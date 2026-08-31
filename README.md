@@ -231,7 +231,7 @@ Note: Due to limitations of the SDXL model, exceeding 8x magnification will resu
 ## Image Tagger
 Supports [WD@SmilingWolf](https://huggingface.co/SmilingWolf), [CL@cella110n](https://huggingface.co/cella110n/cl_tagger) and [Camie@Camais03](https://huggingface.co/spaces/Camais03/camie-tagger-v2-app) models in ONNX format.             
 
-<img src="examples/imageTagger.png" width=35%>   
+<img src="examples/nishiki_image_tagger.png" width=35%>   
 
 <details>
 <summary>Details about Image Tagger</summary>       
@@ -273,7 +273,7 @@ The good news is, you can run `Image tagger` during gegenerate
 </details>
 
 ## ControlNet / IP Adapter
-<img src="examples/controlnet.png" width=35%>   
+<img src="examples/nishiki_controlnet.png" width=35%>   
 
 <details>
 <summary>Details about ControlNet / IP Adapter</summary>      
