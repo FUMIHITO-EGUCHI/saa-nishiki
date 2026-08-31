@@ -8,6 +8,7 @@ export function from_main_updateGallery(base64, seed, tagsString){
 }
 
 export function from_main_updatePreview(base64){
+    globalThis.uiShell?.setPreview?.(base64);
     let overlay = document.getElementById('cg-loading-overlay');
     if (!overlay) {
         overlay = customCommonOverlay().createLoadingOverlay();

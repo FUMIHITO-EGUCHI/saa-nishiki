@@ -737,8 +737,7 @@ class ComfyUI {
     request.on('response', (response) => {
       response.on('end', () => {
         if (response.statusCode !== 200) {
-          console.error(`${CAT} HTTP error: ${response.statusCode} - ${response.Data}`);
-          resolve(`Error: HTTP error: ${response.statusCode}`);
+          console.error(`${CAT} HTTP error on cancel: ${response.statusCode}`);
         }                    
       })
     })
@@ -948,8 +947,15 @@ class ComfyUI {
   }
 
   closeWS(){
-    this.webSocket.close();
-    this.webSocke = null; 
+    const socket = this.webSocket;
+    this.webSocket = null;
+    if (!socket) return;
+    try {
+      socket.close();
+    } catch (error) {
+      console.warn(CAT, 'WebSocket close error:', error?.message ?? error);
+      try { socket.terminate(); } catch { /* already gone */ }
+    }
   }
 
   async getImage(index='29', prompt_id = null) {
@@ -2353,7 +2359,9 @@ class ComfyUI {
         response.on('end', () => {
           if (response.statusCode !== 200) {
             console.error(`${CAT} HTTP error: ${response.statusCode} - ${responseData}`);
+            setMutexBackendBusy(false); // Release the mutex lock so the next run is not reported busy
             resolve(`Error HTTP ${response.statusCode} - ${responseData}`);
+            return;
           }
           resolve(responseData);
         })
@@ -2362,8 +2370,8 @@ class ComfyUI {
       request.on('error', (error) => {
         let ret = '';
         if (error.code === 'ECONNABORTED') {
-          console.error(`${CAT} Request timed out after ${timeout}ms`);
-          ret = `Error: Request timed out after ${timeout}ms`;
+          console.error(`${CAT} Request timed out after ${this.timeout}ms`);
+          ret = `Error: Request timed out after ${this.timeout}ms`;
         } else {
           console.error(CAT, 'Request failed:', error.message);
           ret = `Error: Request failed:, ${error.message}`;
@@ -2373,10 +2381,10 @@ class ComfyUI {
       });
 
       request.on('timeout', () => {
-        req.destroy();
-        console.error(`${CAT} Request timed out after ${timeout}ms`);
+        try { request.destroy(); } catch (err) { console.error(CAT, 'Request destroy error:', err); }
+        console.error(`${CAT} Request timed out after ${this.timeout}ms`);
         setMutexBackendBusy(false); // Release the mutex lock
-        resolve(`Error: Request timed out after ${timeout}ms`);
+        resolve(`Error: Request timed out after ${this.timeout}ms`);
       });
 
       request.write(body);
@@ -2418,6 +2426,16 @@ async function setupGenerateBackendComfyUI() {
 }
 
 async function runComfyUI(generateData) {
+  try {
+    return await runComfyUI_unguarded(generateData);
+  } catch (error) {
+    console.error(CAT, 'runComfyUI failed:', error);
+    await setMutexBackendBusy(false);
+    return `Error: runComfyUI failed: ${error?.message ?? error}`;
+  }
+}
+
+async function runComfyUI_unguarded(generateData) {
   const isBusy = await getMutexBackendBusy();
   if (isBusy) {
     console.warn(CAT, 'ComfyUI is busy, cannot run new generation, please try again later.');
@@ -2443,6 +2461,16 @@ async function runComfyUI(generateData) {
 }
 
 async function runComfyUI_Regional(generateData) {
+  try {
+    return await runComfyUI_Regional_unguarded(generateData);
+  } catch (error) {
+    console.error(CAT, 'runComfyUI_Regional failed:', error);
+    await setMutexBackendBusy(false);
+    return `Error: runComfyUI_Regional failed: ${error?.message ?? error}`;
+  }
+}
+
+async function runComfyUI_Regional_unguarded(generateData) {
   const isBusy = await getMutexBackendBusy();
   if (isBusy) {
     console.warn(CAT, 'ComfyUI API is busy, cannot run new generation, please try again later.');
@@ -2466,7 +2494,17 @@ async function runComfyUI_Regional(generateData) {
   return result;
 }
 
-async function runComfyUI_MiraITU(generateData){
+async function runComfyUI_MiraITU(generateData) {
+  try {
+    return await runComfyUI_MiraITU_unguarded(generateData);
+  } catch (error) {
+    console.error(CAT, 'runComfyUI_MiraITU failed:', error);
+    await setMutexBackendBusy(false);
+    return `Error: runComfyUI_MiraITU failed: ${error?.message ?? error}`;
+  }
+}
+
+async function runComfyUI_MiraITU_unguarded(generateData) {
   const isBusy = await getMutexBackendBusy();
   if (isBusy) {
     console.warn(CAT, 'ComfyUI API is busy, cannot run new generation, please try again later.');
@@ -2492,7 +2530,17 @@ async function runComfyUI_MiraITU(generateData){
   return result;
 }
 
-async function runComfyUI_ControlNet(generateData){
+async function runComfyUI_ControlNet(generateData) {
+  try {
+    return await runComfyUI_ControlNet_unguarded(generateData);
+  } catch (error) {
+    console.error(CAT, 'runComfyUI_ControlNet failed:', error);
+    await setMutexBackendBusy(false);
+    return `Error: runComfyUI_ControlNet failed: ${error?.message ?? error}`;
+  }
+}
+
+async function runComfyUI_ControlNet_unguarded(generateData) {
   const isBusy = await getMutexBackendBusy();
   if (isBusy) {
     console.warn(CAT, 'ComfyUI API is busy, cannot run new generation, please try again later.');

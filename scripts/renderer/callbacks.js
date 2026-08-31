@@ -10,105 +10,8 @@ import { applyTheme } from './theme.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { myCharacterList, myRegionalCharacterList } from './components/myDropdown.js';
 import { flushSlots } from './slots/slotsManager.js';
-import { compareAndMergeFavoriteLists } from './components/favoriteCharacters.js';
 import { changeFontSize } from './components/myTextbox.js';
 import { set_prompt_textBox_Heights } from './components/componentsManager.js';
-
-export async function callback_mySettingList(index, selectedValue) {    
-    if(!globalThis.initialized)
-        return;
-
-    const lastFavList = globalThis.globalSettings.fav_characters;
-    const lastLoadedSettings = globalThis.globalSettings.lastLoadedSettings;
-
-    const lastThumbSelect = globalThis.globalSettings.thumb_select;
-    const lastApiInterface = globalThis.globalSettings.api_interface;
-    const value = selectedValue[0];
-    console.log('Loading settings file:', value);
-    const old_css = globalThis.globalSettings.css_style;
-    setBlur();
-    globalThis.initialized = false;
-    let globalSettings;
-    if (globalThis.inBrowser) {
-        globalSettings = await sendWebSocketMessage({ type: 'API', method: 'loadSettingFile', params: [value] });
-    } else {
-        globalSettings = await globalThis.api.loadSettingFile(value);
-    }    
-    globalThis.globalSettings = structuredClone(globalSettings);
-
-    doSwap(globalThis.globalSettings.rightToleft);    
-    await reloadFiles()    
-
-    // update thumbnail selection if it has changed
-    if(lastThumbSelect !== globalThis.globalSettings.thumb_select){
-        await update_thumb_select(globalThis.globalSettings.thumb_select);
-    }
-    
-    if(old_css !== globalThis.globalSettings.css_style)
-        applyTheme(globalThis.globalSettings.css_style);
-
-    const new_settings_name = value.slice(0, -5);
-    // check favorite list
-    const new_fav = compareAndMergeFavoriteLists(lastFavList, globalThis.globalSettings.fav_characters);
-    if(new_fav) {
-        const SETTINGS = globalThis.globalSettings;
-        const FILES = globalThis.cachedFiles;
-        const LANG = FILES.language[SETTINGS.language];
-
-        const favlist_mismach = LANG.favlist_mismach
-                                    .replace('{0}', lastLoadedSettings)
-                                    .replace('{1}', lastFavList.length)
-                                    .replace('{2}', new_settings_name)
-                                    .replace('{3}', globalThis.globalSettings.fav_characters.length);
-
-        const merge = LANG.favlist_title_merge
-                        .replace('{0}', lastLoadedSettings)
-                        .replace('{1}', new_settings_name)
-                        .replace('{2}', new_fav.length);        
-        const overwrite = LANG.favlist_title_overwrite.replace('{0}', lastLoadedSettings);
-        const replace = LANG.favlist_title_replace.replace('{0}', new_settings_name);
-
-        const combine_itemsTitle = `${replace},${overwrite},${merge}`;
-        const combine_items = `${LANG.favlist_replace},${LANG.favlist_overwrite},${LANG.favlist_merge}`;
-
-        // Ask user what's next
-        const result = await showDialog('radio', { 
-            message: favlist_mismach,
-            items: combine_items,
-            itemsTitle: combine_itemsTitle,
-            buttonText: LANG.setup_ok
-        });
-
-        console.log(result);
-        if (result === 2)   // merge
-            globalThis.globalSettings.fav_characters = new_fav;
-        else if(result === 1) // overwrite
-            globalThis.globalSettings.fav_characters = lastFavList;            
-        // replace  0
-    }    
-
-    // The interface has changed!
-    if(globalThis.globalSettings.api_interface !== lastApiInterface) {
-        console.log("Reload UI and update cache due to interface changed.");
-        await callback_api_interface(0, [globalThis.globalSettings.api_interface]);
-    }
-
-    updateLanguage(true, globalThis.inBrowser); 
-    updateSettings();
-
-    // reLoad slots stuff: LoRA, aDetailer
-    flushSlots();    
-
-    callback_ptompt_textbox_fontsize(globalThis.globalSettings.ptompt_textbox_fontsize);
-    callback_ptompt_textbox_autoresize(globalThis.globalSettings.ptompt_textbox_autoresize);    
-
-    // Done
-    globalThis.initialized = true;
-    setNormal();
-
-    globalThis.dropdownList.settings.updateDefaults(value);
-    globalThis.globalSettings.lastLoadedSettings = new_settings_name;
-}
 
 export async function callback_api_model_select(index, selectedValue) {
     const value = selectedValue[0];    
@@ -138,7 +41,6 @@ export async function callback_api_model_type(index, selectedValue) {
         globalThis.generate.regionalCondition_dummy.setEnable(true);
 
         globalThis.generate.refiner.setEnable(true);
-        globalThis.generate.refiner_dummy.setEnable(true);
 
         globalThis.generate.controlnet.setEnable(true);
 
@@ -149,9 +51,7 @@ export async function callback_api_model_type(index, selectedValue) {
         globalThis.dropdownList.model.updateDefaults(SETTINGS.api_model_file_diffusion_select);
 
         globalThis.generate.refiner.setValue(false);
-        globalThis.generate.refiner_dummy.setValue(false);
         globalThis.generate.refiner.setEnable(false);
-        globalThis.generate.refiner_dummy.setEnable(false);
 
         globalThis.generate.controlnet.setValue(false);
         globalThis.generate.controlnet.setEnable(false);
@@ -273,14 +173,41 @@ export async function callback_generate_start(runType='normal', dataPack=null){
     globalThis.generate.generate_skip.setClickable(true);
     globalThis.generate.generate_cancel.setClickable(true);
 
-    if (runType === 'normal') {
-        if(globalThis.globalSettings.regional_condition) {
-            await generateRegionalImage(dataPack);
-        } else {
-            await generateImage(dataPack);
-        }    
-    } else if (runType === 'MiraITU') {
-        await generateMiraITU(dataPack);
+    // A previous backend failure switches queue auto-start off so the failed slot can be retried; an explicit
+    // generate click means "try again now", so turn it back on. A deliberate user choice (flag not set) is kept.
+    if (globalThis.generate.autoStartDisabledByError && !globalThis.globalSettings.generate_auto_start) {
+        globalThis.generate.autoStartDisabledByError = false;
+        console.log('[Generate] Re-enabling queue auto-start after an earlier backend error.');
+        setQueueAutoStart(true);
+    }
+
+    try {
+        if (runType === 'normal') {
+            if(globalThis.globalSettings.regional_condition) {
+                await generateRegionalImage(dataPack);
+            } else {
+                await generateImage(dataPack);
+            }    
+        } else if (runType === 'MiraITU') {
+            await generateMiraITU(dataPack);
+        }
+    } catch (error) {
+        // Last line of defence: never leave the generate buttons disabled or the busy flag set.
+        console.error('[Generate] Unhandled generation error:', error);
+        const LANG = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language] ?? {};
+        const message = (LANG.gr_error_creating_image ?? 'Error: {0} ({1})')
+            .replace('{0}', error?.message ?? String(error))
+            .replace('{1}', globalThis.generate?.api_interface?.getValue?.() ?? '');
+        globalThis.inGenerating = false;
+        globalThis.queueManager?.removeAll?.();
+        globalThis.mainGallery?.hideLoading?.(message, error?.stack ?? String(error));
+    } finally {
+        globalThis.generate.generate_single.setClickable(true);
+        globalThis.generate.generate_batch.setClickable(true);
+        globalThis.generate.generate_same.setClickable(true);
+        if ((globalThis.queueManager?.getSlotsCount?.() ?? 0) === 0 && !globalThis.inGenerating) {
+            globalThis.generate.showCancelButtons(false);
+        }
     }
 }
 
@@ -339,10 +266,13 @@ export function callback_regional_condition(trigger, dummy = false) {
 
     if (dummy) {
         globalThis.generate.regionalCondition.setValue(globalThis.generate.regionalCondition_dummy.getValue());
-    } else {
-        globalThis.generate.regionalCondition_dummy.setValue(globalThis.generate.regionalCondition.getValue());
     }
     globalThis.globalSettings.regional_condition = trigger;
+
+    // Regional settings live inside the Characters & Views card; show them only while Regional is on.
+    const regionalContainer = document.querySelector('.regional-condition-container');
+    if (regionalContainer) regionalContainer.hidden = !trigger;
+    globalThis.collapsedTabs?.regional?.setCollapsed(!trigger);
 
     const dropdown1 = document.querySelector('.dropdown-character');
     const dropdown2 = document.querySelector('.dropdown-character-regional');
@@ -410,10 +340,8 @@ export async function callback_queue_autostart(trigger, isDummy=false) {
     const FILES = globalThis.cachedFiles;
     const LANG = FILES.language[SETTINGS.language];
 
-    if(isDummy) {
+    if (isDummy) {
         globalThis.generate.queueAutostart.setValue(trigger);
-    } else {
-        globalThis.generate.queueAutostart_dummy.setValue(trigger);
     }
 
     if(trigger) {
@@ -428,6 +356,7 @@ export async function callback_queue_autostart(trigger, isDummy=false) {
 
     globalThis.globalSettings.generate_auto_start = trigger;
     globalThis.overlay.buttons.reload();
+    globalThis.uiShell?.runBar?.refresh?.();
     if(trigger && globalThis.queueManager.getSlotsCount()>0) {
         await startQueue();
     }
@@ -445,7 +374,6 @@ export function setQueueAutoStart(trigger) {
 
     globalThis.globalSettings.generate_auto_start=trigger;
     globalThis.generate.queueAutostart.setValue(trigger);
-    globalThis.generate.queueAutostart_dummy.setValue(trigger);
     globalThis.overlay.buttons.reload();
 }
 

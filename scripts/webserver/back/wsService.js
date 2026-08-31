@@ -12,7 +12,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcrypt';
 import { WebSocketServer } from 'ws';
-import { getGlobalSettings, getSettingFiles, updateSettingFiles, loadSettings, saveSettings, deleteSettings,
+import { getGlobalSettings,
     updateMiraITUSettingFiles, loadMiraITUSettings, saveMiraITUSettings
  } from '../../main/globalSettings.js';
 import { getCachedFilesWithoutThumb, getCharacterThumb, updateCharacterThumb } from '../../main/cachedFiles.js';
@@ -437,11 +437,6 @@ const methodHandlers = {
 
   // global settings
   'getGlobalSettings': ()=> getGlobalSettings(),
-  'loadSettingFile': (params)=> loadSettings(...params),
-  'saveSettingFile': (params)=> saveSettings(...params),
-  'deleteSettingFile': (params)=> deleteSettings(...params),
-  'getSettingFiles': ()=> getSettingFiles(),
-  'updateSettingFiles': ()=> updateSettingFiles(),
 
   'updateMiraITUSettingFiles': ()=> updateMiraITUSettingFiles(),
   'loadMiraITUSettingFile': (params)=> loadMiraITUSettings(...params),
@@ -467,8 +462,8 @@ const methodHandlers = {
   'loadWildcard': (params)=> loadWildcard(...params),
 
   // tag auto complete
-  'tagReload': ()=> tagReload(),
-  'tagGet': (params)=> tagGet(...params),
+  'tagReload': (params = [])=> tagReload(...params),
+  'tagGet': (params = [])=> tagGet(...params),
 
   // AI
   'remoteAI': (params)=> remoteAI(...params),

@@ -2,6 +2,14 @@ import { app, ipcMain, dialog } from 'electron';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import { getWildcardsList } from './wildCards.js';
+import { escapeHtml, parseTranslationLine } from './tagTranslation.js';
+import {
+    createTagFilterMatcher,
+    getCategoryForPrompt,
+    getCategoryLabel,
+    loadTagCategories,
+    normalizeTagFilterOptions,
+} from './tagCategories.js';
 
 const CAT = '[TagAutoCompleteBackend]';
 const appPath = app.isPackaged ? path.join(path.dirname(app.getPath('exe')), 'resources', 'app') : app.getAppPath();
@@ -31,6 +39,8 @@ class PromptManager {
     previousCustomPrompt = "";
     dataLoaded = false;
     useTranslate = false;
+    categoryIndex = new Map();
+    previousFilterKey = '';
 
     async loadPrompts(promptFilePath, translateFilePath = null, useTranslate = false) {    
         try {
@@ -108,15 +118,13 @@ class PromptManager {
         let index = 0;
         for (const line of translateLines) {
             index++;
-            const parts = line.split(',', 3);
-            if (parts.length < 3) {
+            const translation = parseTranslationLine(line);
+            if (!translation) {
                 console.log(CAT, `Skipping invalid line ${index}: ${line}`);
                 continue;
             }
 
-            const prompt = parts[0].trim();
-            const group = parts[1].trim().match(/^\d+$/) ? Number.parseInt(parts[1]) : 0;
-            const newAliases = parts[2].trim();
+            const { prompt, group, aliases: newAliases } = translation;
 
             if (group === 1 || group === 8) {
                 // Skip artist name translations
@@ -148,8 +156,20 @@ class PromptManager {
         this.prompts.sort((a, b) => b.heat - a.heat);
     }
 
-    getSuggestions(text, limit = 50, group = null) {
+    getSuggestions(text, limit = 50, group = null, options = null) {
         if (!text) return [];
+
+        // Keep the existing (text, limit, group[]) contract and also allow
+        // getSuggestions(text, limit, options) for internal callers.
+        if (group && typeof group === 'object' && !Array.isArray(group)) {
+            options = group;
+            group = null;
+        }
+        const normalizedOptions = normalizeTagFilterOptions(options);
+        const hasActiveFilter = normalizedOptions.groupIds !== null || normalizedOptions.category !== null;
+        const matchesFilter = hasActiveFilter
+            ? createTagFilterMatcher(normalizedOptions, this.categoryIndex)
+            : null;
 
         const parts = text.split(',');
         const lastWord = parts.at(-1).trim().toLowerCase();
@@ -162,6 +182,7 @@ class PromptManager {
             if (group !== null && Array.isArray(group) && !group.includes(promptInfo.group)) {
                 continue;
             }
+            if (matchesFilter && !matchesFilter(promptInfo)) continue;
 
             const prompt = promptInfo.prompt.toLowerCase();
             const aliases = promptInfo.aliases ? promptInfo.aliases.toLowerCase().split(',') : [];
@@ -246,19 +267,23 @@ class PromptManager {
                 prompt: promptInfo.prompt,
                 group: promptInfo.group,
                 heat: promptInfo.heat,
+                category: getCategoryForPrompt(this.categoryIndex, promptInfo.prompt),
                 alias: aliasDisplay || null
             };
         }
     }
 
     // eslint-disable-next-line sonarjs/cognitive-complexity
-    updateSuggestions(text) {
+    updateSuggestions(text, options = null) {
         if (!this.dataLoaded) {
             console.log(CAT, `No data loaded. Returning empty dataset.`);
             return [];
         }
 
         const items = [];
+        const normalizedOptions = normalizeTagFilterOptions(options);
+        const filterKey = JSON.stringify(normalizedOptions);
+        const filterChanged = filterKey !== this.previousFilterKey;
         const currentParts = text ? text.replaceAll('\n', ',').split(',') : [];
         const previousParts = this.previousCustomPrompt ? this.previousCustomPrompt.split(',') : [];
 
@@ -271,6 +296,10 @@ class PromptManager {
         }
 
         if (modifiedIndex === -1 && currentParts.length > previousParts.length) {
+            modifiedIndex = currentParts.length - 1;
+        }
+
+        if (modifiedIndex === -1 && filterChanged && currentParts.length > 0) {
             modifiedIndex = currentParts.length - 1;
         }
 
@@ -292,10 +321,10 @@ class PromptManager {
             }                    
             
             if (artistOnly) {
-                matches = this.getSuggestions(targetWord, 50, [1, 8]);
+                matches = this.getSuggestions(targetWord, 50, [1, 8], normalizedOptions);
                 matches = matches.filter(match => Number.parseInt(match.group) === 1 || Number.parseInt(match.group) === 8);
             } else {
-                matches = this.getSuggestions(targetWord);
+                matches = this.getSuggestions(targetWord, 50, null, normalizedOptions);
             }
         }
 
@@ -312,30 +341,45 @@ class PromptManager {
 
             const group = Number.parseInt(match.group);
             const groupName = groupNames[group] || 'Unknown';
+            const categoryLabel = match.category === 'unknown' ? '' : ` [${escapeHtml(getCategoryLabel(match.category))}]`;
+            const safePrompt = escapeHtml(match.prompt);
+            const safeAlias = escapeHtml(displayAlias);
 
             let key = "";
             if(group === 255) { //wildcards
-                key = `<b>${match.prompt}</b> | ${groupName}`;
+                key = `<b>${safePrompt}</b> | ${groupName}`;
             } else {
                 key = displayAlias
-                    ? `<b>${match.prompt}</b>: (${displayAlias}) (${match.heat}) ${groupName}`
-                    : `<b>${match.prompt}</b> (${match.heat}) ${groupName}`;
+                    ? `<b>${safePrompt}</b>: (${safeAlias}) (${match.heat}) ${groupName}${categoryLabel}`
+                    : `<b>${safePrompt}</b> (${match.heat}) ${groupName}${categoryLabel}`;
             }
             items.push([key]);
         }
 
         this.previousCustomPrompt = this.lastCustomPrompt;
         this.lastCustomPrompt = text;
+        this.previousFilterKey = filterKey;
 
         return items;
     }
 }
 
 const tagBackend = new PromptManager();
-async function reloadData() {
+const tagCategoryPath = path.join(appPath, 'data', 'tag_categories.json');
+tagBackend.categoryIndex = loadTagCategories(tagCategoryPath);
+let activeLanguage = 'en-US';
+
+const translationFiles = {
+    'zh-CN': 'danbooru_e621_merged_zh_cn.csv',
+    'ja-JP': 'danbooru_e621_merged_ja.csv',
+};
+
+async function reloadData(language = activeLanguage) {
+    activeLanguage = translationFiles[language] ? language : 'en-US';
     const tags = path.join(appPath, 'data', 'danbooru_e621_merged.csv');
-    const translate = path.join(appPath, 'data', 'danbooru_e621_merged_zh_cn.csv');
-    const isTranslateFile = fs.existsSync(translate);
+    const translateName = translationFiles[activeLanguage];
+    const translate = translateName ? path.join(appPath, 'data', translateName) : null;
+    const isTranslateFile = translate !== null && fs.existsSync(translate);
 
     if (fs.existsSync(tags))
     {
@@ -345,35 +389,38 @@ async function reloadData() {
     return tagBackend.dataLoaded;
 }
 
-async function setupTagAutoCompleteBackend(){    
-    if (await reloadData())
+async function setupTagAutoCompleteBackend(language = 'en-US'){
+    if (await reloadData(language))
     {
-        ipcMain.handle('tag-reload', async () => {
-            return await tagReload();
+        ipcMain.handle('tag-reload', async (event, nextLanguage) => {
+            return await tagReload(nextLanguage);
         });
 
-        ipcMain.handle('tag-get-suggestions', async (event, text) => {            
-            return tagGet(text);
+        ipcMain.handle('tag-get-suggestions', async (event, text, options) => {
+            return tagGet(text, options);
         });
 
         return tagBackend.dataLoaded;
     }
 
+    const tags = path.join(appPath, 'data', 'danbooru_e621_merged.csv');
     console.error(CAT, "Tag file not found: ", tags);
     dialog.showErrorBox(CAT, `Tag file not found: ${tags}`);
     return false;
 }
 
-async function tagReload(){
+async function tagReload(language = activeLanguage){
     tagBackend.prompts = [];
     tagBackend.lastCustomPrompt = "";
     tagBackend.previousCustomPrompt = "";
-    await reloadData();
+    tagBackend.previousFilterKey = '';
+    tagBackend.dataLoaded = false;
+    await reloadData(language);
     return tagBackend.dataLoaded;
 }
 
-function tagGet(text) {
-    return tagBackend.updateSuggestions(text);
+function tagGet(text, options) {
+    return tagBackend.updateSuggestions(text, options);
 }
 
 export {

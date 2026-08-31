@@ -703,11 +703,26 @@ class ControlNetSlotManager {
 
     reload() {
         const slotValues = this.getValues(true);
-    
+
         createControlNetSlotsFromValues(this, slotValues, {
             context: 'Restored',
             validateLoRA: true
         });
+    }
+
+    // Rebuild the rows from globalSettings.controlnet_slot (parameters only — images are not persisted).
+    flush() {
+        this.clear();
+
+        const slots = globalThis.globalSettings?.controlnet_slot;
+        if (!Array.isArray(slots) || slots.length === 0) {
+            return;
+        }
+
+        const slotValues = slots
+            .filter(row => Array.isArray(row))
+            .map(row => [...row.slice(0, 7), null, null, null, null]);
+        createControlNetSlotsFromValues(this, slotValues, { validateControlNet: true, clearSlots: true });
     }
 
     AddControlNetSlot(slotValues) {

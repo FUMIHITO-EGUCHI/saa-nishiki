@@ -1,4 +1,56 @@
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
+import { COARSE_GROUP_FILTERS } from '../main/tagCategoryConstants.js';
+
+export const TAG_FILTERS = Object.freeze([
+    { value: 'all', label: 'All' },
+    { value: 'general', label: 'General', options: { groupIds: COARSE_GROUP_FILTERS.general } },
+    { value: 'character', label: 'Character', options: { groupIds: COARSE_GROUP_FILTERS.character } },
+    { value: 'work', label: 'Work', options: { groupIds: COARSE_GROUP_FILTERS.work } },
+    { value: 'artist', label: 'Artist', options: { groupIds: COARSE_GROUP_FILTERS.artist } },
+    { value: 'species', label: 'Species', options: { groupIds: COARSE_GROUP_FILTERS.species } },
+    { value: 'meta', label: 'Meta', options: { groupIds: COARSE_GROUP_FILTERS.meta } },
+    { value: 'lore', label: 'Lore', options: { groupIds: COARSE_GROUP_FILTERS.lore } },
+    { value: 'pose_action', label: 'Pose / Action', options: { category: 'pose_action' } },
+    { value: 'clothing', label: 'Clothing', options: { category: 'clothing' } },
+    { value: 'appearance', label: 'Appearance', options: { category: 'appearance' } },
+    { value: 'object', label: 'Object', options: { category: 'object' } },
+    { value: 'composition_quality', label: 'Composition / Quality', options: { category: 'composition_quality' } },
+]);
+
+export function getTagFilterOptions(filterValue) {
+    const filter = TAG_FILTERS.find(item => item.value === filterValue);
+    if (!filter?.options) return undefined;
+    return filter.options.groupIds
+        ? { groupIds: [...filter.options.groupIds] }
+        : { category: filter.options.category };
+}
+
+export function extractPromptKeyFromSuggestion(suggestionHtml) {
+    return /^\s*<b>(.*?)<\/b>/.exec(suggestionHtml)?.[1] || '';
+}
+
+function createTagFilterControl(textbox) {
+    const wrapper = textbox.closest('.myTextbox-wrapper') || textbox.parentElement;
+    const relativeContainer = textbox.parentElement;
+    if (!wrapper || !relativeContainer) return null;
+
+    const control = document.createElement('label');
+    control.className = 'tag-filter-control';
+    control.textContent = 'Filter';
+
+    const select = document.createElement('select');
+    select.className = 'tag-filter-select';
+    select.setAttribute('aria-label', 'Tag filter');
+    for (const filter of TAG_FILTERS) {
+        const option = document.createElement('option');
+        option.value = filter.value;
+        option.textContent = filter.label;
+        select.appendChild(option);
+    }
+    control.appendChild(select);
+    wrapper.insertBefore(control, relativeContainer);
+    return select;
+}
 
 function debounce(func, wait) {
     let timeout;
@@ -144,9 +196,6 @@ export function setupSuggestionSystem() {
         //'.myTextbox-prompt-ai-textarea',
     );
 
-    let lastWordSent = '';
-    let skipSuggestion = false;
-
     for(const textbox of textboxes) {
         if (textbox.dataset.suggestionSetup) continue;
 
@@ -156,6 +205,10 @@ export function setupSuggestionSystem() {
         suggestionBox.className = 'suggestion-box scroll-container';
         suggestionBox.style.display = 'none';
         document.body.appendChild(suggestionBox);
+
+        const filterSelect = createTagFilterControl(textbox);
+        let lastWordSent = '';
+        let skipSuggestion = false;
 
         let selectedIndex = -1;
         let currentSuggestions = [];
@@ -187,10 +240,12 @@ export function setupSuggestionSystem() {
 
             try {            
                 let suggestions;
+                const filterOptions = getTagFilterOptions(filterSelect?.value || 'all');
+                const params = filterOptions ? [wordToSend, filterOptions] : [wordToSend];
                 if (globalThis.inBrowser) {
-                    suggestions = await sendWebSocketMessage({ type: 'API', method: 'tagGet', params: [wordToSend] });
+                    suggestions = await sendWebSocketMessage({ type: 'API', method: 'tagGet', params });
                 } else {
-                    suggestions = await globalThis.api.tagGet(wordToSend);
+                    suggestions = await globalThis.api.tagGet(...params);
                 }
 
                 if (!suggestions || suggestions.every(s => s.length === 0)) {
@@ -220,9 +275,12 @@ export function setupSuggestionSystem() {
                     const item = document.createElement('div');
                     item.className = 'suggestion-item';
                     item.innerHTML = element;
-                    const boldRegex = /<b>(.*?)<\/b>/;
-                    const promptMatch = boldRegex.exec(element);
-                    item.dataset.value = promptMatch ? promptMatch[1] : element.split(':')[0].trim();
+                    const promptMatch = extractPromptKeyFromSuggestion(element);
+                    // Read the value back from the DOM so escaped display text
+                    // such as &lt;o&gt; is inserted as the original tag.
+                    item.dataset.value = promptMatch
+                        ? (item.querySelector('b')?.textContent || '')
+                        : element.split(':')[0].trim();
                     let sanitizedElement = element;
                     let previousElement;
                     do {
@@ -231,7 +289,7 @@ export function setupSuggestionSystem() {
                     } while (sanitizedElement !== previousElement);
                     tempDiv.textContent = sanitizedElement;
                     maxWidth = Math.max(maxWidth, tempDiv.offsetWidth);
-                    currentSuggestions.push({ prompt: element });
+                    currentSuggestions.push({ prompt: element, value: item.dataset.value });
                     fragment.appendChild(item);
                 }
 
@@ -257,9 +315,9 @@ export function setupSuggestionSystem() {
                 if (e.key === 'Tab' || e.key === 'Enter') {
                     e.preventDefault();
                     if (selectedIndex >= 0 && selectedIndex < currentSuggestions.length) {
-                        applySuggestion(currentSuggestions[selectedIndex].prompt);
+                        applySuggestion(currentSuggestions[selectedIndex].value);
                     } else if (items.length > 0) {
-                        applySuggestion(currentSuggestions[0].prompt);
+                        applySuggestion(currentSuggestions[0].value);
                     }
                 } else if (e.key === 'ArrowDown') {
                     e.preventDefault();
@@ -278,7 +336,17 @@ export function setupSuggestionSystem() {
                 e.preventDefault();
                 adjustWeight(e.key === 'ArrowUp', textbox);
             }
-        });        
+        });
+
+        filterSelect?.addEventListener('change', () => {
+            lastWordSent = '';
+            selectedIndex = -1;
+            if (textbox.value.trim()) {
+                textbox.dispatchEvent(new Event('input', { bubbles: true }));
+            } else {
+                suggestionBox.style.display = 'none';
+            }
+        });
 
         document.addEventListener('click', (e) => {
             if (!suggestionBox.contains(e.target) && e.target !== textbox) {

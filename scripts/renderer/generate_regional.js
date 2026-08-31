@@ -6,6 +6,9 @@ import { generateRandomSeed, getTagAssist, getLoRAs, replaceWildcardsAsync, getR
 import { processRandomString } from './tools/nestedBraceParsing.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { filterPrompts } from './tools/promptFilter.js';
+import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue } from './tools/promptBatchExpansion.js';
+import { removeAiPromptMarker } from '../aiPromptRefiner.js';
+import { getLocalizedCharacterName } from './characterLocalization.js';
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 function getCustomJSON(loop=-1){
@@ -99,11 +102,11 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
     const positiveColor = (globalThis.globalSettings.css_style==='dark')?'LawnGreen':'SeaGreen';
     const positiveRColor = (globalThis.globalSettings.css_style==='dark')?'LightSkyBlue':'Navy';
 
-    let common = globalThis.prompt.common.getValue();
-    let positive = globalThis.prompt.positive.getValue().trim();
-    let positiveR = globalThis.prompt.positive_right.getValue().trim();
+    let common = readPromptValue('common');
+    let positive = readPromptValue('positive').trim();
+    let positiveR = readPromptValue('positive_right').trim();
     let aiPrompt = ai.trim();
-    const exclude = globalThis.prompt.exclude.getValue();
+    const exclude = readPromptValue('exclude');
 
     if (common !== '' && !common.endsWith(',')) {
         common += ', ';
@@ -173,27 +176,34 @@ async function handleStandardCharacter(character, seed, isValueOnly, index, FILE
     let tag, thumb, info, name;
     if (character.toLowerCase() === 'random') {
         const selectedIndex = getRandomIndex(seed, FILES.characterListArray.length);
+        const selectedKey = FILES.characterListArray[selectedIndex][0];
         tag = FILES.characterListArray[selectedIndex][1];
-        thumb = await decodeThumb(FILES.characterListArray[selectedIndex][0]);
+        const displayName = getLocalizedCharacterName({
+            key: selectedKey,
+            tag,
+            language: globalThis.globalSettings.language,
+            characterNames: FILES.characterNames,
+        });
+        thumb = await decodeThumb(selectedKey);
         info = formatCharacterInfo(index, isValueOnly, {
-        key: FILES.characterListArray[selectedIndex][0],
+        key: displayName,
         value: FILES.characterListArray[selectedIndex][1]
         });
-        if(globalThis.globalSettings.language === 'en-US')
-            name = FILES.characterListArray[selectedIndex][1];
-        else
-            name = FILES.characterListArray[selectedIndex][0];
+        name = displayName;
     } else {
         tag = FILES.characterList[character];
         thumb = await decodeThumb(character);
+        const displayName = getLocalizedCharacterName({
+            key: character,
+            tag,
+            language: globalThis.globalSettings.language,
+            characterNames: FILES.characterNames,
+        });
         info = formatCharacterInfo(index, isValueOnly, {
-        key: character,
+        key: displayName,
         value: globalThis.characterListRegional.getValue()[index]
         });
-        if(globalThis.globalSettings.language === 'en-US')
-            name = tag;
-        else
-            name = character;   
+        name = displayName;
     }
     const weight = globalThis.characterListRegional.getTextValue(index);
     return { tag, thumb, info, weight, name };
@@ -242,7 +252,7 @@ function parseCharacter(weight, tag){
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 async function getCharacters(){    
-    let random_seed = globalThis.generate.seed.getValue();
+    let random_seed = overrideSeed(globalThis.generate.seed.getValue());
     if (random_seed === -1){
         random_seed = generateRandomSeed();
     }
@@ -364,7 +374,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         }
         positivePromptLeftColored = posLc;
         positivePromptRightColored = posRc;
-        const mergedNegativePrompt = [globalThis.prompt.negative.getValue(), negative_tags].filter(Boolean).join(', ').trim();
+        const mergedNegativePrompt = [readPromptValue('negative'), negative_tags].filter(Boolean).join(', ').trim();
         negativePrompt = mergedNegativePrompt;
         thumbImage = thumb;
         charactersName = characters;         
@@ -404,7 +414,9 @@ function createRegional(apiInterface) {
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export async function generateRegionalImage(dataPack){
-    const {loops, runSame} = dataPack;
+    const {runSame} = dataPack;
+    const expansion = planBatchExpansion(dataPack, { generateRandomSeed });
+    const loops = expansion.loops;
     const SETTINGS = globalThis.globalSettings;
     const FILES = globalThis.cachedFiles;
     const LANG = FILES.language[SETTINGS.language];
@@ -430,7 +442,9 @@ export async function generateRegionalImage(dataPack){
         globalThis.infoBox.image.clear();
     }
 
+    let prepareError = null;
     for(let loop = 0; loop < loops; loop++){
+      try {
         if(globalThis.generate.cancelClicked){
             globalThis.queueManager.removeAll();
             break;
@@ -443,7 +457,13 @@ export async function generateRegionalImage(dataPack){
         if(!globalThis.inGenerating)
             globalThis.generate.loadingMessage = LANG.generate_start.replace('{0}', `${loop+1}`).replace('{1}', loops);
 
-        const createPromptResult = await createPrompt(runSame, aiPromot, apiInterface, (loops > 1)?loop:-1);
+        const imageOverride = beginImageOverride(expansion, loop);
+        let createPromptResult;
+        try {
+            createPromptResult = await createPrompt(runSame, aiPromot, apiInterface, (loops > 1)?loop:-1);
+        } finally {
+            endImageOverride();
+        }
 
         const hifix = createHiFix(createPromptResult.randomSeed, apiInterface,brownColor);
         const refiner = createRefiner();
@@ -497,12 +517,20 @@ export async function generateRegionalImage(dataPack){
                         apiUrl: globalThis.ai.local_address.getValue(),
                         userPrompt: globalThis.prompt.ai.getValue(),
                         systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
+                        modelMode: globalThis.ai.local_model_mode.getValue(),
+                        aiUse: 'regional',
+                        promptMode: globalThis.ai.local_prompt_mode.getValue(),
+                        refineSystemPrompt: globalThis.ai.refine_system_prompt.getValue(),
+                        existingPositive: removeAiPromptMarker(createPromptResult.positivePromptLeft, REPLACE_AI_MARK),
+                        existingPositiveRight: removeAiPromptMarker(createPromptResult.positivePromptRight, REPLACE_AI_MARK),
+                        existingNegative: createPromptResult.negativePrompt,
                         temperature: globalThis.ai.local_temp.getValue(),
                         n_predict:globalThis.ai.local_n_predict.getValue(),
-                        timeout: globalThis.ai.remote_timeout.getValue() * 1000
+                        timeout: globalThis.ai.local_timeout.getValue() * 1000
                     },
                 thumb:createPromptResult.thumbImage || globalThis.generate.lastThumb,
                 id:createPromptResult.charactersName,
+                planWeights: imageOverride?.weights ?? null,
             },
 
             model: globalThis.dropdownList.model.getValue(),
@@ -556,6 +584,10 @@ export async function generateRegionalImage(dataPack){
             finalInfo += generateData.regional.info;
             finalInfo +=`\n`;
 
+        if (imageOverride) {
+            const weightsInfo = describeOverrideWeights(imageOverride);
+            if (weightsInfo) finalInfo += `${weightsInfo}\n`;
+        }
         generateData.queueManager.finalInfo = finalInfo;
 
         const nameList = generateData.queueManager.id.replaceAll('\n', ' | ');
@@ -567,13 +599,22 @@ export async function generateRegionalImage(dataPack){
             ],
             generateData
         );
+      } catch (error) {
+        console.error('[Generate Regional] Failed to prepare image', loop + 1, error);
+        prepareError = error;
+        break;
+      }
     }
 
     globalThis.generate.generate_single.setClickable(true);
     globalThis.generate.generate_batch.setClickable(true);
     globalThis.generate.generate_same.setClickable(true);    
     
-    if(globalThis.globalSettings.generate_auto_start) {
+    if (prepareError) {
+        globalThis.mainGallery.hideLoading(
+            LANG.gr_error_creating_image.replace('{0}', prepareError?.message ?? String(prepareError)).replace('{1}', apiInterface),
+            prepareError?.stack ?? String(prepareError));
+    } else if(globalThis.globalSettings.generate_auto_start) {
         await startQueue();
     } else {
         globalThis.mainGallery.hideLoading('success', '');

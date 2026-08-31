@@ -281,6 +281,7 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
             if (passwordMode) {
                 textbox.value = '******';
             }
+            textbox.dispatchEvent(new CustomEvent('mytextbox-value-set'));
             setTimeout(adjustHeight, 0);
         },
         setColors: (backgroundColor, textColor) => {

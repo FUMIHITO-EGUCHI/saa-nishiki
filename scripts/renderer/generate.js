@@ -9,6 +9,9 @@ import { processRandomString } from './tools/nestedBraceParsing.js';
 import { convertToMultipleOfNFloor, checkNumberInRange } from './tools/numbers.js';
 import { setQueueAutoStart } from './callbacks.js';
 import { filterPrompts } from './tools/promptFilter.js';
+import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
+import { applyAiPromptResult, removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
+import { getLocalizedCharacterName } from './characterLocalization.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
 
@@ -151,27 +154,34 @@ async function handleStandardCharacter(character, seed, isValueOnly, index, FILE
     let tag, thumb, info, name;
     if (character.toLowerCase() === 'random') {
         const selectedIndex = getRandomIndex(seed, FILES.characterListArray.length);
+        const selectedKey = FILES.characterListArray[selectedIndex][0];
         tag = FILES.characterListArray[selectedIndex][1];
-        thumb = await decodeThumb(FILES.characterListArray[selectedIndex][0]);
+        const displayName = getLocalizedCharacterName({
+            key: selectedKey,
+            tag,
+            language: globalThis.globalSettings.language,
+            characterNames: FILES.characterNames,
+        });
+        thumb = await decodeThumb(selectedKey);
         info = formatCharacterInfo(index, isValueOnly, {
-        key: FILES.characterListArray[selectedIndex][0],
+        key: displayName,
         value: FILES.characterListArray[selectedIndex][1]
         });
-        if(globalThis.globalSettings.language === 'en-US')
-            name = FILES.characterListArray[selectedIndex][1];
-        else
-            name = FILES.characterListArray[selectedIndex][0];
+        name = displayName;
     } else {
         tag = FILES.characterList[character];
         thumb = await decodeThumb(character);
+        const displayName = getLocalizedCharacterName({
+            key: character,
+            tag,
+            language: globalThis.globalSettings.language,
+            characterNames: FILES.characterNames,
+        });
         info = formatCharacterInfo(index, isValueOnly, {
-        key: character,
+        key: displayName,
         value: globalThis.characterList.getValue()[index]
         });
-        if(globalThis.globalSettings.language === 'en-US')
-            name = tag;
-        else
-            name = character;
+        name = displayName;
     }
     const weight = globalThis.characterList.getTextValue(index);
     return { tag, thumb, info, weight, name };
@@ -289,7 +299,7 @@ function packWeight(character, tag, weight, seperate = ', ') {
 // eslint-disable-next-line sonarjs/cognitive-complexity
 async function getCharacters() {
     const brownColor = (globalThis.globalSettings.css_style==='dark')?'BurlyWood':'Brown';
-    let random_seed = globalThis.generate.seed.getValue();
+    let random_seed = overrideSeed(globalThis.generate.seed.getValue());
     if (random_seed === -1){
         random_seed = generateRandomSeed();
     }
@@ -360,8 +370,8 @@ function appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP) {
     const characterColor = (globalThis.globalSettings.css_style==='dark')?'DeepSkyBlue':'MidnightBlue';
     const positiveColor = (globalThis.globalSettings.css_style==='dark')?'LawnGreen':'SeaGreen';
 
-    let common = globalThis.prompt.common.getValue();
-    let positive = globalThis.prompt.positive.getValue();
+    let common = readPromptValue('common');
+    let positive = readPromptValue('positive');
     let aiPrompt = ai;
 
     aiPrompt = aiPrompt.trim();
@@ -441,7 +451,7 @@ function getPrompts(characters, views, ai='', apiInterface = 'None', loop=-1) {
     const {BOP, BOC, EOC, EOP} = getCustomJSON(loop);
     const {tmpPositivePrompt, tmpPositivePromptColored} = appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP); 
 
-    const exclude = globalThis.prompt.exclude.getValue();
+    const exclude = readPromptValue('exclude');
     const {positivePrompt, positivePromptColored} = filterPrompts(tmpPositivePrompt, tmpPositivePromptColored, exclude);
     const loraPromot = getLoRAs(apiInterface);
     return {pos:positivePrompt, posc:positivePromptColored, lora:loraPromot}
@@ -565,7 +575,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
             finalInfo += `LoRA: [color=${loraColor}]${lora}[/color]\n`;
         }
         positivePromptColored = posc;
-        const mergedNegativePrompt = [globalThis.prompt.negative.getValue(), negative_tags].filter(Boolean).join(', ').trim();
+        const mergedNegativePrompt = [readPromptValue('negative'), negative_tags].filter(Boolean).join(', ').trim();
         negativePrompt = mergedNegativePrompt;
         thumbImage = thumb;
         charactersName = characters;
@@ -762,7 +772,7 @@ export function createADetailer(apiInterface) {
                 // sam_detection_hint
                 mask_merge_invert: ad_mask_merge_invert, 
                 // feather
-                mask_blur:checkNumberInRange(ad_dilate_erode, 0, 100, 4, true),
+                mask_blur:checkNumberInRange(ad_mask_blur, 0, 100, 4, true),
                 // denoise
                 denoise: checkNumberInRange(ad_denoise, 0, 1, 0.4, false),
             };
@@ -906,7 +916,9 @@ export function getImageSavePrefix(apiInterface, character_prefix) {
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export async function generateImage(dataPack){
-    const {loops, runSame} = dataPack;
+    const {runSame} = dataPack;
+    const expansion = planBatchExpansion(dataPack, { generateRandomSeed });
+    const loops = expansion.loops;
     const SETTINGS = globalThis.globalSettings;
     const FILES = globalThis.cachedFiles;
     const LANG = FILES.language[SETTINGS.language];
@@ -932,7 +944,9 @@ export async function generateImage(dataPack){
         globalThis.infoBox.image.clear();
     }
 
+    let prepareError = null;
     for(let loop = 0; loop < loops; loop++){        
+      try {
         if(globalThis.generate.cancelClicked){
             globalThis.queueManager.removeAll();
             break;
@@ -945,7 +959,13 @@ export async function generateImage(dataPack){
         if(!globalThis.inGenerating)
             globalThis.generate.loadingMessage = LANG.generate_warmup.replace('{0}', `${loop+1}`).replace('{1}', loops);
 
-        const createPromptResult = await createPrompt(runSame, aiPromot, apiInterface, (loops > 1)?loop:-1);
+        const imageOverride = beginImageOverride(expansion, loop);
+        let createPromptResult;
+        try {
+            createPromptResult = await createPrompt(runSame, aiPromot, apiInterface, (loops > 1)?loop:-1);
+        } finally {
+            endImageOverride();
+        }
         const landscape = globalThis.generate.landscape.getValue();
         const width = landscape?globalThis.generate.height.getValue():globalThis.generate.width.getValue();
         const height = landscape?globalThis.generate.width.getValue():globalThis.generate.height.getValue();
@@ -995,12 +1015,19 @@ export async function generateImage(dataPack){
                         apiUrl: globalThis.ai.local_address.getValue(),
                         userPrompt: globalThis.prompt.ai.getValue(),
                         systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
+                        modelMode: globalThis.ai.local_model_mode.getValue(),
+                        aiUse: 'prompt',
+                        promptMode: globalThis.ai.local_prompt_mode.getValue(),
+                        refineSystemPrompt: globalThis.ai.refine_system_prompt.getValue(),
+                        existingPositive: removeAiPromptMarker(createPromptResult.positivePrompt, REPLACE_AI_MARK),
+                        existingNegative: createPromptResult.negativePrompt,
                         temperature: globalThis.ai.local_temp.getValue(),
                         n_predict:globalThis.ai.local_n_predict.getValue(),
-                        timeout: globalThis.ai.remote_timeout.getValue() * 1000
+                        timeout: globalThis.ai.local_timeout.getValue() * 1000
                     },
                 thumb:createPromptResult.thumbImage || globalThis.generate.lastThumb,
                 id:createPromptResult.charactersName,
+                planWeights: imageOverride?.weights ?? null,
             },
             
             positive: createPromptResult.positivePrompt,
@@ -1045,6 +1072,10 @@ export async function generateImage(dataPack){
             finalInfo += `Scheduler: [[color=${brownColor}]${generateData.scheduler}[/color]]\n`;
             finalInfo += hifix.info;
             finalInfo += refiner.info;        
+            if (imageOverride) {
+                const weightsInfo = describeOverrideWeights(imageOverride);
+                if (weightsInfo) finalInfo += `${weightsInfo}\n`;
+            }
             finalInfo +=`\n`;
 
         generateData.queueManager.finalInfo = finalInfo;
@@ -1057,13 +1088,22 @@ export async function generateImage(dataPack){
             ], 
             generateData
         );
+      } catch (error) {
+        console.error('[Generate] Failed to prepare image', loop + 1, error);
+        prepareError = error;
+        break;
+      }
     }
 
     globalThis.generate.generate_single.setClickable(true);
     globalThis.generate.generate_batch.setClickable(true);
     globalThis.generate.generate_same.setClickable(true);    
     
-    if(globalThis.globalSettings.generate_auto_start) {
+    if (prepareError) {
+        globalThis.mainGallery.hideLoading(
+            LANG.gr_error_creating_image.replace('{0}', prepareError?.message ?? String(prepareError)).replace('{1}', apiInterface),
+            prepareError?.stack ?? String(prepareError));
+    } else if(globalThis.globalSettings.generate_auto_start) {
         await startQueue();
     } else {
         globalThis.mainGallery.hideLoading('success', '');
@@ -1090,7 +1130,9 @@ export async function startQueue(){
         globalThis.infoBox.image.clear();
     }
 
-    let generateData = globalThis.queueManager.getFirstSlot();
+    let generateData = null;
+    try {
+    generateData = globalThis.queueManager.getFirstSlot();
     while (generateData) {
         if(globalThis.generate.cancelClicked){
             globalThis.queueManager.removeAll();
@@ -1106,28 +1148,59 @@ export async function startQueue(){
         if(queueManager.genType === 'normal') {
             globalThis.thumbGallery.append(queueManager.thumb);
 
-            const aiPrompt = await getAiPrompt(queueManager.loop, LANG.generate_ai, queueManager.aiInterface, queueManager.aiRole, queueManager.aiOptions);            
-            if (globalThis.globalSettings.ai_prompt_preview && globalThis.globalSettings.ai_prompt_role !== 0) {
+            const aiPrompt = await getAiPrompt(queueManager.loop, LANG.generate_ai, queueManager.aiInterface, queueManager.aiRole, queueManager.aiOptions);
+            let promptResult = applyAiPromptResult({
+                mode: queueManager.aiOptions?.promptMode,
+                content: aiPrompt,
+                marker: REPLACE_AI_MARK,
+                positive: generateData.positive ?? generateData.positive_left ?? '',
+                positiveRight: generateData.positive_right ?? '',
+                negative: generateData.negative ?? '',
+            });
+            if (queueManager.planWeights) {
+                // AI Refine (Once) reuses image #1's refined text; restore this image's planned weights.
+                promptResult = reapplyPlanWeights(promptResult, queueManager.planWeights);
+            }
+            const aiPreview = promptResult.preview;
+            if (!promptResult.ok && queueManager.aiOptions?.promptMode === 'Refine') {
+                console.error('AI Refine failed, preserving original prompts:', promptResult.error);
+            }
+            if (globalThis.globalSettings.ai_prompt_role !== 0 && globalThis.globalSettings.ai_interface !== 'None' && globalThis.infoPanel?.showAiResult) {
+                // AI result goes to the Info panel's AI tab (focused when "Show result" is on) instead of a floating overlay.
+                const aiResultText = aiPreview === '' ? LANG.ai_no_prompt_generate : aiPreview;
+                globalThis.infoPanel.showAiResult(aiResultText, { focus: Boolean(globalThis.globalSettings.ai_prompt_preview) });
+            } else if (globalThis.globalSettings.ai_prompt_preview && globalThis.globalSettings.ai_prompt_role !== 0) {
                 globalThis.overlay.custom.closeCustomOverlaysByGroup('aiText'); // close exist
-                if(aiPrompt === '') {
+                if(aiPreview === '') {
                     globalThis.overlay.custom.createCustomOverlay('none', `\n\n[color=gray]${LANG.ai_no_prompt_generate}[/color]`,
                                                         384, 'center', 'left', null, 'aiText');
                 } else {
-                    globalThis.overlay.custom.createCustomOverlay('none', `\n\n${aiPrompt}`,
+                    globalThis.overlay.custom.createCustomOverlay('none', `\n\n${aiPreview}`,
                                                         384, 'center', 'left', null, 'aiText');
                 }
             }
 
-            const finalInfo = String(queueManager.finalInfo).replaceAll(REPLACE_AI_MARK, aiPrompt);
+            const finalInfo = renderAiPromptInfo({
+                info: String(queueManager.finalInfo),
+                mode: queueManager.aiOptions?.promptMode,
+                marker: REPLACE_AI_MARK,
+                preview: aiPreview,
+                positive: promptResult.positive,
+                positiveRight: promptResult.positiveRight,
+                negative: promptResult.negative,
+                regional: queueManager.isRegional,
+            });
             globalThis.infoBox.image.appendValue(finalInfo);            
             globalThis.generate.loadingMessage = LANG.generate_start.replace('{0}', `${queueManager.id}`).replace('{1}', `[${queueManager.loop + 1}/${queueManager.loops}]`);
 
             if(queueManager.isRegional) {
-                generateData.positive_left = String(generateData.positive_left).replaceAll(REPLACE_AI_MARK, aiPrompt);
-                generateData.positive_right = String(generateData.positive_right).replaceAll(REPLACE_AI_MARK, aiPrompt);            
+                generateData.positive_left = promptResult.positive;
+                generateData.positive_right = promptResult.positiveRight;
+                generateData.negative = promptResult.negative;
                 result = await seartGenerateRegional(queueManager.apiInterface, generateData);
             } else {
-                generateData.positive = String(generateData.positive).replaceAll(REPLACE_AI_MARK, aiPrompt);
+                generateData.positive = promptResult.positive;
+                generateData.negative = promptResult.negative;
                 result = await seartGenerate(queueManager.apiInterface, generateData);
             }
         } else if(queueManager.genType === 'miraITU') {
@@ -1152,7 +1225,9 @@ export async function startQueue(){
             }
 
             if(ret !== 'success') {
-                // Disable auto start, the error may solved in future
+                // Disable auto start, the error may solved in future.
+                // Remember why, so the next explicit generate click can switch it back on (§ recovery).
+                globalThis.generate.autoStartDisabledByError = true;
                 setQueueAutoStart(false);
             }
             break;
@@ -1163,11 +1238,20 @@ export async function startQueue(){
         if(!globalThis.globalSettings.generate_auto_start)
             break;
     }
-
-    globalThis.mainGallery.hideLoading(ret, retCopy);
-    if(globalThis.queueManager.getSlotsCount() === 0)
-        globalThis.generate.showCancelButtons(false);
-    globalThis.inGenerating = false;
+    } catch (error) {
+        // Any uncaught failure used to leave inGenerating=true, which silently disabled every later generate.
+        console.error('[Generate] Queue processing failed:', error);
+        ret = LANG.gr_error_creating_image.replace('{0}', error?.message ?? String(error)).replace('{1}', globalThis.generate.api_interface.getValue());
+        retCopy = error?.stack ?? String(error);
+        globalThis.queueManager.removeAll();
+        globalThis.generate.autoStartDisabledByError = true;
+        setQueueAutoStart(false);
+    } finally {
+        globalThis.mainGallery.hideLoading(ret, retCopy);
+        if(globalThis.queueManager.getSlotsCount() === 0)
+            globalThis.generate.showCancelButtons(false);
+        globalThis.inGenerating = false;
+    }
 }
 
 async function seartGenerate(apiInterface, generateData){

@@ -80,11 +80,15 @@ contextBridge.exposeInMainWorld('api', {
 
   // globalSettings
   getGlobalSettings: async () => ipcRenderer.invoke('get-global-settings'),
-  getSettingFiles: async () => ipcRenderer.invoke('get-all-settings-files'),
-  updateSettingFiles: async () => ipcRenderer.invoke('update-all-setting-files'),
-  loadSettingFile: async (fineName) => ipcRenderer.invoke('load-setting-file', fineName),
-  saveSettingFile: async (fineName, settings) => ipcRenderer.invoke('save-setting-file', fineName, settings),
-  deleteSettingFile: async (fineName) => ipcRenderer.invoke('delete-setting-file', fineName),
+  getBackendStatus: async () => ipcRenderer.invoke('get-backend-status'),
+  // sectioned settings (settings/app.json, state.json, presets/<section>/<name>.json)
+  saveSettingsSections: async (sections) => ipcRenderer.invoke('save-settings-sections', sections),
+  saveSettingsSectionsSync: (sections) => ipcRenderer.sendSync('save-settings-sections-sync', sections),
+  listPresets: async (section) => ipcRenderer.invoke('list-presets', section),
+  savePreset: async (section, name, data) => ipcRenderer.invoke('save-preset', section, name, data),
+  loadPreset: async (section, name) => ipcRenderer.invoke('load-preset', section, name),
+  deletePreset: async (section, name) => ipcRenderer.invoke('delete-preset', section, name),
+  openSettingsFolder: async () => ipcRenderer.invoke('open-settings-folder'),
   // MiraITU settings
   loadMiraITUSettingFile: async (fineName) => ipcRenderer.invoke('load-miraitu-setting-file', fineName),
   saveMiraITUSettingFile: async (fineName, settings) => ipcRenderer.invoke('save-miraitu-setting-file', fineName, settings),
@@ -108,8 +112,8 @@ contextBridge.exposeInMainWorld('api', {
   getImageTaggerModels: async () => ipcRenderer.invoke('get-image-tagger-models'),
   getONNXList: async (args) => ipcRenderer.invoke('get-onnx-list', args),
   // Tag Auto Complete
-  tagReload: async () => ipcRenderer.invoke('tag-reload'),
-  tagGet: async (text) => ipcRenderer.invoke('tag-get-suggestions', text),
+  tagReload: async (language) => ipcRenderer.invoke('tag-reload', language),
+  tagGet: async (text, options) => ipcRenderer.invoke('tag-get-suggestions', text, options),
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),

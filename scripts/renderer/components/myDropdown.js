@@ -2,6 +2,11 @@ import { updateLanguage } from '../language.js';
 import { decodeThumb } from '../customThumbGallery.js';
 import { callback_myCharacterList_updateThumb, callback_myViewList_Update } from '../callbacks.js'
 import { generateGUID } from '../slots/myLoRASlot.js'
+import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
+import {
+    myCharacterSelectionModal,
+    myRegionalCharacterSelectionModal,
+} from './characterSelectionModal.js';
 
 const CAT = '[myDropdown]'
 
@@ -57,6 +62,13 @@ function normalizeOptionText(value) {
     return String(value || '').trim().toLowerCase();
 }
 
+function getOptionLabel(option) {
+    if (typeof option?.label === 'function') {
+        return option.label();
+    }
+    return option?.label ?? option?.key ?? '';
+}
+
 function getSpecialSearchOptions() {
     const specialList = Array.isArray(globalThis.globalSettings?.fav_characters)
         ? globalThis.globalSettings.fav_characters
@@ -76,7 +88,8 @@ function filterOptionsByText(optionList, searchText) {
     return optionList.filter(option => {
         const key = normalizeOptionText(option.key);
         const value = normalizeOptionText(option.value);
-        return key.includes(normalizedSearchText) || value.includes(normalizedSearchText);
+        const label = normalizeOptionText(getOptionLabel(option));
+        return key.includes(normalizedSearchText) || value.includes(normalizedSearchText) || label.includes(normalizedSearchText);
     });
 }
 
@@ -103,124 +116,23 @@ function isSpecialSearchMode(searchText) {
     return typeof searchText === 'string' && searchText.startsWith('@');
 }
 
-function handleCharacterOptions(options, filteredOptions, args, dropdownCount) {
-    const [[keys, values], oc] = args;
-    if (!Array.isArray(keys) || !Array.isArray(values) || keys.length !== values.length) {
-        console.error(CAT, '[handleCharacterOptions] Invalid keys or values:', keys, values);
-        return;
-    }
-    if (!Array.isArray(oc)) {
-        console.error(CAT, '[handleCharacterOptions] Invalid oc:', oc);
-        return;
-    }
-
-    const charOptions = [{ key: 'Random', value: 'random' }, { key: 'None', value: 'none' }].concat(keys.map((key, idx) => ({ key, value: values[idx] })));
-    for (let i = 0; i < dropdownCount - 1; i++) {
-        options[i] = charOptions;
-        filteredOptions[i] = [...charOptions];
-    }
-
-    const originalOptions = [{ key: 'Random', value: 'random' }, { key: 'None', value: 'none' }].concat(oc.map(key => ({ key, value: key })));
-    options[dropdownCount - 1] = originalOptions;
-    filteredOptions[dropdownCount - 1] = [...originalOptions];
-}
-
 export function myCharacterList(containerId, wai_characters, oc_characters) {
-    const dropdown = createDropdown({
-        containerId: containerId,
-        dropdownCount: 4,
-        labelPrefixList: ['character1', 'character2', 'character3', 'original_character'],
-        textboxIds: ['cd-character1', 'cd-character2', 'cd-character3', 'cd-original-character'],
-        optionHandler: handleCharacterOptions,
-        callback_func: callback_myCharacterList_updateThumb,
-        enableSearch: true,
-        enableOverlay: true,
-        valueOnly: (globalThis.globalSettings.language === 'en-US'),
-        height: 40,
-        enableNumberInput: true
-    });
-
-    if (wai_characters) {
-        const keys = Object.keys(wai_characters);
-        const values = Object.values(wai_characters);
-        const oc_keys = Object.keys(oc_characters);
-        
-        if (dropdown) {
-            const labelPrefixList = `
-            ${globalThis.cachedFiles.language[globalThis.globalSettings.language].character1},
-            ${globalThis.cachedFiles.language[globalThis.globalSettings.language].character2},
-            ${globalThis.cachedFiles.language[globalThis.globalSettings.language].character3},
-            ${globalThis.cachedFiles.language[globalThis.globalSettings.language].original_character}`
-            dropdown.setOptions([keys, values], oc_keys, labelPrefixList, 'None', 'None', 'None', 'None', true);
-            
-            return dropdown;
-        } else {
-            console.error(CAT, `[myCharacterList] Dropdown with containerId "${containerId}" not found.`);
-        }
-    }
-    
-    return dropdown;
-}
-
-function handleRegionalCharacterOptions(options, filteredOptions, args, dropdownCount) {
-    const [[keys, values], oc] = args;
-    if (!Array.isArray(keys) || !Array.isArray(values) || keys.length !== values.length) {
-        console.error(CAT, '[handleRegionalCharacterOptions] Invalid keys or values:', keys, values);
-        return;
-    }
-    if (!Array.isArray(oc)) {
-        console.error(CAT, '[handleRegionalCharacterOptions] Invalid oc:', oc);
-        return;
-    }
-
-    const charOptions = [{ key: 'Random', value: 'random' }, { key: 'None', value: 'none' }].concat(keys.map((key, idx) => ({ key, value: values[idx] })));
-    for (let i = 0; i < 2; i++) {
-        options[i] = charOptions;
-        filteredOptions[i] = [...charOptions];
-    }
-
-    const originalOptions = [{ key: 'Random', value: 'random' }, { key: 'None', value: 'none' }].concat(oc.map(key => ({ key, value: key })));
-    for (let i = 2; i < dropdownCount; i++) {
-        options[i] = originalOptions;
-        filteredOptions[i] = [...originalOptions];
-    }
+    const labels = [
+        globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.character1 || 'Character list 1',
+        globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.character2 || 'Character list 2',
+        globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.character3 || 'Character list 3',
+        globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.original_character || 'Original Character',
+    ];
+    return myCharacterSelectionModal(containerId, wai_characters, oc_characters, callback_myCharacterList_updateThumb, labels);
 }
 
 export function myRegionalCharacterList(containerId, wai_characters, oc_characters) {
-    const dropdown = createDropdown({
-        containerId: containerId,
-        dropdownCount: 4,
-        labelPrefixList: ['character_left', 'character_right', 'original_character_left', 'original_character_right'],
-        textboxIds: ['rc-character1', 'rc-character2', 'rc-original-character-left', 'rc-original-character-right'],
-        optionHandler: handleRegionalCharacterOptions,
-        callback_func: callback_myCharacterList_updateThumb,
-        enableSearch: true,
-        enableOverlay: true,
-        valueOnly: (globalThis.globalSettings.language === 'en-US'),
-        height: 40,
-        enableNumberInput: true
-    });
-
-    if (wai_characters) {
-        const keys = Object.keys(wai_characters);
-        const values = Object.values(wai_characters);
-        const oc_keys = Object.keys(oc_characters);
-        
-        if (dropdown) {
-            const labelPrefixList = `
-            character_left,
-            character_right,
-            original_character_left,
-            original_character_right`;
-            dropdown.setOptions([keys, values], oc_keys, labelPrefixList, 'None', 'None', 'None', 'None', true);
-            
-            return dropdown;
-        } else {
-            console.error(CAT, `[myDualCharacterList] Dropdown with containerId "${containerId}" not found.`);
-        }
-    }
-    
-    return dropdown;
+    return myRegionalCharacterSelectionModal(
+        containerId,
+        wai_characters,
+        oc_characters,
+        callback_myCharacterList_updateThumb,
+    );
 }
 
 function handleViewOptions(options, filteredOptions, args, dropdownCount) {
@@ -279,8 +191,17 @@ export function myLanguageList(language) {
         value: language[key].language
     }));
 
-    const callback = (index, selectedValue) => {
+    const callback = async (index, selectedValue) => {
         globalThis.globalSettings.language = selectedValue[0];
+        try {
+            if (globalThis.inBrowser) {
+                await sendWebSocketMessage({ type: 'API', method: 'tagReload', params: [selectedValue[0]] });
+            } else {
+                await globalThis.api.tagReload(selectedValue[0]);
+            }
+        } catch (error) {
+            console.error(CAT, '[myLanguageList] Failed to reload tag language:', error);
+        }
         updateLanguage(false, globalThis.inBrowser);
     };
 
@@ -423,6 +344,20 @@ function createDropdown({
     // after fav_characters changes elsewhere.
     let lastRenderedIndex = null;
     let lastRenderedSearchText = null;
+
+    function findOption(index, value) {
+        const normalizedValue = normalizeOptionText(value);
+        if (!normalizedValue || !options[index]) return null;
+
+        return options[index].find(option => [option.key, option.value, getOptionLabel(option)]
+            .some(candidate => normalizeOptionText(candidate) === normalizedValue)) || null;
+    }
+
+    function getInputText(index) {
+        if (valueOnly) return selectedValues[index] || '';
+        const option = findOption(index, selectedKeys[index]) || findOption(index, selectedValues[index]);
+        return option ? getOptionLabel(option) : (selectedKeys[index] || selectedValues[index] || '');
+    }
     
     // Create dropdown instance
     const dropdown = {
@@ -444,9 +379,10 @@ function createDropdown({
     
             for (const [index, input] of inputs.entries()) {
                 const value = defaults[index] || '';
-                selectedValues[index] = value;
-                selectedKeys[index] = value;
-                input.value = value;
+                const option = findOption(index, value);
+                selectedValues[index] = option?.value ?? value;
+                selectedKeys[index] = option?.key ?? value;
+                input.value = getInputText(index);
                 if (!newEnableSearch) 
                     input.setAttribute('readonly', 'readonly');
             }
@@ -471,6 +407,14 @@ function createDropdown({
                     const input = inputs[index];
                     let value = defaultValues[index] || '';
                     
+                    const option = findOption(index, value);
+                    if (option) {
+                        selectedValues[index] = option.value;
+                        selectedKeys[index] = option.key;
+                        input.value = getInputText(index);
+                        continue;
+                    }
+
                     // Check if the value exists in the options, if not use the first option
                     if (value && !this.isValueExist(value)) {
                         // Use the first option's value if the default value doesn't exist
@@ -481,7 +425,7 @@ function createDropdown({
                     
                     selectedValues[index] = value;
                     selectedKeys[index] = value;
-                    input.value = value;
+                    input.value = getInputText(index);
                 }
             }
             return this;
@@ -495,7 +439,8 @@ function createDropdown({
             for (const optionArray of options) {
                 for (const option of optionArray) {                    
                     if (option.key.toLowerCase().includes(searchValue) || 
-                        option.value.toLowerCase().includes(searchValue)) {
+                        option.value.toLowerCase().includes(searchValue) ||
+                        normalizeOptionText(getOptionLabel(option)).includes(searchValue)) {
                         return true;
                     }
                 }
@@ -534,6 +479,11 @@ function createDropdown({
         
         setValueOnly: function(trigger) {
             valueOnly = trigger;
+            for (let index = 0; index < inputs.length; index++) {
+                if (!isEditing[index]) {
+                    inputs[index].value = getInputText(index);
+                }
+            }
         },
 
         isValueOnly: function() {
@@ -581,7 +531,7 @@ function createDropdown({
         _closeDropdown: function() {
             optionsList.style.display = 'none';
             for (let index = 0; index < inputs.length; index++) {
-                inputs[index].value = valueOnly ? selectedValues[index] : selectedKeys[index];
+                inputs[index].value = getInputText(index);
                 isEditing[index] = false;
             }
             activeInput = null;
@@ -616,11 +566,11 @@ function createDropdown({
                 item.className = 'mydropdown-item';
                 let textContent = valueOnly
                     ? `${option.value}` 
-                    : `${option.key}\n(${option.value})`;
+                    : `${getOptionLabel(option)}\n(${option.value})`;
 
                 if ((containerId === 'dropdown-character' && activeIndex === 3) ||
                     (containerId === 'dropdown-character-regional' && (activeIndex === 2 || activeIndex === 3))) {
-                    textContent = option.key;
+                    textContent = getOptionLabel(option);
                 }
 
                 const isFavorite = favoriteSet.has(normalizeOptionText(option.key)) ||
@@ -629,6 +579,7 @@ function createDropdown({
                 item.classList.toggle('mydropdown-item-favorite', isFavorite);
                 item.dataset.key = `${option.key}`; 
                 item.dataset.value = `${option.value || ''}`;
+                item.dataset.label = `${getOptionLabel(option)}`;
                 fragment.appendChild(item);
             }
 
@@ -649,7 +600,7 @@ function createDropdown({
                 const index = wrapper ? Number.parseInt(wrapper.dataset.index) : activeIndex;
                 selectedValues[index] = item.dataset.value;
                 selectedKeys[index] = item.dataset.key;
-                activeInput.value = valueOnly ? item.dataset.value : item.dataset.key;
+                activeInput.value = valueOnly ? item.dataset.value : item.dataset.label;
         
                 optionsList.style.display = 'none';
                 isEditing[index] = false;
@@ -937,14 +888,14 @@ function createDropdown({
             } else {
                 if (activeInput !== null) {
                 const prevIndex = Number.parseInt(activeInput.closest('.mydropdown-wrapper, .mydropdown-wrapper-with-text').dataset.index);
-                inputs[prevIndex].value = valueOnly ? selectedValues[prevIndex] : selectedKeys[prevIndex];
+                inputs[prevIndex].value = getInputText(prevIndex);
                 isEditing[prevIndex] = false;
                 }
                 activeInput = input;
                 filteredOptions[index] = [...options[index]];
                 dropdown._updateOptionsList(index);
                 optionsList.style.display = filteredOptions[index].length > 0 ? 'block' : 'none';
-                input.value = valueOnly ? selectedValues[index] : selectedKeys[index];
+                input.value = getInputText(index);
             }
             });
         }

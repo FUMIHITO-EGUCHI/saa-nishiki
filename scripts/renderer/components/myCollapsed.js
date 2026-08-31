@@ -2,7 +2,6 @@ import { setBlur, setNormal, showDialog } from './myDialog.js';
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
 import { setADetailerModelList } from '../slots/myADetailerSlot.js';
 import { addFavorites, delFavorites } from './favoriteCharacters.js';
-import { get_prompt_textBox_Heights } from './componentsManager.js';
 
 const CAT = '[myCollapsed]'
 
@@ -54,120 +53,6 @@ export function setupCollapsed(containerId, collapsed = false) {
     };
 }
 
-export async function setupSaveSettingsToggle() {
-    const saveSettingsButton = document.getElementById('settings-save-toggle');
-    if (!saveSettingsButton) {
-        console.error(CAT, '[setupSaveSettingsToggle] Save button not found');
-        return null;
-    }  
-
-    saveSettingsButton.addEventListener('click', async () => {
-        setBlur();
-        const inputResult = await showDialog('input', { 
-            message: globalThis.cachedFiles.language[globalThis.globalSettings.language].save_settings_title, 
-            placeholder: 'tmp_settings', 
-            defaultValue: globalThis.globalSettings.lastLoadedSettings
-        });
-        if(inputResult){
-            globalThis.globalSettings.lora_slot = globalThis.lora.getValues();
-            globalThis.globalSettings.ad_slot = globalThis.aDetailer.getValues();
-
-            const tag_angle = globalThis.viewList.getTextValue(0);
-            const tag_camera = globalThis.viewList.getTextValue(1);
-            const tag_background =  globalThis.viewList.getTextValue(2);
-            const tag_style = globalThis.viewList.getTextValue(3);
-            const c1 = globalThis.characterList.getTextValue(0);
-            const c2 = globalThis.characterList.getTextValue(1);
-            const c3 = globalThis.characterList.getTextValue(2);
-            const r1 = globalThis.characterListRegional.getTextValue(0);
-            const r2 = globalThis.characterListRegional.getTextValue(1);
-
-            // save prompt textBox heights
-            globalThis.globalSettings.ptompt_textbox_heights = get_prompt_textBox_Heights();
-
-            const globalSettings = structuredClone(globalThis.globalSettings);
-            delete globalSettings["lastLoadedSettings"];
-
-            globalSettings["weights4dropdownlist"] = [ 
-                tag_angle, tag_camera, tag_background, tag_style, // 0, 1, 2, 3
-                c1, c2, c3, // 4, 5, 6
-                r1, r2      // 7, 8
-            ];            
-
-            let result;
-            if (globalThis.inBrowser) {
-                result = await sendWebSocketMessage({ type: 'API', method: 'saveSettingFile', params: [`${inputResult}.json`, globalSettings] });
-            } else {
-                result = await globalThis.api.saveSettingFile(`${inputResult}.json`, globalSettings);
-            }
-
-            if(result === true) {
-                await showDialog('info', { message: globalThis.cachedFiles.language[globalThis.globalSettings.language].save_settings_success.replace('{0}', inputResult) });
-                if (globalThis.inBrowser) {
-                    globalThis.cachedFiles.settingList = await sendWebSocketMessage({ type: 'API', method: 'updateSettingFiles' });
-                } else {
-                    globalThis.cachedFiles.settingList = await globalThis.api.updateSettingFiles();
-                }
-                globalThis.dropdownList.settings.setOptions(globalThis.cachedFiles.settingList);
-                globalThis.dropdownList.settings.updateDefaults(`${inputResult}.json`);
-            } else {
-                await showDialog('info', { message: globalThis.cachedFiles.language[globalThis.globalSettings.language].save_settings_failed.replace('{0}', inputResult) });
-            }
-        }        
-
-        globalThis.globalSettings.lastLoadedSettings = inputResult;
-        setNormal();
-    });
-
-    return saveSettingsButton;
-}
-
-export async function setupDeleteSettingsToggle() {
-    const deleteSettingsButton = document.getElementById('settings-delete-toggle');
-    if (!deleteSettingsButton) {
-        console.error(CAT, '[setupDeleteSettingsToggle] Delete button not found');
-        return null;
-    }
-
-    deleteSettingsButton.addEventListener('click', async () => {
-        const SETTINGS = globalThis.globalSettings;
-        const FILES = globalThis.cachedFiles;
-        const LANG = FILES.language[SETTINGS.language];
-
-        setBlur();
-        const inputResult = await showDialog('confirm', { 
-            message: LANG.delete_settings_title.replace('{0}', globalThis.globalSettings.lastLoadedSettings),
-            yesText: LANG.setup_yes,
-            noText: LANG.setup_no
-        });
-        if(inputResult) {
-            let result;
-            if (globalThis.inBrowser) {
-                result = await sendWebSocketMessage({ type: 'API', method: 'deleteSettingFile', params: [`${globalThis.globalSettings.lastLoadedSettings}.json`, globalSettings] });
-            } else {
-                result = await globalThis.api.deleteSettingFile(`${globalThis.globalSettings.lastLoadedSettings}.json`, globalSettings);
-            }
-
-            if (result === true) {
-                await showDialog('info', { message: globalThis.cachedFiles.language[globalThis.globalSettings.language].delete_settings_success.replace('{0}', globalThis.globalSettings.lastLoadedSettings) }); 
-
-                if (globalThis.inBrowser) {
-                    globalThis.cachedFiles.settingList = await sendWebSocketMessage({ type: 'API', method: 'updateSettingFiles' });
-                } else {
-                    globalThis.cachedFiles.settingList = await globalThis.api.updateSettingFiles();
-                }
-                globalThis.dropdownList.settings.setOptions(globalThis.cachedFiles.settingList);
-                globalThis.dropdownList.settings.updateDefaults(``);
-            } else {
-                await showDialog('info', { message: globalThis.cachedFiles.language[globalThis.globalSettings.language].delete_settings_failed.replace('{0}', globalThis.globalSettings.lastLoadedSettings) });
-            }
-        }
-        setNormal();
-    });
-    console.log(CAT, '[setupDeleteSettingsToggle] Delete button setup complete', deleteSettingsButton);
-    return deleteSettingsButton;
-}
-
 export async function setupModelReloadToggle() {
     const refreshButton = document.getElementById('model-refresh-toggle');
     if (!refreshButton) {
@@ -177,7 +62,7 @@ export async function setupModelReloadToggle() {
 
     refreshButton.addEventListener('click', async () => {
         const currentModelSelect = globalThis.dropdownList.model.getValue();
-        await reloadFiles(true);
+        await reloadFiles();
         globalThis.dropdownList.model.updateDefaults(currentModelSelect);
         globalThis.lora.reload();
         globalThis.controlnet.reload();
@@ -187,7 +72,7 @@ export async function setupModelReloadToggle() {
     return refreshButton;
 }
 
-export async function reloadFiles(unCollapseTab = false){
+export async function reloadFiles(){
     const SETTINGS = globalThis.globalSettings;
     const LANG = globalThis.cachedFiles.language[SETTINGS.language];
     const args = [
@@ -213,7 +98,6 @@ export async function reloadFiles(unCollapseTab = false){
         globalThis.cachedFiles.controlnetList = await sendWebSocketMessage({ type: 'API', method: 'getControlNetList', params: [SETTINGS.api_interface] });
         globalThis.cachedFiles.upscalerList = await sendWebSocketMessage({ type: 'API', method: 'getUpscalerList', params: [SETTINGS.api_interface] });
         globalThis.cachedFiles.aDetailerList = await sendWebSocketMessage({ type: 'API', method: 'getADetailerList', params: [SETTINGS.api_interface] });
-        globalThis.cachedFiles.settingList = await sendWebSocketMessage({ type: 'API', method: 'updateSettingFiles' });
         globalThis.cachedFiles.imageTaggerModels = await sendWebSocketMessage({ type: 'API', method: 'getImageTaggerModels' });
         if (SETTINGS.api_interface === 'WebUI')
             await sendWebSocketMessage({ type: 'API', method: 'resetModelListsWebUI'});
@@ -231,7 +115,6 @@ export async function reloadFiles(unCollapseTab = false){
         globalThis.cachedFiles.controlnetList = await globalThis.api.getControlNetList(SETTINGS.api_interface);
         globalThis.cachedFiles.upscalerList = await globalThis.api.getUpscalerList(SETTINGS.api_interface);
         globalThis.cachedFiles.aDetailerList = await globalThis.api.getADetailerList(SETTINGS.api_interface);
-        globalThis.cachedFiles.settingList = await globalThis.api.updateSettingFiles();
         globalThis.cachedFiles.imageTaggerModels = await globalThis.api.getImageTaggerModels();
         if (SETTINGS.api_interface === 'WebUI') {
             await globalThis.api.resetModelListsWebUI();
@@ -258,12 +141,7 @@ export async function reloadFiles(unCollapseTab = false){
     globalThis.dropdownList.vae_sdxl.setValue(LANG.api_ckpt_vae_model, globalThis.cachedFiles.vaeList);
     globalThis.dropdownList.textencoder.setValue(LANG.api_text_encoder, globalThis.cachedFiles.textEncoderList);
 
-    globalThis.dropdownList.settings.setValue('', globalThis.cachedFiles.settingList);
     globalThis.refiner.model.setValue(LANG.api_refiner_model, globalThis.cachedFiles.modelListAll);
-
-    if(globalThis.collapsedTabs.modelSettings.getCollapsed() && unCollapseTab) {
-        globalThis.collapsedTabs.modelSettings.setCollapsed(false);
-    }
 }
 
 export function setupFuctionKeys() {

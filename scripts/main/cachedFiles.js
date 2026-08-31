@@ -9,6 +9,7 @@ const CAT = '[FileCache]';
 let cachedCharacterThumb = {}; 
 let cachedLanguages = {};
 let cachedCharacter = {};
+let cachedCharacterNames = {};
 let cachedOCCharacter = {};
 let cachedViewTags = {};
 let cachedTagAssist = {}
@@ -74,7 +75,17 @@ function setupCachedFiles(thumbSelect) {
     const characters = loadFileEx('data', characters_name, cachedCharacter);
     const character_tag_assist = loadFileEx('data', tag_assist_name, cachedTagAssist);
 
-    const language = loadFileEx('data', 'language.json', cachedLanguages);        
+    const language = loadFileEx('data', 'language.json', cachedLanguages);
+    // Japanese intentionally reuses the English UI strings. Character names
+    // are localized separately so the rest of the application stays English.
+    if (language && cachedLanguages['en-US']) {
+        cachedLanguages['ja-JP'] = {
+            ...cachedLanguages['en-US'],
+            language: '日本語'
+        };
+    }
+    const character_names = loadFileEx('data', 'character_names.json', cachedCharacterNames);
+    const official_work_names = loadFileEx('data', 'official_work_names.json', cachedCharacterNames);
     const oc_characters = loadFileEx('data', 'original_character.json', cachedOCCharacter);
     const view_tags = loadFileEx('data', 'view_tags.json', cachedViewTags);
 
@@ -88,6 +99,7 @@ function setupCachedFiles(thumbSelect) {
             characterThumb: cachedCharacterThumb,
             languages: cachedLanguages,
             characters: cachedCharacter,
+            characterNames: cachedCharacterNames,
             ocCharacters: cachedOCCharacter,
             viewTags: cachedViewTags,
             tagAssist: cachedTagAssist,
@@ -103,7 +115,7 @@ function setupCachedFiles(thumbSelect) {
 
     console.log(`${CAT}: Number of characters loaded: ${Object.entries(cachedCharacter).length}`);
 
-    return thumb && language && characters && oc_characters && view_tags && character_tag_assist && loadingWait && loadingFailed && privacyBall;
+    return thumb && language && characters && character_names && official_work_names && oc_characters && view_tags && character_tag_assist && loadingWait && loadingFailed && privacyBall;
 }
 
 function getCachedFiles() {
@@ -111,6 +123,7 @@ function getCachedFiles() {
         characterThumb: cachedCharacterThumb,
         languages: cachedLanguages,
         characters: cachedCharacter,
+        characterNames: cachedCharacterNames,
         ocCharacters: cachedOCCharacter,
         viewTags: cachedViewTags,
         tagAssist: cachedTagAssist,
@@ -125,6 +138,7 @@ function getCachedFilesWithoutThumb() {
         //characterThumb: cachedCharacterThumb,
         languages: cachedLanguages,
         characters: cachedCharacter,
+        characterNames: cachedCharacterNames,
         ocCharacters: cachedOCCharacter,
         viewTags: cachedViewTags,
         tagAssist: cachedTagAssist,

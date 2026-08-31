@@ -8,6 +8,7 @@
   "version": "2.8.9",
   "author": "oOkami",
   "scripts": {
+    "test": "node --test",
     "start": "electron .",
     "package": "electron-packager ./ saa-nishiki --platform=win32 --out=release --overwrite --ignore=^/settings/^.*\\.json --ignore=^/models/tagger/^.*\\.onnx --ignore=^/models/tagger/^.*\\.json --ignore=^/models/tagger/^.*\\.csv --ignore=^/html/ca/^.*\\.pem --ignore=^/examples/^.*\\.png --ignore=^/scripts/python/thumb-compare/data/^.*\\.* --ignore=^/scripts/python/thumb-compare/output/^.*\\.* --ignore=^/scripts/python/thumb-compare/thumb_image^.*/^.*\\.webp",
     "package_mac": "electron-packager ./ saa-nishiki --platform=darwin --out=release --overwrite"

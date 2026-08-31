@@ -4,7 +4,7 @@ import { setupThumbOverlay, setupThumb } from './renderer/customThumbGallery.js'
 import { setupSuggestionSystem } from './renderer/tagAutoComplete.js';
 import { setupButtonOverlay, customCommonOverlay } from './renderer/customOverlay.js';
 import { myCharacterList, myRegionalCharacterList, myViewsList, myLanguageList, mySimpleList } from './renderer/components/myDropdown.js';
-import { callback_mySettingList, callback_api_model_select, callback_api_model_type, callback_api_interface, 
+import { callback_api_model_select, callback_api_model_type, callback_api_interface, 
     callback_generate_start, callback_generate_skip, callback_generate_cancel,callback_keep_gallery,
     callback_regional_condition, callback_controlnet, callback_adetailer, callback_queue_autostart,
     callback_thumb_select, callback_ptompt_textbox_autoresize, callback_ptompt_textbox_fontsize
@@ -12,7 +12,7 @@ import { callback_mySettingList, callback_api_model_select, callback_api_model_t
 import { setupSlider } from './renderer/components/mySlider.js';
 import { setupCheckbox, setupRadiobox } from './renderer/components/myCheckbox.js';
 import { setupButtons, toggleButtons, showCancelButtons } from './renderer/components/myButtons.js';
-import { setupCollapsed, setupSaveSettingsToggle, setupDeleteSettingsToggle, setupModelReloadToggle, 
+import { setupCollapsed, setupModelReloadToggle, 
     setupFuctionKeys, setupSwapToggle, reloadFiles, doSwap } from './renderer/components/myCollapsed.js';
 import { setupTextbox, setupInfoBox } from './renderer/components/myTextbox.js';
 import { from_main_updateGallery, from_main_updatePreview, from_main_customOverlayProgress } from './renderer/generate_backend.js';
@@ -24,11 +24,17 @@ import { setupQueue } from './renderer/slots/myQueueSlot.js';
 import { setBlur, setNormal, showDialog } from './renderer/components/myDialog.js';
 import { setupImageUploadOverlay } from './renderer/imageInfo.js';
 import { setupThemeToggle } from './renderer/theme.js';
+import { setupSettingsModal } from './renderer/settingsModal.js';
+import { setupTagSelectionModal } from './renderer/tagSelectionModal.js';
+import { setupTagCapsuleFields } from './renderer/components/tagCapsuleField.js';
+import { setupUiShell } from './renderer/uiShell.js';
+import { filterPrompts } from './renderer/tools/promptFilter.js';
 import { setupRightClickMenu, addSpellCheckSuggestions } from './renderer/components/myRightClickMenu.js';
 import { extractHostPort } from './renderer/generate.js';
 import { CLIP_TYPE, CLIP_DEVICE, DIFFUSION_DTYPE } from './types.js';
 import { flushSlots } from './renderer/slots/slotsManager.js';
-import { set_prompt_textBox_Heights } from './renderer/components/componentsManager.js';
+import { installSettingsProxy, setupSettingsPersistence } from './renderer/settingsPersistence.js';
+import { get_prompt_textBox_Heights, set_prompt_textBox_Heights } from './renderer/components/componentsManager.js';
 import { hiresCalculate } from './renderer/tools/hiresCalculation.js';
 
 function afterDOMinit() {
@@ -83,8 +89,6 @@ export async function setupHeader(SETTINGS, FILES, LANG){
 
         vpred:  mySimpleList('model-vpred', LANG.vpred, [LANG.vpred_auto, LANG.vpred_on, LANG.vpred_on_zsnr, LANG.vpred_off], 
             (index, value) => { globalThis.globalSettings.api_model_file_vpred = value; }, 5, false, true),
-        settings: mySimpleList('settings-select', LANG.title_settings_load, FILES.settingList, callback_mySettingList),
-
         thumb_select: mySimpleList('thumb-select', LANG.thumb_select, SETTINGS.thumb_select_list,
             callback_thumb_select, 5, false, true)
     }
@@ -93,12 +97,11 @@ export async function setupHeader(SETTINGS, FILES, LANG){
 
     // Setup Header button
     globalThis.headerIcon = {
-        save: await setupSaveSettingsToggle(),
-        delete: await setupDeleteSettingsToggle(),
         reload: await setupModelReloadToggle(),
         refresh: setupFuctionKeys(),
         swap: setupSwapToggle(),
-        theme: setupThemeToggle()
+        theme: setupThemeToggle(),
+        settings: setupSettingsModal()
     }        
 
     // Character and OC List
@@ -123,13 +126,11 @@ export async function setupLeftRight(SETTINGS, FILES, LANG) {
     globalThis.collapsedTabs = {
         infoBox: setupCollapsed('image-infobox', false),
         gallery: setupCollapsed('gallery-main', false),
-        thumb: setupCollapsed('gallery-thumb', true),
+        thumb: setupCollapsed('gallery-thumb', false),
         hires: setupCollapsed('highres-fix', true),
         refiner: setupCollapsed('refiner', true),
         controlnet: setupCollapsed('controlnet', true),
-        modelSettings: setupCollapsed('model-settings', true),
         lora: setupCollapsed('add-lora', true),
-        settings: setupCollapsed('system-settings', true),
         regional: setupCollapsed('regional-condition', true),
         jsonlist: setupCollapsed('jsonlist', true),
         aDetailer: setupCollapsed('adetailer', true),
@@ -139,6 +140,9 @@ export async function setupLeftRight(SETTINGS, FILES, LANG) {
 
 export async function createGenerate(SETTINGS, FILES, LANG) {
     console.log('Creating globalThis.generate');
+    const regionalConditionControl = setupCheckbox('regional-condition-trigger-dummy', LANG.regional_condition, SETTINGS.regional_condition, true,
+        (value) => { callback_regional_condition(value, false); });
+
     globalThis.generate = {
         skipClicked: false,
         cancelClicked: false,
@@ -148,8 +152,8 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         lastNeg: 'bad quality,worst quality,worst detail,sketch',
         loadingMessage: null,
 
-        regionalCondition: setupCheckbox('regional-condition-trigger', LANG.regional_condition, SETTINGS.regional_condition, true, (value) => { callback_regional_condition(value, false); }),
-        regionalCondition_dummy: setupCheckbox('regional-condition-trigger-dummy', LANG.regional_condition, SETTINGS.regional_condition, true, (value) => { callback_regional_condition(value, true); }),
+        regionalCondition: regionalConditionControl,
+        regionalCondition_dummy: regionalConditionControl,
         scrollToLatest: setupCheckbox('gallery-main-latest', LANG.scroll_to_last, SETTINGS.scroll_to_last, true, (value) => { globalThis.globalSettings.scroll_to_last = value; }),
         keepGallery: setupCheckbox('gallery-main-keep', LANG.keep_gallery, SETTINGS.keep_gallery, true, callback_keep_gallery),
 
@@ -159,10 +163,8 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         width: setupSlider('generate-width', LANG.width, {min:512, max:2048, step:8, defaultValue:SETTINGS.width}, (value) =>{globalThis.globalSettings.width = value; hiresCalculate(); }),
         height: setupSlider('generate-height', LANG.height, {min:512, max:2048, step:8, defaultValue:SETTINGS.height}, (value) =>{globalThis.globalSettings.height = value; hiresCalculate(); }),
         batch: setupSlider('generate-batch', LANG.batch, {min:1, max:2038, step:1, defaultValue:SETTINGS.batch}, (value) =>{globalThis.globalSettings.batch = value;}),
-        hifix: setupCheckbox('generate-hires-fix', LANG.api_hf_enable, SETTINGS.api_hf_enable, true, (value) => { globalThis.globalSettings.api_hf_enable = value; globalThis.generate.hifix_dummy.setValue(value);}),
-        hifix_dummy: setupCheckbox('generate-hires-fix-dummy', LANG.api_hf_enable, SETTINGS.api_hf_enable, true, (value) => { globalThis.globalSettings.api_hf_enable = value; globalThis.generate.hifix.setValue(value);}),
-        refiner: setupCheckbox('generate-refiner', LANG.api_refiner_enable, SETTINGS.api_refiner_enable, true, (value) => { globalThis.globalSettings.api_refiner_enable = value; globalThis.generate.refiner_dummy.setValue(value);}),
-        refiner_dummy: setupCheckbox('generate-refiner-dummy', LANG.api_refiner_enable, SETTINGS.api_refiner_enable, true, (value) => { globalThis.globalSettings.api_refiner_enable = value; globalThis.generate.refiner.setValue(value);}),
+        hifix: setupCheckbox('generate-hires-fix', LANG.api_hf_enable, SETTINGS.api_hf_enable, true, (value) => { globalThis.globalSettings.api_hf_enable = value; hiresCalculate(); }),
+        refiner: setupCheckbox('generate-refiner', LANG.api_refiner_enable, SETTINGS.api_refiner_enable, true, (value) => { globalThis.globalSettings.api_refiner_enable = value; }),
         controlnet: setupCheckbox('generate-controlnet', LANG.api_controlnet_enable, SETTINGS.api_controlnet_enable, true, callback_controlnet),
         adetailer: setupCheckbox('generate-adetailer', LANG.api_adetailer_enable, SETTINGS.api_adetailer_enable, true, callback_adetailer),
 
@@ -292,10 +294,6 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
             true, async (value) => {
                 await callback_queue_autostart(value, false);
         }),
-        queueAutostart_dummy:setupCheckbox('queue-autostart-generate-dummy', LANG.generate_auto_start, SETTINGS.generate_auto_start,
-            true, async (value) => {
-                await callback_queue_autostart(value, true);
-        }),
     };
 }
 
@@ -344,6 +342,24 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
     }
     console.log('Creating setupSuggestionSystem');
     setupSuggestionSystem();
+    globalThis.prompt.tagSelectionModals = setupTagSelectionModal([
+        globalThis.prompt.common,
+        globalThis.prompt.positive,
+        globalThis.prompt.positive_right,
+        globalThis.prompt.negative,
+        globalThis.prompt.exclude,
+    ]);
+    globalThis.prompt.tagCapsuleFields = setupTagCapsuleFields([
+        globalThis.prompt.common,
+        globalThis.prompt.positive,
+        globalThis.prompt.positive_right,
+        globalThis.prompt.negative,
+        globalThis.prompt.exclude,
+    ], {
+        keys: ['common', 'positive', 'positive_right', 'negative', 'exclude'],
+        applyExclude: (prompt, exclude) => filterPrompts(prompt, prompt, exclude).positivePrompt,
+        finalPromptContainer: document.querySelector('#prompt-text-container .prompt-fields') ?? document.querySelector('#prompt-text-container'),
+    });
 }
 
 export async function createHifixRefiner(SETTINGS, FILES, LANG) {
@@ -426,6 +442,15 @@ export async function createAI(SETTINGS, FILES, LANG) {
             value: SETTINGS.ai_local_addr,
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.ai_local_addr = value;}),
+        local_model_mode: mySimpleList('system-settings-ai-local-model-mode', LANG.ai_local_model_mode,
+            ['Auto', 'Small', 'Large'],
+            (index, value) => { globalThis.globalSettings.ai_local_model_mode = value; }, 5, false, true),
+        local_prompt_mode: mySimpleList('system-settings-ai-local-prompt-mode', LANG.ai_local_prompt_mode,
+            ['Expand', 'Refine'],
+            (index, value) => { globalThis.globalSettings.ai_local_prompt_mode = value; }, 5, false, true),
+        local_timeout: setupSlider('system-settings-ai-local-timeout', LANG.ai_local_timeout,
+            {min:10, max:300, step:10, defaultValue:SETTINGS.ai_local_timeout},
+            (value) => { globalThis.globalSettings.ai_local_timeout = value;} ),
         local_temp: setupSlider('system-settings-ai-local-temperature', 
             LANG.ai_local_temp, {min:0.1, max:2, step:0.1, defaultValue:SETTINGS.ai_local_temp},
             (value) => { globalThis.globalSettings.ai_local_temp = value;} ),
@@ -437,6 +462,10 @@ export async function createAI(SETTINGS, FILES, LANG) {
             value: LANG.ai_system_prompt,
             maxLines: 30
             }, true),  
+        refine_system_prompt: setupTextbox('system-settings-ai-refine-sysprompt', LANG.ai_refine_system_prompt_text, {
+            value: SETTINGS.ai_refine_system_prompt,
+            maxLines: 40
+            }, true, (value) => { globalThis.globalSettings.ai_refine_system_prompt = value; }),
     }
 }
 
@@ -450,8 +479,8 @@ async function init(){
     };    
 
     try {
-        // Init Global Settings
-        globalThis.globalSettings = await globalThis.api.getGlobalSettings();        
+        // Init Global Settings (proxied: every write marks its section dirty for the autosave)
+        installSettingsProxy(await globalThis.api.getGlobalSettings());
 
         // Setup main func
         globalThis.mainGallery = {};
@@ -464,11 +493,11 @@ async function init(){
             
             characterThumb: cachedFiles.characterThumb,
             characterList: cachedFiles.characters,
+            characterNames: cachedFiles.characterNames,
             tagAssist: cachedFiles.tagAssist,
 
             ocList: cachedFiles.ocCharacters,
-            viewTags: cachedFiles.viewTags,            
-            settingList: await globalThis.api.getSettingFiles(),
+            viewTags: cachedFiles.viewTags,
             loadingWait:`data:image/webp;base64,${cachedFiles.loadingWait.data}`,
             loadingFailed:`data:image/webp;base64,${cachedFiles.loadingFailed.data}`,
             privacyBall:`data:image/webp;base64,${cachedFiles.privacyBall.data}`
@@ -546,31 +575,43 @@ async function init(){
         // globalThis.rightClick
         setupRightClickMenu();
 
+        // 2026-08-30 layout glue (pipeline rows, AI card, run bar, left panel, status pills)
+        setupUiShell();
+
         // Done
         globalThis.initialized = true;
         
-        if(SETTINGS.setup_wizard) {
+        const ranWizard = Boolean(SETTINGS.setup_wizard);
+        if(ranWizard) {
             globalThis.globalSettings.setup_wizard = false;
             await setupWizard();
             await setupModelReloadToggle();
+        }
 
-            callback_mySettingList(0, `settings.json`);  // Reload default settings
-        } else {
-            doSwap(globalThis.globalSettings.rightToleft);   //default is right to left
+        {
+            const CUR = globalThis.globalSettings;
+            const CUR_LANG = FILES.language[CUR.language];
+            doSwap(CUR.rightToleft);   //default is right to left
 
             // Update language and settings
-            updateLanguage(true, globalThis.inBrowser); 
-            globalThis.generate.sampler.setValue(LANG.api_model_sampler, globalThis.globalSettings.api_interface==='ComfyUI'?SAMPLER_COMFYUI:SAMPLER_WEBUI);
-            globalThis.generate.scheduler.setValue(LANG.api_model_scheduler, globalThis.globalSettings.api_interface==='ComfyUI'?SCHEDULER_COMFYUI:SCHEDULER_WEBUI);
+            updateLanguage(true, globalThis.inBrowser);
+            globalThis.generate.sampler.setValue(CUR_LANG.api_model_sampler, CUR.api_interface==='ComfyUI'?SAMPLER_COMFYUI:SAMPLER_WEBUI);
+            globalThis.generate.scheduler.setValue(CUR_LANG.api_model_scheduler, CUR.api_interface==='ComfyUI'?SCHEDULER_COMFYUI:SCHEDULER_WEBUI);
             updateSettings();
-            
-            // reLoad slots stuff: LoRA, aDetailer
+
+            // reLoad slots stuff: LoRA, aDetailer, ControlNet
             flushSlots();
 
             // set prompt textBox heights
             set_prompt_textBox_Heights();
+        }
 
-            globalThis.globalSettings.lastLoadedSettings = `settings`;
+        // Autosave (app.json / state.json), per-section preset controls, flush on unload.
+        setupSettingsPersistence({ updateSettings, flushSlots, getTextboxHeights: get_prompt_textBox_Heights });
+        if (ranWizard) {
+            // first run: persist the wizard result right away
+            globalThis.settingsAutosave.markDirty('app');
+            await globalThis.settingsAutosave.flush();
         }
     } catch (error) {
         console.error('Error:', error);
@@ -580,12 +621,12 @@ async function init(){
 async function setupWizard(){
     const languageSelect = await showDialog('radio', { 
         message: 'Select your language\n请选择界面语言',
-        items: 'en-US,zh-CN',
-        itemsTitle:'English (US),中文（简体）',
+        items: 'en-US,zh-CN,ja-JP',
+        itemsTitle:'English (US),中文（简体）,日本語',
         buttonText: 'OK'
     });
     console.log(languageSelect);
-    globalThis.globalSettings.language = ['en-US','zh-CN'][languageSelect];
+    globalThis.globalSettings.language = ['en-US','zh-CN','ja-JP'][languageSelect];
 
     const SETTINGS = globalThis.globalSettings;
     const FILES = globalThis.cachedFiles;
@@ -746,10 +787,7 @@ async function setupWizard(){
         });
     }
 
-    await globalThis.api.saveSettingFile('settings.json', globalThis.globalSettings);
-    globalThis.cachedFiles.settingList = await globalThis.api.updateSettingFiles();
-    globalThis.dropdownList.settings.setOptions(globalThis.cachedFiles.settingList);
-    globalThis.dropdownList.settings.updateDefaults(`settings.json`);
+    // Persisted by the autosave once setupSettingsPersistence() has run (see the caller).
     await reloadFiles();
     await showDialog('info', { message: LANG.setup_done, buttonText:SETTINGS.setup_ok});
 }

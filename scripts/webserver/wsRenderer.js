@@ -97,7 +97,6 @@ async function init() {
             ocList: cachedFiles.ocCharacters,
             viewTags: cachedFiles.viewTags,
             tagAssist: cachedFiles.tagAssist,            
-            settingList: await sendWebSocketMessage({ type: 'API', method: 'getSettingFiles'}),
             loadingWait:`data:image/webp;base64,${cachedFiles.loadingWait.data}`,
             loadingFailed:`data:image/webp;base64,${cachedFiles.loadingFailed.data}`,
             privacyBall:`data:image/webp;base64,${cachedFiles.privacyBall.data}`
@@ -191,8 +190,6 @@ async function init() {
 
         // set prompt textBox heights
         set_prompt_textBox_Heights();
-
-        globalThis.globalSettings.lastLoadedSettings = `settings`;
     } catch (error) {
         console.error('Error during initialization:', error);
     }

@@ -79,6 +79,27 @@ npm install
 npm start
 ```
 
+### Local CDP debugging (optional)
+
+CDP is disabled by default. To let Chrome DevTools or a compatible MCP client
+inspect the Electron renderer, start SAA with a local debugging port:
+
+```powershell
+$env:SAA_CDP_PORT = "9222"
+npm start
+```
+
+For a packaged executable, the equivalent option is:
+
+```powershell
+.\saa.exe --saa-cdp-port=9222
+```
+
+The DevTools endpoint is available at `http://127.0.0.1:9222/json/list` while
+SAA is running. Use a different port if `9222` is already occupied. Do not
+enable this option on an untrusted or publicly reachable machine because CDP
+can inspect and control the renderer.
+
 ## Update
 > [!IMPORTANT]
 > **Updating version from github will not update the dataset files.**    

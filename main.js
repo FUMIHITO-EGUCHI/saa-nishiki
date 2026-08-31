@@ -3,6 +3,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { configureCdp } from './scripts/main/electronCdp.js';
 
 // common functions for main and wsService
 import { setupIPCs, getAppVersion } from './main-common.js';
@@ -10,7 +11,9 @@ import { setupIPCs, getAppVersion } from './main-common.js';
 import { setupHttpServer, closeWebSocketServer } from './scripts/webserver/back/wsService.js';
 // Import custom modules
 import { setupFileHandlers } from './scripts/main/fileHandlers.js';
-import { setupGlobalSettings } from './scripts/main/globalSettings.js';
+import { setupGlobalSettings, getGlobalSettings } from './scripts/main/globalSettings.js';
+import { releaseComfyModels } from './scripts/main/comfyRelease.js';
+import { registerBackendStatus } from './scripts/main/backendStatus.js';
 import { setupDownloadFiles } from './scripts/main/downloadFiles.js';
 import { setupModelList } from './scripts/main/modelList.js';
 import { setupTagAutoCompleteBackend } from './scripts/main/tagAutoComplete_backend.js';
@@ -23,6 +26,15 @@ import { setupTagger } from './scripts/main/imageTagger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Keep CDP disabled by default. Opt in with SAA_CDP_PORT or
+// --saa-cdp-port=<port> when a local DevTools/MCP session is needed.
+const cdpConfiguration = configureCdp(app);
+if (cdpConfiguration.enabled) {
+  console.log(`[CDP] Remote debugging enabled on http://127.0.0.1:${cdpConfiguration.port}`);
+} else if (cdpConfiguration.source === 'invalid') {
+  console.warn('[CDP] Ignoring an invalid CDP port; use a TCP port from 1024 to 65535.');
+}
 
 let mainWindow; // Main browser window instance
 
@@ -87,7 +99,7 @@ async function initializeApp() {
   // Ensure wildcards list are set up before tag auto-complete
   setupWildcardsHandlers();
 
-  const tacSuccess = await setupTagAutoCompleteBackend();
+  const tacSuccess = await setupTagAutoCompleteBackend(SETTINGS.language);
   setupModelApi();
   setupGenerateBackendComfyUI();
   setupGenerateBackendWebUI();  
@@ -106,6 +118,9 @@ async function initializeApp() {
     app.quit();
   }
   
+  // Header status pills (loopback-only GET probes of ComfyUI / Ollama)
+  registerBackendStatus(ipcMain, getGlobalSettings);
+
   // IPC handlers for spellcheck
   ipcMain.handle('replace-misspelling', async (event, word) => {    
     return replaceMisspelling(word);
@@ -135,9 +150,16 @@ async function initializeApp() {
 })();
 
 // Quit when all windows are closed
-app.on('window-all-closed', function () {
+app.on('window-all-closed', async function () {
   // close the WebSocket server
   closeWebSocketServer();
+
+  // Ask the loopback ComfyUI to drop its models so the checkpoint does not stay in VRAM after SAA exits.
+  try {
+    await releaseComfyModels(getGlobalSettings());
+  } catch (error) {
+    console.warn('[Main] ComfyUI model release skipped:', error?.message ?? error);
+  }
 
   app.quit()
 })

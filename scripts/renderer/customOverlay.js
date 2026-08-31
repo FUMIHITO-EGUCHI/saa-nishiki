@@ -3,6 +3,11 @@ import { parseTaggedContent } from './components/myTextbox.js';
 let customOverlayCounter = 0;
 
 export function setupButtonOverlay() {
+    // 2026-08-30: the floating Create Image / Batch duplicate is retired; the run bar is
+    // pinned to the bottom of the right column instead. Kept as a no-op for callers.
+    if (!globalThis.SAA_LEGACY_BUTTON_OVERLAY) {
+        return { reload: () => {} };
+    }
     globalThis.addEventListener('resize', () => {
         const overlays = ['cg-button-overlay', 'cg-loading-overlay'];
         for (const id of overlays) {
