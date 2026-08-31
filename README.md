@@ -211,7 +211,7 @@ And Image Tagger for [Mira](https://github.com/mirabarukaso/ComfyUI_Mira#tagger)
 
 | Settings | Drag and Drop | Flux.2 |
 | --- | --- | --- | 
-| <img src="examples/miraITU01.png" width=256> | <img src="examples/miraITU02.png" width=256>   | <img src="examples/miraITU03.png" width=256>   |
+| <img src="examples/nishiki_miraitu_settings.png" width=256> | <img src="examples/nishiki_miraitu_drop.png" width=256>   | <img src="examples/nishiki_miraitu_flux2.png" width=256>   |
 
 The generated results will be affected by different models. The `SDXL` model requires a `tagger` to provide more precise content descriptions, and using an `upscale model` is recommended. Models such as `Flux2`, which allow a `reference latent` to connected, can skip the upscale model and stretch the original image directly. Then, simply use the `Positive Prompt` to configure all tiles consistently.        
 
@@ -357,7 +357,7 @@ Support `*.json` and `*.csv` files, just drag and drop (or click `Add` then `Pas
 `__Random__`, randomly selects an item from the list without a seed bound, works for `Single` and `Batch (Random)`  generate mode.          
 `__Enumerate__`, enumerates every item one by one and only works in `Batch (Random)` mode, in `Single` it downgrade to `__Random__`             
 
-<img src="examples/json-csv.png" width=35%>   
+<img src="examples/nishiki_json_csv.png" width=35%>   
 
 ## Wildcards    
 Supports `*.txt` wildcard files, copy your wildcards into `resources\app\data\wildcards`      
@@ -464,23 +464,23 @@ Top buttons from Left to right: Save Settings, Reload Model List, Refresh page, 
       
 **Spell Check (English)**    
 Right-click on a word that has a spell check error (a wavy line drawn at the bottom) to see a hint for the corresponding word.     
-<img src="examples/spellCheck.png" width=45%>
+<img src="examples/nishiki_spell_check.png" width=45%>
 
 **AI prompt generate test**     
 Right click on `AI prompt` to get AI promot without generate.     
 Once got result from Remote/Local AI, an information overlay will show in screen, switch AI rule to `Last` to keep  the result in later generate.    
-<img src="examples/aiPromptTest.png" width=45%>
+<img src="examples/nishiki_ai_prompt_test.png" width=45%>
 
 **Copy Image/Metadata**     
 Right click on `Gallery` to copy current image or copy the metadata to clipboard.     
 ComfyUI with Image Saver node will output an a1111-like format metadata.      
 Copy image based on convert base64 data back to png, but metadata trimed by chromium core, it's impossible to put them back with chromium API, a C based lib could solve that problem, but it's not worth to do. If you do need the original image, check from the relevant (ComfyUI/WebUI) output folder.      
 For SAAC: Drag and drop image from browser to local folder or `save as` from browser right click.        
-<img src="examples/copyImage.png" width=35%>
+<img src="examples/nishiki_copy_image.png" width=35%>
 
 **Send LoRA to Slot**     
 Right click on `Common` and `Positive` to send text form LoRA to LoRA Slot.     
-<img src="examples/sendLoRAtoSlot.png" width=35%>
+<img src="examples/nishiki_send_lora.png" width=35%>
 </details>
 
 ------
