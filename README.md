@@ -2,6 +2,48 @@
 A fork of [Character Select SAA](https://github.com/mirabarukaso/character_select_stand_alone_app) — A Stand Alone App with AI prompt, Semi-auto Tag Complete and ComfyUI/Forge Neo(WebUI) API support.
 Adds Japanese tag translation / character localization / AI prompt refining.    
 
+Current release: **v2.8.9-nishiki.1** — based on upstream SAA v2.8.9. See [Releases](https://github.com/FUMIHITO-EGUCHI/saa-nishiki/releases) for downloads and release notes.
+
+## Nishiki Features（フォーク追加機能）
+
+### 日本語タグ翻訳 / Japanese Tag Translation
+- danbooru/e621 統合タグリストの日本語辞書（約10万エントリ）による日本語でのタグ検索・表示
+- キャラクター名・作品名の日本語ローカライズ
+- ja-JP UI 翻訳とタグカテゴリ表示
+
+Japanese dictionary for the merged danbooru/e621 tag list (~100k entries), localized character and official-work names, and a ja-JP UI.
+
+### AI プロンプトリファイナー / AI Prompt Refiner
+- 入力プロンプトを AI が整形・補強するリファイナー
+- [Ollama](https://ollama.com/) アダプター対応 — 既存の Remote AI に加えてローカル LLM でのリファインが可能
+
+AI-powered prompt refinement with an Ollama adapter for local LLM inference, in addition to the existing remote AI support.
+
+### タグカプセル入力 / Tag Capsule Input
+- プロンプト欄をチップ（カプセル）ベースの入力 UI に刷新
+- タグ単位のウェイト調整ポップオーバー、一括ウェイト変更ダイアログ
+
+Chip-based prompt editing with per-tag weight popovers and a batch weight dialog, replacing the plain textboxes.
+
+### UI シェル刷新 / UI Shell Overhaul
+- ビューポートレイアウト、ステータスピル、生成進捗表示、ダイアログシェルの新設計
+- ダーク／ライトテーマの CSS 刷新
+
+New viewport layout, status pills, run progress indicators, dialog shell components and refreshed dark/light themes.
+
+### 設定システム / Sectioned Settings Store
+- 設定をセクション分割し、スキーマバージョン付きで `app.json`（アプリ設定）と `state.json`（UI 状態）に保存
+- 自動保存・アトミック書き込み・プリセット対応
+
+Schema-versioned settings split into app/state files with autosave, atomic writes and preset support.
+
+### バージョニング / Versioning
+バージョンは `<upstream-version>-nishiki.<generation>` 形式（例: `2.8.9-nishiki.1`）。上流をマージした際はベースバージョンを更新して generation を `.1` にリセットし、フォーク独自の変更では generation を加算します。
+
+Fork versions follow `<upstream-version>-nishiki.<generation>`: the base tracks the merged upstream version, and the generation counts fork-side releases.
+
+------
+
 > [!NOTE]
 > If you find a character that isn't show on the list but can be generated correctly, please don't hesitate to raise an issue to let me know.       
 >
