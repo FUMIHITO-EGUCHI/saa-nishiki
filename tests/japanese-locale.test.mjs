@@ -5,7 +5,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getLocalizedCharacterName } from '../scripts/renderer/characterLocalization.js';
-import { escapeHtml, parseTranslationLine } from '../scripts/main/tagTranslation.js';
+import {
+  escapeHtml,
+  parseTranslationLine,
+  shouldSkipArtistTranslation,
+} from '../scripts/main/tagTranslation.js';
 
 const characterNames = {
   'ja-JP': {
@@ -107,6 +111,14 @@ test('existing grouped translation rows keep their group and aliases', () => {
     parseTranslationLine('1girl,0,一人の女の子'),
     { prompt: '1girl', group: 0, aliases: '一人の女の子' },
   );
+});
+
+test('artist translations are skipped even when the source row omits its group', () => {
+  assert.equal(shouldSkipArtistTranslation({ group: 1 }, 0), true);
+  assert.equal(shouldSkipArtistTranslation({ group: 8 }, 0), true);
+  assert.equal(shouldSkipArtistTranslation({ group: 0 }, 1), true);
+  assert.equal(shouldSkipArtistTranslation({ group: 0 }, 8), true);
+  assert.equal(shouldSkipArtistTranslation({ group: 0 }, 0), false);
 });
 
 test('bundled Japanese tag data contains parseable Japanese aliases', () => {

@@ -19,6 +19,10 @@ export function parseTranslationLine(line) {
     return { prompt, group, aliases };
 }
 
+export function shouldSkipArtistTranslation(promptInfo, sourceGroup = 0) {
+    return [promptInfo?.group, sourceGroup].some(group => group === 1 || group === 8);
+}
+
 function parseCsvFields(line) {
     const fields = [];
     let field = '';

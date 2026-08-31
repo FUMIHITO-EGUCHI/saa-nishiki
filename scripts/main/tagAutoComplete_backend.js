@@ -2,7 +2,7 @@ import { app, ipcMain, dialog } from 'electron';
 import path from 'node:path';
 import * as fs from 'node:fs';
 import { getWildcardsList } from './wildCards.js';
-import { escapeHtml, parseTranslationLine } from './tagTranslation.js';
+import { escapeHtml, parseTranslationLine, shouldSkipArtistTranslation } from './tagTranslation.js';
 import {
     createTagFilterMatcher,
     getCategoryForPrompt,
@@ -126,7 +126,7 @@ class PromptManager {
 
             const { prompt, group, aliases: newAliases } = translation;
 
-            if (group === 1 || group === 8) {
+            if (shouldSkipArtistTranslation(promptDict[prompt], group)) {
                 // Skip artist name translations
                 continue;
             }
