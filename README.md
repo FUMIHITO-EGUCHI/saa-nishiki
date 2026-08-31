@@ -1,5 +1,6 @@
-# Character Select SAA
-A Stand Alone App with AI prompt, Semi-auto Tag Complete and ComfyUI/Forge Neo(WebUI) API support.    
+# SAA-Nishiki（二式）
+A fork of [Character Select SAA](https://github.com/mirabarukaso/character_select_stand_alone_app) — A Stand Alone App with AI prompt, Semi-auto Tag Complete and ComfyUI/Forge Neo(WebUI) API support.
+Adds Japanese tag translation / character localization / AI prompt refining.    
 
 > [!NOTE]
 > If you find a character that isn't show on the list but can be generated correctly, please don't hesitate to raise an issue to let me know.       
@@ -72,8 +73,8 @@ Navigate to my [HF dataset](https://huggingface.co/datasets/flagrantia/character
 
 Clone this repo into your local folder     
 ```
-git clone https://github.com/mirabarukaso/character_select_stand_alone_app.git
-cd character_select_stand_alone_app
+git clone https://github.com/FUMIHITO-EGUCHI/saa-nishiki.git
+cd saa-nishiki
 npm install
 npm start
 ```

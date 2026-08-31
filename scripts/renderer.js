@@ -34,7 +34,7 @@ import { hiresCalculate } from './renderer/tools/hiresCalculation.js';
 function afterDOMinit() {
     (async () => {
         const version = await globalThis.api.getAppVersion();
-        document.title = `Character Select SAA ${version}`;
+        document.title = `SAA-Nishiki ${version}`;
 
         console.log("Script loaded, attempting initial setup");
 

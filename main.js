@@ -74,7 +74,7 @@ function createWindow () {
 // Some APIs can only be used after this event occurs.
 async function initializeApp() {
   const version = getAppVersion();
-  console.log("Character Select SAA Version:", version);
+  console.log("SAA-Nishiki Version:", version);
 
   setupFileHandlers();  
   const SETTINGS = setupGlobalSettings();

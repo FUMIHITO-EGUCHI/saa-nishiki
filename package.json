@@ -1,6 +1,6 @@
 {
-  "name": "character_select",
-  "productName": "Wai Character Select Stand Alone App",
+  "name": "saa-nishiki",
+  "productName": "SAA-Nishiki",
   "description": "API",
   "keywords": [],
   "main": "./main.js",
@@ -9,8 +9,8 @@
   "author": "oOkami",
   "scripts": {
     "start": "electron .",
-    "package": "electron-packager ./ saa --platform=win32 --out=release --overwrite --ignore=^/settings/^.*\\.json --ignore=^/models/tagger/^.*\\.onnx --ignore=^/models/tagger/^.*\\.json --ignore=^/models/tagger/^.*\\.csv --ignore=^/html/ca/^.*\\.pem --ignore=^/examples/^.*\\.png --ignore=^/scripts/python/thumb-compare/data/^.*\\.* --ignore=^/scripts/python/thumb-compare/output/^.*\\.* --ignore=^/scripts/python/thumb-compare/thumb_image^.*/^.*\\.webp",
-    "package_mac": "electron-packager ./ saa --platform=darwin --out=release --overwrite"
+    "package": "electron-packager ./ saa-nishiki --platform=win32 --out=release --overwrite --ignore=^/settings/^.*\\.json --ignore=^/models/tagger/^.*\\.onnx --ignore=^/models/tagger/^.*\\.json --ignore=^/models/tagger/^.*\\.csv --ignore=^/html/ca/^.*\\.pem --ignore=^/examples/^.*\\.png --ignore=^/scripts/python/thumb-compare/data/^.*\\.* --ignore=^/scripts/python/thumb-compare/output/^.*\\.* --ignore=^/scripts/python/thumb-compare/thumb_image^.*/^.*\\.webp",
+    "package_mac": "electron-packager ./ saa-nishiki --platform=darwin --out=release --overwrite"
   },
   "devDependencies": {
     "adm-zip": "^0.6.0",
