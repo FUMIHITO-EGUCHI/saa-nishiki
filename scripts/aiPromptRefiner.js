@@ -2,6 +2,7 @@ export const PROMPT_MODE_EXPAND = 'Expand';
 export const PROMPT_MODE_REFINE = 'Refine';
 
 const MAX_PROMPT_LENGTH = 20_000;
+const MAX_CHANGES_LENGTH = 2_000;
 
 export const LEGACY_REFINE_SYSTEM_PROMPT = `You are a prompt editor for WAI Illustrious SDXL.
 Return exactly one JSON object and no markdown. The object must contain string fields "positive", "negative", and "changes". If the input contains "positive_right", also return a string field named "positive_right".
@@ -296,6 +297,13 @@ export function parseRefineResponse(content, originalPrompts = {}) {
     }
 }
 
+function validateChanges(value) {
+    if (typeof value !== 'string') throw new TypeError('changes must be a string');
+    const trimmed = value.trim();
+    if (trimmed.length > MAX_CHANGES_LENGTH) throw new Error('changes is too long');
+    return trimmed;
+}
+
 function invalidEnvelope(error, originalPrompts = {}) {
     const fallback = fallbackResult({
         positive: typeof originalPrompts.positive === 'string' ? originalPrompts.positive : '',
@@ -338,6 +346,7 @@ export function parseRefineEnvelope(content, options = {}) {
                 positiveRight: validatePrompt(parsed.positive_right, 'positive_right', { allowEmpty: true }),
                 negative: validatePrompt(parsed.negative, 'negative', { allowEmpty: true }),
             };
+            const changes = validateChanges(parsed.changes);
             if (regional && !Object.hasOwn(parsed, 'positive_right')) {
                 return invalidEnvelope('positive_right is required for Regional Refine', originalPrompts);
             }
@@ -347,7 +356,7 @@ export function parseRefineEnvelope(content, options = {}) {
                 validForEditorApply: true,
                 editorFields,
                 generationFallback: null,
-                changes: typeof parsed.changes === 'string' ? parsed.changes.trim() : '',
+                changes,
                 error: '',
             };
         } catch (error) {

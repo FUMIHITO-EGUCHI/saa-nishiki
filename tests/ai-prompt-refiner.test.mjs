@@ -86,6 +86,17 @@ test('unsupported schema versions are invalid instead of falling back to legacy'
     assert.match(result.error, /schema_version/i);
 });
 
+test('v2 schema requires a bounded string changes field', () => {
+    const base = { schema_version: 2, common: '', positive: 'portrait', positive_right: '', negative: '' };
+    const missing = parseRefineEnvelope(JSON.stringify(base));
+    assert.equal(missing.format, 'invalid');
+    assert.match(missing.error, /changes must be a string/i);
+
+    const oversized = parseRefineEnvelope(JSON.stringify({ ...base, changes: 'x'.repeat(2001) }));
+    assert.equal(oversized.format, 'invalid');
+    assert.match(oversized.error, /changes is too long/i);
+});
+
 test('versionless positive/negative response remains generation-only legacy output', () => {
     const result = parseRefineEnvelope(JSON.stringify({
         positive: 'masterpiece, portrait',
