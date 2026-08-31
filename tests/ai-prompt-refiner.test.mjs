@@ -8,12 +8,97 @@ import {
     REFINE_SYSTEM_PROMPT,
     applyAiPromptResult,
     buildRefineUserContent,
+    buildRefineV2UserContent,
     normalizePromptMode,
+    parseRefineEnvelope,
     parseRefineResponse,
     removeAiPromptMarker,
     renderAiPromptInfo,
     resolveRefineSystemPrompt,
 } from '../scripts/aiPromptRefiner.js';
+
+test('v2 refine request separates editable fields from rendered generation context', () => {
+    const content = buildRefineV2UserContent({
+        instruction: '背景を弱めて',
+        editorFields: {
+            common: 'masterpiece',
+            positive: 'portrait, {day|night}',
+            positiveRight: 'full body',
+            negative: 'worst quality',
+        },
+        generationContext: {
+            positive: 'masterpiece, city, alice, portrait, <lora:style:0.8>',
+            positiveRight: 'masterpiece, city, bob, full body',
+            negative: 'worst quality, extra arms',
+        },
+    });
+
+    assert.deepEqual(JSON.parse(content), {
+        schema_version: 2,
+        instruction: '背景を弱めて',
+        editor: {
+            common: 'masterpiece',
+            positive: 'portrait, {day|night}',
+            positive_right: 'full body',
+            negative: 'worst quality',
+        },
+        generation_context: {
+            positive: 'masterpiece, city, alice, portrait, <lora:style:0.8>',
+            positive_right: 'masterpiece, city, bob, full body',
+            negative: 'worst quality, extra arms',
+        },
+    });
+});
+
+test('v2 response is strict and explicitly classified for generation and editor apply', () => {
+    const result = parseRefineEnvelope(JSON.stringify({
+        schema_version: 2,
+        common: 'masterpiece',
+        positive: 'portrait',
+        positive_right: '',
+        negative: '',
+        changes: 'Reorganized the prompt.',
+    }), { regional: false });
+
+    assert.equal(result.format, 'v2');
+    assert.equal(result.validForGeneration, true);
+    assert.equal(result.validForEditorApply, true);
+    assert.deepEqual(result.editorFields, {
+        common: 'masterpiece',
+        positive: 'portrait',
+        positiveRight: '',
+        negative: '',
+    });
+});
+
+test('unsupported schema versions are invalid instead of falling back to legacy', () => {
+    const result = parseRefineEnvelope(JSON.stringify({
+        schema_version: 3,
+        positive: 'portrait',
+        negative: '',
+        changes: '',
+    }));
+
+    assert.equal(result.format, 'invalid');
+    assert.equal(result.validForGeneration, false);
+    assert.equal(result.validForEditorApply, false);
+    assert.match(result.error, /schema_version/i);
+});
+
+test('versionless positive/negative response remains generation-only legacy output', () => {
+    const result = parseRefineEnvelope(JSON.stringify({
+        positive: 'masterpiece, portrait',
+        negative: 'worst quality',
+        changes: 'Legacy result.',
+    }), {
+        originalPrompts: { positive: 'old positive', positiveRight: '', negative: 'old negative' },
+    });
+
+    assert.equal(result.format, 'legacy');
+    assert.equal(result.validForGeneration, true);
+    assert.equal(result.validForEditorApply, false);
+    assert.equal(result.generationFallback.positive, 'masterpiece, portrait');
+});
 
 test('prompt processing mode keeps Expand as the backward-compatible default', () => {
     assert.equal(normalizePromptMode(), PROMPT_MODE_EXPAND);

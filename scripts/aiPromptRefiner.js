@@ -83,6 +83,30 @@ export function buildRefineUserContent({
     return JSON.stringify(payload);
 }
 
+export function buildRefineV2UserContent({
+    instruction = '',
+    editorFields = {},
+    generationContext = {},
+} = {}) {
+    const editor = {
+        common: requireString(editorFields.common ?? '', 'editorFields.common'),
+        positive: requireString(editorFields.positive ?? '', 'editorFields.positive'),
+        positive_right: requireString(editorFields.positiveRight ?? '', 'editorFields.positiveRight'),
+        negative: requireString(editorFields.negative ?? '', 'editorFields.negative'),
+    };
+    const context = {
+        positive: requireString(generationContext.positive ?? '', 'generationContext.positive'),
+        positive_right: requireString(generationContext.positiveRight ?? '', 'generationContext.positiveRight'),
+        negative: requireString(generationContext.negative ?? '', 'generationContext.negative'),
+    };
+    return JSON.stringify({
+        schema_version: 2,
+        instruction: requireString(instruction, 'instruction'),
+        editor,
+        generation_context: context,
+    });
+}
+
 function fallbackResult(original, error) {
     return {
         ok: false,
@@ -246,6 +270,78 @@ export function parseRefineResponse(content, originalPrompts = {}) {
     } catch (error) {
         return fallbackResult(original, error.message);
     }
+}
+
+function invalidEnvelope(error, originalPrompts = {}) {
+    const fallback = fallbackResult({
+        positive: typeof originalPrompts.positive === 'string' ? originalPrompts.positive : '',
+        positiveRight: typeof originalPrompts.positiveRight === 'string' ? originalPrompts.positiveRight : '',
+        negative: typeof originalPrompts.negative === 'string' ? originalPrompts.negative : '',
+    }, error);
+    return {
+        format: 'invalid',
+        validForGeneration: false,
+        validForEditorApply: false,
+        editorFields: null,
+        generationFallback: fallback,
+        changes: '',
+        error,
+    };
+}
+
+export function parseRefineEnvelope(content, options = {}) {
+    const { regional = false, originalPrompts = {} } = options;
+    if (typeof content !== 'string') return invalidEnvelope('Refine response was not a string', originalPrompts);
+
+    let parsed;
+    try {
+        parsed = JSON.parse(stripJsonFence(content));
+    } catch {
+        return invalidEnvelope('Refine response was not valid JSON', originalPrompts);
+    }
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+        return invalidEnvelope('Refine response JSON was not an object', originalPrompts);
+    }
+
+    if (Object.hasOwn(parsed, 'schema_version')) {
+        if (parsed.schema_version !== 2) {
+            return invalidEnvelope('Unsupported Refine schema_version', originalPrompts);
+        }
+        try {
+            const editorFields = {
+                common: validatePrompt(parsed.common, 'common', { allowEmpty: true }),
+                positive: validatePrompt(parsed.positive, 'positive', { allowEmpty: true }),
+                positiveRight: validatePrompt(parsed.positive_right, 'positive_right', { allowEmpty: true }),
+                negative: validatePrompt(parsed.negative, 'negative', { allowEmpty: true }),
+            };
+            if (regional && !Object.hasOwn(parsed, 'positive_right')) {
+                return invalidEnvelope('positive_right is required for Regional Refine', originalPrompts);
+            }
+            return {
+                format: 'v2',
+                validForGeneration: true,
+                validForEditorApply: true,
+                editorFields,
+                generationFallback: null,
+                changes: typeof parsed.changes === 'string' ? parsed.changes.trim() : '',
+                error: '',
+            };
+        } catch (error) {
+            return invalidEnvelope(error.message, originalPrompts);
+        }
+    }
+
+    const legacy = parseRefineResponse(content, originalPrompts);
+    if (!legacy.ok) return invalidEnvelope(legacy.error, originalPrompts);
+    return {
+        format: 'legacy',
+        validForGeneration: true,
+        validForEditorApply: false,
+        editorFields: null,
+        generationFallback: legacy,
+        changes: legacy.changes,
+        error: '',
+    };
 }
 
 export function applyAiPromptResult({
