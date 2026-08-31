@@ -39,7 +39,11 @@ function fakeFieldSet(count, enabled = true) {
 test('a single generate becomes count × batch_size=1 sends with expanded prompts and seed + n − 1', () => {
   const set = fakeFieldSet(8);
   const expansion = planBatchExpansion({ loops: 1, runSame: false }, { fieldSet: set, sliderSeed: 20260825 });
-  assert.deepEqual(expansion, { loops: 8, enabled: true, count: 8, baseSeed: 20260825 });
+  assert.deepEqual(
+    { loops: expansion.loops, enabled: expansion.enabled, count: expansion.count, baseSeed: expansion.baseSeed },
+    { loops: 8, enabled: true, count: 8, baseSeed: 20260825 },
+  );
+  assert.equal(expansion.rows.length, 8, 'all expansion rows are frozen at generate click');
 
   const seen = [];
   for (let loop = 0; loop < expansion.loops; loop += 1) {
@@ -64,6 +68,43 @@ test('a single generate becomes count × batch_size=1 sends with expanded prompt
   assert.equal(describeOverrideWeights({ imageIndex: 7, weights: seen[7].weights, terminal: seen[7].terminal }), 'Weights #8: positive/detailed eyes=1.30 ■');
 });
 
+test('prompt values and expansion rows are frozen before queue preparation starts', () => {
+  let livePositive = 'before';
+  const set = {
+    getBatchExpansion: () => ({ enabled: true, count: 2, variable: 1 }),
+    getPromptOverrides: imageIndex => ({
+      common: 'shared',
+      positive: `${livePositive}-${imageIndex}`,
+      positive_right: '',
+      negative: 'bad',
+      exclude: '',
+      weights: {},
+      terminal: [],
+    }),
+  };
+  const expansion = planBatchExpansion(
+    { loops: 1 },
+    {
+      fieldSet: set,
+      sliderSeed: 7,
+      baseFields: { common: 'shared', positive: 'before', positive_right: '', negative: 'bad', exclude: '' },
+    },
+  );
+
+  livePositive = 'after';
+  const expanded = beginImageOverride(expansion, 1, { fieldSet: set });
+  assert.equal(expanded.fields.positive, 'before-1');
+  endImageOverride();
+
+  const fixed = planBatchExpansion(
+    { loops: 1, runSame: true },
+    { fieldSet: set, baseFields: { positive: 'snapshot value' } },
+  );
+  assert.equal(beginImageOverride(fixed, 0, { fieldSet: set }), null);
+  assert.equal(readPromptValue('positive'), 'snapshot value', 'disabled expansion still reads the run snapshot');
+  endImageOverride();
+});
+
 test('expansion is skipped for Batch (Last), disabled fields, and keeps the caller loop count when larger', () => {
   const set = fakeFieldSet(4);
   assert.deepEqual(planBatchExpansion({ loops: 1, runSame: true }, { fieldSet: set, sliderSeed: 5 }), { loops: 1, enabled: false, count: 1, baseSeed: -1 });
@@ -79,7 +120,7 @@ test('expansion is skipped for Batch (Last), disabled fields, and keeps the call
 test('generate.js and generate_regional.js read prompts and seeds through the expansion bridge', () => {
   for (const file of ['scripts/renderer/generate.js', 'scripts/renderer/generate_regional.js']) {
     const source = read(file);
-    assert.match(source, /planBatchExpansion\(dataPack, \{ generateRandomSeed \}\)/, `${file} plans the expansion`);
+    assert.match(source, /planBatchExpansion\(dataPack, \{[\s\S]*?generateRandomSeed,[\s\S]*?baseFields: snapshotFieldsForPromptOverride\(refineSnapshot\),[\s\S]*?\}\)/, `${file} plans the expansion from the frozen editor snapshot`);
     assert.match(source, /beginImageOverride\(expansion, loop\)/, `${file} sets the per-image override`);
     assert.match(source, /endImageOverride\(\)/, `${file} clears the override`);
     assert.match(source, /overrideSeed\(globalThis\.generate\.seed\.getValue\(\)\)/, `${file} uses seed + n − 1`);

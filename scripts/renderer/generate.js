@@ -12,6 +12,7 @@ import { filterPrompts } from './tools/promptFilter.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
 import { applyAiPromptResult, removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
+import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
 
@@ -454,7 +455,21 @@ function getPrompts(characters, views, ai='', apiInterface = 'None', loop=-1) {
     const exclude = readPromptValue('exclude');
     const {positivePrompt, positivePromptColored} = filterPrompts(tmpPositivePrompt, tmpPositivePromptColored, exclude);
     const loraPromot = getLoRAs(apiInterface);
-    return {pos:positivePrompt, posc:positivePromptColored, lora:loraPromot}
+    return {
+        pos: positivePrompt,
+        posc: positivePromptColored,
+        lora: loraPromot,
+        refineContext: {
+            beforePrompts: BOP,
+            beforeCharacters: BOC,
+            afterCharacters: EOC,
+            afterPrompts: EOP,
+            views,
+            characters,
+            exclude,
+            slotLora: loraPromot,
+        },
+    }
 }
 
 export function getLoRAs(apiInterface) {
@@ -541,6 +556,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let thumbImage = null;
     let charactersName = '';
     let img_prefix = '';
+    let refineContext = null;
 
     if(runSame) {
         let seed = globalThis.generate.seed.getValue();
@@ -558,7 +574,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         finalInfo = information;
 
         const views = getViewTags(seed);
-        let {pos, posc, lora} = getPrompts(characters_tag, views, aiPromot, apiInterface, loop);
+        let {pos, posc, lora, refineContext: promptRefineContext} = getPrompts(characters_tag, views, aiPromot, apiInterface, loop);
                 
         pos = await replaceWildcardsAsync(pos, randomSeed);
         posc = await replaceWildcardsAsync(posc, randomSeed);
@@ -577,12 +593,17 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         positivePromptColored = posc;
         const mergedNegativePrompt = [readPromptValue('negative'), negative_tags].filter(Boolean).join(', ').trim();
         negativePrompt = mergedNegativePrompt;
+        refineContext = {
+            ...promptRefineContext,
+            seed: randomSeed,
+            characterNegative: negative_tags,
+        };
         thumbImage = thumb;
         charactersName = characters;
         img_prefix = image_prefix;
     }
 
-    return {finalInfo, randomSeed, positivePrompt, positivePromptColored, negativePrompt, thumbImage, charactersName, img_prefix}
+    return {finalInfo, randomSeed, positivePrompt, positivePromptColored, negativePrompt, thumbImage, charactersName, img_prefix, refineContext}
 }
 
 export function createHiFix(randomSeed, apiInterface, brownColor){
@@ -917,8 +938,6 @@ export function getImageSavePrefix(apiInterface, character_prefix) {
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export async function generateImage(dataPack){
     const {runSame} = dataPack;
-    const expansion = planBatchExpansion(dataPack, { generateRandomSeed });
-    const loops = expansion.loops;
     const SETTINGS = globalThis.globalSettings;
     const FILES = globalThis.cachedFiles;
     const LANG = FILES.language[SETTINGS.language];
@@ -932,7 +951,22 @@ export async function generateImage(dataPack){
     const brownColor = (globalThis.globalSettings.css_style==='dark')?'BurlyWood':'Brown';    
     
     const aiPromptInterface = globalThis.ai.interface.getValue();
-    const aiPromptCurrentRole = globalThis.ai.ai_select.getValue();        
+    const aiPromptCurrentRole = globalThis.ai.ai_select.getValue();
+    const aiRunSettings = {
+        interface: aiPromptInterface,
+        role: aiPromptCurrentRole,
+        promptMode: globalThis.ai.local_prompt_mode.getValue(),
+        instruction: globalThis.prompt.ai.getValue(),
+        systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
+        refineSystemPrompt: globalThis.ai.refine_system_prompt.getValue(),
+        modelMode: globalThis.ai.local_model_mode.getValue(),
+    };
+    const refineSnapshot = captureRefineEditorSnapshot({ mode: 'normal', ai: aiRunSettings });
+    const expansion = planBatchExpansion(dataPack, {
+        generateRandomSeed,
+        baseFields: snapshotFieldsForPromptOverride(refineSnapshot),
+    });
+    const loops = expansion.loops;
     const aiPromot = (aiPromptCurrentRole===0 || String(aiPromptCurrentRole).toLowerCase() === 'none')?'':REPLACE_AI_MARK;
 
     toggleQueueColor();
@@ -1008,19 +1042,25 @@ export async function generateImage(dataPack){
                         apiUrl: globalThis.ai.remote_address.getValue(),
                         apiKey: globalThis.ai.remote_apikey.getValue(),
                         modelSelect: globalThis.ai.remote_model_select.getValue(),
-                        userPrompt: globalThis.prompt.ai.getValue(),
-                        systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
+                        userPrompt: aiRunSettings.instruction,
+                        systemPrompt: aiRunSettings.systemPrompt,
                         timeout: globalThis.ai.remote_timeout.getValue() * 1000
                     } : {
                         apiUrl: globalThis.ai.local_address.getValue(),
-                        userPrompt: globalThis.prompt.ai.getValue(),
-                        systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
-                        modelMode: globalThis.ai.local_model_mode.getValue(),
+                        userPrompt: aiRunSettings.instruction,
+                        systemPrompt: aiRunSettings.systemPrompt,
+                        modelMode: aiRunSettings.modelMode,
                         aiUse: 'prompt',
-                        promptMode: globalThis.ai.local_prompt_mode.getValue(),
-                        refineSystemPrompt: globalThis.ai.refine_system_prompt.getValue(),
+                        promptMode: aiRunSettings.promptMode,
+                        refineSystemPrompt: aiRunSettings.refineSystemPrompt,
                         existingPositive: removeAiPromptMarker(createPromptResult.positivePrompt, REPLACE_AI_MARK),
                         existingNegative: createPromptResult.negativePrompt,
+                        editorFields: refineSnapshot.fields,
+                        generationContext: {
+                            positive: removeAiPromptMarker(createPromptResult.positivePrompt, REPLACE_AI_MARK),
+                            positiveRight: '',
+                            negative: createPromptResult.negativePrompt,
+                        },
                         temperature: globalThis.ai.local_temp.getValue(),
                         n_predict:globalThis.ai.local_n_predict.getValue(),
                         timeout: globalThis.ai.local_timeout.getValue() * 1000
@@ -1028,6 +1068,8 @@ export async function generateImage(dataPack){
                 thumb:createPromptResult.thumbImage || globalThis.generate.lastThumb,
                 id:createPromptResult.charactersName,
                 planWeights: imageOverride?.weights ?? null,
+                refineSnapshot,
+                refineContext: createPromptResult.refineContext,
             },
             
             positive: createPromptResult.positivePrompt,

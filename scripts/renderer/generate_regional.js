@@ -9,6 +9,7 @@ import { filterPrompts } from './tools/promptFilter.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue } from './tools/promptBatchExpansion.js';
 import { removeAiPromptMarker } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
+import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 function getCustomJSON(loop=-1){
@@ -137,7 +138,27 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
     return {
         posL:positivePromptLeft, posLc:positivePromptLeftColored, 
         posR:positivePromptRight, posRc:positivePromptRightColored, 
-        lora:loraPromot}
+        lora:loraPromot,
+        refineContext: {
+            left: {
+                beforePrompts: BOPL,
+                beforeCharacters: BOCL,
+                characters: character_left,
+                afterCharacters: EOCL,
+                afterPrompts: EOPL,
+            },
+            right: {
+                beforePrompts: BOPR,
+                beforeCharacters: BOCR,
+                characters: character_right,
+                afterCharacters: EOCR,
+                afterPrompts: EOPR,
+            },
+            views,
+            exclude,
+            slotLora: loraPromot,
+        },
+    }
 }
 
 async function createCharacters(index, seeds) {
@@ -328,6 +349,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let thumbImage = null;
     let charactersName = '';
     let img_prefix = '';
+    let refineContext = null;
 
     if(runSame) {
         let seed = globalThis.generate.seed.getValue();
@@ -348,7 +370,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         finalInfo = information;
 
         const views = getViewTags(seed);
-        let {posL, posLc, posR, posRc, lora} = getPrompts(character_left, character_right, views, aiPromot, apiInterface, loop);
+        let {posL, posLc, posR, posRc, lora, refineContext: promptRefineContext} = getPrompts(character_left, character_right, views, aiPromot, apiInterface, loop);
 
         posL = await replaceWildcardsAsync(posL, randomSeed);
         posLc = await replaceWildcardsAsync(posLc, randomSeed);
@@ -376,6 +398,12 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         positivePromptRightColored = posRc;
         const mergedNegativePrompt = [readPromptValue('negative'), negative_tags].filter(Boolean).join(', ').trim();
         negativePrompt = mergedNegativePrompt;
+        refineContext = {
+            ...promptRefineContext,
+            leftSeed: randomSeed,
+            rightSeed: randomSeedr,
+            characterNegative: negative_tags,
+        };
         thumbImage = thumb;
         charactersName = characters;         
         img_prefix = image_prefix;
@@ -383,7 +411,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
 
     return {finalInfo, randomSeed, positivePromptLeft, positivePromptRight, 
             positivePromptLeftColored, positivePromptRightColored, negativePrompt,
-            thumbImage, charactersName, img_prefix
+            thumbImage, charactersName, img_prefix, refineContext
     }
 }
 
@@ -415,8 +443,6 @@ function createRegional(apiInterface) {
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export async function generateRegionalImage(dataPack){
     const {runSame} = dataPack;
-    const expansion = planBatchExpansion(dataPack, { generateRandomSeed });
-    const loops = expansion.loops;
     const SETTINGS = globalThis.globalSettings;
     const FILES = globalThis.cachedFiles;
     const LANG = FILES.language[SETTINGS.language];
@@ -430,7 +456,22 @@ export async function generateRegionalImage(dataPack){
     const brownColor = (globalThis.globalSettings.css_style==='dark')?'BurlyWood':'Brown';    
                 
     const aiPromptInterface = globalThis.ai.interface.getValue();
-    const aiPromptCurrentRole = globalThis.ai.ai_select.getValue();        
+    const aiPromptCurrentRole = globalThis.ai.ai_select.getValue();
+    const aiRunSettings = {
+        interface: aiPromptInterface,
+        role: aiPromptCurrentRole,
+        promptMode: globalThis.ai.local_prompt_mode.getValue(),
+        instruction: globalThis.prompt.ai.getValue(),
+        systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
+        refineSystemPrompt: globalThis.ai.refine_system_prompt.getValue(),
+        modelMode: globalThis.ai.local_model_mode.getValue(),
+    };
+    const refineSnapshot = captureRefineEditorSnapshot({ mode: 'regional', ai: aiRunSettings });
+    const expansion = planBatchExpansion(dataPack, {
+        generateRandomSeed,
+        baseFields: snapshotFieldsForPromptOverride(refineSnapshot),
+    });
+    const loops = expansion.loops;
     const aiPromot = (aiPromptCurrentRole===0 || String(aiPromptCurrentRole).toLowerCase() === 'none')?'': REPLACE_AI_MARK;
 
     toggleQueueColor();
@@ -510,20 +551,26 @@ export async function generateRegionalImage(dataPack){
                         apiUrl: globalThis.ai.remote_address.getValue(),
                         apiKey: globalThis.ai.remote_apikey.getValue(),
                         modelSelect: globalThis.ai.remote_model_select.getValue(),
-                        userPrompt: globalThis.prompt.ai.getValue(),
-                        systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
+                        userPrompt: aiRunSettings.instruction,
+                        systemPrompt: aiRunSettings.systemPrompt,
                         timeout: globalThis.ai.remote_timeout.getValue() * 1000
                     } : {
                         apiUrl: globalThis.ai.local_address.getValue(),
-                        userPrompt: globalThis.prompt.ai.getValue(),
-                        systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
-                        modelMode: globalThis.ai.local_model_mode.getValue(),
+                        userPrompt: aiRunSettings.instruction,
+                        systemPrompt: aiRunSettings.systemPrompt,
+                        modelMode: aiRunSettings.modelMode,
                         aiUse: 'regional',
-                        promptMode: globalThis.ai.local_prompt_mode.getValue(),
-                        refineSystemPrompt: globalThis.ai.refine_system_prompt.getValue(),
+                        promptMode: aiRunSettings.promptMode,
+                        refineSystemPrompt: aiRunSettings.refineSystemPrompt,
                         existingPositive: removeAiPromptMarker(createPromptResult.positivePromptLeft, REPLACE_AI_MARK),
                         existingPositiveRight: removeAiPromptMarker(createPromptResult.positivePromptRight, REPLACE_AI_MARK),
                         existingNegative: createPromptResult.negativePrompt,
+                        editorFields: refineSnapshot.fields,
+                        generationContext: {
+                            positive: removeAiPromptMarker(createPromptResult.positivePromptLeft, REPLACE_AI_MARK),
+                            positiveRight: removeAiPromptMarker(createPromptResult.positivePromptRight, REPLACE_AI_MARK),
+                            negative: createPromptResult.negativePrompt,
+                        },
                         temperature: globalThis.ai.local_temp.getValue(),
                         n_predict:globalThis.ai.local_n_predict.getValue(),
                         timeout: globalThis.ai.local_timeout.getValue() * 1000
@@ -531,6 +578,8 @@ export async function generateRegionalImage(dataPack){
                 thumb:createPromptResult.thumbImage || globalThis.generate.lastThumb,
                 id:createPromptResult.charactersName,
                 planWeights: imageOverride?.weights ?? null,
+                refineSnapshot,
+                refineContext: createPromptResult.refineContext,
             },
 
             model: globalThis.dropdownList.model.getValue(),
