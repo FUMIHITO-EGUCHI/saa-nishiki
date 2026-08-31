@@ -39,3 +39,12 @@ test('main process forwards structured editor and generation context only to the
   const legacyBody = source.slice(source.indexOf(': {', source.indexOf('const requestBody = useOllama')));
   assert.doesNotMatch(legacyBody, /editorFields|generationContext/, 'non-Ollama local backend remains legacy generation-only');
 });
+
+test('pending Refine UI treats model output as text and exposes keyboard-native actions', () => {
+  const source = read('scripts/renderer/uiShell.js');
+  assert.match(source, /summary\.textContent = String\(text \?\? ''\)/, 'untrusted model output is assigned with textContent');
+  assert.doesNotMatch(source, /ai-refine-summary[^\n]*innerHTML/, 'pending summary never uses innerHTML');
+  assert.match(source, /apply\.type = 'button'/);
+  assert.match(source, /discard\.type = 'button'/);
+  assert.match(source, /pendingRunId !== runId/, 'only the newest pending run remains actionable');
+});

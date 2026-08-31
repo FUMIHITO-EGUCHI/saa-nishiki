@@ -1,5 +1,5 @@
 import { decodeThumb } from './customThumbGallery.js';
-import { getAiPrompt } from './remoteAI.js';
+import { getAiPromptResult } from './remoteAI.js';
 import { from_renderer_generate_updatePreview } from './generate_backend.js';
 import { seartGenerateRegional } from './generate_regional.js';
 import { startGenerateMiraITU } from './generate_miraITU.js';
@@ -9,12 +9,76 @@ import { processRandomString } from './tools/nestedBraceParsing.js';
 import { convertToMultipleOfNFloor, checkNumberInRange } from './tools/numbers.js';
 import { setQueueAutoStart } from './callbacks.js';
 import { filterPrompts } from './tools/promptFilter.js';
-import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
-import { applyAiPromptResult, removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
+import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue } from './tools/promptBatchExpansion.js';
+import { removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
+import { resolveQueuedAiPrompt } from './tools/refineGenerationResult.js';
+import { applyRefineEditorPatch } from './tools/refineEditorApplication.js';
+import { completeRefineRunItem, createRefineRunController, recordRefineRunCandidate } from './tools/refineRunState.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
+
+function currentAiRunSettings() {
+    return {
+        interface: globalThis.ai?.interface?.getValue?.() ?? 'None',
+        role: globalThis.ai?.ai_select?.getValue?.() ?? 0,
+        promptMode: globalThis.ai?.local_prompt_mode?.getValue?.() ?? 'Expand',
+        instruction: globalThis.prompt?.ai?.getValue?.() ?? '',
+        systemPrompt: globalThis.ai?.ai_system_prompt?.getValue?.() ?? '',
+        refineSystemPrompt: globalThis.ai?.refine_system_prompt?.getValue?.() ?? '',
+        modelMode: globalThis.ai?.local_model_mode?.getValue?.() ?? 'Auto',
+    };
+}
+
+function refineCandidateSummary(candidate) {
+    const fields = candidate?.editorFields ?? {};
+    return [
+        candidate?.changes ? `Changes: ${candidate.changes}` : '',
+        `Common: ${fields.common ?? ''}`,
+        `Positive: ${fields.positive ?? ''}`,
+        fields.positiveRight ? `Positive Right: ${fields.positiveRight}` : '',
+        `Negative: ${fields.negative ?? ''}`,
+    ].filter(Boolean).join('\n');
+}
+
+function presentRefineRunDecision(controller, decision) {
+    if (!controller || !decision?.candidate) return;
+    if (globalThis.latestRefineRunId && globalThis.latestRefineRunId !== controller.runId) return;
+    const apply = () => {
+        const currentMode = globalThis.globalSettings?.regional_condition ? 'regional' : 'normal';
+        const currentSnapshot = captureRefineEditorSnapshot({ mode: currentMode, ai: currentAiRunSettings() });
+        return applyRefineEditorPatch({
+            candidate: decision.candidate,
+            snapshot: controller.snapshot,
+            currentSnapshot,
+        });
+    };
+    const autoResult = decision.autoApply ? apply() : null;
+    if (autoResult?.status === 'applied') {
+        globalThis.infoPanel?.showRefinePending?.({
+            runId: controller.runId,
+            text: refineCandidateSummary(decision.candidate),
+            status: autoResult.discardedPlans > 0
+                ? `Applied · ${autoResult.discardedPlans} incompatible Weight Plan(s) removed`
+                : 'Applied to prompt',
+            canApply: false,
+        });
+        return;
+    }
+    const status = autoResult?.status === 'conflict'
+        ? 'Pending: prompt changed after this run started'
+        : decision.reason === 'complete'
+            ? 'Pending editor update'
+            : `Pending editor update · run ${decision.reason}`;
+    globalThis.infoPanel?.showRefinePending?.({
+        runId: controller.runId,
+        text: refineCandidateSummary(decision.candidate),
+        status,
+        canApply: true,
+        onApply: apply,
+    });
+}
 
 export function toggleQueueColor() {
     globalThis.generate.queueColor1st = !globalThis.generate.queueColor1st;
@@ -967,6 +1031,15 @@ export async function generateImage(dataPack){
         baseFields: snapshotFieldsForPromptOverride(refineSnapshot),
     });
     const loops = expansion.loops;
+    const refineRun = createRefineRunController({
+        role: aiPromptCurrentRole,
+        runSame,
+        total: loops,
+        snapshot: refineSnapshot,
+    });
+    if (String(aiPromptInterface).toLowerCase() === 'local' && aiRunSettings.promptMode === 'Refine') {
+        globalThis.latestRefineRunId = refineRun.runId;
+    }
     const aiPromot = (aiPromptCurrentRole===0 || String(aiPromptCurrentRole).toLowerCase() === 'none')?'':REPLACE_AI_MARK;
 
     toggleQueueColor();
@@ -1070,6 +1143,8 @@ export async function generateImage(dataPack){
                 planWeights: imageOverride?.weights ?? null,
                 refineSnapshot,
                 refineContext: createPromptResult.refineContext,
+                regionalSwap: false,
+                refineRun,
             },
             
             positive: createPromptResult.positivePrompt,
@@ -1177,10 +1252,12 @@ export async function startQueue(){
     generateData = globalThis.queueManager.getFirstSlot();
     while (generateData) {
         if(globalThis.generate.cancelClicked){
+            presentRefineRunDecision(generateData.queueManager?.refineRun, completeRefineRunItem(generateData.queueManager?.refineRun, { reason: 'cancel' }));
             globalThis.queueManager.removeAll();
             break;
         }                                
         if(globalThis.generate.skipClicked) {
+            presentRefineRunDecision(generateData.queueManager?.refineRun, completeRefineRunItem(generateData.queueManager?.refineRun, { reason: 'skip' }));
             break;
         }
 
@@ -1190,24 +1267,48 @@ export async function startQueue(){
         if(queueManager.genType === 'normal') {
             globalThis.thumbGallery.append(queueManager.thumb);
 
-            const aiPrompt = await getAiPrompt(queueManager.loop, LANG.generate_ai, queueManager.aiInterface, queueManager.aiRole, queueManager.aiOptions);
-            let promptResult = applyAiPromptResult({
+            const aiRequest = await getAiPromptResult(
+                queueManager.loop,
+                LANG.generate_ai,
+                queueManager.aiInterface,
+                queueManager.aiRole,
+                queueManager.aiOptions,
+                queueManager.refineRun,
+            );
+            const aiPrompt = aiRequest.content;
+            const queuedRefineOriginals = queueManager.aiOptions?.promptMode === 'Refine'
+                ? {
+                    positive: queueManager.aiOptions.existingPositive ?? generateData.positive ?? generateData.positive_left ?? '',
+                    positiveRight: queueManager.aiOptions.existingPositiveRight ?? generateData.positive_right ?? '',
+                    negative: queueManager.aiOptions.existingNegative ?? generateData.negative ?? '',
+                }
+                : {
+                    positive: generateData.positive ?? generateData.positive_left ?? '',
+                    positiveRight: generateData.positive_right ?? '',
+                    negative: generateData.negative ?? '',
+                };
+            const promptResult = await resolveQueuedAiPrompt({
                 mode: queueManager.aiOptions?.promptMode,
                 content: aiPrompt,
                 marker: REPLACE_AI_MARK,
-                positive: generateData.positive ?? generateData.positive_left ?? '',
-                positiveRight: generateData.positive_right ?? '',
-                negative: generateData.negative ?? '',
+                originalPrompts: queuedRefineOriginals,
+                regional: queueManager.isRegional,
+                regionalSwap: queueManager.regionalSwap,
+                fixedContext: queueManager.refineContext,
+                planWeights: queueManager.planWeights,
+                resolveComponent: async (value, seed) => processRandomString(await replaceWildcardsAsync(value, seed)),
             });
-            if (queueManager.planWeights) {
-                // AI Refine (Once) reuses image #1's refined text; restore this image's planned weights.
-                promptResult = reapplyPlanWeights(promptResult, queueManager.planWeights);
-            }
             const aiPreview = promptResult.preview;
+            if (promptResult.envelope?.format === 'v2') {
+                recordRefineRunCandidate(queueManager.refineRun, {
+                    ...promptResult.envelope,
+                    imageIndex: queueManager.loop,
+                });
+            }
             if (!promptResult.ok && queueManager.aiOptions?.promptMode === 'Refine') {
                 console.error('AI Refine failed, preserving original prompts:', promptResult.error);
             }
-            if (globalThis.globalSettings.ai_prompt_role !== 0 && globalThis.globalSettings.ai_interface !== 'None' && globalThis.infoPanel?.showAiResult) {
+            if (Number(queueManager.aiRole) !== 0 && String(queueManager.aiInterface).toLowerCase() !== 'none' && globalThis.infoPanel?.showAiResult) {
                 // AI result goes to the Info panel's AI tab (focused when "Show result" is on) instead of a floating overlay.
                 const aiResultText = aiPreview === '' ? LANG.ai_no_prompt_generate : aiPreview;
                 globalThis.infoPanel.showAiResult(aiResultText, { focus: Boolean(globalThis.globalSettings.ai_prompt_preview) });
@@ -1260,6 +1361,12 @@ export async function startQueue(){
         // result
         ret = result.ret;
         retCopy = result.retCopy;
+        const refineDecision = result.breakNow
+            ? completeRefineRunItem(queueManager.refineRun, {
+                reason: globalThis.generate.cancelClicked ? 'cancel' : globalThis.generate.skipClicked ? 'skip' : 'error',
+            })
+            : completeRefineRunItem(queueManager.refineRun);
+        presentRefineRunDecision(queueManager.refineRun, refineDecision);
         
         if(result.breakNow) {
             if(globalThis.generate.cancelClicked) {
@@ -1285,6 +1392,7 @@ export async function startQueue(){
         console.error('[Generate] Queue processing failed:', error);
         ret = LANG.gr_error_creating_image.replace('{0}', error?.message ?? String(error)).replace('{1}', globalThis.generate.api_interface.getValue());
         retCopy = error?.stack ?? String(error);
+        presentRefineRunDecision(generateData?.queueManager?.refineRun, completeRefineRunItem(generateData?.queueManager?.refineRun, { reason: 'error' }));
         globalThis.queueManager.removeAll();
         globalThis.generate.autoStartDisabledByError = true;
         setQueueAutoStart(false);

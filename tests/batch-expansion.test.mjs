@@ -151,7 +151,7 @@ test('planned weights survive AI Refine: re-applied by name + ordinal on the ref
 
   const generate = read('scripts/renderer/generate.js').replace(/\r\n/g, '\n');
   assert.match(generate, /planWeights: imageOverride\?\.weights \?\? null,/);
-  assert.match(generate, /if \(queueManager\.planWeights\) \{\n\s*\/\/ AI Refine[^\n]*\n\s*promptResult = reapplyPlanWeights\(promptResult, queueManager\.planWeights\);/);
+  assert.match(generate, /resolveQueuedAiPrompt\(\{[\s\S]*?planWeights: queueManager\.planWeights,/);
   assert.match(read('scripts/renderer/generate_regional.js'), /planWeights: imageOverride\?\.weights \?\? null,/);
 });
 

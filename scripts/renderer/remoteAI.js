@@ -94,24 +94,29 @@ async function localGenerateWithPrompt(aiOptions = null) {
 }
 
 
-export async function getAiPrompt(loop, overlay_generate_ai, aiInterface=null, aiRole=null, aiOptions=null) {
-    const currentInterface = aiInterface || globalThis.ai.interface.getValue();
-    const currentRole = aiRole || globalThis.ai.ai_select.getValue();
+export async function getAiPromptResult(loop, overlay_generate_ai, aiInterface=null, aiRole=null, aiOptions=null, runCache=null) {
+    const currentInterface = aiInterface ?? globalThis.ai.interface.getValue();
+    const currentRole = aiRole ?? globalThis.ai.ai_select.getValue();
 
     if(currentRole === 0)   // None
-        return '';
+        return { content: '', fresh: false, source: 'none' };
     else if(currentRole === 1 && loop !== 0)   // Once 
-        return lastAIPromot;
+        return { content: runCache?.lastAiPrompt ?? '', fresh: false, source: 'run-cache' };
     else if(currentRole === 3 )   // Last
-        return lastAIPromot;    
+        return { content: lastAIPromot, fresh: false, source: 'last-run' };
     if (currentInterface.toLowerCase() === 'none') {
-        return '';
+        return { content: '', fresh: false, source: 'none' };
     } else if (currentInterface.toLowerCase() === 'remote') {     
         globalThis.generate.loadingMessage = overlay_generate_ai;
         lastAIPromot = await remoteGenerateWithPrompt(aiOptions);        
     } else {
         globalThis.generate.loadingMessage = overlay_generate_ai;
         lastAIPromot = await localGenerateWithPrompt(aiOptions);
-    }    
-    return lastAIPromot;
+    }
+    if (runCache) runCache.lastAiPrompt = lastAIPromot;
+    return { content: lastAIPromot, fresh: true, source: 'request' };
+}
+
+export async function getAiPrompt(loop, overlay_generate_ai, aiInterface=null, aiRole=null, aiOptions=null, runCache=null) {
+    return (await getAiPromptResult(loop, overlay_generate_ai, aiInterface, aiRole, aiOptions, runCache)).content;
 }

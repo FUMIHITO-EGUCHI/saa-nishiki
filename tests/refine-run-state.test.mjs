@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 
 import {
     addRefineRunCandidate,
+    completeRefineRunItem,
+    createRefineRunController,
     createRefineRunState,
     finishRefineRun,
+    recordRefineRunCandidate,
 } from '../scripts/renderer/tools/refineRunState.js';
 
 function v2Candidate(imageIndex, fields = {}) {
@@ -59,4 +62,33 @@ test('Last, runSame, legacy and stale run candidates never auto-apply', () => {
     let current = createRefineRunState({ runId: 'run-current', role: 1 });
     current = addRefineRunCandidate(current, { ...v2Candidate(0), runId: 'run-old' });
     assert.equal(finishRefineRun(current, { reason: 'complete' }).candidate, null);
+});
+
+test('shared run controller finalizes once after every queued image completes', () => {
+    const controller = createRefineRunController({
+        runId: 'run-controller',
+        role: 2,
+        total: 2,
+        snapshot: { revision: 'snapshot' },
+    });
+    recordRefineRunCandidate(controller, v2Candidate(0));
+    assert.equal(completeRefineRunItem(controller), null);
+    recordRefineRunCandidate(controller, v2Candidate(1));
+    const decision = completeRefineRunItem(controller);
+    assert.equal(decision.autoApply, true);
+    assert.equal(decision.candidate.imageIndex, 1);
+    assert.equal(controller.finalized, true);
+    assert.equal(completeRefineRunItem(controller), decision, 'duplicate completion returns the same decision');
+});
+
+test('cancel, skip and error finalize immediately as manual pending only', () => {
+    for (const reason of ['cancel', 'skip', 'error']) {
+        const controller = createRefineRunController({ runId: `run-${reason}`, role: 1, total: 3 });
+        recordRefineRunCandidate(controller, v2Candidate(0));
+        const decision = completeRefineRunItem(controller, { reason });
+        assert.equal(decision.reason, reason);
+        assert.equal(decision.autoApply, false);
+        assert.equal(decision.candidate.imageIndex, 0);
+        assert.equal(controller.finalized, true);
+    }
 });

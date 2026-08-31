@@ -33,3 +33,35 @@ export function finishRefineRun(state, { reason = 'complete' } = {}) {
         reason,
     };
 }
+
+export function createRefineRunController({ runId, role, runSame = false, total = 1, snapshot = null } = {}) {
+    const resolvedRunId = runId || globalThis.crypto?.randomUUID?.() || `refine-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    return {
+        runId: resolvedRunId,
+        state: createRefineRunState({ runId: resolvedRunId, role, runSame }),
+        snapshot,
+        total: Math.max(1, Number.parseInt(total, 10) || 1),
+        completed: 0,
+        finalized: false,
+        decision: null,
+        lastAiPrompt: '',
+    };
+}
+
+export function recordRefineRunCandidate(controller, candidate) {
+    if (!controller || controller.finalized) return controller;
+    controller.state = addRefineRunCandidate(controller.state, { ...candidate, runId: controller.runId });
+    return controller;
+}
+
+export function completeRefineRunItem(controller, { reason = 'complete' } = {}) {
+    if (!controller) return null;
+    if (controller.finalized) return controller.decision;
+    if (reason === 'complete') {
+        controller.completed += 1;
+        if (controller.completed < controller.total) return null;
+    }
+    controller.finalized = true;
+    controller.decision = finishRefineRun(controller.state, { reason });
+    return controller.decision;
+}

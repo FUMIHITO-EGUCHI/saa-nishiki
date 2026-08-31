@@ -10,6 +10,7 @@ import { beginImageOverride, describeOverrideWeights, endImageOverride, override
 import { removeAiPromptMarker } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
+import { createRefineRunController } from './tools/refineRunState.js';
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 function getCustomJSON(loop=-1){
@@ -472,6 +473,15 @@ export async function generateRegionalImage(dataPack){
         baseFields: snapshotFieldsForPromptOverride(refineSnapshot),
     });
     const loops = expansion.loops;
+    const refineRun = createRefineRunController({
+        role: aiPromptCurrentRole,
+        runSame,
+        total: loops,
+        snapshot: refineSnapshot,
+    });
+    if (String(aiPromptInterface).toLowerCase() === 'local' && aiRunSettings.promptMode === 'Refine') {
+        globalThis.latestRefineRunId = refineRun.runId;
+    }
     const aiPromot = (aiPromptCurrentRole===0 || String(aiPromptCurrentRole).toLowerCase() === 'none')?'': REPLACE_AI_MARK;
 
     toggleQueueColor();
@@ -580,6 +590,8 @@ export async function generateRegionalImage(dataPack){
                 planWeights: imageOverride?.weights ?? null,
                 refineSnapshot,
                 refineContext: createPromptResult.refineContext,
+                regionalSwap: swap,
+                refineRun,
             },
 
             model: globalThis.dropdownList.model.getValue(),
