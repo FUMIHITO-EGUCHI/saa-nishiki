@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "tags": {
+    "holding_halo": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/holding_halo.html"
+    },
+    "halo": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/halo.html"
+    },
+    "holding_rocket_launcher": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/holding_rocket_launcher.html"
+    },
+    "rocket_launcher": {
+      "category": "object",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/rocket_launcher.html"
+    },
+    "breasts": {
+      "category": "body",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/breasts.html"
+    },
+    "standing": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/standing.html"
+    },
+    "sitting": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/sitting.html"
+    },
+    "school_uniform": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/school_uniform.html"
+    },
+    "dress": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/dress.html"
+    },
+    "blue_hair": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/blue_hair.html"
+    },
+    "red_eyes": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/red_eyes.html"
+    },
+    "sword": {
+      "category": "object",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/sword.html"
+    },
+    "simple_background": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/simple_background.html"
+    },
+    "highres": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "Danbooru Wiki",
+      "sourceUrl": "https://danbooru.donmai.us/wiki_pages/highres.html"
+    }
+  }
+}

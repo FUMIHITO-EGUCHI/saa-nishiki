@@ -38,6 +38,11 @@ export function setDropdownLanguage(containerID, labelPrefixList){
       label.title = labelPrefixList[index];
     }
   }
+  if (containerID === 'dropdown-character') {
+    globalThis.characterList?.setTitle?.(labelPrefixList);
+  } else if (containerID === 'dropdown-character-regional') {
+    globalThis.characterListRegional?.setTitle?.(labelPrefixList);
+  }
 }
 
 // incase of array input
@@ -71,13 +76,45 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     globalThis.dropdownList.vpred.setTitle(LANG.vpred);
     globalThis.dropdownList.vpred.setValue(LANG.vpred, [LANG.vpred_auto, LANG.vpred_on, LANG.vpred_on_zsnr,LANG.vpred_off]);
-    globalThis.dropdownList.settings.setTitle(LANG.title_settings_load);
-    globalThis.headerIcon.save.title = LANG.title_settings_save;
-    globalThis.headerIcon.delete.title = LANG.title_settings_delete;
     globalThis.headerIcon.reload.title = LANG.title_model_reload;
     globalThis.headerIcon.refresh.title = LANG.title_global_refresh;
     globalThis.headerIcon.swap.title = LANG.title_swap_layout;
     globalThis.headerIcon.theme.title = LANG.title_theme;
+    if (globalThis.headerIcon.settings?.toggle) {
+        globalThis.headerIcon.settings.toggle.title = LANG.system_settings;
+        globalThis.headerIcon.settings.toggle.setAttribute('aria-label', LANG.system_settings);
+    }
+    const rightSettingsTitle = document.querySelector('#right-settings-title');
+    if (rightSettingsTitle) {
+        rightSettingsTitle.textContent = LANG.title_generation_settings;
+    }
+    const settingsModalTitle = document.querySelector('#settings-modal-title');
+    if (settingsModalTitle) {
+        settingsModalTitle.textContent = LANG.system_settings;
+    }
+    const settingsModalNav = document.querySelector('.settings-modal-nav');
+    if (settingsModalNav) {
+        settingsModalNav.setAttribute('aria-label', LANG.system_settings);
+    }
+    const settingsPageLabels = {
+        general: LANG.ui_settings_general || LANG.settings_general,
+        backend: LANG.ui_settings_backend || LANG.settings_image_api,
+        model: LANG.ui_settings_model || LANG.settings_model_details,
+        ai: LANG.ui_settings_ai || 'AI',
+        'prompt-editing': LANG.ui_settings_prompt_editing || LANG.settings_prompt_generation,
+        advanced: LANG.ui_settings_advanced || 'Advanced'
+    };
+    document.querySelectorAll('[data-settings-page-label]').forEach(label => {
+        const text = settingsPageLabels[label.dataset.settingsPageLabel];
+        if (text) {
+            label.textContent = text;
+        }
+    });
+    const settingsModalClose = document.querySelector('#settings-modal-close');
+    if (settingsModalClose) {
+        settingsModalClose.title = LANG.title_settings_close || 'Close Settings';
+        settingsModalClose.setAttribute('aria-label', settingsModalClose.title);
+    }
 
     globalThis.dropdownList.thumb_select.setTitle(LANG.thumb_select);
 
@@ -97,7 +134,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     // Gallery Thumb
     let labels = document.querySelector('#gallery-thumb-span');
-    labels.textContent = LANG.gallery_thumb_span;
+    if (labels) labels.textContent = LANG.gallery_thumb_span;
 
     globalThis.generate.regionalCondition.setTitle(LANG.regional_condition);
     globalThis.generate.regionalCondition_dummy.setTitle(LANG.regional_condition);
@@ -117,9 +154,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.generate.batch.setTitle(LANG.batch);
 
     globalThis.generate.hifix.setTitle(LANG.api_hf_enable);
-    globalThis.generate.hifix_dummy.setTitle(LANG.api_hf_enable);
     globalThis.generate.refiner.setTitle(LANG.api_refiner_enable);
-    globalThis.generate.refiner_dummy.setTitle(LANG.api_refiner_enable);
     globalThis.generate.controlnet.setTitle(LANG.api_controlnet_enable);
     globalThis.generate.adetailer.setTitle(LANG.api_adetailer_enable);
 
@@ -152,7 +187,6 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.generate.webui_auth.setTitle(LANG.webui_auth);
     globalThis.generate.webui_auth_enable.setTitle(LANG.webui_auth_enable);
     globalThis.generate.queueAutostart.setTitle(LANG.generate_auto_start);
-    globalThis.generate.queueAutostart_dummy.setTitle(LANG.generate_auto_start);
 
     globalThis.generate.scrollToLatest.setTitle(LANG.scroll_to_last);
     globalThis.generate.keepGallery.setTitle(LANG.keep_gallery);
@@ -164,6 +198,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.prompt.negative.setTitle(LANG.api_neg_prompt);
     globalThis.prompt.ai.setTitle(LANG.ai_prompt);
     globalThis.prompt.exclude.setTitle(LANG.prompt_ban);
+    globalThis.prompt.tagCapsuleFields?.updateLanguage?.();
     globalThis.prompt.autoResize.setTitle(LANG.ptompt_textbox_autoresize);
     globalThis.prompt.fontSize.setTitle(LANG.ptompt_textbox_fontsize);
 
@@ -188,10 +223,14 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.ai.ai_select.setTitle(LANG.batch_generate_rule, LANG.ai_select, LANG.ai_select_title);
     globalThis.ai.ai_prompt_preview.setTitle(LANG.ai_prompt_preview);
     globalThis.ai.local_address.setTitle(LANG.ai_local_addr);
+    globalThis.ai.local_model_mode.setTitle(LANG.ai_local_model_mode);
+    globalThis.ai.local_prompt_mode.setTitle(LANG.ai_local_prompt_mode);
+    globalThis.ai.local_timeout.setTitle(LANG.ai_local_timeout);
     globalThis.ai.local_temp.setTitle(LANG.ai_local_temp);
     globalThis.ai.local_n_predict.setTitle(LANG.ai_local_n_predict);
     globalThis.ai.ai_system_prompt.setTitle(LANG.ai_system_prompt_text);
     globalThis.ai.ai_system_prompt.setValue(LANG.ai_system_prompt);
+    globalThis.ai.refine_system_prompt.setTitle(LANG.ai_refine_system_prompt_text);
 
     globalThis.overlay.buttons.reload();
 
@@ -208,6 +247,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     globalThis.imageInfo.updateHintText(LANG.image_info_drag_hint_top, LANG.image_info_drag_hint_bottom);
 
+    globalThis.uiShell?.updateLanguage?.();
     hiresCalculate();
 }
 
@@ -248,7 +288,6 @@ export function updateSettings() {
     globalThis.generate.webui_auth.setValue(SETTINGS.webui_auth);
     globalThis.generate.webui_auth_enable.updateDefaults(SETTINGS.webui_auth_enable);
     globalThis.generate.queueAutostart.setValue(SETTINGS.generate_auto_start);
-    globalThis.generate.queueAutostart_dummy.setValue(SETTINGS.generate_auto_start);
 
     globalThis.characterList.updateDefaults(SETTINGS.character1, SETTINGS.character2, SETTINGS.character3, 'None');
     globalThis.characterList.setTextValue(0, SETTINGS.weights4dropdownlist[4]);
@@ -324,26 +363,30 @@ export function updateSettings() {
 
     globalThis.prompt.common.setValue(SETTINGS.custom_prompt);
     globalThis.prompt.positive.setValue(SETTINGS.api_prompt);
-    globalThis.prompt.positive_right.setValue(SETTINGS.regional_api_prompt_right);
+    globalThis.prompt.positive_right.setValue(SETTINGS.api_prompt_right);
     globalThis.prompt.negative.setValue(SETTINGS.api_neg_prompt);
     globalThis.prompt.ai.setValue(SETTINGS.ai_prompt);
     globalThis.prompt.exclude.setValue(SETTINGS.prompt_ban);
+    globalThis.prompt.tagCapsuleFields?.loadFromSettings?.(SETTINGS);
     globalThis.prompt.autoResize.setValue(SETTINGS.ptompt_textbox_autoresize);
     globalThis.prompt.fontSize.setValue(SETTINGS.ptompt_textbox_fontsize);
 
     globalThis.ai.interface.updateDefaults(SETTINGS.ai_interface);
     globalThis.ai.local_address.setValue(SETTINGS.ai_local_addr);
+    globalThis.ai.local_model_mode.updateDefaults(SETTINGS.ai_local_model_mode);
+    globalThis.ai.local_prompt_mode.updateDefaults(SETTINGS.ai_local_prompt_mode);
+    globalThis.ai.local_timeout.setValue(SETTINGS.ai_local_timeout);
     globalThis.ai.local_temp.setValue(SETTINGS.ai_local_temp);
     globalThis.ai.local_n_predict.setValue(SETTINGS.ai_local_n_predict);
     globalThis.ai.ai_select.setValue(SETTINGS.ai_prompt_role);
     globalThis.ai.ai_prompt_preview.setValue(SETTINGS.ai_prompt_preview);
+    globalThis.ai.refine_system_prompt.setValue(SETTINGS.ai_refine_system_prompt);
 
     globalThis.generate.api_interface.updateDefaults(SETTINGS.api_interface);
     globalThis.generate.api_preview_refresh_time.setValue(SETTINGS.api_preview_refresh_time);
     globalThis.generate.api_address.setValue(SETTINGS.api_addr);
 
     globalThis.generate.hifix.setValue(SETTINGS.api_hf_enable);
-    globalThis.generate.hifix_dummy.setValue(SETTINGS.api_hf_enable);
     globalThis.hifix.scale.setValue(SETTINGS.api_hf_scale);
     globalThis.hifix.denoise.setValue(SETTINGS.api_hf_denoise);
     globalThis.hifix.model.updateDefaults(SETTINGS.api_hf_upscaler_selected);
@@ -354,11 +397,13 @@ export function updateSettings() {
     globalThis.hifix.model.setOptions(globalThis.cachedFiles.upscalerList, null, LANG.api_hf_upscaler_selected, SETTINGS.api_hf_upscaler_selected);
 
     globalThis.generate.refiner.setValue(SETTINGS.api_refiner_enable);
-    globalThis.generate.refiner_dummy.setValue(SETTINGS.api_refiner_enable);
     globalThis.refiner.addnoise.setValue(SETTINGS.api_refiner_add_noise);    
     globalThis.refiner.model.updateDefaults(SETTINGS.api_refiner_model);
     globalThis.refiner.vpred.updateDefaults(SETTINGS.api_refiner_model_vpred);
     globalThis.refiner.ratio.setValue(SETTINGS.api_refiner_ratio);
+
+    globalThis.generate.adetailer?.setValue?.(SETTINGS.api_adetailer_enable);
+    globalThis.generate.controlnet?.setValue?.(SETTINGS.api_controlnet_enable);
 
     callback_api_model_type(0, [globalThis.dropdownList.model_type.getValue()]); //Model Type
     callback_regional_condition(globalThis.generate.regionalCondition.getValue(), false); //Regional Condition
