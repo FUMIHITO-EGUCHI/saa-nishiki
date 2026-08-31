@@ -11,6 +11,7 @@ import { removeAiPromptMarker } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
 import { createRefineRunController } from './tools/refineRunState.js';
+import { isStructuredRefineRequest } from './remoteAI.js';
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 function getCustomJSON(loop=-1){
@@ -466,7 +467,13 @@ export async function generateRegionalImage(dataPack){
         systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
         refineSystemPrompt: globalThis.ai.refine_system_prompt.getValue(),
         modelMode: globalThis.ai.local_model_mode.getValue(),
+        apiUrl: globalThis.ai.local_address.getValue(),
     };
+    const structuredRefine = isStructuredRefineRequest({
+        aiInterface: aiPromptInterface,
+        aiOptions: aiRunSettings,
+        runSame,
+    });
     const refineSnapshot = captureRefineEditorSnapshot({ mode: 'regional', ai: aiRunSettings });
     const expansion = planBatchExpansion(dataPack, {
         generateRandomSeed,
@@ -479,7 +486,7 @@ export async function generateRegionalImage(dataPack){
         total: loops,
         snapshot: refineSnapshot,
     });
-    if (String(aiPromptInterface).toLowerCase() === 'local' && aiRunSettings.promptMode === 'Refine') {
+    if (structuredRefine) {
         globalThis.latestRefineRunId = refineRun.runId;
     }
     const aiPromot = (aiPromptCurrentRole===0 || String(aiPromptCurrentRole).toLowerCase() === 'none')?'': REPLACE_AI_MARK;
@@ -565,7 +572,7 @@ export async function generateRegionalImage(dataPack){
                         systemPrompt: aiRunSettings.systemPrompt,
                         timeout: globalThis.ai.remote_timeout.getValue() * 1000
                     } : {
-                        apiUrl: globalThis.ai.local_address.getValue(),
+                        apiUrl: aiRunSettings.apiUrl,
                         userPrompt: aiRunSettings.instruction,
                         systemPrompt: aiRunSettings.systemPrompt,
                         modelMode: aiRunSettings.modelMode,
@@ -575,12 +582,12 @@ export async function generateRegionalImage(dataPack){
                         existingPositive: removeAiPromptMarker(createPromptResult.positivePromptLeft, REPLACE_AI_MARK),
                         existingPositiveRight: removeAiPromptMarker(createPromptResult.positivePromptRight, REPLACE_AI_MARK),
                         existingNegative: createPromptResult.negativePrompt,
-                        editorFields: refineSnapshot.fields,
-                        generationContext: {
+                        editorFields: structuredRefine ? refineSnapshot.fields : null,
+                        generationContext: structuredRefine ? {
                             positive: removeAiPromptMarker(createPromptResult.positivePromptLeft, REPLACE_AI_MARK),
                             positiveRight: removeAiPromptMarker(createPromptResult.positivePromptRight, REPLACE_AI_MARK),
                             negative: createPromptResult.negativePrompt,
-                        },
+                        } : null,
                         temperature: globalThis.ai.local_temp.getValue(),
                         n_predict:globalThis.ai.local_n_predict.getValue(),
                         timeout: globalThis.ai.local_timeout.getValue() * 1000
@@ -592,6 +599,7 @@ export async function generateRegionalImage(dataPack){
                 refineContext: createPromptResult.refineContext,
                 regionalSwap: swap,
                 refineRun,
+                structuredRefine,
             },
 
             model: globalThis.dropdownList.model.getValue(),

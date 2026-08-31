@@ -1,5 +1,5 @@
 import { decodeThumb } from './customThumbGallery.js';
-import { getAiPromptResult } from './remoteAI.js';
+import { getAiPromptResult, isStructuredRefineRequest } from './remoteAI.js';
 import { from_renderer_generate_updatePreview } from './generate_backend.js';
 import { seartGenerateRegional } from './generate_regional.js';
 import { startGenerateMiraITU } from './generate_miraITU.js';
@@ -28,6 +28,7 @@ function currentAiRunSettings() {
         systemPrompt: globalThis.ai?.ai_system_prompt?.getValue?.() ?? '',
         refineSystemPrompt: globalThis.ai?.refine_system_prompt?.getValue?.() ?? '',
         modelMode: globalThis.ai?.local_model_mode?.getValue?.() ?? 'Auto',
+        apiUrl: globalThis.ai?.local_address?.getValue?.() ?? '',
     };
 }
 
@@ -1024,7 +1025,13 @@ export async function generateImage(dataPack){
         systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
         refineSystemPrompt: globalThis.ai.refine_system_prompt.getValue(),
         modelMode: globalThis.ai.local_model_mode.getValue(),
+        apiUrl: globalThis.ai.local_address.getValue(),
     };
+    const structuredRefine = isStructuredRefineRequest({
+        aiInterface: aiPromptInterface,
+        aiOptions: aiRunSettings,
+        runSame,
+    });
     const refineSnapshot = captureRefineEditorSnapshot({ mode: 'normal', ai: aiRunSettings });
     const expansion = planBatchExpansion(dataPack, {
         generateRandomSeed,
@@ -1037,7 +1044,7 @@ export async function generateImage(dataPack){
         total: loops,
         snapshot: refineSnapshot,
     });
-    if (String(aiPromptInterface).toLowerCase() === 'local' && aiRunSettings.promptMode === 'Refine') {
+    if (structuredRefine) {
         globalThis.latestRefineRunId = refineRun.runId;
     }
     const aiPromot = (aiPromptCurrentRole===0 || String(aiPromptCurrentRole).toLowerCase() === 'none')?'':REPLACE_AI_MARK;
@@ -1119,7 +1126,7 @@ export async function generateImage(dataPack){
                         systemPrompt: aiRunSettings.systemPrompt,
                         timeout: globalThis.ai.remote_timeout.getValue() * 1000
                     } : {
-                        apiUrl: globalThis.ai.local_address.getValue(),
+                        apiUrl: aiRunSettings.apiUrl,
                         userPrompt: aiRunSettings.instruction,
                         systemPrompt: aiRunSettings.systemPrompt,
                         modelMode: aiRunSettings.modelMode,
@@ -1128,12 +1135,12 @@ export async function generateImage(dataPack){
                         refineSystemPrompt: aiRunSettings.refineSystemPrompt,
                         existingPositive: removeAiPromptMarker(createPromptResult.positivePrompt, REPLACE_AI_MARK),
                         existingNegative: createPromptResult.negativePrompt,
-                        editorFields: refineSnapshot.fields,
-                        generationContext: {
+                        editorFields: structuredRefine ? refineSnapshot.fields : null,
+                        generationContext: structuredRefine ? {
                             positive: removeAiPromptMarker(createPromptResult.positivePrompt, REPLACE_AI_MARK),
                             positiveRight: '',
                             negative: createPromptResult.negativePrompt,
-                        },
+                        } : null,
                         temperature: globalThis.ai.local_temp.getValue(),
                         n_predict:globalThis.ai.local_n_predict.getValue(),
                         timeout: globalThis.ai.local_timeout.getValue() * 1000
@@ -1145,6 +1152,7 @@ export async function generateImage(dataPack){
                 refineContext: createPromptResult.refineContext,
                 regionalSwap: false,
                 refineRun,
+                structuredRefine,
             },
             
             positive: createPromptResult.positivePrompt,
@@ -1294,6 +1302,7 @@ export async function startQueue(){
                 originalPrompts: queuedRefineOriginals,
                 regional: queueManager.isRegional,
                 regionalSwap: queueManager.regionalSwap,
+                allowStructured: queueManager.structuredRefine,
                 fixedContext: queueManager.refineContext,
                 planWeights: queueManager.planWeights,
                 resolveComponent: async (value, seed) => processRandomString(await replaceWildcardsAsync(value, seed)),

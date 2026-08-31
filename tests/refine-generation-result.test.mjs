@@ -90,6 +90,35 @@ test('legacy Refine remains generation-only and invalid output preserves origina
   assert.equal(invalid.negative, 'old negative');
 });
 
+test('legacy Regional output also applies backend swap at the final boundary', async () => {
+  const legacy = await resolveQueuedAiPrompt({
+    mode: 'Refine',
+    content: JSON.stringify({ positive: 'logical left', positive_right: 'logical right', negative: 'bad' }),
+    marker,
+    regional: true,
+    regionalSwap: true,
+    originalPrompts: { positive: 'old left', positiveRight: 'old right', negative: 'old bad' },
+  });
+  assert.equal(legacy.envelope.format, 'legacy');
+  assert.equal(legacy.positive, 'logical right');
+  assert.equal(legacy.positiveRight, 'logical left');
+});
+
+test('structured output from a non-Ollama path cannot drive generation or editor apply', async () => {
+  const result = await resolveQueuedAiPrompt({
+    mode: 'Refine',
+    content: JSON.stringify({ schema_version: 2, common: '', positive: 'untrusted v2', positive_right: '', negative: '', changes: '' }),
+    marker,
+    allowStructured: false,
+    originalPrompts: { positive: 'keep me', positiveRight: '', negative: 'keep bad' },
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.envelope.format, 'invalid');
+  assert.equal(result.editorFields, null);
+  assert.equal(result.positive, 'keep me');
+  assert.equal(result.negative, 'keep bad');
+});
+
 test('Expand retains marker replacement and per-image plan weights', async () => {
   const result = await resolveQueuedAiPrompt({
     mode: 'Expand',

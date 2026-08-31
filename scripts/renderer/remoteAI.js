@@ -1,4 +1,5 @@
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
+import { isOllamaChatUrl } from '../shared/ollamaUrl.js';
 let lastAIPromot = '';
 
 async function remoteGenerateWithPrompt(aiOptions = null) {
@@ -100,7 +101,7 @@ export async function getAiPromptResult(loop, overlay_generate_ai, aiInterface=n
 
     if(currentRole === 0)   // None
         return { content: '', fresh: false, source: 'none' };
-    else if(currentRole === 1 && loop !== 0)   // Once 
+    else if(currentRole === 1 && loop !== 0 && runCache?.lastAiPrompt)   // Once
         return { content: runCache?.lastAiPrompt ?? '', fresh: false, source: 'run-cache' };
     else if(currentRole === 3 )   // Last
         return { content: lastAIPromot, fresh: false, source: 'last-run' };
@@ -119,4 +120,11 @@ export async function getAiPromptResult(loop, overlay_generate_ai, aiInterface=n
 
 export async function getAiPrompt(loop, overlay_generate_ai, aiInterface=null, aiRole=null, aiOptions=null, runCache=null) {
     return (await getAiPromptResult(loop, overlay_generate_ai, aiInterface, aiRole, aiOptions, runCache)).content;
+}
+
+export function isStructuredRefineRequest({ aiInterface, aiOptions, runSame = false } = {}) {
+    return !runSame
+        && String(aiInterface ?? '').toLowerCase() === 'local'
+        && String(aiOptions?.promptMode ?? '').toLowerCase() === 'refine'
+        && isOllamaChatUrl(aiOptions?.apiUrl);
 }

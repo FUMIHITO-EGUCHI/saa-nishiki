@@ -51,6 +51,7 @@ export function createRefineEditorSnapshot({ mode = 'normal', fields = {}, plans
             systemPrompt: String(ai.systemPrompt ?? ''),
             refineSystemPrompt: String(ai.refineSystemPrompt ?? ''),
             modelMode: String(ai.modelMode ?? 'Auto'),
+            apiUrl: String(ai.apiUrl ?? ''),
         },
     };
     const revision = stableStringify(content);

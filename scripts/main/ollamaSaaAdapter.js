@@ -5,6 +5,7 @@ import {
     buildRefineV2UserContent,
     normalizePromptMode,
 } from '../aiPromptRefiner.js';
+import { isOllamaChatUrl } from '../shared/ollamaUrl.js';
 
 const SMALL_MODEL = 'gemma4-12b-uncensored-comfy:latest';
 const LARGE_MODEL = 'hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M';
@@ -121,16 +122,4 @@ export function normalizeOllamaChatResponse(responseText) {
     };
 }
 
-export function isOllamaChatUrl(apiUrl) {
-    try {
-        const url = new URL(apiUrl);
-        return url.protocol === 'http:'
-            && (url.hostname === '127.0.0.1' || url.hostname === 'localhost' || url.hostname === '[::1]')
-            && url.port === '11434'
-            && url.pathname.replace(/\/$/, '') === '/api/chat';
-    } catch {
-        return false;
-    }
-}
-
-export { LARGE_MODEL, SMALL_MODEL };
+export { isOllamaChatUrl, LARGE_MODEL, SMALL_MODEL };

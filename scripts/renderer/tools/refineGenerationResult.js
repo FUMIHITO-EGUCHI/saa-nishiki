@@ -32,6 +32,7 @@ export async function resolveQueuedAiPrompt({
     originalPrompts = {},
     regional = false,
     regionalSwap = false,
+    allowStructured = true,
     fixedContext = {},
     planWeights = null,
     resolveComponent,
@@ -50,10 +51,37 @@ export async function resolveQueuedAiPrompt({
 
     const cleanOriginals = cleanOriginalPrompts(originalPrompts, marker);
     const envelope = parseRefineEnvelope(content, { regional, originalPrompts: cleanOriginals });
+    if (envelope.format === 'v2' && !allowStructured) {
+        return {
+            ok: false,
+            ...cleanOriginals,
+            changes: '',
+            preview: '',
+            error: 'Structured Refine output is only accepted from Local Ollama',
+            envelope: {
+                ...envelope,
+                format: 'invalid',
+                validForGeneration: false,
+                validForEditorApply: false,
+                editorFields: null,
+                error: 'Structured Refine output is only accepted from Local Ollama',
+            },
+            editorFields: null,
+        };
+    }
     if (envelope.format !== 'v2') {
         const fallback = envelope.generationFallback;
+        const weightedFallback = withPlanWeights(fallback, planWeights);
+        const backend = regional && weightedFallback.ok
+            ? mapRegionalBackendPrompts(weightedFallback, regionalSwap)
+            : null;
         return {
-            ...withPlanWeights(fallback, planWeights),
+            ...weightedFallback,
+            ...(backend ? {
+                positive: backend.positiveLeft,
+                positiveRight: backend.positiveRight,
+                negative: backend.negative,
+            } : {}),
             preview: fallback.ok ? (envelope.changes || fallback.positive) : '',
             envelope,
             editorFields: null,

@@ -15,8 +15,9 @@ test('normal and regional generation queue the frozen editor fields and rendered
     const expansionAt = source.indexOf('const expansion = planBatchExpansion');
     const loopAt = source.indexOf('for(let loop = 0; loop < loops; loop++');
     assert.ok(snapshotAt >= 0 && snapshotAt < expansionAt && expansionAt < loopAt, `${file} freezes state before preparing images`);
-    assert.match(source, /editorFields: refineSnapshot\.fields,/);
-    assert.match(source, /generationContext: \{[\s\S]*?positive:[\s\S]*?positiveRight:[\s\S]*?negative:/);
+    assert.match(source, /editorFields: structuredRefine \? refineSnapshot\.fields : null,/);
+    assert.match(source, /generationContext: structuredRefine \? \{[\s\S]*?positive:[\s\S]*?positiveRight:[\s\S]*?negative:[\s\S]*?\} : null,/);
+    assert.match(source, /structuredRefine,/);
     assert.match(source, /refineSnapshot,/);
     assert.match(source, /refineContext: createPromptResult\.refineContext,/);
   }
