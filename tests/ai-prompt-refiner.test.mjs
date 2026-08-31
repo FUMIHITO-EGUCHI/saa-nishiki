@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
     PROMPT_MODE_EXPAND,
     PROMPT_MODE_REFINE,
+    LEGACY_FULL_REFINE_SYSTEM_PROMPT,
     LEGACY_REFINE_SYSTEM_PROMPT,
     REFINE_SYSTEM_PROMPT,
     applyAiPromptResult,
@@ -107,6 +108,9 @@ test('prompt processing mode keeps Expand as the backward-compatible default', (
 });
 
 test('Refine always rebuilds and reorganizes the complete prompt set', () => {
+    assert.match(REFINE_SYSTEM_PROMPT, /schema_version/i);
+    assert.match(REFINE_SYSTEM_PROMPT, /common.*positive.*positive_right.*negative/is);
+    assert.match(REFINE_SYSTEM_PROMPT, /generation_context/i);
     assert.match(REFINE_SYSTEM_PROMPT, /rebuild the entire positive and negative prompts/i);
     assert.match(REFINE_SYSTEM_PROMPT, /complete replacement/i);
     assert.match(REFINE_SYSTEM_PROMPT, /reorder/i);
@@ -117,6 +121,7 @@ test('Refine always rebuilds and reorganizes the complete prompt set', () => {
 
 test('saved legacy default migrates to full reconstruction while custom prompts are preserved', () => {
     assert.equal(resolveRefineSystemPrompt(LEGACY_REFINE_SYSTEM_PROMPT), REFINE_SYSTEM_PROMPT);
+    assert.equal(resolveRefineSystemPrompt(LEGACY_FULL_REFINE_SYSTEM_PROMPT), REFINE_SYSTEM_PROMPT);
     assert.equal(resolveRefineSystemPrompt(''), REFINE_SYSTEM_PROMPT);
     assert.equal(
         resolveRefineSystemPrompt('My intentionally customized refine instructions.'),

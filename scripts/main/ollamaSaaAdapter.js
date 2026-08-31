@@ -2,6 +2,7 @@ import {
     PROMPT_MODE_REFINE,
     REFINE_SYSTEM_PROMPT,
     buildRefineUserContent,
+    buildRefineV2UserContent,
     normalizePromptMode,
 } from '../aiPromptRefiner.js';
 
@@ -43,6 +44,8 @@ export function buildOllamaChatRequest({
     existingPositive = '',
     existingNegative = '',
     existingPositiveRight = '',
+    editorFields = null,
+    generationContext = null,
     temperature = 0.7,
     n_predict = 768,
 } = {}) {
@@ -58,6 +61,10 @@ export function buildOllamaChatRequest({
         : 768;
 
     const useRefine = normalizePromptMode(promptMode) === PROMPT_MODE_REFINE;
+    const useRefineV2 = useRefine
+        && editorFields && typeof editorFields === 'object'
+        && generationContext && typeof generationContext === 'object'
+        && /schema_version[\s\S]*?2/i.test(refineSystemPrompt || REFINE_SYSTEM_PROMPT);
     const request = {
         model: resolveSaaOllamaModel({ mode, use }),
         messages: useRefine
@@ -65,12 +72,14 @@ export function buildOllamaChatRequest({
                 { role: 'system', content: refineSystemPrompt || REFINE_SYSTEM_PROMPT },
                 {
                     role: 'user',
-                    content: buildRefineUserContent({
-                        instruction: userPrompt,
-                        positive: existingPositive,
-                        negative: existingNegative,
-                        positiveRight: existingPositiveRight,
-                    }),
+                    content: useRefineV2
+                        ? buildRefineV2UserContent({ instruction: userPrompt, editorFields, generationContext })
+                        : buildRefineUserContent({
+                            instruction: userPrompt,
+                            positive: existingPositive,
+                            negative: existingNegative,
+                            positiveRight: existingPositiveRight,
+                        }),
                 },
             ]
             : [

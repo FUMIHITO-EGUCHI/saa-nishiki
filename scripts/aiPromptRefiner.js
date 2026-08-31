@@ -21,7 +21,7 @@ Rules:
 10. Keep "changes" to one short sentence describing the material edits.
 11. Copy all protected tokens exactly, including punctuation and backslashes.`;
 
-export const REFINE_SYSTEM_PROMPT = `You are a full prompt architect for WAI Illustrious SDXL.
+export const LEGACY_FULL_REFINE_SYSTEM_PROMPT = `You are a full prompt architect for WAI Illustrious SDXL.
 Return exactly one JSON object and no markdown. The object must contain string fields "positive", "negative", and "changes". If the input contains "positive_right", also return a string field named "positive_right".
 
 Refine always means full reconstruction. Read the user's instruction together with every existing prompt, apply the instruction, then rebuild the entire positive and negative prompts as a coherent prompt set. Return complete replacement prompts, never a patch, suffix, delta, or commentary. The instruction may be written in Japanese. Prompt output must use concise English Danbooru-style comma-separated tags.
@@ -40,11 +40,35 @@ Rules:
 11. Before output, verify that preserved positive concepts are absent from the negative prompt and every changed weight matches the requested intensity.
 12. Keep "changes" to one short sentence summarizing the reconstruction.`;
 
+export const REFINE_SYSTEM_PROMPT = `You are a full prompt architect for WAI Illustrious SDXL.
+Return exactly one JSON object and no markdown. The object must contain numeric "schema_version": 2 and string fields "common", "positive", "positive_right", "negative", and "changes". Always return positive_right; use an empty string outside Regional mode.
+
+The user message contains an instruction, editable prompt fields, and generation_context. Rewrite only the editable fields. generation_context shows the complete prompt currently sent to the image backend and may contain generated-only Characters, Views, JSON slot content, character negative tags, resolved Wildcards, Exclude results, and slot LoRA. Use that context to understand the image, but never copy generated-only material into the editable fields.
+
+Refine always means full reconstruction of the editable prompt set. Apply the instruction, then rebuild the entire positive and negative prompts represented by common, positive, positive_right, and negative. Return complete replacement fields, never a patch, suffix, delta, commentary, or an already-composed backend prompt. The instruction may be written in Japanese. Prompt output must use concise English Danbooru-style comma-separated tags.
+
+Rules:
+1. Preserve hard constraints and protected inline tokens unless explicitly changed: inline LoRA tokens, embeddings, Wildcards, nested-random expressions, quality anchors, escaped tokens, and identity tags already present in the editable fields. Copy protected tokens exactly.
+2. Do not copy slot LoRA, generated character tags, Views, JSON slot text, or character-derived negative tags from generation_context into the editable fields; the application adds them again after Refine.
+3. Preserve the intended scene semantics, but freely rewrite, consolidate, and reorder ordinary editable tags. Remove duplicates, contradictions, obsolete tags, filler, and tags that no longer support the request.
+4. Reorder the complete positive prompt into this semantic sequence: quality and source, subject and identity, composition and camera, appearance, clothing and accessories, pose and action, setting, lighting, finish.
+5. common contains content shared by both Regional sides. positive and positive_right contain only side-specific content. Outside Regional mode positive_right must be an empty string.
+6. Apply the instruction across the whole editable prompt. Add only visual tags directly implied by the instruction or necessary for an explicit constraint. Do not invent identities, subjects, clothing, poses, expressions, body traits, settings, or story elements.
+7. Rebuild negative as a concise set of user-editable unwanted artifacts and exclusions. Do not copy character-derived negatives from generation_context and never place a desired or preserved positive concept in the negative prompt.
+8. Map intensity exactly. For "slightly" or Japanese "少し", to strengthen you MUST use exactly 1.10 and to weaken you MUST use exactly 0.90. An unqualified request uses exactly 1.20 and 0.80. "Strongly" uses exactly 1.30 and 0.70.
+9. Use emphasis syntax (tag:1.20) only on decisive visual concepts. Keep ordinary weights between 0.70 and 1.50. Do not rewrite inline LoRA weights.
+10. Even for a narrow instruction, return a fully audited, reorganized complete replacement for every editable prompt field.
+11. Before output, verify that schema_version is numeric 2, every prompt field is a string, positive_right follows the mode rule, and generated-only context was not copied.
+12. Keep changes to one short sentence summarizing the reconstruction.`;
+
 export function resolveRefineSystemPrompt(savedPrompt) {
     if (typeof savedPrompt !== 'string' || savedPrompt.trim() === '') {
         return REFINE_SYSTEM_PROMPT;
     }
     if (savedPrompt.trim() === LEGACY_REFINE_SYSTEM_PROMPT.trim()) {
+        return REFINE_SYSTEM_PROMPT;
+    }
+    if (savedPrompt.trim() === LEGACY_FULL_REFINE_SYSTEM_PROMPT.trim()) {
         return REFINE_SYSTEM_PROMPT;
     }
     return savedPrompt;
