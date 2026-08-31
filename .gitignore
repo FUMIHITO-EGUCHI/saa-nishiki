@@ -37,3 +37,7 @@ scripts/python/saa-agent/*.png
 /scripts/python/thumb-compare/output/*.txt
 
 data/waiANIMA_v10Base10_thumbs.json
+
+models/tagger/*.onnx
+models/tagger/*_selected_tags.csv
+models/tagger/*_tag_mapping.json
