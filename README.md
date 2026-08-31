@@ -13,6 +13,8 @@ Current release: **v2.8.9-nishiki.1** — based on upstream SAA v2.8.9. See [Rel
 
 Japanese dictionary for the merged danbooru/e621 tag list (~100k entries), localized character and official-work names, and a ja-JP UI.
 
+<img src="examples/nishiki_jp_tag_search.png" width=75%>   
+
 ### AI プロンプトリファイナー / AI Prompt Refiner
 - 入力プロンプトを AI が整形・補強するリファイナー
 - [Ollama](https://ollama.com/) アダプター対応 — 既存の Remote AI に加えてローカル LLM でのリファインが可能
@@ -24,6 +26,8 @@ AI-powered prompt refinement with an Ollama adapter for local LLM inference, in 
 - タグ単位のウェイト調整ポップオーバー、一括ウェイト変更ダイアログ
 
 Chip-based prompt editing with per-tag weight popovers and a batch weight dialog, replacing the plain textboxes.
+
+<img src="examples/nishiki_tag_capsules.png" width=75%>   
 
 ### UI シェル刷新 / UI Shell Overhaul
 - ビューポートレイアウト、ステータスピル、生成進捗表示、ダイアログシェルの新設計
@@ -48,9 +52,9 @@ Fork versions follow `<upstream-version>-nishiki.<generation>`: the base tracks 
 > If you find a character that isn't show on the list but can be generated correctly, please don't hesitate to raise an issue to let me know.       
 >
 > The default thumbList is based on `waiIllustriousSDXL_v160`. There are two alternative thumbList: `waiANIMA_v10Base10` and `waiNSFWIllustrious_v120`. Will download automatically from `HuggingFace` once you have selected it. 
-> Create your own thumbList with [SAA Thumb Generator](https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/scripts/python/thumb-generator/README.md)
+> Create your own thumbList with [SAA Thumb Generator](scripts/python/thumb-generator/README.md)
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/overall01.png" width=75%>   
+<img src="examples/nishiki_overall.png" width=75%>   
 
 | Verified | [ComfyUI](https://github.com/comfyanonymous/ComfyUI)  | [Forge Neo](https://github.com/Haoming02/sd-webui-forge-classic/tree/neo) |
 | --- | --- | --- | 
@@ -72,8 +76,8 @@ Fork versions follow `<upstream-version>-nishiki.<generation>`: the base tracks 
 > 
 > *Online Character Select* [Hugging Face Space](https://huggingface.co/spaces/flagrantia/character_select_saa)             
 >
-> For browser based SAAC, check [README_SAAC.md](https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/README_SAAC.md)           
-> For Python based CLI tool for OpenClaw [SAA Agent](https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/scripts/python/saa-agent/README_HUMAN.md) and [ClawHub](https://clawhub.ai/mirabarukaso/saa-agent)         
+> For browser based SAAC, check [README_SAAC.md](README_SAAC.md)           
+> For Python based CLI tool for OpenClaw [SAA Agent](scripts/python/saa-agent/README_HUMAN.md) and [ClawHub](https://clawhub.ai/mirabarukaso/saa-agent)         
 
 ## thumbList manually download guide
 <details>
@@ -160,7 +164,7 @@ npm install
 > Test and Verified: Anima / Qwen Image / Z Image / Flux / Krea2
 > Supports ComfyUI and Forge neo, NOT support original A1111.         
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/diffusion_models.png" width=25%>
+<img src="examples/diffusion_models.png" width=25%>
 
 <details>
 <summary>Details about Diffusion Models</summary>       
@@ -192,7 +196,7 @@ Forge also supports the `GGUF model`, but the `Diffusion models` use the same `C
 
 | Before | 6x After (SDXL) | Before | 3x After (Flux.2) |
 | --- | --- | --- | --- | 
-| <img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/2025-12-29-031208_1898628601.png" width=256>   |  <img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/2026-01-01-223655_3487267443.png" width=256> | <img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/MiraITU_FLUX2_sample.png" width=256>   |  <img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/MiraITU_FLUX2_sample_upscaled.png" width=256> |
+| <img src="examples/2025-12-29-031208_1898628601.png" width=256>   |  <img src="examples/2026-01-01-223655_3487267443.png" width=256> | <img src="examples/MiraITU_FLUX2_sample.png" width=256>   |  <img src="examples/MiraITU_FLUX2_sample_upscaled.png" width=256> |
 
 <details>
 <summary>Details about MiraITU</summary>       
@@ -207,7 +211,7 @@ And Image Tagger for [Mira](https://github.com/mirabarukaso/ComfyUI_Mira#tagger)
 
 | Settings | Drag and Drop | Flux.2 |
 | --- | --- | --- | 
-| <img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/miraITU01.png" width=256> | <img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/miraITU02.png" width=256>   | <img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/miraITU03.png" width=256>   |
+| <img src="examples/miraITU01.png" width=256> | <img src="examples/miraITU02.png" width=256>   | <img src="examples/miraITU03.png" width=256>   |
 
 The generated results will be affected by different models. The `SDXL` model requires a `tagger` to provide more precise content descriptions, and using an `upscale model` is recommended. Models such as `Flux2`, which allow a `reference latent` to connected, can skip the upscale model and stretch the original image directly. Then, simply use the `Positive Prompt` to configure all tiles consistently.        
 
@@ -227,7 +231,7 @@ Note: Due to limitations of the SDXL model, exceeding 8x magnification will resu
 ## Image Tagger
 Supports [WD@SmilingWolf](https://huggingface.co/SmilingWolf), [CL@cella110n](https://huggingface.co/cella110n/cl_tagger) and [Camie@Camais03](https://huggingface.co/spaces/Camais03/camie-tagger-v2-app) models in ONNX format.             
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/imageTagger.png" width=35%>   
+<img src="examples/imageTagger.png" width=35%>   
 
 <details>
 <summary>Details about Image Tagger</summary>       
@@ -269,7 +273,7 @@ The good news is, you can run `Image tagger` during gegenerate
 </details>
 
 ## ControlNet / IP Adapter
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/controlnet.png" width=35%>   
+<img src="examples/controlnet.png" width=35%>   
 
 <details>
 <summary>Details about ControlNet / IP Adapter</summary>      
@@ -316,7 +320,7 @@ Also support check LoRA info by click the 'i' button in LoRA Slot. And, if there
 
 **To use LoRA in ComfyUI API, you need update your ComfyUI_Mira node to 0.5.6.0 or above**    
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/loraSlot.png" width=45%>   
+<img src="examples/loraSlot.png" width=45%>   
 
 ## ADetailer
 > [!TIP]
@@ -337,7 +341,7 @@ Put your `SAM` models in `ComfyUI\\models\\sams`
 The default ADetailer model list will be updated after the first generation. Simply start generating an image as normal.        
 Put your `ADetailer` models in `sd-webui-forge-neo\\models\\adetailer` or `stable-diffusion-webui\\models\\adetailer`       
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/aDetailer.png" width=35%>   
+<img src="examples/aDetailer.png" width=35%>   
 
 ## Queue Manager
 The queue management system enables you to submit multiple generation tasks, each with their own distinct parameters. Once submitted, the queue automatically begins processing them and removes completed tasks.       
@@ -345,7 +349,7 @@ If an error occurs, or if you manually unchecked `Enable Generation`, the queue 
 You can `delete` or `view details` of tasks within the queue. Deleting the first task in the queue cancels the current generation process.       
 *Recommended that the length of the queue should not exceed 10,000.*         
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/queueManager.png" width=35%>   
+<img src="examples/queueManager.png" width=35%>   
 
 ## JSON/CSV List
 **JSON/CSV list will NOT save into your settings file**
@@ -353,7 +357,7 @@ Support `*.json` and `*.csv` files, just drag and drop (or click `Add` then `Pas
 `__Random__`, randomly selects an item from the list without a seed bound, works for `Single` and `Batch (Random)`  generate mode.          
 `__Enumerate__`, enumerates every item one by one and only works in `Batch (Random)` mode, in `Single` it downgrade to `__Random__`             
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/json-csv.png" width=35%>   
+<img src="examples/json-csv.png" width=35%>   
 
 ## Wildcards    
 Supports `*.txt` wildcard files, copy your wildcards into `resources\app\data\wildcards`      
@@ -371,7 +375,7 @@ In case you didn't like wildcards file or json/csv wildcard, try the following i
 { red | green | blue | blonde } { {long | short} hair | eyes}
 ```
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/wildcards.png" width=35%>   
+<img src="examples/wildcards.png" width=35%>   
 
 ## Regional Condition / Couple 
 > [!TIP]
@@ -387,12 +391,12 @@ Try SAA Regional Condition with only 3 steps:
 `Regional Condition` requires [SD Forge Attention Couple](https://github.com/Haoming02/sd-forge-couple) [latest](https://github.com/Haoming02/sd-forge-couple/commits/main/)    
 
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/regionalCondition.png" width=35%>   
+<img src="examples/regionalCondition.png" width=35%>   
 
 ## Semi-Auto Tag Complete
 Tags credits from [DraconicDragon/dbr-e621-lists-archive/danbooru_e621_merged_2026-04-01_pt20-ia-dd-ed-spc.csv](https://github.com/DraconicDragon/dbr-e621-lists-archive/blob/main/tag-lists/danbooru_e621_merged/README.MD)    
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/tagAutoComplete.png" width=45%>   
+<img src="examples/nishiki_jp_tag_search.png" width=45%>   
 
 <details>
 <summary>Details about Semi-Auto Tag Complete</summary>
@@ -432,7 +436,7 @@ Double click the image to close.
 The `Send` button will override `Common Prompt`, `Negative Prompt`, `Width & Height`, `CFG`, `Setp` and `Seed`.    
 LoRA in `Common Prompt` also works if you have the same one. If you don't like LoRA in prompts, try `Send LoRA to Slot`.      
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/imageInfo.png" width=45%>   
+<img src="examples/imageInfo.png" width=45%>   
 </details>
 
 ## Character List
@@ -445,12 +449,12 @@ LoRA in `Common Prompt` also works if you have the same one. If you don't like L
 
 *Merge/Overwrite/Replace*: So, when you switch settings files, you might find that the favourite lists aren't the same. An options dialogue box will pop up and ask you what you want to do next. It's a little annoying, but it will get better once you have merged all.         
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/favoriteList.png" width=25%>
+<img src="examples/favoriteList.png" width=25%>
 
 ### Preview and Search
 The Character List supports keywords search in both Chinese and English.      
 
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/characterPreview.png" width=45%>
+<img src="examples/characterPreview.png" width=45%>
 
 ## Top buttons and Right Click Menu      
 Top buttons from Left to right: Save Settings, Reload Model List, Refresh page, Right to Left, Theme Switch.     
@@ -460,23 +464,23 @@ Top buttons from Left to right: Save Settings, Reload Model List, Refresh page, 
       
 **Spell Check (English)**    
 Right-click on a word that has a spell check error (a wavy line drawn at the bottom) to see a hint for the corresponding word.     
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/spellCheck.png" width=45%>
+<img src="examples/spellCheck.png" width=45%>
 
 **AI prompt generate test**     
 Right click on `AI prompt` to get AI promot without generate.     
 Once got result from Remote/Local AI, an information overlay will show in screen, switch AI rule to `Last` to keep  the result in later generate.    
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/aiPromptTest.png" width=45%>
+<img src="examples/aiPromptTest.png" width=45%>
 
 **Copy Image/Metadata**     
 Right click on `Gallery` to copy current image or copy the metadata to clipboard.     
 ComfyUI with Image Saver node will output an a1111-like format metadata.      
 Copy image based on convert base64 data back to png, but metadata trimed by chromium core, it's impossible to put them back with chromium API, a C based lib could solve that problem, but it's not worth to do. If you do need the original image, check from the relevant (ComfyUI/WebUI) output folder.      
 For SAAC: Drag and drop image from browser to local folder or `save as` from browser right click.        
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/copyImage.png" width=35%>
+<img src="examples/copyImage.png" width=35%>
 
 **Send LoRA to Slot**     
 Right click on `Common` and `Positive` to send text form LoRA to LoRA Slot.     
-<img src="https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/examples/sendLoRAtoSlot.png" width=35%>
+<img src="examples/sendLoRAtoSlot.png" width=35%>
 </details>
 
 ------
@@ -621,5 +625,5 @@ Upscale Model list is `None` (ComfyUI)
 
 
 ComfyUI/WebUI is busy, cannot run new generation, please try again later.       
-Refer to 5, 6 in [README_SAAC.md](https://github.com/mirabarukaso/character_select_stand_alone_app/blob/main/README_SAAC.md)     
+Refer to 5, 6 in [README_SAAC.md](README_SAAC.md)     
 
