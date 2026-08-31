@@ -320,7 +320,7 @@ Also support check LoRA info by click the 'i' button in LoRA Slot. And, if there
 
 **To use LoRA in ComfyUI API, you need update your ComfyUI_Mira node to 0.5.6.0 or above**    
 
-<img src="examples/loraSlot.png" width=45%>   
+<img src="examples/nishiki_lora_slot.png" width=45%>   
 
 ## ADetailer
 > [!TIP]
@@ -341,7 +341,7 @@ Put your `SAM` models in `ComfyUI\\models\\sams`
 The default ADetailer model list will be updated after the first generation. Simply start generating an image as normal.        
 Put your `ADetailer` models in `sd-webui-forge-neo\\models\\adetailer` or `stable-diffusion-webui\\models\\adetailer`       
 
-<img src="examples/aDetailer.png" width=35%>   
+<img src="examples/nishiki_adetailer.png" width=35%>   
 
 ## Queue Manager
 The queue management system enables you to submit multiple generation tasks, each with their own distinct parameters. Once submitted, the queue automatically begins processing them and removes completed tasks.       
@@ -349,7 +349,7 @@ If an error occurs, or if you manually unchecked `Enable Generation`, the queue 
 You can `delete` or `view details` of tasks within the queue. Deleting the first task in the queue cancels the current generation process.       
 *Recommended that the length of the queue should not exceed 10,000.*         
 
-<img src="examples/queueManager.png" width=35%>   
+<img src="examples/nishiki_queue.png" width=35%>   
 
 ## JSON/CSV List
 **JSON/CSV list will NOT save into your settings file**
@@ -375,7 +375,7 @@ In case you didn't like wildcards file or json/csv wildcard, try the following i
 { red | green | blue | blonde } { {long | short} hair | eyes}
 ```
 
-<img src="examples/wildcards.png" width=35%>   
+<img src="examples/nishiki_wildcards.png" width=35%>   
 
 ## Regional Condition / Couple 
 > [!TIP]
@@ -391,7 +391,7 @@ Try SAA Regional Condition with only 3 steps:
 `Regional Condition` requires [SD Forge Attention Couple](https://github.com/Haoming02/sd-forge-couple) [latest](https://github.com/Haoming02/sd-forge-couple/commits/main/)    
 
 
-<img src="examples/regionalCondition.png" width=35%>   
+<img src="examples/nishiki_regional.png" width=35%>   
 
 ## Semi-Auto Tag Complete
 Tags credits from [DraconicDragon/dbr-e621-lists-archive/danbooru_e621_merged_2026-04-01_pt20-ia-dd-ed-spc.csv](https://github.com/DraconicDragon/dbr-e621-lists-archive/blob/main/tag-lists/danbooru_e621_merged/README.MD)    
@@ -436,7 +436,7 @@ Double click the image to close.
 The `Send` button will override `Common Prompt`, `Negative Prompt`, `Width & Height`, `CFG`, `Setp` and `Seed`.    
 LoRA in `Common Prompt` also works if you have the same one. If you don't like LoRA in prompts, try `Send LoRA to Slot`.      
 
-<img src="examples/imageInfo.png" width=45%>   
+<img src="examples/nishiki_image_info.png" width=45%>   
 </details>
 
 ## Character List
@@ -454,7 +454,7 @@ LoRA in `Common Prompt` also works if you have the same one. If you don't like L
 ### Preview and Search
 The Character List supports keywords search in both Chinese and English.      
 
-<img src="examples/characterPreview.png" width=45%>
+<img src="examples/nishiki_character_select.png" width=45%>
 
 ## Top buttons and Right Click Menu      
 Top buttons from Left to right: Save Settings, Reload Model List, Refresh page, Right to Left, Theme Switch.     
