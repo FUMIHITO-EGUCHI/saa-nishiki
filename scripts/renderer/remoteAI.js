@@ -51,9 +51,12 @@ async function localGenerateWithPrompt(aiOptions = null) {
                 apiUrl: globalThis.ai.local_address.getValue(),
                 userPrompt: globalThis.prompt.ai.getValue(),
                 systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
+                modelMode: globalThis.ai.local_model_mode.getValue(),
+                aiUse: 'preview',
+                promptMode: 'Expand',
                 temperature: globalThis.ai.local_temp.getValue(),
                 n_predict:globalThis.ai.local_n_predict.getValue(),
-                timeout: globalThis.ai.remote_timeout.getValue() * 1000
+                timeout: globalThis.ai.local_timeout.getValue() * 1000
             };
 
         let result;

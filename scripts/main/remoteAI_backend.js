@@ -1,4 +1,9 @@
 import { ipcMain, net } from 'electron';
+import {
+    buildOllamaChatRequest,
+    isOllamaChatUrl,
+    normalizeOllamaChatResponse,
+} from './ollamaSaaAdapter.js';
 
 const CAT = '[ModelAPI]';
 
@@ -66,18 +71,47 @@ function requestRemote(options) {
 
 function requestLocal(options) {
     return new Promise((resolve, reject) => {
-        const { apiUrl, userPrompt, systemPrompt, temperature, n_predict, timeout } = options;
+        const {
+            apiUrl,
+            userPrompt,
+            systemPrompt,
+            temperature,
+            n_predict,
+            timeout,
+            modelMode,
+            aiUse,
+            promptMode,
+            refineSystemPrompt,
+            existingPositive,
+            existingNegative,
+            existingPositiveRight,
+        } = options;
 
-        const requestBody = {
-            temperature: temperature,
-            n_predict: n_predict,
-            cache_prompt: true,
-            stop: ["<|im_end|>"],
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: `${userPrompt};Response in English` }
-            ],
-        };
+        const useOllama = isOllamaChatUrl(apiUrl);
+        const requestBody = useOllama
+            ? buildOllamaChatRequest({
+                mode: modelMode,
+                use: aiUse,
+                promptMode,
+                systemPrompt,
+                refineSystemPrompt,
+                userPrompt,
+                existingPositive,
+                existingNegative,
+                existingPositiveRight,
+                temperature,
+                n_predict,
+            })
+            : {
+                temperature: temperature,
+                n_predict: n_predict,
+                cache_prompt: true,
+                stop: ["<|im_end|>"],
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: `${userPrompt};Response in English` }
+                ],
+            };
         const body = JSON.stringify(requestBody);
 
         let request = net.request({
@@ -98,10 +132,19 @@ function requestLocal(options) {
             response.on('end', () => {
                 if (response.statusCode !== 200) {
                     console.error(`${CAT} HTTP error: ${response.statusCode} - ${responseData}`);
-                    resolve(`Error: HTTP error: ${response.statusCode}`);
+                    return resolve(`Error: HTTP error: ${response.statusCode}`);
                 }
 
-                resolve(responseData);
+                if (useOllama) {
+                    try {
+                        return resolve(JSON.stringify(normalizeOllamaChatResponse(responseData)));
+                    } catch (error) {
+                        console.error(`${CAT} Invalid Ollama response: ${error.message}`);
+                        return resolve('Error: Invalid Ollama response');
+                    }
+                }
+
+                return resolve(responseData);
             })
         })
 
@@ -118,7 +161,7 @@ function requestLocal(options) {
         });
 
         request.on('timeout', () => {
-            req.destroy();
+            request.destroy();
             console.error(`${CAT} Request timed out after ${timeout}ms`);
             resolve(`Error: Request timed out after ${timeout}ms`);
         });
