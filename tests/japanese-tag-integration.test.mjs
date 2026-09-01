@@ -68,3 +68,14 @@ test('normalizes underscore and space variants to the base tag spelling', () => 
   assert.deepEqual(result.rows, [{ tag: 'long_hair', alias: '長い髪' }]);
   assert.equal(result.stats.addedRows, 1);
 });
+
+test('preserves quoted comma aliases from the existing dictionary', () => {
+  const result = mergeGeneralJapaneseAliases({
+    baseText: 'wake_up_girls!,0,100,',
+    existingText: 'wake_up_girls!,"Wake Up, Girls!"',
+    sourceText: 'wake_up_girls!,"Wake Up, Girls!"',
+  });
+
+  assert.deepEqual(result.rows, [{ tag: 'wake_up_girls!', alias: 'Wake Up, Girls!' }]);
+  assert.equal(result.stats.mergedAliasRows, 0);
+});

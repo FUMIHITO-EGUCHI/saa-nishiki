@@ -428,6 +428,29 @@ To apply the `Artist` tag in `Anima Model`, you need to add an `@` symbol at the
 | `Wildcards` | 255 | Wildcards | SAA |
 </details>
 
+### Japanese tag alias integration (maintainers)
+
+`scripts/integrateJapaneseTagAliases.mjs` builds a review candidate from a
+four-column Danbooru/e621 base tag file and a two-column Japanese alias file.
+Only tags whose base group is Danbooru General (`0`) are imported. Artist,
+Copyright, Character, and e621 aliases are not added by this tool; the runtime
+also keeps Artist aliases disabled for Japanese autocomplete.
+
+The base file is the same
+[`danbooru_e621_merged.csv`](https://raw.githubusercontent.com/DominikDoom/a1111-sd-webui-tagcomplete/main/tags/danbooru_e621_merged.csv)
+downloaded by SAA. A suitable Japanese candidate source is
+[`PYU224/tagdb-updater`](https://github.com/PYU224/tagdb-updater), using its
+`dist/danbooru-jp.csv` output.
+
+Example:
+
+```text
+node scripts/integrateJapaneseTagAliases.mjs --base data/danbooru_e621_merged.csv --source danbooru-jp.csv --output danbooru_e621_merged_ja.general-candidates.csv
+```
+
+The output is a candidate file. Run the Japanese review workflow before
+replacing the bundled translation data.
+
 ## Image info
 <details>
 <summary>Drag and drop your image into SAA window, supports Png/Jpeg/Webp.</summary>             

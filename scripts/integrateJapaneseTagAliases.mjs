@@ -57,19 +57,13 @@ function containsJapanese(value) {
   return JAPANESE_CHARACTERS.test(String(value ?? ''));
 }
 
-function splitAliases(value) {
-  return String(value ?? '')
-    .split(',')
-    .map(alias => alias.trim())
-    .filter(Boolean);
-}
-
-function appendAliases(row, aliases) {
-  const existingAliases = splitAliases(row.alias);
-  const known = new Set(existingAliases);
-  const additions = aliases.filter(alias => !known.has(alias));
-  if (!additions.length) return false;
-  row.alias = [...existingAliases, ...additions].join(',');
+function appendAlias(row, alias) {
+  const incoming = String(alias ?? '').trim();
+  if (!incoming) return false;
+  const existingText = String(row.alias ?? '').trim();
+  const existingAliases = existingText.split(',').map(value => value.trim());
+  if (existingText === incoming || existingAliases.includes(incoming)) return false;
+  row.alias = existingText ? `${existingText},${incoming}` : incoming;
   return true;
 }
 
@@ -83,10 +77,7 @@ export function mergeGeneralJapaneseAliases({ baseText, existingText = '', sourc
   for (const row of parseTagRows(existingText)) {
     const key = normalizeTagKey(row.tag);
     const existing = rowsByKey.get(key);
-    if (existing) {
-      appendAliases(existing, splitAliases(row.alias));
-      continue;
-    }
+    if (existing) continue;
     const preserved = { tag: row.tag, alias: row.alias };
     rows.push(preserved);
     rowsByKey.set(key, preserved);
@@ -124,7 +115,7 @@ export function mergeGeneralJapaneseAliases({ baseText, existingText = '', sourc
     const key = normalizeTagKey(baseRow.tag);
     const existing = rowsByKey.get(key);
     if (existing) {
-      if (appendAliases(existing, splitAliases(sourceRow.alias))) stats.mergedAliasRows += 1;
+      if (appendAlias(existing, sourceRow.alias)) stats.mergedAliasRows += 1;
       continue;
     }
     const added = { tag: baseRow.tag, alias: sourceRow.alias };
