@@ -8,7 +8,6 @@ import {
     excludedTagSet,
     expandAll,
     handleChipKey,
-    insertCapsules,
     isVariablePlan,
     moveCapsule,
     normalizeBatch,
@@ -126,14 +125,8 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     addButton.appendChild(createIcon('plus', 12));
     const addButtonText = el('span', 'tag-capsule-add-text');
     addButton.appendChild(addButtonText);
-    const addInput = el('input', 'tag-capsule-add-input');
-    addInput.type = 'text';
-    addInput.autocomplete = 'off';
-    addInput.spellcheck = false;
-    addInput.hidden = true;
-    addInput.tabIndex = -1;
     const addSlot = el('span', 'tag-capsule-add-slot');
-    addSlot.append(addButton, addInput);
+    addSlot.append(addButton);
     chips.appendChild(addSlot);
     view.appendChild(chips);
 
@@ -178,8 +171,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         capsuleButton.setAttribute('aria-label', text('tag_ui_view_capsules'));
         addButtonText.textContent = text('tag_ui_add_tag');
         addButton.setAttribute('aria-label', text('tag_ui_add_tag'));
-        addInput.setAttribute('aria-label', text('tag_ui_add_tag'));
-        addInput.placeholder = text('tag_ui_add_placeholder');
         batchButtonText.textContent = text('tag_ui_batch_weights');
         chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
         renderFooter();
@@ -247,7 +238,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         const chipNodes = chips.querySelectorAll(':scope > .tag-capsule-chip');
         focusIndex = Math.max(0, Math.min(capsules.length, focusIndex));
         chipNodes.forEach((chip, index) => { chip.tabIndex = index === focusIndex ? 0 : -1; });
-        addButton.tabIndex = focusIndex === capsules.length && addInput.hidden ? 0 : -1;
+        addButton.tabIndex = focusIndex === capsules.length ? 0 : -1;
     }
 
     function render() {
@@ -293,7 +284,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             if (focus) focusChip(0);
         } else {
             getWeightPopover().close();
-            hideAddInput({ commit: true });
             writeCurrentText();
             mode = 'string';
             relativeContainer.hidden = false;
@@ -305,56 +295,19 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         onChange?.(api);
     }
 
-    // ---------------------------------------------------------------- add input
-    function showAddInput(initial = '') {
-        addButton.hidden = true;
-        addInput.hidden = false;
-        addInput.tabIndex = 0;
-        addInput.value = initial;
-        addInput.focus();
-        addInput.setSelectionRange(addInput.value.length, addInput.value.length);
+    // ---------------------------------------------------------------- add tag → selection modal
+    // The "+ Add tag" button routes to the same tag selection modal as "Choose tags"
+    // (tagSelectionModal.js wires the trigger on this wrapper before this setup runs).
+    // The modal writes into the hidden textarea, whose input event syncs the capsules.
+    function openTagModal() {
+        if (!chooseButton) return;
+        const length = textbox.value.length;
+        try { textbox.setSelectionRange(length, length); } catch { /* non-focusable state */ }
+        chooseButton.click();
     }
 
-    function hideAddInput({ commit }) {
-        if (addInput.hidden) return;
-        const value = addInput.value.trim();
-        addInput.hidden = true;
-        addInput.tabIndex = -1;
-        addButton.hidden = false;
-        addInput.value = '';
-        if (commit && value) {
-            commitCapsules(insertCapsules(capsules, value.split(/[,\n]/), capsules.length));
-        }
-        updateRoving();
-    }
-
-    addButton.addEventListener('click', () => { focusIndex = capsules.length; showAddInput(); });
+    addButton.addEventListener('click', () => { focusIndex = capsules.length; openTagModal(); });
     addButton.addEventListener('focus', () => { focusIndex = capsules.length; updateRoving(); });
-    addInput.addEventListener('keydown', event => {
-        if (event.isComposing || event.keyCode === 229) return;
-        if (event.key === 'Enter' || event.key === ',') {
-            event.preventDefault();
-            const value = addInput.value.trim();
-            if (!value) {
-                hideAddInput({ commit: false });
-                capsuleButton.focus();
-                return;
-            }
-            hideAddInput({ commit: true });
-            focusIndex = capsules.length;
-            showAddInput();
-        } else if (event.key === 'Escape') {
-            event.preventDefault();
-            event.stopPropagation();
-            hideAddInput({ commit: false });
-            focusChip(Math.max(0, capsules.length - 1));
-        } else if (event.key === 'Backspace' && addInput.value === '' && capsules.length > 0) {
-            event.preventDefault();
-            hideAddInput({ commit: false });
-            focusChip(capsules.length - 1);
-        }
-    });
-    addInput.addEventListener('blur', () => hideAddInput({ commit: true }));
 
     // ---------------------------------------------------------------- chip events
     function chipIndexOf(target) {
@@ -405,7 +358,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     });
 
     chips.addEventListener('keydown', event => {
-        if (event.target === addInput) return;
         if (event.isComposing || event.keyCode === 229) return;
         const onAdd = event.target === addButton;
         const state = { index: onAdd ? capsules.length : focusIndex, count: capsules.length };
@@ -421,12 +373,9 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
                 openPopover(result.index);
                 break;
             case 'add':
-                focusIndex = capsules.length;
-                showAddInput();
-                break;
             case 'type':
                 focusIndex = capsules.length;
-                showAddInput(event.key);
+                openTagModal();
                 break;
             case 'delete':
                 deleteAt(state.index);

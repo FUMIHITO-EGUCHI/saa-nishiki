@@ -74,6 +74,11 @@ export const TAG_UI_DEFAULTS = Object.freeze({
     tag_ui_fp_empty: '(empty)',
     tag_ui_modal_note: 'Weights and batch are not set here',
     tag_ui_modal_hint: '↑↓ move · Space select · Enter apply',
+    tag_ui_fav_only: 'Favorites only',
+    tag_ui_fav_add: 'Add {0} to favorites',
+    tag_ui_fav_remove: 'Remove {0} from favorites',
+    tag_ui_modal_favorites_prompt: 'Showing favorites. Type to search all tags; Enter adds unknown text as a new tag.',
+    tag_ui_modal_search_prompt: 'Enter a tag or character name to search. Enter adds unknown text as a new tag.',
 });
 
 export function formatText(template, args = []) {

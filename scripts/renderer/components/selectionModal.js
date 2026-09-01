@@ -48,6 +48,7 @@ export function createSelectionModal({
     optionLimit = DEFAULT_LIMIT,
     emptyMessage = 'No matching items.',
     searchPrompt = 'Enter a search term to find items.',
+    allowFreeInput = false,
     onApply = null,
     onOpen = null,
     onClose = null,
@@ -99,6 +100,12 @@ export function createSelectionModal({
     attributeSelect.setAttribute('aria-label', 'Attribute');
     attributeLabel.appendChild(attributeSelect);
     toolbar.appendChild(attributeLabel);
+
+    const favOnlyButton = createElement('button', 'selection-modal-favonly', '★');
+    favOnlyButton.type = 'button';
+    favOnlyButton.hidden = true;
+    favOnlyButton.setAttribute('aria-pressed', 'false');
+    toolbar.appendChild(favOnlyButton);
     dialog.appendChild(toolbar);
 
     const selectedSection = createElement('section', 'selection-modal-selected');
@@ -143,7 +150,20 @@ export function createSelectionModal({
     let fallbackFocus = null;
     let requestGeneration = 0;
     let searchTimer = null;
-    let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave };
+    let favOnly = false;
+    let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, favorites: null };
+
+    function isFavoriteOption(option) {
+        return Boolean(activeConfig.favorites?.isFavorite?.(optionKey(option)));
+    }
+
+    function renderFavOnlyButton() {
+        favOnlyButton.hidden = !activeConfig.favorites;
+        favOnlyButton.classList.toggle('is-on', favOnly);
+        favOnlyButton.setAttribute('aria-pressed', String(favOnly));
+        favOnlyButton.title = tagText('tag_ui_fav_only');
+        favOnlyButton.setAttribute('aria-label', tagText('tag_ui_fav_only'));
+    }
 
     function isOpen() {
         return !overlay.hidden;
@@ -222,11 +242,19 @@ export function createSelectionModal({
     }
 
     function renderOptions() {
-        const filteredOptions = filterSelectionOptions(currentOptions, {
+        let filteredOptions = filterSelectionOptions(currentOptions, {
             query: searchInput.value,
             category: categorySelect.value,
             attribute: attributeSelect.value,
         });
+        if (activeConfig.favorites) {
+            if (favOnly) filteredOptions = filteredOptions.filter(option => isFavoriteOption(option));
+            // stable sort: favorites first, source order preserved otherwise
+            filteredOptions = filteredOptions
+                .map((option, index) => ({ option, index, fav: isFavoriteOption(option) ? 0 : 1 }))
+                .sort((a, b) => a.fav - b.fav || a.index - b.index)
+                .map(entry => entry.option);
+        }
         const limited = limitSelectionOptions(filteredOptions, optionLimit);
         visibleOptions = limited.items;
         listbox.replaceChildren();
@@ -238,8 +266,23 @@ export function createSelectionModal({
             item.setAttribute('aria-selected', String(selected.has(optionKey(option))));
             item.dataset.index = String(index);
             item.dataset.key = optionKey(option);
-            item.appendChild(createElement('span', 'selection-modal-option-label', optionLabel(option)));
+            const labelSpan = createElement('span', 'selection-modal-option-label', optionLabel(option));
+            if (option.description) {
+                labelSpan.appendChild(createElement('span', 'selection-modal-option-desc', ` ${option.description}`));
+            }
+            item.appendChild(labelSpan);
             if (option.category) item.appendChild(createElement('span', 'selection-modal-option-category', option.category));
+            if (activeConfig.favorites) {
+                const favButton = createElement('button', 'selection-modal-option-fav');
+                favButton.type = 'button';
+                favButton.tabIndex = -1;
+                const isFav = isFavoriteOption(option);
+                favButton.classList.toggle('is-fav', isFav);
+                favButton.textContent = isFav ? '★' : '☆';
+                favButton.title = tagText(isFav ? 'tag_ui_fav_remove' : 'tag_ui_fav_add', optionLabel(option));
+                favButton.setAttribute('aria-label', favButton.title);
+                item.appendChild(favButton);
+            }
             item.addEventListener('mouseenter', () => activeConfig.onOptionHover?.(option, item));
             item.addEventListener('mouseleave', () => activeConfig.onOptionLeave?.(option, item));
             listbox.appendChild(item);
@@ -349,19 +392,47 @@ export function createSelectionModal({
             if (activeIndex < 0 && visibleOptions.length > 0) activeIndex = 0;
             updateActiveDescendant();
         } else if (event.key === 'Enter') {
+            if (event.isComposing || event.keyCode === 229) return;
             event.preventDefault();
-            if (visibleOptions.length === 1) {
+            const query = searchInput.value.trim();
+            const queryKey = normalizeSelectionKey(query);
+            const exactIndex = visibleOptions.findIndex(option => optionKey(option) === queryKey);
+            if (exactIndex >= 0) {
+                activeIndex = exactIndex;
+                toggleActive();
+            } else if (visibleOptions.length === 1) {
                 activeIndex = 0;
                 toggleActive();
+            } else if (allowFreeInput && queryKey) {
+                // unknown text becomes a free-form tag in the selection
+                selectedOptions = selectOption(selectedOptions, { key: query, value: query, label: query }, mode);
+                renderSelected();
+                renderOptions();
+                searchInput.value = '';
+                scheduleRefresh();
             }
         }
+    });
+    favOnlyButton.addEventListener('click', () => {
+        favOnly = !favOnly;
+        renderFavOnlyButton();
+        renderOptions();
     });
     categorySelect.addEventListener('change', scheduleRefresh);
     attributeSelect.addEventListener('change', scheduleRefresh);
     listbox.addEventListener('click', event => {
         const item = event.target.closest('[role="option"]');
         if (!item) return;
-        activeIndex = Number.parseInt(item.dataset.index, 10);
+        const index = Number.parseInt(item.dataset.index, 10);
+        if (event.target.closest('.selection-modal-option-fav')) {
+            const option = visibleOptions[index];
+            if (option && activeConfig.favorites?.toggle) {
+                activeConfig.favorites.toggle(option);
+                renderOptions();
+            }
+            return;
+        }
+        activeIndex = index;
         toggleActive();
     });
     listbox.addEventListener('keydown', event => {
@@ -399,6 +470,7 @@ export function createSelectionModal({
             attributes = attributeOptions,
             modalTitle = title,
             dynamicLoadOptions = loadOptions,
+            favorites = null,
         } = {}) {
             lastTrigger = trigger;
             fallbackFocus = fallback;
@@ -408,7 +480,10 @@ export function createSelectionModal({
                 onOptionHover,
                 onOptionLeave,
                 loadOptions: dynamicLoadOptions,
+                favorites: favorites && typeof favorites.isFavorite === 'function' ? favorites : null,
             };
+            favOnly = false;
+            renderFavOnlyButton();
             heading.textContent = modalTitle;
             setFilterOptions(categorySelect, categories, 'All categories');
             setFilterOptions(attributeSelect, attributes, 'All attributes');

@@ -348,7 +348,7 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
         globalThis.prompt.positive_right,
         globalThis.prompt.negative,
         globalThis.prompt.exclude,
-    ]);
+    ], ['common', 'positive', 'positive_right', 'negative', 'exclude']);
     globalThis.prompt.tagCapsuleFields = setupTagCapsuleFields([
         globalThis.prompt.common,
         globalThis.prompt.positive,

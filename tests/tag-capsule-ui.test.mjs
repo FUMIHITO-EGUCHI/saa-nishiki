@@ -61,7 +61,9 @@ test('chip row implements roving tabindex, keyboard reducer actions, drag reorde
   assert.match(field, /chip\.tabIndex = index === focusIndex \? 0 : -1/);
   assert.match(field, /addEventListener\('dragstart'/);
   assert.match(field, /addEventListener\('drop'/);
-  assert.match(field, /event\.key === 'Enter' \|\| event\.key === ','/);
+  assert.match(field, /function openTagModal/, 'add-tag routes to the tag selection modal');
+  assert.match(field, /chooseButton\.click\(\)/, 'add-tag reuses the Choose tags trigger');
+  assert.doesNotMatch(field, /tag-capsule-add-input/, 'inline add input removed');
   assert.match(field, /event\.isComposing \|\| event\.keyCode === 229/);
   assert.match(chip, /draggable = true/);
   assert.match(chip, /setAttribute\('aria-label'/);

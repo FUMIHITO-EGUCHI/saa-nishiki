@@ -148,6 +148,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     controlnet_slot: [],
 
     fav_characters: [],
+    fav_tags: { positive: [], negative: [] },
 
     generate_auto_start: true,
     // 4:3:2 = 9 number inputs: views 0-3, characters 4-6, regional characters 7-8
@@ -173,6 +174,7 @@ export const SECTION_KEYS = Object.freeze({
         'tag_assist', 'wildcard_random',
         'keep_gallery', 'scroll_to_last', 'generate_auto_start',
         'fav_characters',
+        'fav_tags',
         'preset_current',
     ]),
     prompt: Object.freeze([
