@@ -85,6 +85,8 @@ function requestLocal(options) {
             existingPositive,
             existingNegative,
             existingPositiveRight,
+            editorFields,
+            generationContext,
         } = options;
 
         const useOllama = isOllamaChatUrl(apiUrl);
@@ -99,6 +101,8 @@ function requestLocal(options) {
                 existingPositive,
                 existingNegative,
                 existingPositiveRight,
+                editorFields,
+                generationContext,
                 temperature,
                 n_predict,
             })

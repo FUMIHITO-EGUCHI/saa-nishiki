@@ -2,8 +2,10 @@ import {
     PROMPT_MODE_REFINE,
     REFINE_SYSTEM_PROMPT,
     buildRefineUserContent,
+    buildRefineV2UserContent,
     normalizePromptMode,
 } from '../aiPromptRefiner.js';
+import { isOllamaChatUrl } from '../shared/ollamaUrl.js';
 
 const SMALL_MODEL = 'gemma4-12b-uncensored-comfy:latest';
 const LARGE_MODEL = 'hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M';
@@ -43,6 +45,8 @@ export function buildOllamaChatRequest({
     existingPositive = '',
     existingNegative = '',
     existingPositiveRight = '',
+    editorFields = null,
+    generationContext = null,
     temperature = 0.7,
     n_predict = 768,
 } = {}) {
@@ -58,6 +62,10 @@ export function buildOllamaChatRequest({
         : 768;
 
     const useRefine = normalizePromptMode(promptMode) === PROMPT_MODE_REFINE;
+    const useRefineV2 = useRefine
+        && editorFields && typeof editorFields === 'object'
+        && generationContext && typeof generationContext === 'object'
+        && /schema_version[\s\S]*?2/i.test(refineSystemPrompt || REFINE_SYSTEM_PROMPT);
     const request = {
         model: resolveSaaOllamaModel({ mode, use }),
         messages: useRefine
@@ -65,12 +73,14 @@ export function buildOllamaChatRequest({
                 { role: 'system', content: refineSystemPrompt || REFINE_SYSTEM_PROMPT },
                 {
                     role: 'user',
-                    content: buildRefineUserContent({
-                        instruction: userPrompt,
-                        positive: existingPositive,
-                        negative: existingNegative,
-                        positiveRight: existingPositiveRight,
-                    }),
+                    content: useRefineV2
+                        ? buildRefineV2UserContent({ instruction: userPrompt, editorFields, generationContext })
+                        : buildRefineUserContent({
+                            instruction: userPrompt,
+                            positive: existingPositive,
+                            negative: existingNegative,
+                            positiveRight: existingPositiveRight,
+                        }),
                 },
             ]
             : [
@@ -112,16 +122,4 @@ export function normalizeOllamaChatResponse(responseText) {
     };
 }
 
-export function isOllamaChatUrl(apiUrl) {
-    try {
-        const url = new URL(apiUrl);
-        return url.protocol === 'http:'
-            && (url.hostname === '127.0.0.1' || url.hostname === 'localhost' || url.hostname === '[::1]')
-            && url.port === '11434'
-            && url.pathname.replace(/\/$/, '') === '/api/chat';
-    } catch {
-        return false;
-    }
-}
-
-export { LARGE_MODEL, SMALL_MODEL };
+export { isOllamaChatUrl, LARGE_MODEL, SMALL_MODEL };
