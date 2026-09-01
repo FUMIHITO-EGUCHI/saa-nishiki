@@ -131,7 +131,12 @@ export function applySectionsData(sectionData = {}) {
     }
 
     for (const section of sections) autosave?.markDirty(section);
-    document.dispatchEvent(new CustomEvent('saa-settings-applied', { detail: { sections } }));
+    document.dispatchEvent(new CustomEvent('saa-settings-applied', {
+        detail: {
+            section: sections.length === 1 ? sections[0] : null,
+            sections,
+        },
+    }));
     return true;
 }
 

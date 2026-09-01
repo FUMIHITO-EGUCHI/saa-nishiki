@@ -55,7 +55,14 @@ test('settings writes become one atomic multi-section history entry and restore 
     assert.equal(updateCount, 1);
     assert.equal(slotFlushCount, 0);
     assert.deepEqual(globalThis.settingsAutosave.pending().sort(), ['generation', 'prompt']);
-    assert.deepEqual(dispatched.filter(event => event.type === 'saa-settings-applied').at(-1).detail.sections.sort(), ['generation', 'prompt']);
+    const applied = dispatched.filter(event => event.type === 'saa-settings-applied').at(-1).detail;
+    assert.equal(applied.section, null);
+    assert.deepEqual(applied.sections.sort(), ['generation', 'prompt']);
+
+    persistence.applySectionData('prompt', { api_prompt: 'single-section' });
+    const singleApplied = dispatched.filter(event => event.type === 'saa-settings-applied').at(-1).detail;
+    assert.equal(singleApplied.section, 'prompt');
+    assert.deepEqual(singleApplied.sections, ['prompt']);
     await persistence.flush();
   } finally {
     Object.assign(globalThis, original);
