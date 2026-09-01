@@ -457,12 +457,21 @@ export function setupImageUploadOverlay() {
         sendButton.className = 'send-metadata';
         sendButton.textContent = LANG.image_info_send_tags;
         
-        sendButton.addEventListener('click', () => {
+        sendButton.addEventListener('click', async () => {
             const parsedMetadata = globalThis.currentImageMetadata;
-            
-            sendPrompt(parsedMetadata);
-            globalThis.generate.landscape.setValue(false);
-            globalThis.ai.ai_select.setValue(0);
+            const applyMetadata = () => {
+                sendPrompt(parsedMetadata);
+                globalThis.generate.landscape.setValue(false);
+                globalThis.ai.ai_select.setValue(0);
+            };
+            if (globalThis.settingsPersistence?.runEditTransaction) {
+                await globalThis.settingsPersistence.runEditTransaction({
+                    source: 'image-metadata',
+                    sections: ['prompt', 'generation'],
+                }, applyMetadata);
+            } else {
+                applyMetadata();
+            }
             
             sendButton.textContent = LANG.image_info_send_tags_sent;
             setTimeout(() => {
@@ -537,9 +546,9 @@ export function setupImageUploadOverlay() {
         const allLora = loraMatches.join('\n');
         const allPrompt = extractedData.positivePrompt.replaceAll(loraRegex, '').replaceAll(/,\s*,/g, ',').replaceAll(/(^,\s*)|(\s*,$)/g, '').trim(); //NOSONAR S8786
 
-        globalThis.prompt.common.setValue(allPrompt || defaultPositivePrompt);
-        globalThis.prompt.positive.setValue(allLora);
-        globalThis.prompt.negative.setValue(extractedData.negativePrompt);    
+        globalThis.prompt.common.commitValue(allPrompt || defaultPositivePrompt);
+        globalThis.prompt.positive.commitValue(allLora);
+        globalThis.prompt.negative.commitValue(extractedData.negativePrompt);
         globalThis.generate.seed.setValue(extractedData.seed);
         globalThis.generate.cfg.setValue(extractedData.cfgScale);
         globalThis.generate.step.setValue(extractedData.steps);

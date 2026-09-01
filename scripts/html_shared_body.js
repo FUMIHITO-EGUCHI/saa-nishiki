@@ -28,6 +28,12 @@ export const sharedBodyHTML = `
         <div id="global-settings-right">
           <div class="header-status" id="header-status"></div>
 
+          <div class="edit-history-controls" role="group" aria-label="Edit history">
+            <button type="button" id="edit-history-undo" class="edit-history-button" disabled></button>
+            <button type="button" id="edit-history-redo" class="edit-history-button" disabled></button>
+            <span id="edit-history-status" class="edit-history-status" role="status" aria-live="polite"></span>
+          </div>
+
           <div class="global-settings-right-to-left">
             <button id="global-settings-swap-layout-toggle" title="Right to left" >
               <img id="global-settings-swap-layout-icon" src="scripts/svg/swap.svg" alt="Right to left" fill="currentColor">

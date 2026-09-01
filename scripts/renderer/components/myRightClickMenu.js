@@ -514,24 +514,24 @@ function registerDefaultMenuItems() {
     // Common
     globalThis.rightClick.append('lora_common_to_slot', LANG.right_menu_send_lora_to_slot, {
         selector: '.prompt-common',
-        func: (element) => {
+        func: (element) => runSendLoraTransaction(() => {
             const textPrompt = prompt_sendLoRAtoSlot(element, '.myTextbox-prompt-common-textarea ')
             if(textPrompt) {
-                globalThis.prompt.common.setValue(textPrompt.trim());
+                globalThis.prompt.common.commitValue(textPrompt.trim());
                 globalThis.collapsedTabs.lora.setCollapsed(false);
             }
-        }
+        })
     });
     // Positive
     globalThis.rightClick.append('lora_positive_to_slot', LANG.right_menu_send_lora_to_slot, {
         selector: '.prompt-positive',
-        func: (element) => {
+        func: (element) => runSendLoraTransaction(() => {
             const textPrompt = prompt_sendLoRAtoSlot(element, '.myTextbox-prompt-positive-textarea ')
             if(textPrompt){
-                globalThis.prompt.positive.setValue(textPrompt.trim());
+                globalThis.prompt.positive.commitValue(textPrompt.trim());
                 globalThis.collapsedTabs.lora.setCollapsed(false);
             }
-        }
+        })
     });
 
     // AI prompt
@@ -567,6 +567,16 @@ function registerDefaultMenuItems() {
                 384, 'center', 'left', null, 'Info');
         });
     }
+}
+
+function runSendLoraTransaction(mutation) {
+    if (globalThis.settingsPersistence?.runEditTransaction) {
+        return globalThis.settingsPersistence.runEditTransaction({
+            source: 'send-lora-to-slot',
+            sections: ['prompt', 'lora'],
+        }, mutation);
+    }
+    return mutation();
 }
 
 function menu_copyImage(element) {

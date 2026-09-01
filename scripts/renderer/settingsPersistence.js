@@ -194,34 +194,38 @@ function mountPresetControls() {
     }
 }
 
+function watchSectionInteraction(container, section, source) {
+    let interaction = null;
+    const begin = () => {
+        if (interaction || !editHistory) return;
+        interaction = editHistory.beginTransaction({ source, sections: [section] });
+    };
+    const commit = () => {
+        if (!interaction) return;
+        editHistory?.commitTransaction(interaction);
+        interaction = null;
+    };
+    container.addEventListener('pointerdown', begin, true);
+    container.addEventListener('click', commit);
+    container.addEventListener('keydown', event => {
+        if (event.isComposing || event.keyCode === 229) return;
+        begin();
+    }, true);
+    container.addEventListener('keyup', () => queueMicrotask(commit));
+    container.addEventListener('beforeinput', () => {
+        if (interaction || !editHistory) return;
+        editHistory.runTransaction({ source, sections: [section], mergeKey: `${source}:input` }, () => {})
+            .catch(error => console.error(CAT, `${source} history capture failed`, error));
+    }, true);
+    container.addEventListener('pointercancel', () => queueMicrotask(commit));
+    document.addEventListener('pointerup', () => setTimeout(commit, 0));
+}
+
 function watchSlots() {
     for (const [section, selector] of Object.entries(SLOT_CONTAINERS)) {
         const container = document.querySelector(selector);
         if (!container) continue;
-        let interaction = null;
-        const begin = source => {
-            if (interaction || !editHistory) return;
-            interaction = editHistory.beginTransaction({ source, sections: [section] });
-        };
-        const commit = () => {
-            if (!interaction) return;
-            editHistory?.commitTransaction(interaction);
-            interaction = null;
-        };
-        container.addEventListener('pointerdown', () => begin(`slot:${section}`), true);
-        container.addEventListener('click', () => commit());
-        container.addEventListener('keydown', event => {
-            if (event.isComposing || event.keyCode === 229) return;
-            begin(`slot:${section}`);
-        }, true);
-        container.addEventListener('keyup', () => queueMicrotask(commit));
-        container.addEventListener('beforeinput', () => {
-            if (interaction || !editHistory) return;
-            editHistory.runTransaction({ source: `slot:${section}`, sections: [section], mergeKey: `slot:${section}:input` }, () => {})
-                .catch(error => console.error(CAT, 'slot history capture failed', error));
-        }, true);
-        container.addEventListener('pointercancel', () => queueMicrotask(commit));
-        document.addEventListener('pointerup', () => setTimeout(commit, 0));
+        watchSectionInteraction(container, section, `slot:${section}`);
         const mark = () => autosave?.markDirty(section);
         for (const type of ['input', 'change', 'click']) container.addEventListener(type, mark);
         new MutationObserver(mark).observe(container, { childList: true, subtree: true });
@@ -229,6 +233,7 @@ function watchSlots() {
     for (const selector of ['.dropdown-view', '.dropdown-character', '.dropdown-character-regional']) {
         const container = document.querySelector(selector);
         if (!container) continue;
+        watchSectionInteraction(container, 'prompt', 'prompt-dropdown');
         const mark = () => autosave?.markDirty('prompt');
         container.addEventListener('change', mark);
         container.addEventListener('input', mark);

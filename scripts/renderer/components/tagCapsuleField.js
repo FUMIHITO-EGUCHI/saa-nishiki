@@ -553,6 +553,10 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         getCapsules: () => capsules.map(capsule => ({ ...capsule, weightPlan: { ...capsule.weightPlan } })),
         getPlans: () => serializePlans(plans),
         getBatch: () => ({ ...batch }),
+        focusFromHistory: (capsuleId, fallbackIndex = 0) => {
+            const index = capsules.findIndex(capsule => capsule.id === capsuleId);
+            focusChip(index >= 0 ? index : Math.max(0, Math.min(capsules.length, fallbackIndex)));
+        },
         setPlans: entries => {
             plans = parsePlans(entries);
             syncFromText();

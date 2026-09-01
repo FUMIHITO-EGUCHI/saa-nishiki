@@ -17,6 +17,8 @@ const ICON_PATHS = Object.freeze({
     chevronDown: ['M4 6l4 4 4-4'],
     minus: ['M3 8h10'],
     lock: ['M5.5 7V5a2.5 2.5 0 0 1 5 0v2'],
+    undo: ['M6 5L3 8l3 3', 'M3 8h6a4 4 0 0 1 4 4'],
+    redo: ['M10 5l3 3-3 3', 'M13 8H7a4 4 0 0 0-4 4'],
 });
 
 export function createIcon(name, size = 14) {
