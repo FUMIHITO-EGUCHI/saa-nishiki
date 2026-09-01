@@ -91,7 +91,8 @@ export function createEditHistory({
             && previous?.mergeKey === entry.mergeKey
             && previous.source === entry.source
             && entry.timestamp - previous.timestamp <= mergeWindowMs
-            && same(previous.sections, entry.sections);
+            && same(previous.sections, entry.sections)
+            && same(previous.focusAfter, entry.focusBefore);
         if (mergeable) {
             undoBytes -= previous.bytes;
             previous.after = entry.after;
@@ -125,16 +126,14 @@ export function createEditHistory({
         });
     }
 
-    async function runTransaction(options = {}, mutation = () => {}) {
-        if (typeof mutation !== 'function') throw new TypeError('runTransaction: mutation must be a function');
-        if (suspended > 0) return mutation();
-
+    function beginTransaction(options = {}) {
+        if (suspended > 0) return null;
         const sections = normalizedSections(options.sections);
-        if (sections.length === 0) return mutation();
+        if (sections.length === 0) return null;
 
         if (active) {
             addSections(active, sections);
-            return mutation();
+            return { transaction: active, owner: false };
         }
 
         const transaction = {
@@ -146,11 +145,32 @@ export function createEditHistory({
         };
         active = transaction;
         addSections(transaction, sections);
+        return { transaction, owner: true };
+    }
+
+    function commitTransaction(token) {
+        if (!token?.owner) return false;
+        if (active !== token.transaction) return false;
+        active = null;
+        return finish(token.transaction);
+    }
+
+    async function runTransaction(options = {}, mutation = () => {}) {
+        if (typeof mutation !== 'function') throw new TypeError('runTransaction: mutation must be a function');
+        if (suspended > 0) return mutation();
+
+        const sections = normalizedSections(options.sections);
+        if (sections.length === 0) return mutation();
+        if (active) {
+            addSections(active, sections);
+            return mutation();
+        }
+
+        const token = beginTransaction(options);
         try {
             return await mutation();
         } finally {
-            active = null;
-            finish(transaction);
+            commitTransaction(token);
         }
     }
 
@@ -186,6 +206,8 @@ export function createEditHistory({
     }
 
     return {
+        beginTransaction,
+        commitTransaction,
         runTransaction,
         suspendRecording,
         undo: () => travel(undoStack, redoStack, 'undo'),

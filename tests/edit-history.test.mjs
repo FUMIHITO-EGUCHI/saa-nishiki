@@ -67,6 +67,40 @@ test('coalesces compatible typing while preserving the earliest before state', a
   assert.equal(state.prompt.text, 'abc');
 });
 
+test('explicit transactions span separate UI events and absorb nested setting writes', async () => {
+  const { state, history } = fixture();
+
+  const token = history.beginTransaction({ source: 'slot', sections: ['prompt'] });
+  state.prompt.text = 'pressed';
+  await Promise.resolve();
+  await history.runTransaction({ source: 'setting', sections: ['generation'] }, () => {
+    state.generation.seed = 9;
+  });
+  state.prompt.text = 'released';
+  history.commitTransaction(token);
+
+  assert.equal(history.undoCount(), 1);
+  await history.undo();
+  assert.deepEqual(state, { prompt: { text: 'a' }, generation: { seed: 1 } });
+});
+
+test('does not coalesce typing after the selection moved unexpectedly', async () => {
+  const { state, focus, history, tick } = fixture({ mergeWindowMs: 500 });
+  focus.value = { field: 'positive', start: 1, end: 1 };
+  await history.runTransaction({ source: 'input', sections: ['prompt'], mergeKey: 'prompt:positive:insertText' }, () => {
+    state.prompt.text = 'ab';
+    focus.value = { field: 'positive', start: 2, end: 2 };
+  });
+  tick(10);
+  focus.value = { field: 'positive', start: 0, end: 0 };
+  await history.runTransaction({ source: 'input', sections: ['prompt'], mergeKey: 'prompt:positive:insertText' }, () => {
+    state.prompt.text = 'xab';
+    focus.value = { field: 'positive', start: 1, end: 1 };
+  });
+
+  assert.equal(history.undoCount(), 2);
+});
+
 test('does not coalesce after the merge window or across section sets', async () => {
   const { state, history, tick } = fixture({ mergeWindowMs: 100 });
 

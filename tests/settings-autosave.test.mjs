@@ -98,3 +98,19 @@ test('createSettingsProxy reports every string key written or deleted', () => {
     assert.deepEqual(raw, { cfg: 5, step: 20 });
     assert.deepEqual({ ...proxy }, { cfg: 5, step: 20 }, 'spread works through the proxy');
 });
+
+test('createSettingsProxy exposes the previous value before a mutation', () => {
+  const target = { prompt: 'before', count: 1 };
+  const before = [];
+  const proxy = createSettingsProxy(target, () => {}, {
+    beforeChange: change => before.push({ ...change, observed: target[change.key] }),
+  });
+
+  proxy.prompt = 'after';
+  delete proxy.count;
+
+  assert.deepEqual(before, [
+    { type: 'set', key: 'prompt', previousValue: 'before', value: 'after', observed: 'before' },
+    { type: 'delete', key: 'count', previousValue: 1, observed: 1 },
+  ]);
+});

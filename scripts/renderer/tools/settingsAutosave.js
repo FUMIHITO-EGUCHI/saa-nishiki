@@ -9,14 +9,16 @@
 // `beforeunload`. Nothing is marked dirty while `enabled` is false (startup).
 import { sectionOf as defaultSectionOf, isSection as defaultIsSection } from '../../shared/settingsSections.js';
 
-export function createSettingsProxy(target, onSet) {
+export function createSettingsProxy(target, onSet, { beforeChange = null } = {}) {
     return new Proxy(target, {
         set(object, key, value) {
+            if (typeof key === 'string') beforeChange?.({ type: 'set', key, previousValue: object[key], value });
             object[key] = value;
             if (typeof key === 'string') onSet(key);
             return true;
         },
         deleteProperty(object, key) {
+            if (typeof key === 'string') beforeChange?.({ type: 'delete', key, previousValue: object[key] });
             delete object[key];
             if (typeof key === 'string') onSet(key);
             return true;
