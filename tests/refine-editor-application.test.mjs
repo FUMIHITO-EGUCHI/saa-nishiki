@@ -25,7 +25,12 @@ function harness() {
     getValue: () => values[key],
     setValue: value => { values[key] = value; },
   }]));
-  const settings = { ...values };
+  const settings = {
+    custom_prompt: values.common,
+    api_prompt: values.positive,
+    api_prompt_right: values.positive_right,
+    api_neg_prompt: values.negative,
+  };
   const calls = [];
   const tagCapsuleFields = {
     beginBatchUpdate: () => calls.push('begin'),
@@ -65,7 +70,12 @@ test('valid V2 patch updates all prompt stores as one batch and refreshes Final 
     positive_right: 'new right',
     negative: 'new negative',
   });
-  assert.deepEqual(h.settings, h.values);
+  assert.deepEqual(h.settings, {
+    custom_prompt: 'new common',
+    api_prompt: 'new positive',
+    api_prompt_right: 'new right',
+    api_neg_prompt: 'new negative',
+  });
   assert.deepEqual(h.calls, ['begin', 'end', 'refresh']);
 });
 
