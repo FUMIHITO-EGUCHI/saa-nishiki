@@ -461,6 +461,9 @@ node scripts/reviewJapaneseTags.mjs --input danbooru_general_kana_review.csv --r
 node scripts/reviewJapaneseTags.mjs --apply --input danbooru_general_kana_review.csv --report danbooru_general_kana_review.jsonl --output danbooru_general_kana_reviewed.csv
 ```
 
+The apply step also refuses a high-confidence change when a tag containing
+`unworn` or `removed` would lose its removal/wear-state meaning.
+
 Feed the reviewed candidate back into the integration command to create a
 full replacement candidate. Keep the kanji-only output out of this step until
 it has been manually checked; an empty alias means that the candidate is
