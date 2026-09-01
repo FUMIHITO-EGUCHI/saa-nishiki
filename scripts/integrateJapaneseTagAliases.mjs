@@ -88,11 +88,9 @@ export function mergeGeneralJapaneseAliases({ baseText, existingText = '', sourc
 
   for (const row of parseTagRows(existingText)) {
     const key = normalizeTagKey(row.tag);
-    const existing = rowsByKey.get(key);
-    if (existing) continue;
     const preserved = { tag: row.tag, alias: row.alias };
     rows.push(preserved);
-    rowsByKey.set(key, preserved);
+    if (!rowsByKey.has(key)) rowsByKey.set(key, preserved);
   }
 
   const stats = {

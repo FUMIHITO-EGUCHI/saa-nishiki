@@ -84,6 +84,20 @@ test('preserves quoted comma aliases from the existing dictionary', () => {
   assert.equal(result.stats.mergedAliasRows, 0);
 });
 
+test('preserves duplicate existing rows while merging into the first match', () => {
+  const result = mergeGeneralJapaneseAliases({
+    baseText: 'same_tag,0,100,',
+    existingText: 'same_tag,先頭の別名\nsame tag,別の既存行\n',
+    sourceText: 'same_tag,追加の別名',
+  });
+
+  assert.deepEqual(result.rows, [
+    { tag: 'same_tag', alias: '先頭の別名,追加の別名' },
+    { tag: 'same tag', alias: '別の既存行' },
+  ]);
+  assert.equal(result.stats.mergedAliasRows, 1);
+});
+
 test('separates kana candidates from kanji-only aliases for manual review', () => {
   assert.deepEqual(splitJapaneseReviewCandidates([
     { tag: 'kana_tag', alias: 'チェック柄' },
