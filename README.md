@@ -453,6 +453,19 @@ replacing the bundled translation data. The kana output is suitable for the
 automated review pass; the kanji-only output needs manual confirmation because
 Japanese and Chinese can share the same character set.
 
+The review is intentionally staged. First review the kana candidates, then
+apply only rows accepted with high confidence by both review passes:
+
+```text
+node scripts/reviewJapaneseTags.mjs --input danbooru_general_kana_review.csv --report danbooru_general_kana_review.jsonl
+node scripts/reviewJapaneseTags.mjs --apply --input danbooru_general_kana_review.csv --report danbooru_general_kana_review.jsonl --output danbooru_general_kana_reviewed.csv
+```
+
+Feed the reviewed candidate back into the integration command to create a
+full replacement candidate. Keep the kanji-only output out of this step until
+it has been manually checked; an empty alias means that the candidate is
+removed rather than imported.
+
 ## Image info
 <details>
 <summary>Drag and drop your image into SAA window, supports Png/Jpeg/Webp.</summary>             
