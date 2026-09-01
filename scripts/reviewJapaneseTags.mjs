@@ -312,12 +312,23 @@ export function validateVerificationRows(inputRows, verificationRows) {
   }).sort((left, right) => left.i - right.i);
 }
 
+function preservesRemovalSemantics(tag, alias) {
+  const tagText = String(tag ?? '');
+  if (!/(^|[_ ])unworn([_ ]|$)|removed/i.test(tagText)) return true;
+  return /未着用|着用なし|着用されていない|脱いだ|脱がれ|取り外|外した|外され|削除|取り除|抜き/.test(String(alias ?? ''));
+}
+
+export function shouldApplyHighConfidenceReview(row, review) {
+  if (!review || !['change', 'remove'].includes(review.action) || review.confidence !== 'high') return false;
+  if (!review.verification?.accepted || review.verification.confidence !== 'high') return false;
+  return review.action === 'remove' || preservesRemovalSemantics(row.tag, review.reference || review.alias);
+}
+
 export function applyHighConfidenceReviews(rows, reviews) {
   const reviewById = new Map(reviews.map(review => [review.i, review]));
   return rows.map(row => {
     const review = reviewById.get(row.i);
-    if (!review || !['change', 'remove'].includes(review.action) || review.confidence !== 'high') return row;
-    if (!review.verification?.accepted || review.verification.confidence !== 'high') return row;
+    if (!shouldApplyHighConfidenceReview(row, review)) return row;
     return { ...row, alias: review.action === 'remove' ? '' : review.reference || review.alias };
   });
 }
@@ -467,10 +478,8 @@ function runApply(args) {
   const reviews = readReport(args.report);
   const result = applyHighConfidenceReviews(rows, reviews);
   fs.writeFileSync(args.output, formatTagRows(result), 'utf8');
-  const applied = reviews.filter(review => (review.action === 'change' || review.action === 'remove')
-    && review.confidence === 'high'
-    && review.verification?.accepted
-    && review.verification.confidence === 'high').length;
+  const reviewById = new Map(reviews.map(review => [review.i, review]));
+  const applied = rows.filter(row => shouldApplyHighConfidenceReview(row, reviewById.get(row.i))).length;
   console.log(JSON.stringify({ inputRows: rows.length, reportRows: reviews.length, applied, output: args.output }, null, 2));
 }
 

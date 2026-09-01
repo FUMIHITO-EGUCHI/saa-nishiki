@@ -93,6 +93,31 @@ test('only high-confidence changes are applied', () => {
   assert.equal(formatTagRows(result), 'aircraft,航空機\nakemi_homura,暁美ほむら\n');
 });
 
+test('does not apply changes that drop unworn or removed semantics', () => {
+  const rows = parseTagRows('unworn_thighhighs,太ももが削除されました\npresenting_removed_panties,パンティーを提示します\n');
+  const result = applyHighConfidenceReviews(rows, [
+    {
+      i: 1,
+      tag: 'unworn_thighhighs',
+      original: '太ももが削除されました',
+      action: 'change',
+      confidence: 'high',
+      alias: '太もも',
+      verification: { accepted: true, confidence: 'high' },
+    },
+    {
+      i: 2,
+      tag: 'presenting_removed_panties',
+      original: 'パンティーを提示します',
+      action: 'change',
+      confidence: 'high',
+      alias: 'パンティを提示',
+      verification: { accepted: true, confidence: 'high' },
+    },
+  ]);
+  assert.deepEqual(result.map(row => row.alias), ['太ももが削除されました', 'パンティーを提示します']);
+});
+
 test('verification can reject a semantically wrong candidate', () => {
   const candidates = [{ i: 1, tag: 'pussy', current: 'マンコ', candidate: 'オナニー' }];
   const rejected = validateVerificationRows(candidates, [
