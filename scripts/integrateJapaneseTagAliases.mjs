@@ -57,6 +57,17 @@ function containsJapanese(value) {
   return JAPANESE_CHARACTERS.test(String(value ?? ''));
 }
 
+function containsKana(value) {
+  return /[ぁ-んァ-ン]/.test(String(value ?? ''));
+}
+
+export function splitJapaneseReviewCandidates(rows) {
+  return {
+    kanaRows: rows.filter(row => containsKana(row.alias)),
+    kanjiOnlyRows: rows.filter(row => !containsKana(row.alias) && JAPANESE_CHARACTERS.test(row.alias)),
+  };
+}
+
 function appendAlias(row, alias) {
   const incoming = String(alias ?? '').trim();
   if (!incoming) return false;
@@ -72,6 +83,7 @@ export function mergeGeneralJapaneseAliases({ baseText, existingText = '', sourc
     parseBaseTagRows(baseText).map(row => [normalizeTagKey(row.tag), row]),
   );
   const rows = [];
+  const candidateRows = [];
   const rowsByKey = new Map();
 
   for (const row of parseTagRows(existingText)) {
@@ -120,21 +132,27 @@ export function mergeGeneralJapaneseAliases({ baseText, existingText = '', sourc
     }
     const added = { tag: baseRow.tag, alias: sourceRow.alias };
     rows.push(added);
+    candidateRows.push({ ...added });
     rowsByKey.set(key, added);
     stats.addedRows += 1;
   }
 
-  return { rows, stats };
+  return { rows, candidateRows, stats };
 }
 
 function parseArgs(argv) {
-  const args = { base: '', source: '', input: DEFAULT_INPUT, output: '', help: false };
+  const args = {
+    base: '', source: '', input: DEFAULT_INPUT, output: '', candidatesOutput: '', kanaOutput: '', kanjiOnlyOutput: '', help: false,
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--base') args.base = argv[++index];
     else if (arg === '--source') args.source = argv[++index];
     else if (arg === '--input') args.input = argv[++index];
     else if (arg === '--output') args.output = argv[++index];
+    else if (arg === '--candidates-output') args.candidatesOutput = argv[++index];
+    else if (arg === '--kana-output') args.kanaOutput = argv[++index];
+    else if (arg === '--kanji-only-output') args.kanjiOnlyOutput = argv[++index];
     else if (arg === '--help') args.help = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
@@ -147,7 +165,10 @@ function printHelp() {
   node scripts/integrateJapaneseTagAliases.mjs \\
     --base data/danbooru_e621_merged.csv \\
     --source <danbooru-jp.csv> \\
-    --output <candidate.csv>
+    --output <merged-candidate.csv> \\
+    --candidates-output <new-general.csv> \\
+    --kana-output <kana-review.csv> \\
+    --kanji-only-output <manual-review.csv>
 
 The source is never merged for Artist, Copyright, Character, or e621 groups.
 The output is a candidate file and must pass the Japanese review workflow before
@@ -168,7 +189,21 @@ export function main(argv = process.argv.slice(2)) {
     sourceText: fs.readFileSync(args.source, 'utf8'),
   });
   fs.writeFileSync(args.output, formatTagRows(result.rows), 'utf8');
-  console.log(JSON.stringify({ ...result.stats, output: args.output }, null, 2));
+  const reviewCandidates = splitJapaneseReviewCandidates(result.candidateRows);
+  if (args.candidatesOutput) {
+    fs.writeFileSync(args.candidatesOutput, formatTagRows(result.candidateRows), 'utf8');
+  }
+  if (args.kanaOutput) fs.writeFileSync(args.kanaOutput, formatTagRows(reviewCandidates.kanaRows), 'utf8');
+  if (args.kanjiOnlyOutput) fs.writeFileSync(args.kanjiOnlyOutput, formatTagRows(reviewCandidates.kanjiOnlyRows), 'utf8');
+  console.log(JSON.stringify({
+    ...result.stats,
+    kanaReviewRows: reviewCandidates.kanaRows.length,
+    kanjiOnlyReviewRows: reviewCandidates.kanjiOnlyRows.length,
+    output: args.output,
+    candidatesOutput: args.candidatesOutput || null,
+    kanaOutput: args.kanaOutput || null,
+    kanjiOnlyOutput: args.kanjiOnlyOutput || null,
+  }, null, 2));
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {

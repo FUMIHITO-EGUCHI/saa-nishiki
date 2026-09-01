@@ -62,6 +62,27 @@ test('rejects omitted rows and discards stray aliases on keep actions', () => {
   ])[0].alias, '航空機');
 });
 
+test('supports removing an unsafe machine alias conservatively', () => {
+  const input = parseTagRows('double_parted_bangs,双分刘海\n');
+  const reviews = validateReviewRows(input, [
+    { i: 1, action: 'remove', confidence: 'high', alias: '' },
+  ]);
+  assert.equal(reviews[0].alias, '');
+
+  const applied = applyHighConfidenceReviews(input, [
+    {
+      i: 1,
+      tag: 'double_parted_bangs',
+      original: '双分刘海',
+      action: 'remove',
+      confidence: 'high',
+      alias: '',
+      verification: { accepted: true, confidence: 'high' },
+    },
+  ]);
+  assert.equal(applied[0].alias, '');
+});
+
 test('only high-confidence changes are applied', () => {
   const rows = parseTagRows('aircraft,航空機\nakemi_homura,Akemi Homura\n');
   const result = applyHighConfidenceReviews(rows, [

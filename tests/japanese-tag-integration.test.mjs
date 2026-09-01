@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   mergeGeneralJapaneseAliases,
   parseBaseTagRows,
+  splitJapaneseReviewCandidates,
 } from '../scripts/integrateJapaneseTagAliases.mjs';
 
 test('parses prompt groups from the four-column base tag CSV', () => {
@@ -46,6 +47,9 @@ test('merges only new Danbooru General aliases with Japanese text', () => {
     { tag: 'general_tag', alias: '既存の一般タグ,新しい別名' },
     { tag: 'new_general', alias: '新規一般タグ' },
   ]);
+  assert.deepEqual(result.candidateRows, [
+    { tag: 'new_general', alias: '新規一般タグ' },
+  ]);
   assert.deepEqual(result.stats, {
     sourceRows: 8,
     matchedBaseRows: 7,
@@ -78,4 +82,15 @@ test('preserves quoted comma aliases from the existing dictionary', () => {
 
   assert.deepEqual(result.rows, [{ tag: 'wake_up_girls!', alias: 'Wake Up, Girls!' }]);
   assert.equal(result.stats.mergedAliasRows, 0);
+});
+
+test('separates kana candidates from kanji-only aliases for manual review', () => {
+  assert.deepEqual(splitJapaneseReviewCandidates([
+    { tag: 'kana_tag', alias: 'チェック柄' },
+    { tag: 'kanji_tag', alias: '格子衣服' },
+    { tag: 'latin_tag', alias: 'english' },
+  ]), {
+    kanaRows: [{ tag: 'kana_tag', alias: 'チェック柄' }],
+    kanjiOnlyRows: [{ tag: 'kanji_tag', alias: '格子衣服' }],
+  });
 });

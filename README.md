@@ -445,11 +445,13 @@ downloaded by SAA. A suitable Japanese candidate source is
 Example:
 
 ```text
-node scripts/integrateJapaneseTagAliases.mjs --base data/danbooru_e621_merged.csv --source danbooru-jp.csv --output danbooru_e621_merged_ja.general-candidates.csv
+node scripts/integrateJapaneseTagAliases.mjs --base data/danbooru_e621_merged.csv --source danbooru-jp.csv --output danbooru_e621_merged_ja.general-candidates.csv --candidates-output danbooru_general_new.csv --kana-output danbooru_general_kana_review.csv --kanji-only-output danbooru_general_manual_review.csv
 ```
 
 The output is a candidate file. Run the Japanese review workflow before
-replacing the bundled translation data.
+replacing the bundled translation data. The kana output is suitable for the
+automated review pass; the kanji-only output needs manual confirmation because
+Japanese and Chinese can share the same character set.
 
 ## Image info
 <details>
