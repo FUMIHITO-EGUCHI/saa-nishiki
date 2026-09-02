@@ -5,6 +5,8 @@
 // Electron-only for now: the management IPC is not exposed over the web-service
 // socket, so the trigger button stays hidden in browser mode.
 
+import { openTagPicker } from './tagSelectionModal.js';
+
 const CAT = '[ListManager]';
 const ROW_LIMIT = 200;
 
@@ -175,6 +177,14 @@ export function setupListManager() {
         tagInput.value = editing.tag;
         tagLabel.append(tagInput);
         form.append(tagLabel);
+
+        const pickRow = el('div', 'list-manager-edit-pick');
+        const pickButton = el('button', 'list-manager-button', text('ui_lists_pick_tags', 'Choose tags…'));
+        pickButton.type = 'button';
+        pickButton.title = text('ui_lists_pick_tags_hint', 'Only plain single tags are offered (no wildcards or multi-tag favorites), so entries cannot reference each other.');
+        pickButton.addEventListener('click', () => openTagPicker(tagInput, { favGroup: 'positive', singleTagsOnly: true, trigger: pickButton }));
+        pickRow.append(pickButton);
+        form.append(pickRow);
 
         let thumbStatus = null;
         if (state.list === 'character') {

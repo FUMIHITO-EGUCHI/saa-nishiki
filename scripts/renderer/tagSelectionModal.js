@@ -76,6 +76,69 @@ function applyTagsToTextbox(textbox, selectedOptions, start, end) {
     textbox.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: null }));
 }
 
+// "1 tag = 1 prompt" candidates only: list entries expand to whole prompts, so anything
+// that itself expands further is not offered inside one — multi-tag favorites (commas /
+// newlines), __wildcard__ tokens and {a|b} random blocks. Free typing in the target
+// textarea stays unrestricted; this only filters what the picker proposes.
+function isSingleTagOption(option) {
+    const value = String(option?.value ?? option?.key ?? '').trim();
+    return value !== ''
+        && !value.includes(',')
+        && !value.includes('\n')
+        && !/__[a-zA-Z0-9_-]+__/.test(value)
+        && !value.includes('{');
+}
+
+// Shared pickers for plain textareas outside the prompt-field set (e.g. the list
+// manager's entry editor). One modal per favGroup / restriction combo; the active
+// textbox is swapped in on open.
+const sharedPickers = new Map();
+
+export function openTagPicker(textbox, { favGroup = 'positive', singleTagsOnly = false, trigger = null } = {}) {
+    if (!textbox) return;
+    const cacheKey = `${favGroup}|${singleTagsOnly ? 1 : 0}`;
+    let picker = sharedPickers.get(cacheKey);
+    if (!picker) {
+        picker = { textbox: null };
+        picker.modal = createSelectionModal({
+            mode: 'multiple',
+            categoryOptions: DETAILED_TAG_FILTERS.map(filter => ({ value: filter.value, label: filter.label })),
+            emptyMessage: 'No matching tags.',
+            searchPrompt: tagText('tag_ui_modal_search_prompt'),
+            allowFreeInput: true,
+            onApply: selected => {
+                const target = picker.textbox;
+                if (!target) return;
+                applyTagsToTextbox(
+                    target,
+                    selected,
+                    storedCursor(target, 'tagModalStart', target.value.length),
+                    storedCursor(target, 'tagModalEnd', target.value.length),
+                );
+            },
+        });
+        sharedPickers.set(cacheKey, picker);
+    }
+    picker.textbox = textbox;
+    const start = Number.isInteger(textbox.selectionStart) ? textbox.selectionStart : textbox.value.length;
+    const end = Number.isInteger(textbox.selectionEnd) ? textbox.selectionEnd : start;
+    textbox.dataset.tagModalStart = String(start);
+    textbox.dataset.tagModalEnd = String(end);
+    const filter = singleTagsOnly ? options => options.filter(isSingleTagOption) : options => options;
+    picker.modal.open({
+        trigger: trigger ?? textbox,
+        fallback: textbox,
+        selection: promptSelection(textbox.value),
+        dynamicLoadOptions: async ({ query, category }) => filter(query
+            ? await requestTagOptions(query, category)
+            : favoriteOptions(favGroup)),
+        favorites: {
+            isFavorite: key => isFavoriteTag(favGroup, key),
+            toggle: option => toggleFavTag(favGroup, option),
+        },
+    });
+}
+
 export function setupTagSelectionModal(textboxes = [], keys = []) {
     const controls = [];
     let fieldIndex = -1;

@@ -1998,6 +1998,7 @@ body {
 .list-manager-edit-label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--saa-muted2); }
 .list-manager-edit-input, .list-manager-edit-textarea { box-sizing: border-box; border: 1px solid var(--saa-border-ctl); border-radius: 5px; padding: 5px 7px; font: inherit; background: var(--saa-bg-control); color: var(--saa-text); }
 .list-manager-edit-textarea { resize: vertical; font-family: Consolas, "Cascadia Mono", monospace; }
+.list-manager-edit-pick { display: flex; }
 .list-manager-edit-thumb { display: flex; align-items: center; gap: 8px; }
 .list-manager-edit-thumb-status { font-size: 11px; color: var(--saa-ok); }
 .list-manager-edit-buttons { display: flex; gap: 8px; }
