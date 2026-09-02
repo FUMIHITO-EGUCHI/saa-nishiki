@@ -22,6 +22,7 @@ import {
     setCapsulePlan,
 } from './tagCapsuleLogic.js';
 import { createIcon, renderChips } from './tagCapsuleChip.js';
+import { FAVORITE_TAGS_CHANGED_EVENT, favGroupForKey, isFavoriteTag } from './favoriteTags.js';
 import { getWeightPopover } from './weightPopover.js';
 import { getBatchWeightDialog } from './batchWeightDialog.js';
 import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
@@ -243,7 +244,12 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
 
     function render() {
         if (mode === 'capsule') {
-            renderChips(chips, capsules, { text, excludedSet: excludedTagSet(getExcludeText()), trailing: addSlot });
+            renderChips(chips, capsules, {
+                text,
+                excludedSet: excludedTagSet(getExcludeText()),
+                trailing: addSlot,
+                isFavorite: value => isFavoriteTag(favGroupForKey(key), value),
+            });
             chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
             updateRoving();
         }
@@ -484,6 +490,9 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
 
     const titleObserver = new MutationObserver(() => applyText());
     titleObserver.observe(textbox, { attributes: true, attributeFilter: ['placeholder', 'title'] });
+
+    // star toggles in the selection modal reflect into the chips immediately
+    document.addEventListener(FAVORITE_TAGS_CHANGED_EVENT, () => render());
 
     // ---------------------------------------------------------------- init
     textbox.dataset.tagCapsuleFieldSetup = 'true';

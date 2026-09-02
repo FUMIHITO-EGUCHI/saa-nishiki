@@ -697,6 +697,24 @@ html, body {
     color: var(--saa-warn, #b8860b);
 }
 
+.selection-modal-option.is-fav {
+    background: color-mix(in srgb, var(--saa-warn, #b8860b) 10%, transparent);
+}
+
+.tag-capsule-chip-fav {
+    display: inline-flex;
+    align-items: center;
+    color: var(--saa-warn, #b8860b);
+}
+
+.tag-capsule-chip-fav[hidden] {
+    display: none;
+}
+
+.tag-capsule-chip.is-fav {
+    background: color-mix(in srgb, var(--saa-warn, #b8860b) 16%, var(--saa-bg-control, #2a2a2f));
+}
+
 .selection-modal-search-label,
 .selection-modal-filter-label {
     display: flex;

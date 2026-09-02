@@ -277,6 +277,7 @@ export function createSelectionModal({
                 favButton.type = 'button';
                 favButton.tabIndex = -1;
                 const isFav = isFavoriteOption(option);
+                item.classList.toggle('is-fav', isFav);
                 favButton.classList.toggle('is-fav', isFav);
                 favButton.textContent = isFav ? '★' : '☆';
                 favButton.title = tagText(isFav ? 'tag_ui_fav_remove' : 'tag_ui_fav_add', optionLabel(option));

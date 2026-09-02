@@ -17,6 +17,7 @@ const ICON_PATHS = Object.freeze({
     chevronDown: ['M4 6l4 4 4-4'],
     minus: ['M3 8h10'],
     lock: ['M5.5 7V5a2.5 2.5 0 0 1 5 0v2'],
+    star: ['M8 2.2l1.8 3.7 4.1.6-3 2.9.7 4.1L8 11.6l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 2.2z'],
 });
 
 export function createIcon(name, size = 14) {
@@ -87,16 +88,23 @@ export function modeIconName(mode) {
 
 export function chipSignature(capsule, options = {}) {
     const plan = normalizeWeightPlan(capsule.weightPlan);
-    return [capsule.id, capsule.value, plan.mode, plan.min, plan.max, plan.step, plan.seed, options.excluded ? 1 : 0].join('|');
+    return [capsule.id, capsule.value, plan.mode, plan.min, plan.max, plan.step, plan.seed,
+        options.excluded ? 1 : 0, options.favorite ? 1 : 0].join('|');
 }
 
 export function createChip(capsule, options = {}) {
-    const { text, excluded = false } = options;
+    const { text, excluded = false, favorite = false } = options;
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'tag-capsule-chip';
     chip.tabIndex = -1;
     chip.draggable = true;
+
+    const fav = document.createElement('span');
+    fav.className = 'tag-capsule-chip-fav';
+    fav.setAttribute('aria-hidden', 'true');
+    fav.appendChild(createIcon('star', 11));
+    chip.appendChild(fav);
 
     const name = document.createElement('span');
     name.className = 'tag-capsule-chip-name';
@@ -112,24 +120,27 @@ export function createChip(capsule, options = {}) {
     remove.appendChild(createIcon('close', 12));
     chip.appendChild(remove);
 
-    updateChip(chip, capsule, { text, excluded });
+    updateChip(chip, capsule, { text, excluded, favorite });
     return chip;
 }
 
 export function updateChip(chip, capsule, options = {}) {
-    const { text, excluded = false } = options;
+    const { text, excluded = false, favorite = false } = options;
     const plan = normalizeWeightPlan(capsule.weightPlan);
     const kind = chipKind(plan);
     const description = describePlan(plan);
     const modeIcon = modeIconName(plan.mode);
 
     chip.dataset.capsuleId = capsule.id;
-    chip.dataset.signature = chipSignature(capsule, { excluded });
+    chip.dataset.signature = chipSignature(capsule, { excluded, favorite });
     chip.classList.toggle('is-up', kind === 'up');
     chip.classList.toggle('is-down', kind === 'down');
     chip.classList.toggle('is-plan', kind === 'plan');
     chip.classList.toggle('is-warn', weightWarning(plan));
     chip.classList.toggle('is-excluded', excluded);
+    chip.classList.toggle('is-fav', favorite);
+    const favMark = chip.querySelector('.tag-capsule-chip-fav');
+    if (favMark) favMark.hidden = !favorite;
 
     const name = chip.querySelector('.tag-capsule-chip-name');
     name.textContent = capsule.value;
@@ -158,7 +169,7 @@ export function updateChip(chip, capsule, options = {}) {
 // Keyed diff: reuses chip elements by capsule id, re-renders only changed ones,
 // and keeps `trailing` (the add-tag slot) as the last child.
 export function renderChips(container, capsules, options = {}) {
-    const { text, excludedSet = new Set(), trailing = null } = options;
+    const { text, excludedSet = new Set(), trailing = null, isFavorite = null } = options;
     const existing = new Map();
     for (const child of container.querySelectorAll(':scope > .tag-capsule-chip')) {
         existing.set(child.dataset.capsuleId, child);
@@ -167,12 +178,13 @@ export function renderChips(container, capsules, options = {}) {
     const ordered = [];
     for (const capsule of capsules) {
         const excluded = excludedSet.has(String(capsule.value ?? '').trim().replaceAll(/\s+/g, ' ').toLocaleLowerCase());
+        const favorite = typeof isFavorite === 'function' && isFavorite(capsule.value);
         let chip = existing.get(capsule.id);
         if (chip) {
             existing.delete(capsule.id);
-            if (chip.dataset.signature !== chipSignature(capsule, { excluded })) updateChip(chip, capsule, { text, excluded });
+            if (chip.dataset.signature !== chipSignature(capsule, { excluded, favorite })) updateChip(chip, capsule, { text, excluded, favorite });
         } else {
-            chip = createChip(capsule, { text, excluded });
+            chip = createChip(capsule, { text, excluded, favorite });
         }
         ordered.push(chip);
     }

@@ -3,6 +3,7 @@ import { extractPromptKeyFromSuggestion, getTagFilterOptions, TAG_FILTERS } from
 import { createSelectionModal } from './components/selectionModal.js';
 import { insertTagsAtCursor, normalizePromptToken } from './components/selectionModalLogic.js';
 import { tagText } from './components/tagUiText.js';
+import { favGroupForKey, favoriteOptions, isFavoriteTag, toggleFavTag } from './components/favoriteTags.js';
 
 const DETAILED_TAG_FILTERS = TAG_FILTERS.filter(filter => filter.options?.category);
 
@@ -75,38 +76,6 @@ function applyTagsToTextbox(textbox, selectedOptions, start, end) {
     textbox.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: null }));
 }
 
-// fav_tags is split into a positive and a negative pool so negative-only tags
-// (lowres, bad hands, …) never surface as favorites in positive-side fields.
-function favGroupForKey(fieldKey) {
-    return fieldKey === 'negative' || fieldKey === 'exclude' ? 'negative' : 'positive';
-}
-
-function favTagList(group) {
-    const stored = globalThis.globalSettings?.fav_tags;
-    return Array.isArray(stored?.[group]) ? stored[group] : [];
-}
-
-function favTagSet(group) {
-    return new Set(favTagList(group).map(normalizePromptToken).filter(Boolean));
-}
-
-function toggleFavTag(group, option) {
-    const settings = globalThis.globalSettings;
-    if (!settings) return;
-    const tag = String(option?.value ?? option?.key ?? '').trim();
-    const normalized = normalizePromptToken(tag);
-    if (!normalized) return;
-    const list = favTagList(group);
-    const next = favTagSet(group).has(normalized)
-        ? list.filter(item => normalizePromptToken(item) !== normalized)
-        : [...list, tag].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-    settings.fav_tags = { positive: favTagList('positive'), negative: favTagList('negative'), [group]: next };
-}
-
-function favoriteOptions(group) {
-    return favTagList(group).map(tag => ({ key: tag, value: tag, label: tag.replaceAll('_', ' ') }));
-}
-
 export function setupTagSelectionModal(textboxes = [], keys = []) {
     const controls = [];
     let fieldIndex = -1;
@@ -161,7 +130,7 @@ export function setupTagSelectionModal(textboxes = [], keys = []) {
                     ? await requestTagOptions(query, category)
                     : favoriteOptions(favGroup)),
                 favorites: {
-                    isFavorite: key => favTagSet(favGroup).has(normalizePromptToken(key)),
+                    isFavorite: key => isFavoriteTag(favGroup, key),
                     toggle: option => toggleFavTag(favGroup, option),
                 },
             });
