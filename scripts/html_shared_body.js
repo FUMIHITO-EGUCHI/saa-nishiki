@@ -99,6 +99,7 @@ export const sharedBodyHTML = `
                 <span class="ui-card-title" data-ui-text="ui_characters_title">Characters &amp; Views</span>
                 <span class="ui-card-sub" data-ui-text="ui_characters_sub">3 lists + OC · Angle / Camera</span>
                 <div class="ui-card-tools">
+                  <button type="button" id="list-manager-open" class="list-manager-open" data-ui-text="ui_lists_open">Lists</button>
                   <div class="regional-condition-trigger-dummy ui-switch"></div>
                 </div>
               </div>

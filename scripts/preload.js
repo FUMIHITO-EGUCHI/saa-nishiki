@@ -161,6 +161,7 @@ contextBridge.exposeInMainWorld('api', {
   getUserLists: async () => ipcRenderer.invoke('get-user-lists'),
   applyUserListChange: async (list, change) => ipcRenderer.invoke('apply-user-list-change', list, change),
   prepareUserThumb: async (filePath) => ipcRenderer.invoke('prepare-user-thumb', filePath),
+  pickUserThumb: async () => ipcRenderer.invoke('pick-user-thumb'),
   exportUserLists: async () => ipcRenderer.invoke('export-user-lists'),
   importUserLists: async (mode) => ipcRenderer.invoke('import-user-lists', mode),
 });

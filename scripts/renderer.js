@@ -28,6 +28,7 @@ import { setupSettingsModal } from './renderer/settingsModal.js';
 import { setupTagSelectionModal } from './renderer/tagSelectionModal.js';
 import { setupTagCapsuleFields } from './renderer/components/tagCapsuleField.js';
 import { setupUiShell } from './renderer/uiShell.js';
+import { setupListManager } from './renderer/listManager.js';
 import { filterPrompts } from './renderer/tools/promptFilter.js';
 import { setupRightClickMenu, addSpellCheckSuggestions } from './renderer/components/myRightClickMenu.js';
 import { extractHostPort } from './renderer/generate.js';
@@ -591,6 +592,11 @@ async function init(){
 
         // 2026-08-30 layout glue (pipeline rows, AI card, run bar, left panel, status pills)
         setupUiShell();
+
+        // List manager (R3): user-diff editing for the bundled lists (Electron only)
+        setupListManager();
+        document.getElementById('list-manager-open')?.addEventListener('click', () => globalThis.listManager?.open());
+        if (globalThis.inBrowser || !globalThis.listManager) document.getElementById('list-manager-open')?.setAttribute('hidden', '');
 
         // Done
         globalThis.initialized = true;

@@ -210,6 +210,17 @@ function setupCachedFiles(thumbSelect) {
         return prepareUserThumb(filePath);
     });
 
+    // Open a file picker and return the prepared thumb payload in one step.
+    ipcMain.handle('pick-user-thumb', async () => {
+        const { canceled, filePaths } = await dialog.showOpenDialog({
+            title: 'Choose a thumbnail image',
+            filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'] }],
+            properties: ['openFile'],
+        });
+        if (canceled || !filePaths?.[0]) return null;
+        return prepareUserThumb(filePaths[0]);
+    });
+
     ipcMain.handle('export-user-lists', async () => {
         const { canceled, filePath: target } = await dialog.showSaveDialog({
             title: 'Export user lists',

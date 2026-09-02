@@ -1947,6 +1947,53 @@ body {
 .prompts-card .tag-field-tools .tag-filter-control { display: none; }
 .prompts-card .final-prompt-disclosure { margin-top: 2px; }
 
+/* ---- list manager (R3) ---- */
+.list-manager-open { min-height: 22px; padding: 1px 9px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-muted2); font: inherit; font-size: 11.5px; cursor: pointer; }
+.list-manager-open:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
+.list-manager-overlay { position: fixed; inset: 0; z-index: 1200; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; }
+.list-manager-modal { display: flex; flex-direction: column; width: min(860px, 92vw); height: min(640px, 88vh); border: 2px solid var(--saa-border); border-radius: 10px; overflow: hidden; box-shadow: 0 12px 40px var(--saa-shadow); background: var(--saa-bg-panel); color: var(--saa-text); }
+.list-manager-head { display: flex; align-items: center; justify-content: space-between; min-height: 42px; padding: 6px 10px 6px 14px; border-bottom: 1px solid var(--saa-border); }
+.list-manager-title { font-weight: 600; }
+.list-manager-close { border: none; background: transparent; color: var(--saa-muted); font-size: 24px; line-height: 1; padding: 2px 6px; cursor: pointer; }
+.list-manager-layout { display: flex; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.list-manager-nav { display: flex; flex: 0 0 180px; flex-direction: column; gap: 4px; padding: 10px 8px; border-right: 1px solid var(--saa-border); }
+.list-manager-nav-item { width: 100%; border: 1px solid transparent; border-radius: 5px; padding: 8px 10px; background: transparent; color: var(--saa-text); text-align: left; cursor: pointer; font: inherit; }
+.list-manager-nav-item.is-active { background: var(--saa-bg-hover); font-weight: 600; }
+.list-manager-nav-note { margin-top: auto; padding: 8px; font-size: 10.5px; color: var(--saa-placeholder); line-height: 1.5; }
+.list-manager-body { flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; padding: 10px; }
+.list-manager-toolbar { display: flex; gap: 8px; margin-bottom: 8px; }
+.list-manager-search { flex: 1 1 auto; min-height: 30px; box-sizing: border-box; border: 1px solid var(--saa-border-ctl); border-radius: 5px; padding: 4px 7px; font: inherit; background: var(--saa-bg-control); color: var(--saa-text); }
+.list-manager-count { margin-bottom: 6px; font-size: 11px; color: var(--saa-muted); }
+.list-manager-rows { border: 1px solid var(--saa-border); border-radius: 5px; background: var(--saa-bg-field); overflow: hidden; }
+.list-manager-row { display: grid; grid-template-columns: minmax(120px, 0.35fr) minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 38px; padding: 5px 10px; border-bottom: 1px solid var(--saa-border); }
+.list-manager-row:last-child { border-bottom: none; }
+.list-manager-row:hover { background: var(--saa-bg-hover); }
+.list-manager-row.is-hidden { opacity: 0.45; }
+.list-manager-row.is-hidden .list-manager-name-text { text-decoration: line-through; }
+.list-manager-name { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.list-manager-initial { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 5px; background: var(--saa-bg-control); border: 1px solid var(--saa-border); color: var(--saa-placeholder); font-size: 12px; font-weight: 600; }
+.list-manager-name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.list-manager-badge { flex: 0 0 auto; padding: 1px 7px; border-radius: 9px; font-size: 10px; line-height: 16px; background: var(--saa-bg-control); color: var(--saa-muted2); border: 1px solid var(--saa-border-ctl); }
+.list-manager-badge.is-csv { background: var(--saa-bg-selected); color: var(--saa-accent); border-color: transparent; }
+.list-manager-badge.is-original { color: var(--saa-ok); }
+.list-manager-badge.is-user { color: var(--saa-text); }
+.list-manager-badge.is-overridden { color: var(--saa-warn); }
+.list-manager-tag { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: var(--saa-muted); font-family: Consolas, "Cascadia Mono", monospace; }
+.list-manager-actions { display: inline-flex; gap: 4px; }
+.list-manager-button { min-height: 26px; padding: 2px 10px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; font-size: 11.5px; cursor: pointer; }
+.list-manager-button:hover { background: var(--saa-bg-hover); }
+.list-manager-button.is-primary { background: var(--saa-bg-selected); border-color: transparent; }
+.list-manager-button.is-danger { color: var(--saa-danger); }
+.list-manager-button.is-ok { color: var(--saa-ok); }
+.list-manager-more { padding: 8px 10px; font-size: 11px; color: var(--saa-muted); }
+.list-manager-edit { display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
+.list-manager-edit-label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--saa-muted2); }
+.list-manager-edit-input, .list-manager-edit-textarea { box-sizing: border-box; border: 1px solid var(--saa-border-ctl); border-radius: 5px; padding: 5px 7px; font: inherit; background: var(--saa-bg-control); color: var(--saa-text); }
+.list-manager-edit-textarea { resize: vertical; font-family: Consolas, "Cascadia Mono", monospace; }
+.list-manager-edit-thumb { display: flex; align-items: center; gap: 8px; }
+.list-manager-edit-thumb-status { font-size: 11px; color: var(--saa-ok); }
+.list-manager-edit-buttons { display: flex; gap: 8px; }
+
 /* ---- AI card ---- */
 .ai-card { border: 1px solid var(--saa-border); border-radius: 8px; background: var(--saa-bg-panel); overflow: hidden; }
 .ai-card-head { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border-bottom: 1px solid var(--saa-border); }
