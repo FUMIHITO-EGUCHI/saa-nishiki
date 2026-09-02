@@ -580,9 +580,12 @@ function createDropdown({
             for (const [idx, option] of currentOptions.entries()) {
                 let item = existingItems[idx] || document.createElement('div');
                 item.className = 'mydropdown-item';
-                let textContent = valueOnly
-                    ? `${option.value}` 
-                    : `${getOptionLabel(option)}\n(${option.value})`;
+                const optionLabel = getOptionLabel(option);
+                // only append the value when the label actually stands for something else
+                // (e.g. a user view entry expanding to a multi-tag prompt)
+                let textContent = valueOnly || optionLabel === `${option.value}`
+                    ? `${valueOnly ? option.value : optionLabel}`
+                    : `${optionLabel}\n(${option.value})`;
 
                 if ((containerId === 'dropdown-character' && activeIndex === 3) ||
                     (containerId === 'dropdown-character-regional' && (activeIndex === 2 || activeIndex === 3))) {
