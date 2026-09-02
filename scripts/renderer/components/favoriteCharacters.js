@@ -1,5 +1,3 @@
-import { notifyFavoriteCharactersChanged } from './myDropdown.js';
-
 function normalizeFavoriteCharacter(value) {
     return String(value ?? '').trim();
 }
@@ -72,7 +70,6 @@ export function addFavorites(character) {
         globalThis.globalSettings.fav_characters = mergedList;
     }
 
-    notifyFavoriteCharactersChanged();
     return true;
 }
 
@@ -94,7 +91,6 @@ export function delFavorites(character) {
         console.log('[delFavorites] Remove', character, 'from list.');
     }
 
-    notifyFavoriteCharactersChanged();
     return true;
 }
 

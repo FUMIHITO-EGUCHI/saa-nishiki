@@ -1,7 +1,8 @@
 import { getLocalizedCharacterName } from '../characterLocalization.js';
 import { decodeThumb } from '../customThumbGallery.js';
+import { addFavorites, delFavorites } from './favoriteCharacters.js';
 import { createSelectionModal } from './selectionModal.js';
-import { normalizeSearchText } from './selectionModalLogic.js';
+import { normalizeSearchText, normalizeSelectionKey } from './selectionModalLogic.js';
 
 function splitLabels(value, count) {
     const labels = Array.isArray(value)
@@ -65,6 +66,30 @@ function optionDisplay(option, valueOnly) {
     if (!option) return '';
     const label = typeof option.label === 'function' ? option.label() : option.label;
     return valueOnly ? option.value : label || option.value || option.key;
+}
+
+// Favorites live in globalThis.globalSettings.fav_characters as raw character
+// names; keys arrive normalized (normalizeSelectionKey), so compare through the
+// same normalization. toggle passes the stored raw entry to delFavorites so
+// legacy entries with different casing / underscores are still removed.
+function favoriteCharacterList() {
+    return Array.isArray(globalThis.globalSettings?.fav_characters)
+        ? globalThis.globalSettings.fav_characters
+        : [];
+}
+
+function characterFavoritesConfig() {
+    return {
+        isFavorite: key => favoriteCharacterList().some(item => normalizeSelectionKey(item) === key),
+        toggle: option => {
+            const name = String(option?.key ?? option?.value ?? '').trim();
+            if (!name) return;
+            const normalized = normalizeSelectionKey(name);
+            const stored = favoriteCharacterList().find(item => normalizeSelectionKey(item) === normalized);
+            if (stored === undefined) addFavorites(name);
+            else delFavorites(stored);
+        },
+    };
 }
 
 function hideCharacterThumbPreview() {
@@ -230,6 +255,7 @@ function createCharacterControl({ containerId, dropdownCount, labels, getKind, c
                 options: fieldOptions,
                 attributes: uniqueFilterOptions(fieldOptions, 'attributes').map(value => ({ value, label: value })),
                 modalTitle: labels[index],
+                favorites: characterFavoritesConfig(),
             });
         });
 

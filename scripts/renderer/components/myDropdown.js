@@ -1,5 +1,4 @@
 import { updateLanguage } from '../language.js';
-import { decodeThumb } from '../customThumbGallery.js';
 import { callback_myCharacterList_updateThumb, callback_myViewList_Update } from '../callbacks.js'
 import { generateGUID } from '../slots/myLoRASlot.js'
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
@@ -46,18 +45,6 @@ const activeDropdownsRegistry = {
     }
 };
 
-// Call this after fav_characters is added to / removed from elsewhere in the app
-// (globalThis.globalSettings.fav_characters) so any currently-open dropdown list
-// re-renders its ✨ favorite marks immediately, instead of waiting for the next
-// time the list happens to be reopened.
-export function notifyFavoriteCharactersChanged() {
-    for (const instance of activeDropdownsRegistry.registry.values()) {
-        if (instance && typeof instance.refreshFavoriteMarks === 'function') {
-            instance.refreshFavoriteMarks();
-        }
-    }
-}
-
 function normalizeOptionText(value) {
     return String(value || '').trim().toLowerCase();
 }
@@ -67,16 +54,6 @@ function getOptionLabel(option) {
         return option.label();
     }
     return option?.label ?? option?.key ?? '';
-}
-
-function getSpecialSearchOptions() {
-    const specialList = Array.isArray(globalThis.globalSettings?.fav_characters)
-        ? globalThis.globalSettings.fav_characters
-        : [];
-
-    return specialList
-        .map(item => normalizeOptionText(item))
-        .filter(item => item !== '');
 }
 
 function filterOptionsByText(optionList, searchText) {
@@ -91,29 +68,6 @@ function filterOptionsByText(optionList, searchText) {
         const label = normalizeOptionText(getOptionLabel(option));
         return key.includes(normalizedSearchText) || value.includes(normalizedSearchText) || label.includes(normalizedSearchText);
     });
-}
-
-function filterSpecialOptions(optionList, searchText) {
-    const specialKeywords = getSpecialSearchOptions();
-    const normalizedSearchText = normalizeOptionText(searchText).slice(1);
-    const matchedSpecialKeywords = normalizedSearchText
-        ? specialKeywords.filter(keyword => keyword.includes(normalizedSearchText))
-        : specialKeywords;
-
-    if (matchedSpecialKeywords.length === 0) {
-        return [];
-    }
-
-    const specialLookup = new Set(matchedSpecialKeywords);
-    return optionList.filter(option => {
-        const key = normalizeOptionText(option.key);
-        const value = normalizeOptionText(option.value);
-        return specialLookup.has(key) || specialLookup.has(value);
-    });
-}
-
-function isSpecialSearchMode(searchText) {
-    return typeof searchText === 'string' && searchText.startsWith('@');
 }
 
 // count standard labels (character1-3 from the language file, a pattern beyond) + OC.
@@ -176,7 +130,6 @@ export function myViewsList(containerId, view_tags) {
         optionHandler: handleViewOptions,
         callback_func: callback_myViewList_Update,
         enableSearch: true,
-        enableOverlay: false,
         // labels, not values: a user entry's label can stand for a multi-tag prompt
         isValueOnly: false,
         height: 30,
@@ -232,7 +185,6 @@ export function myLanguageList(language) {
         },
         callback_func: callback,
         enableSearch: false,
-        enableOverlay: false,
         valueOnly: true,
         height: 15
     });
@@ -264,9 +216,8 @@ export function mySimpleList(containerId, label, options, callback_func = null, 
         textboxIds: [`${containerId}-dropdown`], 
         optionHandler: handleOptions, 
         callback_func: callback_func,
-        enableSearch: enableSearch, 
-        enableOverlay: false, 
-        valueOnly: true, 
+        enableSearch: enableSearch,
+        valueOnly: true,
         height: height,
         showTitle: showTitle
     });
@@ -282,9 +233,9 @@ export function mySimpleList(containerId, label, options, callback_func = null, 
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 function createDropdown({
-    containerId, dropdownCount, labelPrefixList, textboxIds, 
-    optionHandler, callback_func = null, 
-    enableSearch = true, enableOverlay = false, isValueOnly = true, height = 15, showTitle = false, enableNumberInput = false}) {
+    containerId, dropdownCount, labelPrefixList, textboxIds,
+    optionHandler, callback_func = null,
+    enableSearch = true, isValueOnly = true, height = 15, showTitle = false, enableNumberInput = false}) {
     
     let valueOnly = isValueOnly;
     const container = document.querySelector(`.${containerId}`);
@@ -355,11 +306,6 @@ function createDropdown({
     let selectedKeys = new Array(dropdownCount).fill('');
     let selectedValues = new Array(dropdownCount).fill('');
     let numberValues = new Array(dropdownCount).fill('1.0');
-    // Tracks the parameters of the most recent _updateOptionsList render so that
-    // refreshFavoriteMarks() can redraw the currently-open list with fresh ✨ marks
-    // after fav_characters changes elsewhere.
-    let lastRenderedIndex = null;
-    let lastRenderedSearchText = null;
 
     function findOption(index, value) {
         const normalizedValue = normalizeOptionText(value);
@@ -553,50 +499,27 @@ function createDropdown({
             activeInput = null;
         },
         
-        // eslint-disable-next-line sonarjs/cognitive-complexity
         _updateOptionsList: function(activeIndex, searchText = null) {
-            // Remember the last render params so an external favorites-change
-            // notification can re-render this exact view (see refreshFavoriteMarks).
-            lastRenderedIndex = activeIndex;
-            lastRenderedSearchText = searchText;
-
             const existingItems = Array.from(optionsList.children);
             const fragment = document.createDocumentFragment();
             let currentOptions = [];
-    
+
             if (searchText) {
-                if (isSpecialSearchMode(searchText)) {
-                    currentOptions = filterSpecialOptions(options[activeIndex], searchText);
-                } else {
-                    currentOptions = filterOptionsByText(filteredOptions[activeIndex], searchText);
-                }
+                currentOptions = filterOptionsByText(filteredOptions[activeIndex], searchText);
             } else {
                 currentOptions = filteredOptions[activeIndex];
             }
 
-            // Build the favorites lookup once per render instead of per item.
-            const favoriteSet = new Set(getSpecialSearchOptions());
-    
             for (const [idx, option] of currentOptions.entries()) {
                 let item = existingItems[idx] || document.createElement('div');
                 item.className = 'mydropdown-item';
                 const optionLabel = getOptionLabel(option);
                 // only append the value when the label actually stands for something else
                 // (e.g. a user view entry expanding to a multi-tag prompt)
-                let textContent = valueOnly || optionLabel === `${option.value}`
+                item.textContent = valueOnly || optionLabel === `${option.value}`
                     ? `${valueOnly ? option.value : optionLabel}`
                     : `${optionLabel}\n(${option.value})`;
-
-                if ((containerId === 'dropdown-character' && activeIndex === 3) ||
-                    (containerId === 'dropdown-character-regional' && (activeIndex === 2 || activeIndex === 3))) {
-                    textContent = getOptionLabel(option);
-                }
-
-                const isFavorite = favoriteSet.has(normalizeOptionText(option.key)) ||
-                    favoriteSet.has(normalizeOptionText(option.value));
-                item.textContent = isFavorite ? `✨ ${textContent}` : textContent;
-                item.classList.toggle('mydropdown-item-favorite', isFavorite);
-                item.dataset.key = `${option.key}`; 
+                item.dataset.key = `${option.key}`;
                 item.dataset.value = `${option.value || ''}`;
                 item.dataset.label = `${getOptionLabel(option)}`;
                 fragment.appendChild(item);
@@ -631,125 +554,8 @@ function createDropdown({
                     callback_func(index, selectedKeys);
                 }
             };
-    
-            const validOverlayIds = [
-                'cd-character1-overlay', 'cd-character2-overlay', 'cd-character3-overlay',
-                'rc-character1-overlay', 'rc-character2-overlay', 'rc-character3-overlay'
-            ];
-            const shouldAddOverlayEvents = enableOverlay && activeInput && validOverlayIds.includes(activeInput.id);
-            let lastOptionKey = null;
-            let lastUpdateTime = 0;
-            const throttleDelay = 8; // 120 fps
-            let overlayTaskId = 0;
-       
-            if (shouldAddOverlayEvents && (containerId === 'dropdown-character' || containerId === 'dropdown-character-regional')) {
-                optionsList.removeEventListener('mouseenter', optionsList._onMouseEnter);
-                optionsList.removeEventListener('mouseleave', optionsList._onMouseLeave);
-    
-                optionsList._onMouseEnter = async (e) => {
-                    const item = e.target.closest('.mydropdown-item');
-                    if (!item) {
-                        return;
-                    }
-        
-                    const now = performance.now();
-                    if (now - lastUpdateTime < throttleDelay) {
-                        return;
-                    }
-                    lastUpdateTime = now;
-        
-                    if (lastOptionKey === item.dataset.key) {
-                        return;
-                    }
-                    lastOptionKey = item.dataset.key;
-                    
-                    overlayTaskId++;
-                    const currentTaskId = overlayTaskId;
-
-                    const image = await decodeThumb(lastOptionKey);
-                    if (currentTaskId !== overlayTaskId) return;
-
-                    globalThis.updateThumbOverlay(lastOptionKey, image);
-        
-                    const overlayContainer = document.getElementById('cg-thumb-overlay');
-                    if (overlayContainer) {
-                        const hasImage = overlayContainer.querySelector('img') !== null;
-                        overlayContainer.style.display = hasImage ? 'block' : 'none';
-                        if (hasImage) {
-                            overlayContainer.style.background = 'rgba(39,39,42, 0.2)';
-                            overlayContainer.style.border = 'none';
-        
-                            requestAnimationFrame(() => {
-                                const inputRect = activeInput.getBoundingClientRect();
-                                const optionsRect = optionsList.getBoundingClientRect();
-                                const itemRect = item.getBoundingClientRect();
-        
-                                const optionsWidth = Math.min(inputRect.width, 600);
-                                let left;
-                                let top = itemRect.top;
-                                const overlayWidth = overlayContainer.offsetWidth || 327;
-                                const overlayHeight = overlayContainer.offsetHeight || 480;
-        
-                                const inputId = activeInput.id;
-                                if (inputId === 'cd-character1-overlay' || inputId === 'cd-character2-overlay'
-                                    || inputId === 'rc-character1-overlay' || inputId === 'rc-character2-overlay'
-                                ) {
-                                    left = optionsRect.left + optionsWidth + globalThis.scrollX + 30;
-                                } else if (inputId === 'cd-character3-overlay') {
-                                    left = optionsRect.left + globalThis.scrollX - overlayWidth - 10;
-                                } else {
-                                    overlayContainer.style.display = 'none';
-                                    return;
-                                }
-                                            
-                                if (top + overlayHeight > globalThis.innerHeight - 10) {
-                                    top = globalThis.innerHeight - overlayHeight - 10;
-                                }
-                                if (top < 10) {
-                                    top = 10;
-                                }
-                                if (top + overlayHeight - globalThis.scrollY > globalThis.innerHeight - 10) {
-                                    top = globalThis.innerHeight - overlayHeight - 10;
-                                }
-    
-                                overlayContainer.style.transform = `translate(${left}px, ${top}px)`;
-                                overlayContainer.style.left = '0';
-                                overlayContainer.style.top = '0';
-                                overlayContainer.style.zIndex = '10003';
-                            });
-                        }
-                    } else {
-                        console.warn(`[MouseEnter] cg-thumb-overlay not found`);
-                    }
-                };
-        
-                optionsList._onMouseLeave = (e) => {
-                    overlayTaskId++;
-                    const item = e.target.closest('.mydropdown-item');
-                    if (!item) {
-                        return;
-                    }
-                    const overlayContainer = document.getElementById('cg-thumb-overlay');
-                    if (overlayContainer) {
-                        overlayContainer.style.display = 'none';
-                        lastOptionKey = null;
-                    }
-                };        
-                optionsList.addEventListener('mouseenter', optionsList._onMouseEnter, true);
-                optionsList.addEventListener('mouseleave', optionsList._onMouseLeave, true);
-            }
         },
 
-        // Re-renders the currently visible options list (if any) so that ✨ marks
-        // reflect the latest fav_characters state. Cheap no-op when this dropdown
-        // isn't open, so it's safe to call unconditionally from the global
-        // notifyFavoriteCharactersChanged() broadcast below.
-        refreshFavoriteMarks: function() {
-            if (lastRenderedIndex === null) return;
-            if (optionsList.style.display !== 'block') return;
-            this._updateOptionsList(lastRenderedIndex, lastRenderedSearchText);
-        },
-        
         _updateOptionsPosition: function(index) {
             if (!activeInput) activeInput = inputs[index];
             const inputRect = activeInput.getBoundingClientRect();
@@ -866,10 +672,7 @@ function createDropdown({
                 const searchText = (input.value || '').toLowerCase();
                 inputHistory[index] = input.value || ''; // Save Search history
 
-                if (isSpecialSearchMode(searchText)) {
-                    filteredOptions[index] = filterSpecialOptions(options[index], searchText);
-                    dropdown._updateOptionsList(index, searchText);
-                } else if (searchText) {
+                if (searchText) {
                     filteredOptions[index] = filterOptionsByText(options[index], searchText);
                     dropdown._updateOptionsList(index, searchText);
                 } else if (filteredOptions[index].length === 1) {

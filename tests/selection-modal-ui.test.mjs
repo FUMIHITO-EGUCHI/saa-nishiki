@@ -90,3 +90,30 @@ test('renderer installs tag modals for editable prompt fields and localization u
   assert.match(language, /globalThis\.characterList\?\.setTitle/);
   assert.match(language, /globalThis\.characterListRegional\?\.setTitle/);
 });
+
+// R6 / issue #2: favorites live in the selection modal now, and the legacy
+// dropdown machinery (fav marks, '@' special search, character hover overlays)
+// is gone from myDropdown.
+test('character modal wires fav_characters into the selection modal', () => {
+  const favorites = read('scripts/renderer/components/favoriteCharacters.js');
+  assert.match(characterModal, /characterFavoritesConfig/);
+  assert.match(characterModal, /favorites: characterFavoritesConfig\(\)/);
+  // toggle removes by the stored raw entry so legacy spellings still delete
+  assert.match(characterModal, /delFavorites\(stored\)/);
+  // no import cycle: favoriteCharacters must not reach back into myDropdown
+  assert.doesNotMatch(favorites, /myDropdown/);
+});
+
+test("selection modal searches favorites with an '@' prefix", () => {
+  assert.match(modal, /effectiveSearch/);
+  assert.match(modal, /startsWith\('@'\)/);
+  assert.match(modal, /favoritesOnly/);
+});
+
+test('myDropdown no longer carries the legacy favorites / overlay machinery', () => {
+  for (const gone of ['notifyFavoriteCharactersChanged', 'refreshFavoriteMarks',
+    'filterSpecialOptions', 'isSpecialSearchMode', 'getSpecialSearchOptions',
+    'enableOverlay', 'cd-character1-overlay', 'decodeThumb']) {
+    assert.doesNotMatch(dropdown, new RegExp(gone), `${gone} should be removed`);
+  }
+});

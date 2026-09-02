@@ -157,6 +157,16 @@ export function createSelectionModal({
         return Boolean(activeConfig.favorites?.isFavorite?.(optionKey(option)));
     }
 
+    // A leading '@' searches favorites only (parity with the legacy dropdown's
+    // special search). Only meaningful when a favorites config is active.
+    function effectiveSearch() {
+        const raw = searchInput.value;
+        if (activeConfig.favorites && raw.trimStart().startsWith('@')) {
+            return { query: raw.trimStart().slice(1), favoritesOnly: true };
+        }
+        return { query: raw, favoritesOnly: favOnly };
+    }
+
     function renderFavOnlyButton() {
         favOnlyButton.hidden = !activeConfig.favorites;
         favOnlyButton.classList.toggle('is-on', favOnly);
@@ -242,13 +252,14 @@ export function createSelectionModal({
     }
 
     function renderOptions() {
+        const { query, favoritesOnly } = effectiveSearch();
         let filteredOptions = filterSelectionOptions(currentOptions, {
-            query: searchInput.value,
+            query,
             category: categorySelect.value,
             attribute: attributeSelect.value,
         });
         if (activeConfig.favorites) {
-            if (favOnly) filteredOptions = filteredOptions.filter(option => isFavoriteOption(option));
+            if (favoritesOnly) filteredOptions = filteredOptions.filter(option => isFavoriteOption(option));
             // stable sort: favorites first, source order preserved otherwise
             filteredOptions = filteredOptions
                 .map((option, index) => ({ option, index, fav: isFavoriteOption(option) ? 0 : 1 }))
@@ -296,7 +307,7 @@ export function createSelectionModal({
     async function refreshOptions() {
         const generation = ++requestGeneration;
         const config = {
-            query: searchInput.value.trim(),
+            query: effectiveSearch().query.trim(),
             category: categorySelect.value,
             attribute: attributeSelect.value,
         };
