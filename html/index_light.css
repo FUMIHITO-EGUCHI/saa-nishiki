@@ -1956,7 +1956,7 @@ body {
 /* ---- list manager (R3) ---- */
 .list-manager-open { min-height: 22px; padding: 1px 9px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-muted2); font: inherit; font-size: 11.5px; cursor: pointer; }
 .list-manager-open:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
-.list-manager-overlay { position: fixed; inset: 0; z-index: 1200; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; }
+.list-manager-overlay { position: fixed; inset: 0; z-index: 10500; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; }
 .list-manager-overlay[hidden] { display: none; }
 .list-manager-modal { display: flex; flex-direction: column; width: min(1000px, 94vw); height: min(680px, 90vh); border: 2px solid var(--saa-border); border-radius: 10px; overflow: hidden; box-shadow: 0 12px 40px var(--saa-shadow); background: var(--saa-bg-panel); color: var(--saa-text); }
 .list-manager-head { display: flex; align-items: center; justify-content: space-between; min-height: 42px; padding: 6px 10px 6px 14px; border-bottom: 1px solid var(--saa-border); }

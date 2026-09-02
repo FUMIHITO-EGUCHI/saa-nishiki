@@ -99,7 +99,6 @@ export const sharedBodyHTML = `
                 <span class="ui-card-title" data-ui-text="ui_characters_title">Characters &amp; Views</span>
                 <span class="ui-card-sub" data-ui-text="ui_characters_sub">3 lists + OC · Angle / Camera</span>
                 <div class="ui-card-tools">
-                  <button type="button" id="list-manager-open" class="list-manager-open" data-ui-text="ui_lists_open">Lists</button>
                   <div class="regional-condition-trigger-dummy ui-switch"></div>
                 </div>
               </div>
@@ -360,6 +359,9 @@ export const sharedBodyHTML = `
               <button class="settings-modal-nav-item" role="tab" type="button" data-settings-page="prompt-editing" aria-controls="settings-page-prompt-editing" aria-selected="false" tabindex="-1">
                 <span data-settings-page-label="prompt-editing">Prompt editing</span>
               </button>
+              <button class="settings-modal-nav-item" role="tab" type="button" data-settings-page="lists" aria-controls="settings-page-lists" aria-selected="false" tabindex="-1">
+                <span data-settings-page-label="lists">Lists</span>
+              </button>
               <button class="settings-modal-nav-item" role="tab" type="button" data-settings-page="advanced" aria-controls="settings-page-advanced" aria-selected="false" tabindex="-1">
                 <span data-settings-page-label="advanced">Advanced</span>
               </button>
@@ -478,6 +480,16 @@ export const sharedBodyHTML = `
                   <div class="generate-tag-assist ui-switch"></div>
                   <div class="generate-wildcard-random ui-switch"></div>
                 </div>
+              </section>
+
+              <section id="settings-page-lists" class="settings-modal-page" role="tabpanel" data-settings-page-content="lists" aria-labelledby="settings-page-lists-title" tabindex="0" hidden>
+                <h2 id="settings-page-lists-title" data-settings-page-label="lists">Lists</h2>
+                <div class="settings-grid">
+                  <button id="list-manager-open" type="button" class="settings-action-button">
+                    <span data-ui-text="ui_lists_open_settings">Open list manager…</span>
+                  </button>
+                </div>
+                <p class="settings-note" data-ui-text="ui_lists_settings_note">Add, override or hide entries of the character / original character / angle / camera lists. Upstream data stays read-only; your edits are saved as a diff (settings/user_lists.json) and can be exported / imported.</p>
               </section>
 
               <section id="settings-page-advanced" class="settings-modal-page" role="tabpanel" data-settings-page-content="advanced" aria-labelledby="settings-page-advanced-title" tabindex="0" hidden>

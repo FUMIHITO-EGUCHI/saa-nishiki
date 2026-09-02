@@ -102,6 +102,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
         model: LANG.ui_settings_model || LANG.settings_model_details,
         ai: LANG.ui_settings_ai || 'AI',
         'prompt-editing': LANG.ui_settings_prompt_editing || LANG.settings_prompt_generation,
+        lists: LANG.ui_settings_lists || LANG.ui_lists_title || 'Lists',
         advanced: LANG.ui_settings_advanced || 'Advanced'
     };
     document.querySelectorAll('[data-settings-page-label]').forEach(label => {
