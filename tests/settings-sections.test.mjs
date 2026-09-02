@@ -59,11 +59,35 @@ test('normalizeSection keeps weights4dropdownlist numeric and batch objects well
         negative_batch: 'nope',
         positive_weight_plans: [{ tag: 'a' }],
     });
-    assert.deepEqual(prompt.weights4dropdownlist, [1.2, 1, 0.5, 1, 1, 1, 1, 1, 1]);
+    // slots 2-3 belonged to the retired Background / Style dropdowns and are pinned to 1
+    assert.deepEqual(prompt.weights4dropdownlist, [1.2, 1, 1, 1, 1, 1, 1, 1, 1]);
     assert.deepEqual(prompt.positive_batch, { enabled: true, count: 8 });
     assert.deepEqual(prompt.negative_batch, { enabled: false, count: 4 });
     assert.deepEqual(prompt.positive_weight_plans, [{ tag: 'a' }]);
     assert.throws(() => normalizeSection('bundle', {}), /Unknown settings section/);
+});
+
+test('prompt migration converts view background / style selections into the prompt fields', () => {
+    const migrated = normalizeSection('prompt', {
+        view_background: 'Cafe (Terrace)',
+        view_style: 'Random',
+        weights4dropdownlist: [1, 1, 1.3, 0.8, 1, 1, 1, 1, 1],
+        prompt_background: 'sunset,',
+    });
+    assert.equal(migrated.prompt_background, 'sunset, (cafe \\(terrace\\):1.3)');
+    assert.equal(migrated.prompt_style, 'random');
+    assert.equal(migrated.view_background, 'None');
+    assert.equal(migrated.view_style, 'None');
+    assert.deepEqual(migrated.weights4dropdownlist.slice(2, 4), [1, 1]);
+
+    // already-migrated data passes through unchanged (idempotent)
+    const again = normalizeSection('prompt', migrated);
+    assert.equal(again.prompt_background, migrated.prompt_background);
+    assert.equal(again.prompt_style, migrated.prompt_style);
+
+    const clean = normalizeSection('prompt', { view_background: 'None', view_style: 'none' });
+    assert.equal(clean.prompt_background, '');
+    assert.equal(clean.prompt_style, '');
 });
 
 test('splitFlat / mergeSections round-trip a flat settings object', () => {

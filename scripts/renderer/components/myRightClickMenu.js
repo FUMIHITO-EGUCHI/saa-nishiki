@@ -286,6 +286,8 @@ export function setupRightClickMenu() {
 
         const spellCheckClasses = [
             'myTextbox-prompt-common-textarea',
+            'myTextbox-prompt-background-textarea',
+            'myTextbox-prompt-style-textarea',
             'myTextbox-prompt-positive-textarea',
             'myTextbox-prompt-positive-right-textarea',
             'myTextbox-prompt-negative-textarea',

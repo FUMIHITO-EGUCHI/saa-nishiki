@@ -134,14 +134,14 @@ function setupPipelineRows() {
 }
 
 // ------------------------------------------------------------------ characters & views
-// myViewsList renders four unlabeled dropdowns; add a label row above them (Angle / Camera / Background / Style).
+// myViewsList renders two unlabeled dropdowns; add a label row above them (Angle / Camera).
 function setupCharactersCard() {
     const view = document.querySelector('.characters-card .dropdown-view');
     if (!view) return null;
     let labels = view.querySelector('.view-labels');
     function render() {
         const LANG = lang();
-        const names = [LANG.view_angle || 'Angle', LANG.view_camera || 'Camera', LANG.view_background || 'Background', LANG.view_style || 'Style'];
+        const names = [LANG.view_angle || 'Angle', LANG.view_camera || 'Camera'];
         if (!labels) {
             labels = document.createElement('div');
             labels.className = 'view-labels';

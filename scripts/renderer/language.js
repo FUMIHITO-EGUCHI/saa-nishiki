@@ -130,7 +130,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.characterListRegional.setValueOnly(globalThis.globalSettings.language === 'en-US');
 
     // View List
-    setDropdownLanguage('dropdown-view', [LANG.view_angle, LANG.view_camera, LANG.view_background,LANG.view_style]);
+    setDropdownLanguage('dropdown-view', [LANG.view_angle, LANG.view_camera]);
 
     // Gallery Thumb
     let labels = document.querySelector('#gallery-thumb-span');
@@ -196,6 +196,8 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.prompt.positive.setTitle(LANG.api_prompt);
     globalThis.prompt.positive_right.setTitle(LANG.regional_api_prompt_right);
     globalThis.prompt.negative.setTitle(LANG.api_neg_prompt);
+    globalThis.prompt.background.setTitle(LANG.prompt_background);
+    globalThis.prompt.style.setTitle(LANG.prompt_style);
     globalThis.prompt.ai.setTitle(LANG.ai_prompt);
     globalThis.prompt.exclude.setTitle(LANG.prompt_ban);
     globalThis.prompt.tagCapsuleFields?.updateLanguage?.();
@@ -300,11 +302,9 @@ export function updateSettings() {
     globalThis.generate.tag_assist.setValue(SETTINGS.tag_assist);
     globalThis.generate.wildcard_random.setValue(SETTINGS.wildcard_random);
 
-    globalThis.viewList.updateDefaults(SETTINGS.view_angle, SETTINGS.view_camera, SETTINGS.view_background, SETTINGS.view_style);
+    globalThis.viewList.updateDefaults(SETTINGS.view_angle, SETTINGS.view_camera);
     globalThis.viewList.setTextValue(0, SETTINGS.weights4dropdownlist[0]);  // tag_angle
     globalThis.viewList.setTextValue(1, SETTINGS.weights4dropdownlist[1]);  // tag_camera
-    globalThis.viewList.setTextValue(2, SETTINGS.weights4dropdownlist[2]);  // tag_background
-    globalThis.viewList.setTextValue(3, SETTINGS.weights4dropdownlist[3]);  // tag_style
 
     // need more careful for sampler and scheduler due to different list
     if (SETTINGS.api_interface==='ComfyUI') {
@@ -365,6 +365,8 @@ export function updateSettings() {
     globalThis.prompt.positive.setValue(SETTINGS.api_prompt);
     globalThis.prompt.positive_right.setValue(SETTINGS.api_prompt_right);
     globalThis.prompt.negative.setValue(SETTINGS.api_neg_prompt);
+    globalThis.prompt.background.setValue(SETTINGS.prompt_background);
+    globalThis.prompt.style.setValue(SETTINGS.prompt_style);
     globalThis.prompt.ai.setValue(SETTINGS.ai_prompt);
     globalThis.prompt.exclude.setValue(SETTINGS.prompt_ban);
     globalThis.prompt.tagCapsuleFields?.loadFromSettings?.(SETTINGS);

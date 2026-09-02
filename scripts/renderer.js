@@ -318,6 +318,16 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
             minLines: 3,
             maxLines: 50
             }, false, (value) => { globalThis.globalSettings.api_prompt_right = value; }),
+        background: setupTextbox('prompt-background', LANG.prompt_background, {
+            value: SETTINGS.prompt_background,
+            defaultTextColor: 'BurlyWood',
+            maxLines: 10
+            }, false, (value) => { globalThis.globalSettings.prompt_background = value; }),
+        style: setupTextbox('prompt-style', LANG.prompt_style, {
+            value: SETTINGS.prompt_style,
+            defaultTextColor: 'BurlyWood',
+            maxLines: 10
+            }, false, (value) => { globalThis.globalSettings.prompt_style = value; }),
         negative: setupTextbox('prompt-negative', LANG.api_neg_prompt, {
             value: SETTINGS.api_neg_prompt,
             defaultTextColor: 'Crimson',
@@ -344,19 +354,23 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
     setupSuggestionSystem();
     globalThis.prompt.tagSelectionModals = setupTagSelectionModal([
         globalThis.prompt.common,
+        globalThis.prompt.background,
+        globalThis.prompt.style,
         globalThis.prompt.positive,
         globalThis.prompt.positive_right,
         globalThis.prompt.negative,
         globalThis.prompt.exclude,
-    ], ['common', 'positive', 'positive_right', 'negative', 'exclude']);
+    ], ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'exclude']);
     globalThis.prompt.tagCapsuleFields = setupTagCapsuleFields([
         globalThis.prompt.common,
+        globalThis.prompt.background,
+        globalThis.prompt.style,
         globalThis.prompt.positive,
         globalThis.prompt.positive_right,
         globalThis.prompt.negative,
         globalThis.prompt.exclude,
     ], {
-        keys: ['common', 'positive', 'positive_right', 'negative', 'exclude'],
+        keys: ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'exclude'],
         applyExclude: (prompt, exclude) => filterPrompts(prompt, prompt, exclude).positivePrompt,
         finalPromptContainer: document.querySelector('#prompt-text-container .prompt-fields') ?? document.querySelector('#prompt-text-container'),
     });

@@ -28,7 +28,7 @@ import { getBatchWeightDialog } from './batchWeightDialog.js';
 import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
 import { tagText } from './tagUiText.js';
 
-export const PROMPT_FIELD_KEYS = Object.freeze(['common', 'positive', 'positive_right', 'negative', 'exclude']);
+export const PROMPT_FIELD_KEYS = Object.freeze(['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'exclude']);
 
 function el(tag, className, text = '') {
     const node = document.createElement(tag);

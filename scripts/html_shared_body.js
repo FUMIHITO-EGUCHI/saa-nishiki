@@ -97,7 +97,7 @@ export const sharedBodyHTML = `
             <section class="ui-card characters-card" aria-label="Characters and views">
               <div class="ui-card-head">
                 <span class="ui-card-title" data-ui-text="ui_characters_title">Characters &amp; Views</span>
-                <span class="ui-card-sub" data-ui-text="ui_characters_sub">3 lists + OC · Angle / Camera / Background / Style</span>
+                <span class="ui-card-sub" data-ui-text="ui_characters_sub">3 lists + OC · Angle / Camera</span>
                 <div class="ui-card-tools">
                   <div class="regional-condition-trigger-dummy ui-switch"></div>
                 </div>
@@ -129,13 +129,15 @@ export const sharedBodyHTML = `
             <section class="ui-card prompts-card" id="prompt-text-container" aria-label="Prompts">
               <div class="ui-card-head">
                 <span class="ui-card-title" data-ui-text="ui_prompts_title">Prompts</span>
-                <span class="ui-card-sub" data-ui-text="ui_prompts_sub">Common → Character → Positive · Exclude applies to all</span>
+                <span class="ui-card-sub" data-ui-text="ui_prompts_sub">Common → Background / Style → Character → Positive · Exclude applies to all</span>
                 <div class="ui-card-tools">
                   <span class="preset-host" data-preset-host="prompt"></span>
                 </div>
               </div>
               <div class="ui-card-body prompt-fields">
                 <div class="prompt-common prompt-field" data-stripe="common">common</div>
+                <div class="prompt-background prompt-field" data-stripe="view">background</div>
+                <div class="prompt-style prompt-field" data-stripe="view">style</div>
                 <div class="prompt-positive prompt-field" data-stripe="positive">positive</div>
                 <div class="prompt-positive-right prompt-field" data-stripe="positive">positive-right</div>
                 <div class="prompt-negative prompt-field" data-stripe="negative">negative</div>

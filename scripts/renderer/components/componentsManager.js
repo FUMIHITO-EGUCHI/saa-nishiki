@@ -5,16 +5,18 @@ export function get_prompt_textBox_Heights(){
     const neg = globalThis.prompt.negative.getHeight();
     const ai = globalThis.prompt.ai.getHeight();
     const exc = globalThis.prompt.exclude.getHeight();
+    // background / style are appended so 6-entry arrays from older versions stay readable
+    const bg = globalThis.prompt.background.getHeight();
+    const style = globalThis.prompt.style.getHeight();
 
-    console.log([common, pos, posr, neg, ai, exc]);
-    return [common, pos, posr, neg, ai, exc];    
+    return [common, pos, posr, neg, ai, exc, bg, style];
 }
 
 export function set_prompt_textBox_Heights(){
     const heights = Array.isArray(globalThis.globalSettings?.ptompt_textbox_heights)
         ? globalThis.globalSettings.ptompt_textbox_heights
-        : [3, 3, 3, 3, 3, 3];
-    const [common = 3, pos = 3, posr = 3, neg = 3, ai = 3, exc = 3] = heights;
+        : [3, 3, 3, 3, 3, 3, 3, 3];
+    const [common = 3, pos = 3, posr = 3, neg = 3, ai = 3, exc = 3, bg = 3, style = 3] = heights;
 
     globalThis.prompt.common.setHeight(common);
     globalThis.prompt.positive.setHeight(pos);
@@ -22,5 +24,6 @@ export function set_prompt_textBox_Heights(){
     globalThis.prompt.negative.setHeight(neg);
     globalThis.prompt.ai.setHeight(ai);
     globalThis.prompt.exclude.setHeight(exc);
+    globalThis.prompt.background.setHeight(bg);
+    globalThis.prompt.style.setHeight(style);
 }
-

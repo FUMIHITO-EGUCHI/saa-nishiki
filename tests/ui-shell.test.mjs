@@ -10,7 +10,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\
 test('shared body keeps every container the renderer looks up, in the new places', () => {
   const html = read('scripts/html_shared_body.js');
   for (const cls of ['dropdown-character', 'dropdown-character-regional', 'dropdown-view', 'regional-condition-trigger-dummy', 'regional-condition-swap',
-    'prompt-common', 'prompt-positive', 'prompt-positive-right', 'prompt-negative', 'prompt-exclude', 'prompt-ai', 'system-settings-ai-select', 'system-settings-ai-preview',
+    'prompt-common', 'prompt-background', 'prompt-style', 'prompt-positive', 'prompt-positive-right', 'prompt-negative', 'prompt-exclude', 'prompt-ai', 'system-settings-ai-select', 'system-settings-ai-preview',
     'system-settings-ai-interface', 'system-settings-ai-local-prompt-mode', 'generate-hires-fix', 'generate-refiner', 'generate-adetailer', 'generate-controlnet',
     'hires-fix-model', 'hires-fix-scale', 'hires-fix-color-transfer', 'hires-fix-denoise', 'hires-fix-steps', 'hires-fix-random-seed', 'hires-fix-resolution',
     'refiner-model', 'refiner-vpred', 'refiner-ratio', 'refiner-addnoise', 'adetailer-main', 'controlnet-main', 'add-lora-main', 'jsonlist-main', 'queue-main',

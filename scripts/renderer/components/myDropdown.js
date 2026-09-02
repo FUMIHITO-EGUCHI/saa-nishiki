@@ -137,9 +137,11 @@ export function myRegionalCharacterList(containerId, wai_characters, oc_characte
 
 function handleViewOptions(options, filteredOptions, args, dropdownCount) {
     const [data] = args;
-    if (typeof data !== 'object' || data === null || Object.keys(data).length !== dropdownCount) return;
-    
-    const keys = ['angle', 'camera', 'background', 'style'];
+    // view_tags.json still ships all four lists; only angle / camera stay dropdowns
+    // (background / style moved into the prompt fields).
+    if (typeof data !== 'object' || data === null || Object.keys(data).length < dropdownCount) return;
+
+    const keys = ['angle', 'camera'];
     for (let index = 0; index < options.length; index++) {
         const key = keys[index];
         options[index] = [
@@ -150,12 +152,12 @@ function handleViewOptions(options, filteredOptions, args, dropdownCount) {
     }
 }
 
-export function myViewsList(containerId, view_tags) {    
+export function myViewsList(containerId, view_tags) {
     const dropdown = createDropdown({
         containerId: containerId,
-        dropdownCount: 4,
-        labelPrefixList: ['angle', 'camera', 'background', 'view'],
-        textboxIds: ['cd-view-angle', 'cd-view-camera', 'cd-view-background', 'cd-view-style'],
+        dropdownCount: 2,
+        labelPrefixList: ['angle', 'camera'],
+        textboxIds: ['cd-view-angle', 'cd-view-camera'],
         optionHandler: handleViewOptions,
         callback_func: callback_myViewList_Update,
         enableSearch: true,
@@ -168,10 +170,8 @@ export function myViewsList(containerId, view_tags) {
     if (view_tags && dropdown) {
         const labelPrefixList = `
         ${globalThis.cachedFiles.language[globalThis.globalSettings.language].view_angle},
-        ${globalThis.cachedFiles.language[globalThis.globalSettings.language].view_camera},
-        ${globalThis.cachedFiles.language[globalThis.globalSettings.language].view_background},
-        ${globalThis.cachedFiles.language[globalThis.globalSettings.language].view_style}`;
-        dropdown.setOptions(view_tags, null, labelPrefixList, 'None', 'None', 'None', 'None', false);
+        ${globalThis.cachedFiles.language[globalThis.globalSettings.language].view_camera}`;
+        dropdown.setOptions(view_tags, null, labelPrefixList, 'None', 'None', false);
     } else if (!dropdown) {
         console.error(CAT, `[myViewsList] Dropdown with containerId "${containerId}" not found.`);
     }

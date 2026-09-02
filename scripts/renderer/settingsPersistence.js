@@ -53,8 +53,10 @@ function weightsFromLists() {
     const number = value => { const parsed = Number.parseFloat(value); return Number.isFinite(parsed) ? parsed : 1; };
     if (!view?.getTextValue || !chars?.getTextValue || !regional?.getTextValue) return null;
     try {
+        // Slots 2-3 belonged to the retired Background / Style dropdown columns; kept as 1
+        // so the stored array shape stays compatible.
         return [
-            number(view.getTextValue(0)), number(view.getTextValue(1)), number(view.getTextValue(2)), number(view.getTextValue(3)),
+            number(view.getTextValue(0)), number(view.getTextValue(1)), 1, 1,
             number(chars.getTextValue(0)), number(chars.getTextValue(1)), number(chars.getTextValue(2)),
             number(regional.getTextValue(0)), number(regional.getTextValue(1)),
         ];

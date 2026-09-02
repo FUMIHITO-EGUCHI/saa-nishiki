@@ -90,6 +90,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     api_prompt: 'masterpiece, best quality, amazing quality',
     api_prompt_right: ':d, selfie',
     api_neg_prompt: 'bad quality,worst quality,worst detail,sketch,censor',
+    prompt_background: '',
+    prompt_style: '',
     ai_prompt: '',
     prompt_ban: '',
     common_weight_plans: [],
@@ -97,14 +99,18 @@ export const DEFAULT_SETTINGS = Object.freeze({
     positive_right_weight_plans: [],
     negative_weight_plans: [],
     exclude_weight_plans: [],
+    background_weight_plans: [],
+    style_weight_plans: [],
     common_batch: { enabled: false, count: 4 },
     positive_batch: { enabled: false, count: 4 },
     positive_right_batch: { enabled: false, count: 4 },
     negative_batch: { enabled: false, count: 4 },
     exclude_batch: { enabled: false, count: 4 },
+    background_batch: { enabled: false, count: 4 },
+    style_batch: { enabled: false, count: 4 },
     ptompt_textbox_autoresize: true,
     ptompt_textbox_fontsize: 14,
-    ptompt_textbox_heights: [3, 3, 3, 3, 3, 3],
+    ptompt_textbox_heights: [3, 3, 3, 3, 3, 3, 3, 3],
 
     remote_ai_base_url: 'https://api.groq.com/openai/v1/chat/completions',
     remote_ai_model: 'meta-llama/llama-4-maverick-17b-128e-instruct',
@@ -151,7 +157,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     fav_tags: { positive: [], negative: [] },
 
     generate_auto_start: true,
-    // 4:3:2 = 9 number inputs: views 0-3, characters 4-6, regional characters 7-8
+    // 9 number inputs kept for on-disk compatibility: views angle 0 / camera 1
+    // (2-3 were background / style, retired by the prompt-field migration and pinned to 1),
+    // characters 4-6, regional characters 7-8
     weights4dropdownlist: [1, 1, 1, 1, 1, 1, 1, 1, 1],
 
     // last preset name loaded per section ('' = none)
@@ -180,9 +188,11 @@ export const SECTION_KEYS = Object.freeze({
     prompt: Object.freeze([
         'character1', 'character2', 'character3', 'character_left', 'character_right',
         'view_angle', 'view_camera', 'view_background', 'view_style', 'weights4dropdownlist',
-        'custom_prompt', 'api_prompt', 'api_prompt_right', 'api_neg_prompt', 'ai_prompt', 'prompt_ban',
+        'custom_prompt', 'api_prompt', 'api_prompt_right', 'api_neg_prompt', 'prompt_background', 'prompt_style', 'ai_prompt', 'prompt_ban',
         'common_weight_plans', 'positive_weight_plans', 'positive_right_weight_plans', 'negative_weight_plans', 'exclude_weight_plans',
+        'background_weight_plans', 'style_weight_plans',
         'common_batch', 'positive_batch', 'positive_right_batch', 'negative_batch', 'exclude_batch',
+        'background_batch', 'style_batch',
         'ai_interface', 'ai_local_prompt_mode', 'ai_prompt_role', 'ai_prompt_preview',
     ]),
     generation: Object.freeze([
@@ -284,6 +294,34 @@ function coerce(key, value, defaultValue) {
     return sameType(defaultValue, value) ? clone(value) : clone(defaultValue);
 }
 
+// The Background / Style dropdown columns became prompt fields. A selection stored by an
+// older version (state file or preset) is converted into prompt text once, then cleared,
+// so re-normalizing already-migrated data is a no-op. 'Random' stays the literal keyword
+// `random`, which the generator still resolves against the view-tag list per seed.
+function migrateViewPrompts(result) {
+    const moves = [['view_background', 'prompt_background', 2], ['view_style', 'prompt_style', 3]];
+    for (const [fromKey, toKey, weightIndex] of moves) {
+        const value = String(result[fromKey] ?? '').trim();
+        result[fromKey] = 'None';
+        if (value === '' || value.toLowerCase() === 'none') continue;
+        let tag;
+        if (value.toLowerCase() === 'random') {
+            tag = 'random';
+        } else {
+            tag = value.toLowerCase().replaceAll('\\', '\\\\').replaceAll('(', '\\(').replaceAll(')', '\\)');
+            const weight = Number(result.weights4dropdownlist?.[weightIndex]);
+            if (Number.isFinite(weight) && weight !== 1) tag = `(${tag}:${weight})`;
+        }
+        const existing = String(result[toKey] ?? '').trim();
+        result[toKey] = existing ? `${existing.replace(/,$/, '')}, ${tag}` : tag;
+    }
+    if (Array.isArray(result.weights4dropdownlist)) {
+        result.weights4dropdownlist[2] = 1;
+        result.weights4dropdownlist[3] = 1;
+    }
+    return result;
+}
+
 /**
  * Return a complete, typed object for `section`: every section key present, aliases resolved,
  * foreign / unknown keys dropped (reported through `warn`).
@@ -302,6 +340,7 @@ export function normalizeSection(section, data, { warn = null } = {}) {
         }
         result[key] = coerce(key, value, DEFAULT_SETTINGS[key]);
     }
+    if (section === 'prompt') migrateViewPrompts(result);
     return result;
 }
 

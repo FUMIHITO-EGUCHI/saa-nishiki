@@ -423,6 +423,8 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
             }
         }
         const common = expandField('common', imageIndex);
+        const background = expandField('background', imageIndex);
+        const style = expandField('style', imageIndex);
         const positiveTail = expandField('positive', imageIndex);
         const positiveRightTail = expandField('positive_right', imageIndex);
         const negative = expandField('negative', imageIndex);
@@ -442,6 +444,8 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
             negative,
             fields: {
                 common,
+                background,
+                style,
                 positive: positiveTail,
                 positive_right: positiveRightTail,
                 negative,

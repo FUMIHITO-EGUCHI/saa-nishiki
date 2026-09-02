@@ -154,13 +154,9 @@ export async function callback_myCharacterList_updateThumb(){
 export function callback_myViewList_Update(){
     const v1 = globalThis.viewList.getValue()[0];
     const v2 = globalThis.viewList.getValue()[1];
-    const v3 = globalThis.viewList.getValue()[2];
-    const v4 = globalThis.viewList.getValue()[3];
 
     globalThis.globalSettings.view_angle = v1;
     globalThis.globalSettings.view_camera = v2;
-    globalThis.globalSettings.view_background = v3;
-    globalThis.globalSettings.view_style = v4;
 }
 
 export async function callback_generate_start(runType='normal', dataPack=null){    
