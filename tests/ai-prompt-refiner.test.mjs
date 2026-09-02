@@ -4,16 +4,113 @@ import assert from 'node:assert/strict';
 import {
     PROMPT_MODE_EXPAND,
     PROMPT_MODE_REFINE,
+    LEGACY_FULL_REFINE_SYSTEM_PROMPT,
     LEGACY_REFINE_SYSTEM_PROMPT,
     REFINE_SYSTEM_PROMPT,
     applyAiPromptResult,
     buildRefineUserContent,
+    buildRefineV2UserContent,
     normalizePromptMode,
+    parseRefineEnvelope,
     parseRefineResponse,
     removeAiPromptMarker,
     renderAiPromptInfo,
     resolveRefineSystemPrompt,
 } from '../scripts/aiPromptRefiner.js';
+
+test('v2 refine request separates editable fields from rendered generation context', () => {
+    const content = buildRefineV2UserContent({
+        instruction: '背景を弱めて',
+        editorFields: {
+            common: 'masterpiece',
+            positive: 'portrait, {day|night}',
+            positiveRight: 'full body',
+            negative: 'worst quality',
+        },
+        generationContext: {
+            positive: 'masterpiece, city, alice, portrait, <lora:style:0.8>',
+            positiveRight: 'masterpiece, city, bob, full body',
+            negative: 'worst quality, extra arms',
+        },
+    });
+
+    assert.deepEqual(JSON.parse(content), {
+        schema_version: 2,
+        instruction: '背景を弱めて',
+        editor: {
+            common: 'masterpiece',
+            positive: 'portrait, {day|night}',
+            positive_right: 'full body',
+            negative: 'worst quality',
+        },
+        generation_context: {
+            positive: 'masterpiece, city, alice, portrait, <lora:style:0.8>',
+            positive_right: 'masterpiece, city, bob, full body',
+            negative: 'worst quality, extra arms',
+        },
+    });
+});
+
+test('v2 response is strict and explicitly classified for generation and editor apply', () => {
+    const result = parseRefineEnvelope(JSON.stringify({
+        schema_version: 2,
+        common: 'masterpiece',
+        positive: 'portrait',
+        positive_right: '',
+        negative: '',
+        changes: 'Reorganized the prompt.',
+    }), { regional: false });
+
+    assert.equal(result.format, 'v2');
+    assert.equal(result.validForGeneration, true);
+    assert.equal(result.validForEditorApply, true);
+    assert.deepEqual(result.editorFields, {
+        common: 'masterpiece',
+        positive: 'portrait',
+        positiveRight: '',
+        negative: '',
+    });
+});
+
+test('unsupported schema versions are invalid instead of falling back to legacy', () => {
+    const result = parseRefineEnvelope(JSON.stringify({
+        schema_version: 3,
+        positive: 'portrait',
+        negative: '',
+        changes: '',
+    }));
+
+    assert.equal(result.format, 'invalid');
+    assert.equal(result.validForGeneration, false);
+    assert.equal(result.validForEditorApply, false);
+    assert.match(result.error, /schema_version/i);
+});
+
+test('v2 schema requires a bounded string changes field', () => {
+    const base = { schema_version: 2, common: '', positive: 'portrait', positive_right: '', negative: '' };
+    const missing = parseRefineEnvelope(JSON.stringify(base));
+    assert.equal(missing.format, 'invalid');
+    assert.match(missing.error, /changes must be a string/i);
+
+    const oversized = parseRefineEnvelope(JSON.stringify({ ...base, changes: 'x'.repeat(2001) }));
+    assert.equal(oversized.format, 'invalid');
+    assert.match(oversized.error, /changes is too long/i);
+});
+
+test('versionless positive/negative response remains generation-only legacy output', () => {
+    const result = parseRefineEnvelope(JSON.stringify({
+        positive: 'masterpiece, portrait',
+        negative: 'worst quality',
+        changes: 'Legacy result.',
+    }), {
+        originalPrompts: { positive: 'old positive', positiveRight: '', negative: 'old negative' },
+    });
+
+    assert.equal(result.format, 'legacy');
+    assert.equal(result.validForGeneration, true);
+    assert.equal(result.validForEditorApply, false);
+    assert.equal(result.generationFallback.positive, 'masterpiece, portrait');
+});
 
 test('prompt processing mode keeps Expand as the backward-compatible default', () => {
     assert.equal(normalizePromptMode(), PROMPT_MODE_EXPAND);
@@ -22,6 +119,9 @@ test('prompt processing mode keeps Expand as the backward-compatible default', (
 });
 
 test('Refine always rebuilds and reorganizes the complete prompt set', () => {
+    assert.match(REFINE_SYSTEM_PROMPT, /schema_version/i);
+    assert.match(REFINE_SYSTEM_PROMPT, /common.*positive.*positive_right.*negative/is);
+    assert.match(REFINE_SYSTEM_PROMPT, /generation_context/i);
     assert.match(REFINE_SYSTEM_PROMPT, /rebuild the entire positive and negative prompts/i);
     assert.match(REFINE_SYSTEM_PROMPT, /complete replacement/i);
     assert.match(REFINE_SYSTEM_PROMPT, /reorder/i);
@@ -32,6 +132,7 @@ test('Refine always rebuilds and reorganizes the complete prompt set', () => {
 
 test('saved legacy default migrates to full reconstruction while custom prompts are preserved', () => {
     assert.equal(resolveRefineSystemPrompt(LEGACY_REFINE_SYSTEM_PROMPT), REFINE_SYSTEM_PROMPT);
+    assert.equal(resolveRefineSystemPrompt(LEGACY_FULL_REFINE_SYSTEM_PROMPT), REFINE_SYSTEM_PROMPT);
     assert.equal(resolveRefineSystemPrompt(''), REFINE_SYSTEM_PROMPT);
     assert.equal(
         resolveRefineSystemPrompt('My intentionally customized refine instructions.'),

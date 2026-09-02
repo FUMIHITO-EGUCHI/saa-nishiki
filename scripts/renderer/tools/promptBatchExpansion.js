@@ -26,7 +26,11 @@ export function overrideSeed(sliderSeed) {
 }
 
 export function planBatchExpansion({ loops = 1, runSame = false } = {}, options = {}) {
+    const baseFields = options.baseFields && typeof options.baseFields === 'object'
+        ? Object.freeze({ ...options.baseFields })
+        : null;
     const base = { loops, enabled: false, count: 1, baseSeed: -1 };
+    if (baseFields) base.baseFields = baseFields;
     const set = options.fieldSet ?? fieldSet();
     if (runSame || !set?.getBatchExpansion) return base;
     const plan = set.getBatchExpansion();
@@ -35,25 +39,45 @@ export function planBatchExpansion({ loops = 1, runSame = false } = {}, options 
     const sliderSeed = Number(options.sliderSeed ?? globalThis.generate?.seed?.getValue?.() ?? -1);
     const randomSeed = typeof options.generateRandomSeed === 'function' ? options.generateRandomSeed : () => Math.floor(Math.random() * 4294967295);
     const baseSeed = Number.isFinite(sliderSeed) && sliderSeed >= 0 ? sliderSeed : randomSeed();
+    const plannedLoops = loops <= 1 ? plan.count : loops;
+    const rows = Array.from({ length: plannedLoops }, (_, imageIndex) => {
+        const row = set.getPromptOverrides?.(imageIndex, baseSeed);
+        if (!row) return null;
+        const { weights, terminal, ...fields } = row;
+        return Object.freeze({
+            fields: Object.freeze({ ...fields }),
+            weights: Object.freeze({ ...(weights ?? {}) }),
+            terminal: Object.freeze([...(terminal ?? [])]),
+        });
+    });
     return {
-        loops: loops <= 1 ? plan.count : loops,
+        loops: plannedLoops,
         enabled: true,
         count: plan.count,
         baseSeed,
+        rows: Object.freeze(rows),
+        ...(baseFields ? { baseFields } : {}),
     };
 }
 
 export function beginImageOverride(expansion, loop, options = {}) {
     activeOverride = null;
-    if (!expansion?.enabled) return null;
+    if (!expansion?.enabled) {
+        if (expansion?.baseFields) activeOverride = { fields: expansion.baseFields };
+        return null;
+    }
+    const frozenRow = expansion.rows?.[loop];
     const set = options.fieldSet ?? fieldSet();
-    const row = set?.getPromptOverrides?.(loop, expansion.baseSeed);
+    const liveRow = frozenRow ? null : set?.getPromptOverrides?.(loop, expansion.baseSeed);
+    const row = frozenRow ?? (liveRow ? (() => {
+        const { weights, terminal, ...fields } = liveRow;
+        return { fields, weights, terminal };
+    })() : null);
     if (!row) return null;
-    const { weights, terminal, ...fields } = row;
     activeOverride = {
-        fields,
-        weights: weights ?? {},
-        terminal: terminal ?? [],
+        fields: row.fields,
+        weights: row.weights ?? {},
+        terminal: row.terminal ?? [],
         seed: expansion.baseSeed + loop,
         imageIndex: loop,
     };

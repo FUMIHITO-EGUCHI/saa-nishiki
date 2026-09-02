@@ -1893,6 +1893,12 @@ body {
 .run-saved[hidden] { display: none !important; }
 
 /* ---- header ---- */
+.edit-history-controls { display: inline-flex; align-items: center; gap: 2px; }
+.edit-history-button { width: 26px; height: 24px; padding: 0; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--saa-muted2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.edit-history-button:hover:not(:disabled) { background: var(--saa-bg-hover); color: var(--saa-text); }
+.edit-history-button:disabled { opacity: .32; cursor: default; }
+.edit-history-button:focus-visible { outline: 2px solid var(--saa-accent); outline-offset: 1px; }
+.edit-history-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .header-status { display: flex; align-items: center; gap: 6px; }
 .status-pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border: 1px solid var(--saa-border); border-radius: 11px; background: var(--saa-bg-control); color: var(--saa-muted2); font: inherit; font-size: 11px; white-space: nowrap; cursor: pointer; }
 .status-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--saa-ok); }

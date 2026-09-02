@@ -97,7 +97,7 @@ export function createPresetControl({
                 await refresh();
                 return;
             }
-            apply(data, name);
+            await apply(data, name);
             setCurrent(name);
             render();
         } catch (error) {

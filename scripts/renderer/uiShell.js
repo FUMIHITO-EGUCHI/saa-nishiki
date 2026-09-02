@@ -369,9 +369,75 @@ function setupLeftPanel() {
     setTab(initial);
 
     const aiText = panel.querySelector('.ai-result-text');
+    const aiPanel = panel.querySelector('[data-info-panel="ai"]');
+    let pendingRunId = '';
     function showAiResult(text, { focus = false } = {}) {
         if (aiText) aiText.textContent = String(text ?? '');
         const tab = tabs.find(t => t.dataset.infoTab === 'ai');
+        if (focus) setTab('ai');
+        else if (active !== 'ai') tab?.classList.add('has-new');
+    }
+
+    function showRefinePending({ runId, text, status = 'Pending editor update', canApply = true, onApply, onDiscard, focus = false } = {}) {
+        if (!aiPanel || !runId) return;
+        pendingRunId = runId;
+        aiPanel.querySelector('.ai-refine-pending')?.remove();
+        const container = document.createElement('section');
+        container.className = 'ai-refine-pending';
+        container.dataset.runId = runId;
+        container.setAttribute('aria-label', 'AI Refine editor update');
+
+        const statusNode = document.createElement('div');
+        statusNode.className = 'ai-refine-status';
+        statusNode.setAttribute('role', 'status');
+        statusNode.setAttribute('aria-live', 'polite');
+        statusNode.textContent = String(status);
+        const summary = document.createElement('pre');
+        summary.className = 'ai-refine-summary';
+        summary.textContent = String(text ?? '');
+        container.append(statusNode, summary);
+
+        if (canApply) {
+            const actions = document.createElement('div');
+            actions.className = 'ai-refine-actions';
+            const apply = document.createElement('button');
+            apply.type = 'button';
+            apply.textContent = 'Apply to prompt';
+            apply.setAttribute('aria-label', 'Apply AI Refine result to prompt fields');
+            const discard = document.createElement('button');
+            discard.type = 'button';
+            discard.textContent = 'Discard';
+            discard.setAttribute('aria-label', 'Discard AI Refine result');
+            apply.addEventListener('click', async () => {
+                if (pendingRunId !== runId) return;
+                apply.disabled = true;
+                discard.disabled = true;
+                statusNode.textContent = 'Applying…';
+                const result = await onApply?.();
+                if (result?.status === 'applied') {
+                    statusNode.textContent = result.discardedPlans > 0
+                        ? `Applied · ${result.discardedPlans} incompatible Weight Plan(s) removed`
+                        : 'Applied to prompt';
+                    actions.remove();
+                } else {
+                    statusNode.textContent = result?.status === 'conflict'
+                        ? 'Not applied: prompt changed after this run started'
+                        : `Not applied: ${result?.error ?? result?.status ?? 'unknown error'}`;
+                    apply.disabled = false;
+                    discard.disabled = false;
+                }
+            });
+            discard.addEventListener('click', () => {
+                if (pendingRunId !== runId) return;
+                pendingRunId = '';
+                container.remove();
+                onDiscard?.();
+            });
+            actions.append(apply, discard);
+            container.append(actions);
+        }
+        aiPanel.append(container);
+        const tab = tabs.find(item => item.dataset.infoTab === 'ai');
         if (focus) setTab('ai');
         else if (active !== 'ai') tab?.classList.add('has-new');
     }
@@ -426,7 +492,7 @@ function setupLeftPanel() {
     }
     refreshViewerStatus();
 
-    return { setTab, showAiResult, refreshViewerStatus, setHeight };
+    return { setTab, showAiResult, showRefinePending, refreshViewerStatus, setHeight };
 }
 
 // ------------------------------------------------------------------ preview mirror
@@ -518,6 +584,7 @@ export function setupUiShell() {
     globalThis.infoPanel = {
         setTab: name => shell.leftPanel?.setTab?.(name),
         showAiResult: (text, options) => shell.leftPanel?.showAiResult?.(text, options),
+        showRefinePending: options => shell.leftPanel?.showRefinePending?.(options),
     };
     shell.updateLanguage();
     return shell;

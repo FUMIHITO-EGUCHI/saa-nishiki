@@ -284,6 +284,23 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
             textbox.dispatchEvent(new CustomEvent('mytextbox-value-set'));
             setTimeout(adjustHeight, 0);
         },
+        commitValue: (value) => {
+            textbox.value = value;
+            if (numberOnly) {
+                const validPattern = /^-?\d*\.?\d*$/;   // NOSONAR S8786
+                textbox.value = validPattern.test(value) ? value : (textbox.dataset.lastValid || '');
+                textbox.dataset.lastValid = textbox.value;
+            }
+            realValue = textbox.value;
+            if (passwordMode) {
+                onInputCallback?.(realValue);
+                textbox.value = '******';
+                textbox.dispatchEvent(new CustomEvent('mytextbox-value-set'));
+            } else {
+                textbox.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            setTimeout(adjustHeight, 0);
+        },
         setColors: (backgroundColor, textColor) => {
             textbox.style.backgroundColor = backgroundColor;
             textbox.style.color = textColor;

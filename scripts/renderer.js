@@ -35,6 +35,7 @@ import { extractHostPort } from './renderer/generate.js';
 import { CLIP_TYPE, CLIP_DEVICE, DIFFUSION_DTYPE } from './types.js';
 import { flushSlots } from './renderer/slots/slotsManager.js';
 import { installSettingsProxy, setupSettingsPersistence } from './renderer/settingsPersistence.js';
+import { setupEditHistoryUi } from './renderer/editHistoryUi.js';
 import { get_prompt_textBox_Heights, set_prompt_textBox_Heights } from './renderer/components/componentsManager.js';
 import { hiresCalculate } from './renderer/tools/hiresCalculation.js';
 
@@ -628,6 +629,7 @@ async function init(){
 
         // Autosave (app.json / state.json), per-section preset controls, flush on unload.
         setupSettingsPersistence({ updateSettings, flushSlots, getTextboxHeights: get_prompt_textBox_Heights });
+        setupEditHistoryUi();
         if (ranWizard) {
             // first run: persist the wizard result right away
             globalThis.settingsAutosave.markDirty('app');

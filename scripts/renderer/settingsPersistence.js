@@ -6,6 +6,7 @@
 // language.js / callbacks.js import tangle.
 import { PRESET_SECTIONS, SECTION_KEYS, clone, pickSection, sectionOf } from '../shared/settingsSections.js';
 import { createAutosave, createSettingsProxy } from './tools/settingsAutosave.js';
+import { createEditHistory } from './tools/editHistory.js';
 import { createPresetControl } from './components/presetControl.js';
 import { showDialog } from './components/myDialog.js';
 
@@ -19,6 +20,9 @@ let autosave = null;
 let hooks = {};
 let controls = new Map();
 let savedTimer = null;
+let editHistory = null;
+
+const EDITABLE_SECTIONS = new Set(PRESET_SECTIONS);
 
 function lang() {
     return globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language] ?? {};
@@ -40,10 +44,22 @@ export function installSettingsProxy(settings) {
         onSaved: showSaved,
         onError: (error, sections) => console.warn(CAT, 'autosave failed for', sections, error?.message ?? error),
     });
-    const proxy = createSettingsProxy(raw, key => autosave.markDirty(key));
+    const proxy = createSettingsProxy(raw, key => autosave.markDirty(key), {
+        beforeChange: change => beginSettingHistory(change),
+    });
     globalThis.globalSettings = proxy;
     globalThis.settingsAutosave = autosave;
     return proxy;
+}
+
+function beginSettingHistory(change) {
+    const section = sectionOf(change?.key);
+    if (!editHistory || !EDITABLE_SECTIONS.has(section) || editHistory.isRecordingSuspended()) return;
+    editHistory.runTransaction({
+        source: 'setting',
+        sections: [section],
+        mergeKey: `setting:${change.key}`,
+    }, () => {}).catch(error => console.error(CAT, 'history capture failed', error));
 }
 
 function weightsFromLists() {
@@ -89,26 +105,52 @@ export function collectSection(section) {
     return pickSection(raw, section, { warn: message => console.warn(CAT, message) });
 }
 
-/** Write a section's data into globalSettings and refresh the UI that shows it. */
-export function applySectionData(section, data) {
-    if (!raw || !SECTION_KEYS[section]) return false;
-    for (const key of SECTION_KEYS[section]) {
-        if (Object.hasOwn(data ?? {}, key)) raw[key] = clone(data[key]);
+/** Atomically write multiple editable sections, then refresh derived UI once. */
+export function applySectionsData(sectionData = {}) {
+    if (!raw || !sectionData || typeof sectionData !== 'object') return false;
+    const sections = Object.keys(sectionData).filter(section => EDITABLE_SECTIONS.has(section) && SECTION_KEYS[section]);
+    if (sections.length === 0) return false;
+
+    for (const section of sections) {
+        const data = sectionData[section];
+        for (const key of SECTION_KEYS[section]) {
+            if (Object.hasOwn(data ?? {}, key)) raw[key] = clone(data[key]);
+        }
     }
-    autosave?.markDirty(section);
+
+    const capsules = globalThis.prompt?.tagCapsuleFields;
+    capsules?.beginBatchUpdate?.();
     try {
-        if (section === 'prompt' || section === 'generation') hooks.updateSettings?.();
-        if (section === 'lora' || section === 'adetailer') hooks.flushSlots?.();
-        if (section === 'adetailer') globalThis.generate?.adetailer?.setValue?.(raw.api_adetailer_enable);
-        if (section === 'controlnet') {
-            globalThis.controlnet?.flush?.();
+        if (sections.some(section => section === 'prompt' || section === 'generation')) hooks.updateSettings?.();
+        if (sections.some(section => section === 'lora' || section === 'adetailer' || section === 'controlnet')) hooks.flushSlots?.();
+        if (sections.includes('adetailer')) globalThis.generate?.adetailer?.setValue?.(raw.api_adetailer_enable);
+        if (sections.includes('controlnet')) {
             globalThis.generate?.controlnet?.setValue?.(raw.api_controlnet_enable);
         }
     } catch (error) {
-        console.error(CAT, `apply ${section}: UI refresh failed`, error);
+        console.error(CAT, `apply ${sections.join(',')}: UI refresh failed`, error);
+    } finally {
+        capsules?.endBatchUpdate?.();
     }
-    document.dispatchEvent(new CustomEvent('saa-settings-applied', { detail: { section } }));
+
+    for (const section of sections) autosave?.markDirty(section);
+    document.dispatchEvent(new CustomEvent('saa-settings-applied', {
+        detail: {
+            section: sections.length === 1 ? sections[0] : null,
+            sections,
+        },
+    }));
     return true;
+}
+
+/** Write one section through the same atomic restore path used by undo/redo. */
+export function applySectionData(section, data) {
+    return applySectionsData({ [section]: data });
+}
+
+export function runEditTransaction(options, mutation) {
+    if (!editHistory) return mutation();
+    return editHistory.runTransaction(options, mutation);
 }
 
 function presetText(section) {
@@ -149,7 +191,7 @@ function mountPresetControls() {
                 globalThis.globalSettings.preset_current = { ...(raw.preset_current ?? {}), [section]: name ?? '' };
             },
             collect: () => collectSection(section),
-            apply: data => applySectionData(section, data),
+            apply: data => runEditTransaction({ source: 'preset', sections: [section] }, () => applySectionData(section, data)),
             dialog: {
                 input: options => showDialog('input', options),
                 confirm: options => showDialog('confirm', options),
@@ -160,10 +202,38 @@ function mountPresetControls() {
     }
 }
 
+function watchSectionInteraction(container, section, source) {
+    let interaction = null;
+    const begin = () => {
+        if (interaction || !editHistory) return;
+        interaction = editHistory.beginTransaction({ source, sections: [section] });
+    };
+    const commit = () => {
+        if (!interaction) return;
+        editHistory?.commitTransaction(interaction);
+        interaction = null;
+    };
+    container.addEventListener('pointerdown', begin, true);
+    container.addEventListener('click', commit);
+    container.addEventListener('keydown', event => {
+        if (event.isComposing || event.keyCode === 229) return;
+        begin();
+    }, true);
+    container.addEventListener('keyup', () => queueMicrotask(commit));
+    container.addEventListener('beforeinput', () => {
+        if (interaction || !editHistory) return;
+        editHistory.runTransaction({ source, sections: [section], mergeKey: `${source}:input` }, () => {})
+            .catch(error => console.error(CAT, `${source} history capture failed`, error));
+    }, true);
+    container.addEventListener('pointercancel', () => queueMicrotask(commit));
+    document.addEventListener('pointerup', () => setTimeout(commit, 0));
+}
+
 function watchSlots() {
     for (const [section, selector] of Object.entries(SLOT_CONTAINERS)) {
         const container = document.querySelector(selector);
         if (!container) continue;
+        watchSectionInteraction(container, section, `slot:${section}`);
         const mark = () => autosave?.markDirty(section);
         for (const type of ['input', 'change', 'click']) container.addEventListener(type, mark);
         new MutationObserver(mark).observe(container, { childList: true, subtree: true });
@@ -171,6 +241,7 @@ function watchSlots() {
     for (const selector of ['.dropdown-view', '.dropdown-character', '.dropdown-character-regional']) {
         const container = document.querySelector(selector);
         if (!container) continue;
+        watchSectionInteraction(container, 'prompt', 'prompt-dropdown');
         const mark = () => autosave?.markDirty('prompt');
         container.addEventListener('change', mark);
         container.addEventListener('input', mark);
@@ -206,12 +277,29 @@ function showSaved() {
 export function setupSettingsPersistence(uiHooks = {}) {
     hooks = uiHooks;
     if (!autosave) throw new Error('installSettingsProxy() must run before setupSettingsPersistence()');
+    editHistory = createEditHistory({
+        capture: section => collectSection(section),
+        restore: snapshots => applySectionsData(snapshots),
+        captureFocus: () => globalThis.editHistoryFocus?.capture?.() ?? null,
+        restoreFocus: focus => globalThis.editHistoryFocus?.restore?.(focus),
+        onChange: status => document.dispatchEvent(new CustomEvent('saa-edit-history-changed', { detail: status })),
+    });
+    globalThis.editHistory = editHistory;
     mountPresetControls();
     watchSlots();
     document.getElementById('settings-open-folder')?.addEventListener('click', () => globalThis.api?.openSettingsFolder?.());
     globalThis.addEventListener('beforeunload', () => { autosave.flushSync(); });
     autosave.enable(true);
-    globalThis.settingsPersistence = { flush: () => autosave.flush(), collectSection, applySectionData, updateLanguage, controls };
+    globalThis.settingsPersistence = {
+        flush: () => autosave.flush(),
+        collectSection,
+        applySectionData,
+        applySectionsData,
+        runEditTransaction,
+        history: editHistory,
+        updateLanguage,
+        controls,
+    };
     return globalThis.settingsPersistence;
 }
 

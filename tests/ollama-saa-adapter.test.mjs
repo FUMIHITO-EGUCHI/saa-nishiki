@@ -50,7 +50,7 @@ test('Ollama chat requests include the selected model and unload after the reque
     );
 });
 
-test('Refine requests send existing prompts as JSON and request structured output', () => {
+test('Refine v2 requests separate editor fields from rendered generation context', () => {
     const request = buildOllamaChatRequest({
         mode: 'Small',
         use: 'prompt',
@@ -59,6 +59,17 @@ test('Refine requests send existing prompts as JSON and request structured outpu
         userPrompt: '顔と目を強調する',
         existingPositive: 'masterpiece, portrait, city background',
         existingNegative: 'worst quality, blurry',
+        editorFields: {
+            common: 'masterpiece',
+            positive: 'portrait',
+            positiveRight: '',
+            negative: 'worst quality, blurry',
+        },
+        generationContext: {
+            positive: 'masterpiece, portrait, city background',
+            positiveRight: '',
+            negative: 'worst quality, blurry',
+        },
         temperature: 0.3,
         n_predict: 768,
     });
@@ -66,12 +77,39 @@ test('Refine requests send existing prompts as JSON and request structured outpu
     assert.equal(request.model, SMALL_MODEL);
     assert.equal(request.messages[0].content, REFINE_SYSTEM_PROMPT);
     assert.deepEqual(JSON.parse(request.messages[1].content), {
+        schema_version: 2,
         instruction: '顔と目を強調する',
-        positive: 'masterpiece, portrait, city background',
-        negative: 'worst quality, blurry',
+        editor: {
+            common: 'masterpiece',
+            positive: 'portrait',
+            positive_right: '',
+            negative: 'worst quality, blurry',
+        },
+        generation_context: {
+            positive: 'masterpiece, portrait, city background',
+            positive_right: '',
+            negative: 'worst quality, blurry',
+        },
     });
     assert.equal(request.format, 'json');
     assert.equal(request.keep_alive, 0);
+});
+
+test('custom Refine without editor fields keeps the legacy generation-only request', () => {
+    const request = buildOllamaChatRequest({
+        promptMode: 'Refine',
+        refineSystemPrompt: 'custom legacy prompt',
+        userPrompt: 'change lighting',
+        existingPositive: 'portrait',
+        existingNegative: 'blurry',
+    });
+
+    assert.equal(request.messages[0].content, 'custom legacy prompt');
+    assert.deepEqual(JSON.parse(request.messages[1].content), {
+        instruction: 'change lighting',
+        positive: 'portrait',
+        negative: 'blurry',
+    });
 });
 
 test('Ollama chat responses are normalized to the SAA response shape', () => {

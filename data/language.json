@@ -526,6 +526,10 @@
         "ui_section_adetailer": "ADetailer",
         "ui_section_controlnet": "ControlNet",
         "ui_saved": "Saved",
+        "ui_history_undo": "Undo",
+        "ui_history_redo": "Redo",
+        "ui_history_undone": "Undo complete",
+        "ui_history_redone": "Redo complete",
         "ui_settings_open_folder": "Open settings folder"
     },
     "zh-CN": {
@@ -1054,6 +1058,10 @@
         "ui_section_adetailer": "ADetailer",
         "ui_section_controlnet": "ControlNet",
         "ui_saved": "已保存",
+        "ui_history_undo": "撤销",
+        "ui_history_redo": "重做",
+        "ui_history_undone": "已撤销",
+        "ui_history_redone": "已重做",
         "ui_settings_open_folder": "打开设置文件夹"
     }
   }

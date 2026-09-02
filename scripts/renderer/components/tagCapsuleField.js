@@ -511,6 +511,10 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         getCapsules: () => capsules.map(capsule => ({ ...capsule, weightPlan: { ...capsule.weightPlan } })),
         getPlans: () => serializePlans(plans),
         getBatch: () => ({ ...batch }),
+        focusFromHistory: (capsuleId, fallbackIndex = 0) => {
+            const index = capsules.findIndex(capsule => capsule.id === capsuleId);
+            focusChip(index >= 0 ? index : Math.max(0, Math.min(capsules.length, fallbackIndex)));
+        },
         setPlans: entries => {
             plans = parsePlans(entries);
             syncFromText();
@@ -551,6 +555,8 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
 
     const fields = new Map();
     let disclosure = null;
+    let batchUpdateDepth = 0;
+    let finalRefreshPending = false;
 
     const fieldList = () => [...fields.values()];
     const previewSeed = () => Math.max(0, getGenerationSeed());
@@ -569,6 +575,14 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
 
     function refreshFinalPrompt() {
         disclosure?.refresh();
+    }
+
+    function requestFinalPromptRefresh() {
+        if (batchUpdateDepth > 0) {
+            finalRefreshPending = true;
+            return;
+        }
+        refreshFinalPrompt();
     }
 
     textboxControls.forEach((control, index) => {
@@ -596,7 +610,7 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
                 if (changed.key === 'exclude') {
                     for (const other of fields.values()) if (other !== changed) other.refresh();
                 }
-                refreshFinalPrompt();
+                requestFinalPromptRefresh();
             },
         });
         if (field) fields.set(key, field);
@@ -618,6 +632,14 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
     const set = {
         fields,
         get: key => fields.get(key) ?? null,
+        beginBatchUpdate: () => { batchUpdateDepth += 1; },
+        endBatchUpdate: () => {
+            batchUpdateDepth = Math.max(0, batchUpdateDepth - 1);
+            if (batchUpdateDepth === 0 && finalRefreshPending) {
+                finalRefreshPending = false;
+                refreshFinalPrompt();
+            }
+        },
         expandAll: (count, seed) => expandRows(count, seed),
         getBatchExpansion,
         getPromptOverrides: (imageIndex, seed) => {
@@ -637,7 +659,7 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
             getBatchWeightDialog().updateLanguage();
             disclosure?.updateLanguage();
         },
-        refreshFinalPrompt,
+        refreshFinalPrompt: requestFinalPromptRefresh,
         finalPrompt: () => disclosure,
     };
     return set;

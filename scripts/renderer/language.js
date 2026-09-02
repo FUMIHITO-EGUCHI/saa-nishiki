@@ -251,6 +251,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.imageInfo.updateHintText(LANG.image_info_drag_hint_top, LANG.image_info_drag_hint_bottom);
 
     globalThis.uiShell?.updateLanguage?.();
+    globalThis.editHistoryUi?.updateLanguage?.();
     hiresCalculate();
 }
 

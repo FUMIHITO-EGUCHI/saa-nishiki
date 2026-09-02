@@ -59,6 +59,8 @@ test('slots participate: ControlNet has flush(), slotsManager restores it, persi
     assert.match(persistence, /raw\.lora_slot = globalThis\.lora\.getValues\(\)/);
     assert.match(persistence, /raw\.ad_slot = globalThis\.aDetailer\.getValues\(\)/);
     assert.match(persistence, /raw\.controlnet_slot = globalThis\.controlnet\.getValues\(false\)/);
+    assert.match(persistence, /watchSectionInteraction\(container, section, `slot:\$\{section\}`\)/);
+    assert.match(persistence, /watchSectionInteraction\(container, 'prompt', 'prompt-dropdown'\)/);
     assert.match(persistence, /addEventListener\('beforeunload'/);
 });
 
