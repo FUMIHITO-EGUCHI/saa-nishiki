@@ -166,6 +166,9 @@ npm install
 
 <img src="examples/diffusion_models.png" width=25%>
 
+> [!NOTE]
+> Screenshot above is from the previous (upstream) UI. It will be retaken with the Nishiki UI once a diffusion model is set up in the test environment.
+
 <details>
 <summary>Details about Diffusion Models</summary>       
 
@@ -450,6 +453,9 @@ LoRA in `Common Prompt` also works if you have the same one. If you don't like L
 *Merge/Overwrite/Replace*: So, when you switch settings files, you might find that the favourite lists aren't the same. An options dialogue box will pop up and ask you what you want to do next. It's a little annoying, but it will get better once you have merged all.         
 
 <img src="examples/favoriteList.png" width=25%>
+
+> [!WARNING]
+> The favorite list (`@` search / `Alt+D` / `Alt+Q`) has not been ported to the new selection modal UI yet — see [#2](https://github.com/FUMIHITO-EGUCHI/saa-nishiki/issues/2). Screenshot above is from the previous (upstream) UI.
 
 ### Preview and Search
 The Character List supports keywords search in both Chinese and English.      
