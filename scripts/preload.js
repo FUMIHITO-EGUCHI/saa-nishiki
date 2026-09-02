@@ -156,6 +156,13 @@ contextBridge.exposeInMainWorld('api', {
 
   // Image Tagger
   runImageTagger: async (args) => ipcRenderer.invoke('run-image-tagger', args),
+
+  // User list diffs (R3): add / override / hide entries of the bundled lists
+  getUserLists: async () => ipcRenderer.invoke('get-user-lists'),
+  applyUserListChange: async (list, change) => ipcRenderer.invoke('apply-user-list-change', list, change),
+  prepareUserThumb: async (filePath) => ipcRenderer.invoke('prepare-user-thumb', filePath),
+  exportUserLists: async () => ipcRenderer.invoke('export-user-lists'),
+  importUserLists: async (mode) => ipcRenderer.invoke('import-user-lists', mode),
 });
 
 globalThis.addEventListener('DOMContentLoaded', () => {
