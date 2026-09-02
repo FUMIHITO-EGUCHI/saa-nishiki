@@ -2,9 +2,10 @@ import { ipcMain, BrowserWindow, net } from 'electron';
 import { WebSocket } from 'ws';
 import * as wsService from '../webserver/back/wsService.js';
 import { getMutexBackendBusy, setMutexBackendBusy } from '../../main-common.js';
-import { WORKFLOW, WORKFLOW_REGIONAL, WORKFLOW_CONTROLNET, 
-  WORKFLOW_MIRA_ITU, WORKFLOW_UNET, WORKFLOW_REIONAL_UNET, 
+import { WORKFLOW, WORKFLOW_REGIONAL, WORKFLOW_CONTROLNET,
+  WORKFLOW_MIRA_ITU, WORKFLOW_UNET, WORKFLOW_REIONAL_UNET,
   WORKFLOW_MIRA_ITU_UNET, WORKFLOW_MIRA_ITU_UNET_PREBAKE, VAE_LOADER} from './comfyui_workflow.js';
+import { backendAuthHeaders, httpApiUrl, wsApiUrl } from '../shared/backendAddress.js';
 
 const CAT = '[ComfyUI]';
 const TIMEOUT = 5000; // 5 seconds timeout for backend response
@@ -678,11 +679,11 @@ function applyADetailerUnet(workflow, adetailers, workflowInfo) {
 }
 
 // HTTP quick health check: return true if HTTP responds
-function checkHttpAlive(addr, timeout = TIMEOUT) {
+function checkHttpAlive(addr, timeout = TIMEOUT, auth = '') {
   return new Promise((res) => {
     try {
-      const apiUrl = /^https?:\/\//i.test(addr) ? `${addr}/` : `http://${addr}/`;
-      const req = net.request({ method: 'GET', url: apiUrl, timeout: Math.min(2000, timeout) });
+      const apiUrl = httpApiUrl(addr);
+      const req = net.request({ method: 'GET', url: apiUrl, headers: backendAuthHeaders(auth), timeout: Math.min(2000, timeout) });
       let answered = false;
 
       function onResponse(response) {
@@ -727,10 +728,11 @@ class ComfyUI {
   }
 
   cancelGenerate() {
-    const apiUrl = `http://${this.addr}/interrupt`;
+    const apiUrl = httpApiUrl(this.addr, 'interrupt');
     let request = net.request({
       method: 'POST',
       url: apiUrl,
+      headers: backendAuthHeaders(this.auth),
       timeout: this.timeout
     });
 
@@ -756,8 +758,8 @@ class ComfyUI {
       this.step = 0;
       this.firstValidPreview = !skipFirst;
 
-      const wsUrl = `ws://${this.addr}/ws?clientId=${this.clientID}`;
-      this.webSocket = new WebSocket(wsUrl);
+      const wsUrl = wsApiUrl(this.addr, `ws?clientId=${this.clientID}`);
+      this.webSocket = new WebSocket(wsUrl, { headers: backendAuthHeaders(this.auth) });
 
       let settled = false;
       let timeoutTimer = null;
@@ -780,7 +782,7 @@ class ComfyUI {
         cleanupTimers();
         timeoutTimer = setTimeout(async () => {
           if (settled) return;
-          const alive = await checkHttpAlive(this.addr, this.timeout);
+          const alive = await checkHttpAlive(this.addr, this.timeout, this.auth);
           if (alive) {
             // reschedule next timeout; do not terminate
             if (!settled) scheduleConnTimeout();
@@ -807,7 +809,7 @@ class ComfyUI {
             sock.on('timeout', async () => {
               if (settled) return;
               console.warn(CAT, `WebSocket underlying socket timeout after ${this.timeout}ms -> performing HTTP check`);
-              const alive = await checkHttpAlive(this.addr, this.timeout);
+              const alive = await checkHttpAlive(this.addr, this.timeout, this.auth);
               if (alive) {
                 console.log(CAT, 'HTTP is alive; ignore underlying socket timeout and continue monitoring.');
                 // keep socket open and continue monitoring by scheduling next conn timeout
@@ -1018,16 +1020,12 @@ class ComfyUI {
       return `Error: urlPrefix not allowed.`;
     }
 
-    let apiUrl = '';
-    if (/^https?:\/\//i.test(this.addr)) {
-      apiUrl = `${this.addr}/${this.urlPrefix}`;
-    } else {
-      apiUrl = `http://${this.addr}/${this.urlPrefix}`;
-    }
+    const apiUrl = httpApiUrl(this.addr, this.urlPrefix);
 
     return new Promise((resolve, reject) => {
       let request = net.request({
         url: apiUrl,
+        headers: backendAuthHeaders(this.auth),
         timeout: this.timeout
       });
 
@@ -2340,13 +2338,14 @@ class ComfyUI {
         client_id: this.clientID
       };
       const body = JSON.stringify(requestBody);
-      const apiUrl = `http://${this.addr}/prompt`;
+      const apiUrl = httpApiUrl(this.addr, 'prompt');
 
       let request = net.request({
         method: 'POST',
         url: apiUrl,
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...backendAuthHeaders(this.auth)
         },
         timeout: this.timeout,
       });

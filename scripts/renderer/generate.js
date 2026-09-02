@@ -12,6 +12,7 @@ import { filterPrompts } from './tools/promptFilter.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
 import { applyAiPromptResult, removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
+import { normalizeApiAddress } from '../shared/backendAddress.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
 
@@ -32,38 +33,35 @@ export function fileToBase64(file) {
     });
 }
 
+// Keeps `https://host` origins intact (Runpod pod proxies need TLS + wss);
+// plain http inputs stay in the historical bare `host:port` shape.
 export function extractHostPort(input) {
     input = input.trim();
 
-    try {
-        const urlInput = input.match(/^[a-zA-Z]+:\/\//) ? input : `http://${input}`;
-        const url = new URL(urlInput);
-        return url.host;
-    } catch (e) {
-        const hostPortRegex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d{1,5})$/;
-        if (hostPortRegex.test(input)) {
-            return input;
-        }
-        const ret = `Invalid input: Expected a URL or host:port format (e.g., 'http://127.0.0.1:58189/' or '127.0.0.1:58188')\n${e}`;
-        console.error();        
-        globalThis.generate.cancelClicked = true;
-        globalThis.mainGallery.hideLoading(ret, ret);
+    const normalized = normalizeApiAddress(input);
+    if (normalized) return normalized;
+
+    const hostPortRegex = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d{1,5})$/;
+    if (hostPortRegex.test(input)) {
+        return input;
     }
+    const ret = `Invalid input: Expected a URL or host:port format (e.g., 'http://127.0.0.1:58189/' or '127.0.0.1:58188')`;
+    console.error(ret);
+    globalThis.generate.cancelClicked = true;
+    globalThis.mainGallery.hideLoading(ret, ret);
 
     return '127.0.0.1:58188';   // fail safe
 }
 
+// WebUI expects `user:pass` (--api-auth Basic); ComfyUI behind a proxy takes a
+// bearer token. The backends turn either shape into the right Authorization header.
 export function extractAPISecure(apiInterface) {
-    if(apiInterface === 'WebUI') {
-        const webui_auth = globalThis.generate.webui_auth.getValue();
-        const webui_auth_enable = globalThis.generate.webui_auth_enable.getValue();
-
-        if (webui_auth_enable === 'ON' && webui_auth.includes(':')) {
-            return webui_auth.trim();
-        }
-    }
-
-    return '';
+    if (apiInterface !== 'WebUI' && apiInterface !== 'ComfyUI') return '';
+    const auth = globalThis.generate.webui_auth.getValue().trim();
+    const enabled = globalThis.generate.webui_auth_enable.getValue() === 'ON';
+    if (!enabled || !auth) return '';
+    if (apiInterface === 'WebUI' && !auth.includes(':')) return '';
+    return auth;
 }
 
 export function generateRandomSeed() {

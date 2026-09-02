@@ -1,7 +1,9 @@
-// Loopback-only health probe for the header status pills.
-// Reads ComfyUI /system_stats and the Ollama /api/tags endpoint; never contacts any
-// host that is not 127.0.0.1 / localhost, and never sends anything but a GET.
+// Health probe for the header status pills.
+// Reads ComfyUI /system_stats and the Ollama /api/tags endpoint with GETs only.
+// Only the user-configured backend address is ever contacted: loopback hosts over
+// plain HTTP, remote hosts (e.g. Runpod pod proxies) only over HTTPS.
 import { net } from 'electron';
+import { backendAuthHeaders } from '../shared/backendAddress.js';
 
 const CAT = '[BackendStatus]';
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
@@ -19,7 +21,21 @@ export function loopbackOrigin(raw) {
     return `${url.protocol}//${url.host}`;
 }
 
-function getJson(url, { timeout = 1500, request = net.request } = {}) {
+// Loopback (any scheme) or HTTPS-only for remote hosts; anything else is refused.
+export function probeOrigin(raw) {
+    const loopback = loopbackOrigin(raw);
+    if (loopback) return loopback;
+    const text = String(raw ?? '').trim();
+    if (!/^https:\/\//i.test(text)) return null;
+    try {
+        const url = new URL(text);
+        return `${url.protocol}//${url.host}`;
+    } catch {
+        return null;
+    }
+}
+
+function getJson(url, { timeout = 1500, request = net.request, headers = {} } = {}) {
     return new Promise(resolve => {
         let settled = false;
         let req;
@@ -34,7 +50,7 @@ function getJson(url, { timeout = 1500, request = net.request } = {}) {
             finish({ ok: false, error: 'timeout' });
         }, timeout);
         try {
-            req = request({ method: 'GET', url, timeout });
+            req = request({ method: 'GET', url, headers, timeout });
         } catch (error) {
             finish({ ok: false, error: error?.message ?? String(error) });
             return;
@@ -82,14 +98,16 @@ export async function probeBackends(settings, options = {}) {
     const result = { comfy: { configured: false, ok: false }, ollama: { configured: false, ok: false }, checkedAt: Date.now() };
 
     if (settings?.api_interface === 'ComfyUI') {
-        const origin = loopbackOrigin(settings.api_addr);
+        const origin = probeOrigin(settings.api_addr);
         result.comfy.configured = Boolean(origin);
         result.comfy.address = origin ? origin.replace(/^https?:\/\//, '') : String(settings.api_addr ?? '');
         if (origin) {
-            const stats = await getJson(`${origin}/system_stats`, options);
+            const auth = settings.webui_auth_enable === 'ON' ? String(settings.webui_auth ?? '').trim() : '';
+            const comfyOptions = { ...options, headers: backendAuthHeaders(auth) };
+            const stats = await getJson(`${origin}/system_stats`, comfyOptions);
             if (stats.ok) {
                 Object.assign(result.comfy, { ok: true }, summarizeSystemStats(stats.data));
-                const queue = await getJson(`${origin}/queue`, options);
+                const queue = await getJson(`${origin}/queue`, comfyOptions);
                 if (queue.ok && queue.data) {
                     result.comfy.running = Array.isArray(queue.data.queue_running) ? queue.data.queue_running.length : 0;
                     result.comfy.pending = Array.isArray(queue.data.queue_pending) ? queue.data.queue_pending.length : 0;

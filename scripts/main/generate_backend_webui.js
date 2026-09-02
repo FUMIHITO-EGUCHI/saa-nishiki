@@ -2,6 +2,7 @@ import { ipcMain, net } from 'electron';
 import path from 'node:path';
 import { sendToRenderer } from './generate_backend_comfyui.js';
 import { getMutexBackendBusy, setMutexBackendBusy } from '../../main-common.js';
+import { backendAuthHeaders, httpApiUrl } from '../shared/backendAddress.js';
 
 const CAT = '[WebUI]';
 let backendWebUI = null;
@@ -119,13 +120,10 @@ class WebUI {
 
     async detectBackendType(addr, auth) {
         return new Promise((resolve, reject) => {
-            const apiUrl = `http://${addr}/sdapi/v1/options`;
+            const apiUrl = httpApiUrl(addr, 'sdapi/v1/options');
 
             let headers = {};
-            if (auth?.includes(':')) {
-                const encoded = Buffer.from(auth).toString('base64');
-                headers['Authorization'] = `Basic ${encoded}`;
-            }
+            Object.assign(headers, backendAuthHeaders(auth));
 
             let request = net.request({
                 method: 'GET',
@@ -210,15 +208,12 @@ class WebUI {
             optionPayload["directories_filename_pattern"] = img_prefix;
 
             const body = JSON.stringify(optionPayload);
-            const apiUrl = `http://${this.addr}/sdapi/v1/options`;
+            const apiUrl = httpApiUrl(this.addr, 'sdapi/v1/options');
 
             let headers = {
                 'Content-Type': 'application/json'
             };
-            if (auth?.includes(':')) {
-                const encoded = Buffer.from(auth).toString('base64');
-                headers['Authorization'] = `Basic ${encoded}`;
-            }
+            Object.assign(headers, backendAuthHeaders(auth));
 
             const request = net.request({
                 method: 'POST',
@@ -367,15 +362,12 @@ class WebUI {
             }
             
             const body = JSON.stringify(payload);
-            const apiUrl = `http://${this.addr}/sdapi/v1/txt2img`;
+            const apiUrl = httpApiUrl(this.addr, 'sdapi/v1/txt2img');
             
             let headers = {
                 'Content-Type': 'application/json'
             };
-            if (auth?.includes(':')) {
-                const encoded = Buffer.from(auth).toString('base64');
-                headers['Authorization'] = `Basic ${encoded}`;
-            }
+            Object.assign(headers, backendAuthHeaders(auth));
 
             const request = net.request({
                 method: 'POST',
@@ -551,15 +543,12 @@ class WebUI {
             }
             
             const body = JSON.stringify(payload);
-            const apiUrl = `http://${this.addr}/sdapi/v1/txt2img`;
+            const apiUrl = httpApiUrl(this.addr, 'sdapi/v1/txt2img');
             
             let headers = {
                 'Content-Type': 'application/json'
             };
-            if (auth?.includes(':')) {
-                const encoded = Buffer.from(auth).toString('base64');
-                headers['Authorization'] = `Basic ${encoded}`;
-            }
+            Object.assign(headers, backendAuthHeaders(auth));
 
             let request = net.request({
                 method: 'POST',
@@ -614,15 +603,12 @@ class WebUI {
 
     cancelGenerate() {
         const auth = this.auth;
-        const apiUrl = `http://${this.addr}/sdapi/v1/interrupt`;
+        const apiUrl = httpApiUrl(this.addr, 'sdapi/v1/interrupt');
 
         let headers = {
             'Content-Type': 'application/json'
         };
-        if (auth?.includes(':')) {
-            const encoded = Buffer.from(auth).toString('base64');
-            headers['Authorization'] = `Basic ${encoded}`;
-        }
+        Object.assign(headers, backendAuthHeaders(auth));
 
         let request = net.request({
             method: 'POST',
@@ -647,13 +633,10 @@ class WebUI {
         const interval = (this.refresh > 0 ? this.refresh : 1) * 1000;
         this.pollingInterval = setInterval(() => {
             const auth = this.auth;
-            const apiUrl = `http://${this.addr}/sdapi/v1/progress`;
+            const apiUrl = httpApiUrl(this.addr, 'sdapi/v1/progress');
 
             let headers = {};
-            if (auth?.includes(':')) {
-                const encoded = Buffer.from(auth).toString('base64');
-                headers['Authorization'] = `Basic ${encoded}`;
-            }
+            Object.assign(headers, backendAuthHeaders(auth));
 
             let request = net.request({
                 method: 'GET',
@@ -729,10 +712,7 @@ class WebUI {
             try {
                 // Default headers if none provided
                 let defaultHeaders = headers || { 'Content-Type': 'application/json' };
-                if (auth?.includes(':')) {
-                    const encoded = Buffer.from(auth).toString('base64');
-                    defaultHeaders['Authorization'] = `Basic ${encoded}`;
-                }
+                Object.assign(defaultHeaders, backendAuthHeaders(auth));
 
                 const chunks = [];
                 let request;
@@ -923,7 +903,7 @@ async function getListFromBAckend(generateData, url){
 async function updateControlNetHashList(generateData) {
     // update contronNe tModel Hash List first
     // that's really annoying, why they did not use prefix with model name?!
-    const  result = await getListFromBAckend(generateData, `http://${generateData.addr}/controlnet/model_list?update=true`);
+    const  result = await getListFromBAckend(generateData, httpApiUrl(generateData.addr, 'controlnet/model_list?update=true'));
     contronNetModelHashList = result?.model_list;    
     if (!Array.isArray(contronNetModelHashList)) {
         console.error(CAT, 'Invalid controlnet model_list from GET');
@@ -935,7 +915,7 @@ async function updateControlNetHashList(generateData) {
 
 async function updateControlProcessorList(generateData) {
     // update controlnet module_list
-    const result = await getListFromBAckend(generateData, `http://${generateData.addr}/controlnet/module_list`);
+    const result = await getListFromBAckend(generateData, httpApiUrl(generateData.addr, 'controlnet/module_list'));
     contronProcessorList = result?.module_list;    
     if (!Array.isArray(contronProcessorList)) {
         console.error(CAT, 'Invalid controlnet module_list from GET');
@@ -946,7 +926,7 @@ async function updateControlProcessorList(generateData) {
 
 async function updateAdModelList(generateData) {
     // update aDetailer Model List 
-    const result = await getListFromBAckend(generateData, `http://${generateData.addr}/adetailer/v1/ad_model`);
+    const result = await getListFromBAckend(generateData, httpApiUrl(generateData.addr, 'adetailer/v1/ad_model'));
     aDetailerModelList = result?.ad_model;
     if (!Array.isArray(aDetailerModelList)) {
         console.error(CAT, 'Invalid aDetailer ad_model from GET');
@@ -957,7 +937,7 @@ async function updateAdModelList(generateData) {
 
 async function updateUpscalerModelList(generateData) {
     // update Upscaler Model List 
-    const jsonData = await getListFromBAckend(generateData, `http://${generateData.addr}/sdapi/v1/upscalers`);
+    const jsonData = await getListFromBAckend(generateData, httpApiUrl(generateData.addr, 'sdapi/v1/upscalers'));
     if (typeof jsonData === 'string') {
         upscalersModelList = 'none';
         return upscalersModelList;
@@ -1131,7 +1111,7 @@ async function runWebUI_ControlNet(generateData) {
         };
 
         const result = await backendWebUI.makeHttpRequestControlnet(
-            `http://${generateData.addr}/controlnet/detect`,
+            httpApiUrl(generateData.addr, 'controlnet/detect'),
             generateData.auth,
             'POST',
             null,

@@ -34,13 +34,17 @@ test('pills: nothing for Ollama when the AI is not Local; ComfyUI pill says "not
   assert.deepEqual(formatBackendStatus(null), []);
 });
 
-test('main-side probe only ever targets loopback origins with GET', () => {
+test('main-side probe: GET only; loopback over http, remote only over https', () => {
   const source = read('scripts/main/backendStatus.js');
   assert.match(source, /LOOPBACK_HOSTS = new Set\(\['127\.0\.0\.1', 'localhost', '::1', '\[::1\]'\]\)/);
   assert.match(source, /method: 'GET'/);
   assert.doesNotMatch(source, /method: 'POST'/);
   assert.match(source, /\/system_stats/);
   assert.match(source, /\/api\/tags/);
+  // remote origins are https-only and carry the configured auth header
+  assert.match(source, /probeOrigin/);
+  assert.match(source, /\^https:\\\/\\\//);
+  assert.match(source, /backendAuthHeaders/);
   assert.match(read('main.js'), /registerBackendStatus\(ipcMain, getGlobalSettings\)/);
   assert.match(read('scripts/preload.js'), /getBackendStatus: async \(\) => ipcRenderer\.invoke\('get-backend-status'\)/);
 });
