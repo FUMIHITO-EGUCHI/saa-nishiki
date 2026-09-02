@@ -155,10 +155,14 @@ function handleViewOptions(options, filteredOptions, args, dropdownCount) {
     const keys = ['angle', 'camera'];
     for (let index = 0; index < options.length; index++) {
         const key = keys[index];
+        // merged lists carry { key, value } pairs (a user label may stand for several
+        // tags); plain strings are the upstream shape where key === value.
         options[index] = [
-            { key: 'random', value: 'random' }, 
+            { key: 'random', value: 'random' },
             { key: 'none', value: 'none' }
-        ].concat(data[key].map(item => ({ key: item, value: item })));
+        ].concat(data[key].map(item => typeof item === 'string'
+            ? { key: item, value: item }
+            : { key: item.key, value: item.value }));
         filteredOptions[index] = [...options[index]];
     }
 }
@@ -173,7 +177,8 @@ export function myViewsList(containerId, view_tags) {
         callback_func: callback_myViewList_Update,
         enableSearch: true,
         enableOverlay: false,
-        valueOnly: true,
+        // labels, not values: a user entry's label can stand for a multi-tag prompt
+        isValueOnly: false,
         height: 30,
         enableNumberInput: true
     });

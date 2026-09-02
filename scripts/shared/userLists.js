@@ -10,8 +10,11 @@
 //   {
 //     character:   { entries: { "<name>": { tag, thumb? } }, hidden: ["<name>"] },
 //     oc:          { entries: { "<name>": { tag } },         hidden: [...] },
-//     view_angle:  { entries: { "<tag>": {} },               hidden: [...] },
-//     view_camera: { entries: { "<tag>": {} },               hidden: [...] }
+//     view_angle:  { entries: { "<name>": { tag? } },        hidden: [...] },
+//     view_camera: { entries: { "<name>": { tag? } },        hidden: [...] }
+//
+// A view entry's optional `tag` lets one dropdown label stand for several prompt
+// tags; without it the name itself is the tag (upstream behaviour).
 //   }
 //
 // An entry whose key exists upstream is an override; one that doesn't is an addition.
@@ -36,7 +39,10 @@ export function emptyUserLists() {
 
 function cleanEntry(list, value) {
     const source = value && typeof value === 'object' ? value : {};
-    if (!KEYED_LISTS.includes(list)) return {};
+    if (!KEYED_LISTS.includes(list)) {
+        // view lists: the tag is optional — an entry without one stands for its own name
+        return typeof source.tag === 'string' && source.tag.trim() ? { tag: source.tag } : {};
+    }
     const entry = { tag: typeof source.tag === 'string' ? source.tag : '' };
     if (list === 'character' && typeof source.thumb === 'string' && source.thumb) entry.thumb = source.thumb;
     return entry;
@@ -136,6 +142,9 @@ export function mergeKeyedList(base, diff, baseSource) {
 /**
  * Merge a value list (view angle / camera arrays) with its diff.
  * Base order is kept, user additions are appended in insertion order.
+ * Merged entries are { key, value } pairs: upstream rows keep key === value; a user
+ * entry (or an override of an upstream name) may carry a multi-tag prompt as `value`,
+ * so a dropdown label can stand for several prompt tags.
  */
 export function mergeValueList(base, diff, baseSource = 'view') {
     const merged = [];
@@ -143,13 +152,16 @@ export function mergeValueList(base, diff, baseSource = 'view') {
     const entries = diff?.entries ?? {};
     const hidden = new Set(diff?.hidden ?? []);
     for (const name of base ?? []) {
-        meta[name] = { source: baseSource, overridden: false, hidden: hidden.has(name) };
-        if (!hidden.has(name)) merged.push(name);
+        const override = entries[name];
+        const isHidden = hidden.has(name);
+        meta[name] = { source: override ? 'user' : baseSource, overridden: Boolean(override), hidden: isHidden };
+        if (isHidden) continue;
+        merged.push({ key: name, value: override?.tag || name });
     }
-    for (const name of Object.keys(entries)) {
+    for (const [name, entry] of Object.entries(entries)) {
         if (Object.hasOwn(meta, name)) continue;
         meta[name] = { source: 'user', overridden: false, hidden: false };
-        merged.push(name);
+        merged.push({ key: name, value: entry.tag || name });
     }
     return { merged, meta };
 }

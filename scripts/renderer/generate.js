@@ -81,7 +81,9 @@ function createViewTag(view_list, in_tag, seed, weight) {
         const tags = globalThis.cachedFiles.viewTags[view_list];
         const index = seed % tags.length;
         const selectedIndex = (index === 0 || index === 1) ? 2 : index;
-        out_tag = `${tags[selectedIndex].toLowerCase()}`;
+        // merged angle / camera lists hold { key, value } pairs; background / style stay strings
+        const entry = tags[selectedIndex];
+        out_tag = `${(typeof entry === 'string' ? entry : entry.value).toLowerCase()}`;
     } else if (in_tag.toLowerCase() === 'none') {
         return '';
     } else {

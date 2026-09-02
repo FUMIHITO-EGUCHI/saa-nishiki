@@ -1959,7 +1959,7 @@ body {
 .list-manager-open:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
 .list-manager-overlay { position: fixed; inset: 0; z-index: 1200; background: rgba(0, 0, 0, 0.55); display: flex; align-items: center; justify-content: center; }
 .list-manager-overlay[hidden] { display: none; }
-.list-manager-modal { display: flex; flex-direction: column; width: min(860px, 92vw); height: min(640px, 88vh); border: 2px solid var(--saa-border); border-radius: 10px; overflow: hidden; box-shadow: 0 12px 40px var(--saa-shadow); background: var(--saa-bg-panel); color: var(--saa-text); }
+.list-manager-modal { display: flex; flex-direction: column; width: min(1000px, 94vw); height: min(680px, 90vh); border: 2px solid var(--saa-border); border-radius: 10px; overflow: hidden; box-shadow: 0 12px 40px var(--saa-shadow); background: var(--saa-bg-panel); color: var(--saa-text); }
 .list-manager-head { display: flex; align-items: center; justify-content: space-between; min-height: 42px; padding: 6px 10px 6px 14px; border-bottom: 1px solid var(--saa-border); }
 .list-manager-title { font-weight: 600; }
 .list-manager-close { border: none; background: transparent; color: var(--saa-muted); font-size: 24px; line-height: 1; padding: 2px 6px; cursor: pointer; }
@@ -1973,7 +1973,7 @@ body {
 .list-manager-search { flex: 1 1 auto; min-height: 30px; box-sizing: border-box; border: 1px solid var(--saa-border-ctl); border-radius: 5px; padding: 4px 7px; font: inherit; background: var(--saa-bg-control); color: var(--saa-text); }
 .list-manager-count { margin-bottom: 6px; font-size: 11px; color: var(--saa-muted); }
 .list-manager-rows { border: 1px solid var(--saa-border); border-radius: 5px; background: var(--saa-bg-field); overflow: hidden; }
-.list-manager-row { display: grid; grid-template-columns: minmax(120px, 0.35fr) minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 38px; padding: 5px 10px; border-bottom: 1px solid var(--saa-border); }
+.list-manager-row { display: grid; grid-template-columns: minmax(240px, 0.5fr) minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 38px; padding: 5px 10px; border-bottom: 1px solid var(--saa-border); }
 .list-manager-row:last-child { border-bottom: none; }
 .list-manager-row:hover { background: var(--saa-bg-hover); }
 .list-manager-row.is-hidden { opacity: 0.45; }

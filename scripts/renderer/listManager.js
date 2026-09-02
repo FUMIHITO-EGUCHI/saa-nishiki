@@ -46,12 +46,17 @@ function listRows(listId) {
     }
     const key = listId === 'view_angle' ? 'angle' : 'camera';
     const values = FILES.viewTags?.[key] ?? [];
-    const names = new Set([...values, ...Object.keys(meta)]);
-    return [...names].map(name => ({
-        name,
-        tag: '',
-        meta: meta[name] ?? { source: 'view', overridden: false, hidden: false },
-    }));
+    const valueByKey = new Map(values.map(item => typeof item === 'string' ? [item, item] : [item.key, item.value]));
+    const names = new Set([...valueByKey.keys(), ...Object.keys(meta)]);
+    return [...names].map(name => {
+        const value = valueByKey.get(name) ?? '';
+        return {
+            name,
+            // only show a preview when the label stands for something else
+            tag: value !== name ? value : '',
+            meta: meta[name] ?? { source: 'view', overridden: false, hidden: false },
+        };
+    });
 }
 
 // Push the refreshed merged lists from an apply/import payload into the renderer caches
@@ -141,13 +146,13 @@ export function setupListManager() {
     }
 
     function startEdit(row) {
-        const isValueList = state.list.startsWith('view_');
         state.editing = {
             key: row?.name ?? '',
             isNew: !row,
             tag: row?.tag ?? '',
             thumb: null,
-            valueOnly: isValueList,
+            // view lists: the tag is optional and defaults to the name itself
+            optionalTag: state.list.startsWith('view_'),
         };
         render();
     }
@@ -162,15 +167,14 @@ export function setupListManager() {
         nameLabel.append(nameInput);
         form.append(nameLabel);
 
-        let tagInput = null;
-        if (!editing.valueOnly) {
-            const tagLabel = el('label', 'list-manager-edit-label', text('ui_lists_edit_tag', 'Prompt tags'));
-            tagInput = el('textarea', 'list-manager-edit-textarea');
-            tagInput.rows = 4;
-            tagInput.value = editing.tag;
-            tagLabel.append(tagInput);
-            form.append(tagLabel);
-        }
+        const tagLabel = el('label', 'list-manager-edit-label', editing.optionalTag
+            ? text('ui_lists_edit_tag_optional', 'Prompt tags (optional — the name itself is used when empty)')
+            : text('ui_lists_edit_tag', 'Prompt tags'));
+        const tagInput = el('textarea', 'list-manager-edit-textarea');
+        tagInput.rows = 4;
+        tagInput.value = editing.tag;
+        tagLabel.append(tagInput);
+        form.append(tagLabel);
 
         let thumbStatus = null;
         if (state.list === 'character') {
@@ -194,9 +198,9 @@ export function setupListManager() {
         save.type = 'button';
         save.addEventListener('click', async () => {
             const key = nameInput.value.trim();
-            const tag = editing.valueOnly ? '' : (tagInput?.value ?? '').trim();
-            if (!key || (!editing.valueOnly && !tag)) return;
-            const entry = editing.valueOnly ? {} : { tag };
+            const tag = (tagInput?.value ?? '').trim();
+            if (!key || (!editing.optionalTag && !tag)) return;
+            const entry = tag ? { tag } : {};
             if (editing.thumb) entry.thumb = editing.thumb;
             else if (!editing.isNew) {
                 // keep an already stored thumb when re-saving an entry
@@ -225,13 +229,17 @@ export function setupListManager() {
 
             const nameCell = el('span', 'list-manager-name');
             if (state.list === 'character') nameCell.append(el('span', 'list-manager-initial', (row.name[0] ?? '?').toUpperCase()));
-            nameCell.append(el('span', 'list-manager-name-text', row.name));
+            const nameText = el('span', 'list-manager-name-text', row.name);
+            nameText.title = row.name;
+            nameCell.append(nameText);
             const badge = sourceBadge(meta);
             nameCell.append(el('span', `list-manager-badge ${badge.cls}`, badge.label));
             if (meta.overridden) nameCell.append(el('span', 'list-manager-badge is-overridden', text('ui_lists_badge_overridden', 'edited')));
             rowElement.append(nameCell);
 
-            rowElement.append(el('span', 'list-manager-tag', row.tag));
+            const tagCell = el('span', 'list-manager-tag', row.tag);
+            tagCell.title = row.tag;
+            rowElement.append(tagCell);
 
             const actions = el('span', 'list-manager-actions');
             const edit = el('button', 'list-manager-button',

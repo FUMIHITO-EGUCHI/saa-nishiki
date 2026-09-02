@@ -23,12 +23,14 @@ test('normalizeUserLists fills every list and drops malformed input', () => {
             hidden: ['a', 'a', ' b ', 7],
         },
         view_angle: { entries: { 'dutch angle': { junk: 1 } } },
+        view_camera: { entries: { combo: { tag: 'wide shot, from below' } } },
         junk_list: { entries: { x: { tag: 'y' } } },
     });
     assert.deepEqual(Object.keys(doc.character.entries), ['Miku']);
     assert.deepEqual(doc.character.entries.Miku, { tag: '1girl, hatsune miku', thumb: 'AAA=' });
     assert.deepEqual(doc.character.hidden, ['a', 'b']);
     assert.deepEqual(doc.view_angle.entries, { 'dutch angle': {} });
+    assert.deepEqual(doc.view_camera.entries, { combo: { tag: 'wide shot, from below' } });
     assert.ok(!('junk_list' in doc));
     for (const list of USER_LIST_KEYS) assert.ok(doc[list]);
 });
@@ -70,14 +72,24 @@ test('mergeKeyedList applies overrides, additions and hides; meta keeps every ke
     assert.deepEqual(mergeKeyedList(base, null, 'original').merged, base);
 });
 
-test('mergeValueList keeps base order, appends additions, drops hidden', () => {
+test('mergeValueList keeps base order, appends additions as {key,value}, drops hidden, applies tag overrides', () => {
     const { merged, meta } = mergeValueList(['front', 'side', 'back'], {
-        entries: { 'dutch angle': {} },
+        entries: {
+            'dutch angle': {},
+            'my combo': { tag: 'from above, dutch angle' },
+            back: { tag: 'from behind, looking back' },
+        },
         hidden: ['side'],
     });
-    assert.deepEqual(merged, ['front', 'back', 'dutch angle']);
+    assert.deepEqual(merged, [
+        { key: 'front', value: 'front' },
+        { key: 'back', value: 'from behind, looking back' },
+        { key: 'dutch angle', value: 'dutch angle' },
+        { key: 'my combo', value: 'from above, dutch angle' },
+    ]);
     assert.equal(meta.side.hidden, true);
     assert.equal(meta['dutch angle'].source, 'user');
+    assert.equal(meta.back.overridden, true);
 });
 
 test('envelope round-trips and rejects foreign files', () => {
