@@ -127,7 +127,7 @@ export function getViewTags(seed) {
     return combo;
 }
 
-async function createCharacters(index, seeds) {
+async function createCharacters(index, seeds, ocIndex = 3) {
     const FILES = globalThis.cachedFiles;
     const character = globalThis.characterList.getKey()[index];
     const isValueOnly = globalThis.characterList.isValueOnly();
@@ -137,7 +137,7 @@ async function createCharacters(index, seeds) {
         return { tag: '', tag_assist: '', thumb: null, info: '', neg_tags: '' };
     }
 
-    const isOriginalCharacter = index === 3;
+    const isOriginalCharacter = index === ocIndex;
     const { tag, thumb, info, weight, name } = isOriginalCharacter
         ? handleOriginalCharacter(character, seed, isValueOnly, index, FILES)
         : await handleStandardCharacter(character, seed, isValueOnly, index, FILES);
@@ -311,7 +311,15 @@ async function getCharacters() {
     if (random_seed === -1){
         random_seed = generateRandomSeed();
     }
-    const seeds = [random_seed, Math.floor(random_seed /3), Math.floor(random_seed /7), 4294967296 - random_seed];
+    // Per-slot seed derivation: slots 0-2 keep the historical divisors so old seeds
+    // reproduce the same characters; extra slots continue the prime sequence.
+    // The OC slot (last) keeps its historical complement seed.
+    const slotCount = globalThis.characterList.getSlotCount?.() ?? 3;
+    const SEED_DIVISORS = [1, 3, 7, 11, 13, 17];
+    const seeds = Array.from({ length: slotCount }, (_, index) =>
+        Math.floor(random_seed / (SEED_DIVISORS[index % SEED_DIVISORS.length] * (1 + Math.floor(index / SEED_DIVISORS.length)))));
+    seeds.push(4294967296 - random_seed);
+    const ocIndex = slotCount;
 
     let character = '';
     let information = '';
@@ -320,16 +328,16 @@ async function getCharacters() {
     let negativeTags = '';
     let character_name_for_image_prefix = '';
 
-    for(let index=0; index < 4; index++) {
-        let {tag, tag_assist, thumb, info, weight, characterName, neg_tags} = await createCharacters(index, seeds);
+    for(let index=0; index <= ocIndex; index++) {
+        let {tag, tag_assist, thumb, info, weight, characterName, neg_tags} = await createCharacters(index, seeds, ocIndex);
         let seperate = ', ';
         // Should not happen
-        if(tag.startsWith('✨ ')) {            
+        if(tag.startsWith('✨ ')) {
             tag = tag.replace('✨ ', '');
             console.log('remove fav mark ✨ for', tag);
         }
 
-        if (index === 3) {            
+        if (index === ocIndex) {
             if(tag.endsWith('.')) {
                 seperate = ' ';
             } else if (tag.endsWith('\n')) {

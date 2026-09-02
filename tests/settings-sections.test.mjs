@@ -90,6 +90,36 @@ test('prompt migration converts view background / style selections into the prom
     assert.equal(clean.prompt_style, '');
 });
 
+test('prompt migration builds character_slots from character1-3 and retires weights 4-6', () => {
+    const migrated = normalizeSection('prompt', {
+        character1: 'gawr gura', character2: 'Random', character3: 'None',
+        weights4dropdownlist: [1, 1, 1, 1, 1.2, 0.9, 1, 1.5, 1],
+    });
+    assert.deepEqual(migrated.character_slots, [
+        { key: 'gawr gura', weight: 1.2 },
+        { key: 'Random', weight: 0.9 },
+        { key: 'None', weight: 1 },
+    ]);
+    assert.deepEqual(migrated.weights4dropdownlist.slice(4, 7), [1, 1, 1]);
+    assert.equal(migrated.weights4dropdownlist[7], 1.5); // regional untouched
+    // mirrors follow the slots
+    assert.equal(migrated.character1, 'gawr gura');
+
+    // data that already has slots is not rebuilt, and mirrors track the slots
+    const kept = normalizeSection('prompt', {
+        character_slots: [{ key: 'A', weight: 1 }, { key: 'B', weight: 2 }, { key: 'C', weight: 1 }, { key: 'D', weight: 1 }],
+        character1: 'stale',
+    });
+    assert.equal(kept.character_slots.length, 4);
+    assert.equal(kept.character1, 'A');
+    assert.equal(kept.character2, 'B');
+
+    // malformed slots fall back to the default trio
+    const fallback = normalizeSection('prompt', { character_slots: 'nope' });
+    assert.equal(fallback.character_slots.length, 3);
+    assert.equal(fallback.character_slots[0].key, 'Random');
+});
+
 test('splitFlat / mergeSections round-trip a flat settings object', () => {
     const flat = { ...DEFAULT_SETTINGS, api_addr: '127.0.0.1:8189', api_prompt: '1girl', cfg: 4, lora_slot: [['x', 0.5, 0.5, 'ALL']], ad_slot: [['face_yolov8n.pt']], controlnet_slot: [], junk: 1 };
     const { app, state } = splitFlat(flat);

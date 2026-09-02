@@ -313,6 +313,131 @@ function createCharacterControl({ containerId, dropdownCount, labels, getKind, c
     return api;
 }
 
+/**
+ * Variable standard character slots + one fixed OC slot (R4).
+ * The fixed-count control is rebuilt whenever the slot count changes; selections and
+ * weights survive the rebuild. `labelsFor(count)` supplies labels (count standard + OC).
+ */
+export function myVariableCharacterList(containerId, waiCharacters, originalCharacters, callback, options = {}) {
+    const { slotCount = 3, minSlots = 1, maxSlots = 6, labelsFor = null, onSlotsChanged = null } = options;
+    const container = document.querySelector(`.${containerId}`);
+    if (!container) return null;
+
+    let count = Math.max(minSlots, Math.min(maxSlots, slotCount));
+    let charData = [Object.keys(waiCharacters || {}), Object.values(waiCharacters || {})];
+    let ocData = Object.keys(originalCharacters || {});
+    let control = null;
+
+    function labels() {
+        if (typeof labelsFor === 'function') return labelsFor(count);
+        return [...Array.from({ length: count }, (_, index) => `Character list ${index + 1}`), 'Original Character'];
+    }
+
+    function renderSlotButtons() {
+        const row = document.createElement('div');
+        row.className = 'character-slot-buttons';
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'character-slot-button';
+        add.textContent = '+';
+        add.disabled = count >= maxSlots;
+        add.addEventListener('click', () => setSlotCount(count + 1));
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'character-slot-button';
+        remove.textContent = '−';
+        remove.disabled = count <= minSlots;
+        remove.addEventListener('click', () => setSlotCount(count - 1));
+        row.append(add, remove);
+        container.appendChild(row);
+    }
+
+    function build(keys = [], weights = [], valueOnly = null) {
+        const previousValueOnly = valueOnly ?? control?.isValueOnly?.() ?? (globalThis.globalSettings?.language === 'en-US');
+        control = createCharacterControl({
+            containerId,
+            dropdownCount: count + 1,
+            labels: labels(),
+            getKind: index => index === count ? 'original' : 'character',
+            callback,
+        });
+        control.setOptions(charData, ocData, labels());
+        control.setValueOnly(previousValueOnly);
+        const defaults = Array.from({ length: count + 1 }, (_, index) => keys[index] ?? 'None');
+        control.updateDefaults(...defaults);
+        for (let index = 0; index <= count; index++) control.setTextValue(index, weights[index] ?? 1);
+        renderSlotButtons();
+    }
+
+    function currentKeys() {
+        return control ? control.getKey() : [];
+    }
+
+    function currentWeights() {
+        return control ? Array.from({ length: count + 1 }, (_, index) => control.getTextValue(index)) : [];
+    }
+
+    function setSlotCount(next) {
+        const clamped = Math.max(minSlots, Math.min(maxSlots, next));
+        if (clamped === count) return;
+        const keys = currentKeys();
+        const weights = currentWeights();
+        const ocKey = keys[count] ?? 'None';
+        const ocWeight = weights[count] ?? 1;
+        const standardKeys = keys.slice(0, Math.min(count, clamped));
+        const standardWeights = weights.slice(0, Math.min(count, clamped));
+        count = clamped;
+        build([...standardKeys, ...Array(Math.max(0, count - standardKeys.length)).fill('None')].slice(0, count).concat([ocKey]),
+            [...standardWeights, ...Array(Math.max(0, count - standardWeights.length)).fill(1)].slice(0, count).concat([ocWeight]));
+        onSlotsChanged?.();
+        if (typeof callback === 'function') callback(0, control.getKey());
+    }
+
+    const api = {
+        // ---- variable-slot surface ----
+        getSlotCount: () => count,
+        getSlots: () => Array.from({ length: count }, (_, index) => ({
+            key: control?.getKey()[index] ?? 'None',
+            weight: control?.getTextValue(index) ?? 1,
+        })),
+        setSlots(slots) {
+            const list = Array.isArray(slots) && slots.length ? slots.slice(0, maxSlots) : [{ key: 'None', weight: 1 }];
+            const keys = currentKeys();
+            const ocKey = keys[count] ?? 'None';
+            count = Math.max(minSlots, list.length);
+            build([...list.map(slot => slot?.key ?? 'None'), ocKey], [...list.map(slot => slot?.weight ?? 1), 1]);
+        },
+        addSlot: () => setSlotCount(count + 1),
+        removeSlot: () => setSlotCount(count - 1),
+        // ---- historical control surface ----
+        setOptions(data, originalData) {
+            if (Array.isArray(data?.[0]) && Array.isArray(data?.[1])) charData = data;
+            if (Array.isArray(originalData)) ocData = originalData;
+            build(currentKeys(), currentWeights());
+            return api;
+        },
+        updateDefaults(...defaults) {
+            control.updateDefaults(...defaults);
+            return api;
+        },
+        getKey: () => control.getKey(),
+        getValue: () => control.getValue(),
+        getTextValue: index => control.getTextValue(index),
+        setTextValue: (index, value) => control.setTextValue(index, value),
+        setValueOnly: trigger => control.setValueOnly(trigger),
+        isValueOnly: () => control.isValueOnly(),
+        setTitle() {
+            // labels always come from labelsFor so they follow the current language
+            control.setTitle(labels());
+            return api;
+        },
+        cleanup: () => control?.cleanup(),
+    };
+
+    build();
+    return api;
+}
+
 export function myCharacterSelectionModal(containerId, waiCharacters, originalCharacters, callback, initialLabels = null) {
     const labels = initialLabels || ['Character list 1', 'Character list 2', 'Character list 3', 'Original Character'];
     const control = createCharacterControl({

@@ -11,6 +11,8 @@ import { REFINE_SYSTEM_PROMPT } from '../aiPromptRefiner.js';
 
 export const SCHEMA_VERSION = 1;
 
+export const MAX_CHARACTER_SLOTS = 6;
+
 export const DEFAULT_SETTINGS = Object.freeze({
     version: '2.8.9',
 
@@ -39,6 +41,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
 
     thumb_select: 'waiIllustriousSDXL_v160',
     thumb_select_list: ['waiIllustriousSDXL_v160', 'waiANIMA_v10Base10', 'waiNSFWIllustrious_v120'],
+    // Variable standard character slots (R4). character1-3 stay in the schema as the
+    // migration source for pre-slot files and as read-only mirrors of slots 0-2.
+    character_slots: [{ key: 'Random', weight: 1 }, { key: 'None', weight: 1 }, { key: 'None', weight: 1 }],
     character1: 'Random',
     character2: 'None',
     character3: 'None',
@@ -158,8 +163,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
 
     generate_auto_start: true,
     // 9 number inputs kept for on-disk compatibility: views angle 0 / camera 1
-    // (2-3 were background / style, retired by the prompt-field migration and pinned to 1),
-    // characters 4-6, regional characters 7-8
+    // (2-3 were background / style, retired by the prompt-field migration; 4-6 were
+    // characters 1-3, retired by the character_slots migration — all pinned to 1),
+    // regional characters 7-8
     weights4dropdownlist: [1, 1, 1, 1, 1, 1, 1, 1, 1],
 
     // last preset name loaded per section ('' = none)
@@ -186,7 +192,7 @@ export const SECTION_KEYS = Object.freeze({
         'preset_current',
     ]),
     prompt: Object.freeze([
-        'character1', 'character2', 'character3', 'character_left', 'character_right',
+        'character_slots', 'character1', 'character2', 'character3', 'character_left', 'character_right',
         'view_angle', 'view_camera', 'view_background', 'view_style', 'weights4dropdownlist',
         'custom_prompt', 'api_prompt', 'api_prompt_right', 'api_neg_prompt', 'prompt_background', 'prompt_style', 'ai_prompt', 'prompt_ban',
         'common_weight_plans', 'positive_weight_plans', 'positive_right_weight_plans', 'negative_weight_plans', 'exclude_weight_plans',
@@ -265,6 +271,17 @@ function coerce(key, value, defaultValue) {
     if (typeof defaultValue === 'string') {
         return typeof value === 'string' ? value : (typeof value === 'number' ? String(value) : defaultValue);
     }
+    if (key === 'character_slots') {
+        if (!Array.isArray(value)) return clone(defaultValue);
+        const slots = value
+            .filter(slot => slot && typeof slot === 'object' && typeof slot.key === 'string' && slot.key.trim() !== '')
+            .slice(0, MAX_CHARACTER_SLOTS)
+            .map(slot => {
+                const weight = Number.parseFloat(slot.weight);
+                return { key: slot.key, weight: Number.isFinite(weight) ? weight : 1 };
+            });
+        return slots.length ? slots : clone(defaultValue);
+    }
     if (key === 'weights4dropdownlist') {
         if (!Array.isArray(value)) return clone(defaultValue);
         const numbers = defaultValue.map((fallback, index) => {
@@ -322,6 +339,31 @@ function migrateViewPrompts(result) {
     return result;
 }
 
+// Pre-R4 data has no character_slots: build them from character1-3 and their
+// weights4dropdownlist[4..6] weights. Afterwards character1-3 mirror slots 0-2
+// (read-only compatibility) and the retired weight slots are pinned to 1.
+function migrateCharacterSlots(result, source) {
+    if (!Object.hasOwn(source ?? {}, 'character_slots')) {
+        const weights = result.weights4dropdownlist ?? [];
+        result.character_slots = [result.character1, result.character2, result.character3].map((key, index) => {
+            const weight = Number.parseFloat(weights[4 + index]);
+            return {
+                key: typeof key === 'string' && key.trim() ? key : 'None',
+                weight: Number.isFinite(weight) ? weight : 1,
+            };
+        });
+    }
+    result.character1 = result.character_slots[0]?.key ?? 'None';
+    result.character2 = result.character_slots[1]?.key ?? 'None';
+    result.character3 = result.character_slots[2]?.key ?? 'None';
+    if (Array.isArray(result.weights4dropdownlist)) {
+        result.weights4dropdownlist[4] = 1;
+        result.weights4dropdownlist[5] = 1;
+        result.weights4dropdownlist[6] = 1;
+    }
+    return result;
+}
+
 /**
  * Return a complete, typed object for `section`: every section key present, aliases resolved,
  * foreign / unknown keys dropped (reported through `warn`).
@@ -340,7 +382,10 @@ export function normalizeSection(section, data, { warn = null } = {}) {
         }
         result[key] = coerce(key, value, DEFAULT_SETTINGS[key]);
     }
-    if (section === 'prompt') migrateViewPrompts(result);
+    if (section === 'prompt') {
+        migrateViewPrompts(result);
+        migrateCharacterSlots(result, source);
+    }
     return result;
 }
 

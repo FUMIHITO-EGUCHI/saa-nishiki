@@ -122,7 +122,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     setDropdownLanguage('global-settings-language', [LANG.language_select]);
 
     // Character List
-    setDropdownLanguage('dropdown-character', [LANG.character1, LANG.character2, LANG.character3, LANG.original_character]);
+    globalThis.characterList.setTitle();   // labels re-derived from the language file
     globalThis.characterList.setValueOnly(globalThis.globalSettings.language === 'en-US');
 
     // Regional Condition
@@ -291,10 +291,7 @@ export function updateSettings() {
     globalThis.generate.webui_auth_enable.updateDefaults(SETTINGS.webui_auth_enable);
     globalThis.generate.queueAutostart.setValue(SETTINGS.generate_auto_start);
 
-    globalThis.characterList.updateDefaults(SETTINGS.character1, SETTINGS.character2, SETTINGS.character3, 'None');
-    globalThis.characterList.setTextValue(0, SETTINGS.weights4dropdownlist[4]);
-    globalThis.characterList.setTextValue(1, SETTINGS.weights4dropdownlist[5]);
-    globalThis.characterList.setTextValue(2, SETTINGS.weights4dropdownlist[6]);
+    globalThis.characterList.setSlots(SETTINGS.character_slots);
     globalThis.characterListRegional.updateDefaults(SETTINGS.character_left, SETTINGS.character_right, 'None', 'None');
     globalThis.characterListRegional.setTextValue(0, SETTINGS.weights4dropdownlist[7]);
     globalThis.characterListRegional.setTextValue(1, SETTINGS.weights4dropdownlist[8]);

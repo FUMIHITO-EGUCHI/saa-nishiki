@@ -4,8 +4,8 @@ import { callback_myCharacterList_updateThumb, callback_myViewList_Update } from
 import { generateGUID } from '../slots/myLoRASlot.js'
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
 import {
-    myCharacterSelectionModal,
     myRegionalCharacterSelectionModal,
+    myVariableCharacterList,
 } from './characterSelectionModal.js';
 
 const CAT = '[myDropdown]'
@@ -116,14 +116,25 @@ function isSpecialSearchMode(searchText) {
     return typeof searchText === 'string' && searchText.startsWith('@');
 }
 
+// count standard labels (character1-3 from the language file, a pattern beyond) + OC.
+export function characterSlotLabels(count) {
+    const LANG = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language] ?? {};
+    const labels = Array.from({ length: count }, (_, index) => {
+        const fixed = LANG[`character${index + 1}`];
+        if (index < 3 && typeof fixed === 'string' && fixed) return fixed;
+        return (LANG.ui_character_list_n || 'Character list {0}').replace('{0}', String(index + 1));
+    });
+    labels.push(LANG.original_character || 'Original Character');
+    return labels;
+}
+
 export function myCharacterList(containerId, wai_characters, oc_characters) {
-    const labels = [
-        globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.character1 || 'Character list 1',
-        globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.character2 || 'Character list 2',
-        globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.character3 || 'Character list 3',
-        globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.original_character || 'Original Character',
-    ];
-    return myCharacterSelectionModal(containerId, wai_characters, oc_characters, callback_myCharacterList_updateThumb, labels);
+    const slots = globalThis.globalSettings?.character_slots;
+    return myVariableCharacterList(containerId, wai_characters, oc_characters, callback_myCharacterList_updateThumb, {
+        slotCount: Array.isArray(slots) && slots.length ? slots.length : 3,
+        labelsFor: characterSlotLabels,
+        onSlotsChanged: () => { /* persisted through callback_myCharacterList_updateThumb */ },
+    });
 }
 
 export function myRegionalCharacterList(containerId, wai_characters, oc_characters) {

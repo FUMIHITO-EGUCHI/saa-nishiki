@@ -130,24 +130,23 @@ export async function callback_myCharacterList_updateThumb(){
         globalThis.globalSettings.character_left = L;
         globalThis.globalSettings.character_right = R;
     } else {
-        const c1 = globalThis.characterList.getKey()[0];
-        const c2 = globalThis.characterList.getKey()[1];
-        const c3 = globalThis.characterList.getKey()[2];
+        const keys = globalThis.characterList.getKey();
+        const slots = globalThis.characterList.getSlots?.() ??
+            keys.slice(0, -1).map((key, index) => ({ key, weight: globalThis.characterList.getTextValue(index) }));
 
-        const i1 = await decodeThumb(c1);
-        const i2 = await decodeThumb(c2);
-        const i3 = await decodeThumb(c3);
+        // standard slots only (the OC slot has no stored thumb), latest slot first
         const imgData = [];
-
-        if (i3 !== null) imgData.push(i3);
-        if (i2 !== null) imgData.push(i2);
-        if (i1 !== null) imgData.push(i1);
-
+        for (let index = slots.length - 1; index >= 0; index--) {
+            const image = await decodeThumb(keys[index]);
+            if (image !== null) imgData.push(image);
+        }
         globalThis.thumbGallery.update(imgData);
 
-        globalThis.globalSettings.character1 = c1;
-        globalThis.globalSettings.character2 = c2;
-        globalThis.globalSettings.character3 = c3;
+        globalThis.globalSettings.character_slots = slots;
+        // read-only mirrors of slots 0-2 for pre-slot readers
+        globalThis.globalSettings.character1 = slots[0]?.key ?? 'None';
+        globalThis.globalSettings.character2 = slots[1]?.key ?? 'None';
+        globalThis.globalSettings.character3 = slots[2]?.key ?? 'None';
     }
 }
 
@@ -423,14 +422,10 @@ async function update_thumb_select(value) {
     globalThis.characterList = myCharacterList('dropdown-character', FILES.characterList, FILES.ocList);
     globalThis.characterListRegional = myRegionalCharacterList('dropdown-character-regional', FILES.characterList, FILES.ocList);
         
-    // Character List
-    setDropdownLanguage('dropdown-character', [LANG.character1, LANG.character2, LANG.character3, LANG.original_character]);
+    // Character List (variable slots; labels come from the wrapper's labelsFor)
     globalThis.characterList.setValueOnly(globalThis.globalSettings.language === 'en-US');
-    globalThis.characterList.updateDefaults(SETTINGS.character1, SETTINGS.character2, SETTINGS.character3, 'None');
-    globalThis.characterList.setTextValue(0, SETTINGS.weights4dropdownlist[4]);
-    globalThis.characterList.setTextValue(1, SETTINGS.weights4dropdownlist[5]);
-    globalThis.characterList.setTextValue(2, SETTINGS.weights4dropdownlist[6]);
-    
+    globalThis.characterList.setSlots(SETTINGS.character_slots);
+
 
     // Regional Condition
     setDropdownLanguage('dropdown-character-regional', [LANG.regional_character_left, LANG.regional_character_right, LANG.regional_origina_character_left, LANG.regional_origina_character_right]);

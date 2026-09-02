@@ -170,7 +170,7 @@ export function setupFuctionKeys() {
         if (event.altKey && !event.ctrlKey && !event.metaKey && key === 'd') {
             event.preventDefault();
             const c1 = globalThis.characterList.getValue()[0];
-            const oc = globalThis.characterList.getKey()[3];
+            const oc = globalThis.characterList.getKey().at(-1);
 
             addFavorites(c1);
             addFavorites(oc);
@@ -180,8 +180,9 @@ export function setupFuctionKeys() {
         // Remove from favorite list (Alt + R)
         if (event.altKey && !event.ctrlKey && !event.metaKey && key === 'q') {
             event.preventDefault();
-            const c3 = globalThis.characterList.getValue()[2];
-            const oc = globalThis.characterList.getKey()[3];
+            const values = globalThis.characterList.getValue();
+            const c3 = values[values.length - 2];   // last standard slot (OC is the final entry)
+            const oc = globalThis.characterList.getKey().at(-1);
 
             delFavorites(c3);
             delFavorites(oc);

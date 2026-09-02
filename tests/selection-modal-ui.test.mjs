@@ -56,7 +56,10 @@ test('character controls use single-selection modal adapters while keeping the l
   for (const method of ['getKey', 'getValue', 'getTextValue', 'updateDefaults', 'setTextValue', 'isValueOnly', 'setValueOnly', 'setTitle', 'cleanup']) {
     assert.match(characterModal, new RegExp(`${method}`), `${method} should remain available`);
   }
-  assert.match(dropdown, /myCharacterSelectionModal/);
+  // R4: the standard list uses the variable-slot wrapper; regional stays fixed
+  assert.match(dropdown, /myVariableCharacterList/);
+  assert.match(characterModal, /export function myVariableCharacterList/);
+  assert.match(characterModal, /getSlotCount/);
   assert.match(dropdown, /export function myCharacterList/);
   assert.match(dropdown, /export function myRegionalCharacterList/);
 });
