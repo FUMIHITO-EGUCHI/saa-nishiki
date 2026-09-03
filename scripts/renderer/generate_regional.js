@@ -11,7 +11,7 @@ import { removeAiPromptMarker } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
 import { createRefineRunController } from './tools/refineRunState.js';
-import { isStructuredRefineRequest } from './remoteAI.js';
+import { currentLocalLlmEndpoint, isStructuredRefineRequest } from './remoteAI.js';
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 function getCustomJSON(loop=-1){
@@ -459,6 +459,7 @@ export async function generateRegionalImage(dataPack){
                 
     const aiPromptInterface = globalThis.ai.interface.getValue();
     const aiPromptCurrentRole = globalThis.ai.ai_select.getValue();
+    const aiEndpoint = currentLocalLlmEndpoint();
     const aiRunSettings = {
         interface: aiPromptInterface,
         role: aiPromptCurrentRole,
@@ -467,7 +468,7 @@ export async function generateRegionalImage(dataPack){
         systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
         refineSystemPrompt: globalThis.ai.refine_system_prompt.getValue(),
         modelMode: globalThis.ai.local_model_mode.getValue(),
-        apiUrl: globalThis.ai.local_address.getValue(),
+        apiUrl: aiEndpoint.apiUrl,
     };
     const structuredRefine = isStructuredRefineRequest({
         aiInterface: aiPromptInterface,
@@ -573,6 +574,7 @@ export async function generateRegionalImage(dataPack){
                         timeout: globalThis.ai.remote_timeout.getValue() * 1000
                     } : {
                         apiUrl: aiRunSettings.apiUrl,
+                        apiAuth: aiEndpoint.apiAuth,
                         userPrompt: aiRunSettings.instruction,
                         systemPrompt: aiRunSettings.systemPrompt,
                         modelMode: aiRunSettings.modelMode,

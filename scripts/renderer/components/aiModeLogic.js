@@ -1,5 +1,5 @@
 // Pure mapping between the AI card (Off | Expand | Refine + role) and the settings keys
-// that already exist: ai_interface (None/Remote/Local), ai_local_prompt_mode (Expand/Refine),
+// that already exist: ai_interface (None/Remote/Local/Pod), ai_local_prompt_mode (Expand/Refine),
 // ai_prompt_role (0 None, 1 Once, 2 Every, 3 Last). No new settings keys.
 
 export const AI_MODES = ['off', 'expand', 'refine'];
@@ -17,7 +17,9 @@ export function applyAiMode(mode, settings = {}, lastInterface = 'Local') {
     if (mode === 'off') {
         return { ai_interface: 'None' };
     }
-    const backend = settings.ai_interface && settings.ai_interface !== 'None' ? settings.ai_interface : (lastInterface === 'Remote' ? 'Remote' : 'Local');
+    const backend = settings.ai_interface && settings.ai_interface !== 'None'
+        ? settings.ai_interface
+        : (['Remote', 'Pod'].includes(lastInterface) ? lastInterface : 'Local');
     const patch = { ai_interface: backend, ai_local_prompt_mode: mode === 'refine' ? 'Refine' : 'Expand' };
     const role = Number(settings.ai_prompt_role);
     if (!Number.isFinite(role) || role < 1 || role > 3) patch.ai_prompt_role = 1; // None → Once when the AI is turned on
@@ -41,7 +43,9 @@ export function describeAiStatus(settings = {}, { lastRunSeconds = null, text = 
     const mode = deriveAiMode(settings);
     if (mode === 'off') return text.off ?? 'Off';
     const parts = [];
-    parts.push(settings.ai_interface === 'Remote' ? (text.remote ?? 'Remote') : (text.local ?? 'Local'));
+    parts.push(settings.ai_interface === 'Remote' ? (text.remote ?? 'Remote')
+        : settings.ai_interface === 'Pod' ? (text.pod ?? 'Pod')
+            : (text.local ?? 'Local'));
     if (settings.ai_interface === 'Remote') {
         if (settings.remote_ai_model) parts.push(String(settings.remote_ai_model).split('/').pop());
     } else if (settings.ai_local_model_mode) {

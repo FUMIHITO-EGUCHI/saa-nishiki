@@ -4,6 +4,7 @@
 // plain HTTP, remote hosts (e.g. Runpod pod proxies) only over HTTPS.
 import { net } from 'electron';
 import { backendAuthHeaders } from '../shared/backendAddress.js';
+import { resolvePodOrigin } from '../shared/llmEndpoint.js';
 
 const CAT = '[BackendStatus]';
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
@@ -118,11 +119,16 @@ export async function probeBackends(settings, options = {}) {
         }
     }
 
-    if (settings?.ai_interface === 'Local') {
-        const origin = loopbackOrigin(settings.ai_local_addr);
+    if (settings?.ai_interface === 'Local' || settings?.ai_interface === 'Pod') {
+        const isPod = settings.ai_interface === 'Pod';
+        const origin = isPod
+            ? probeOrigin(resolvePodOrigin(settings))
+            : loopbackOrigin(settings.ai_local_addr);
         result.ollama.configured = Boolean(origin);
+        result.ollama.remote = isPod;
         if (origin) {
-            const tags = await getJson(`${origin}/api/tags`, options);
+            const auth = isPod ? String(settings.ai_pod_auth ?? '').trim() : '';
+            const tags = await getJson(`${origin}/api/tags`, { ...options, headers: backendAuthHeaders(auth) });
             result.ollama.ok = tags.ok;
             if (!tags.ok) result.ollama.error = tags.error;
             result.ollama.mode = settings.ai_local_model_mode ?? null;

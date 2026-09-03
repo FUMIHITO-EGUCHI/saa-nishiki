@@ -34,6 +34,18 @@ test('pills: nothing for Ollama when the AI is not Local; ComfyUI pill says "not
   assert.deepEqual(formatBackendStatus(null), []);
 });
 
+test('pills: a pod-backed Ollama is labeled as Pod', () => {
+  const pills = formatBackendStatus({ ollama: { configured: true, ok: true, remote: true, mode: 'Auto' } });
+  assert.deepEqual(pills.map(p => [p.id, p.state, p.label]), [['ollama', 'ok', 'Ollama · Pod · Auto']]);
+});
+
+test('main-side probe covers the Pod target with its auth', () => {
+  const source = read('scripts/main/backendStatus.js');
+  assert.match(source, /ai_interface === 'Local' \|\| settings\?\.ai_interface === 'Pod'/);
+  assert.match(source, /resolvePodOrigin/);
+  assert.match(source, /ai_pod_auth/);
+});
+
 test('main-side probe: GET only; loopback over http, remote only over https', () => {
   const source = read('scripts/main/backendStatus.js');
   assert.match(source, /LOOPBACK_HOSTS = new Set\(\['127\.0\.0\.1', 'localhost', '::1', '\[::1\]'\]\)/);

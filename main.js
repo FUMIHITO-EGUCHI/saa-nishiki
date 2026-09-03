@@ -118,7 +118,7 @@ async function initializeApp() {
     app.quit();
   }
   
-  // Header status pills (loopback-only GET probes of ComfyUI / Ollama)
+  // Header status pills (GET probes of ComfyUI / Ollama: loopback, or HTTPS for pods)
   registerBackendStatus(ipcMain, getGlobalSettings);
 
   // IPC handlers for spellcheck

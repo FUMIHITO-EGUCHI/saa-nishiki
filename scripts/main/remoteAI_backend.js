@@ -4,6 +4,7 @@ import {
     isOllamaChatUrl,
     normalizeOllamaChatResponse,
 } from './ollamaSaaAdapter.js';
+import { backendAuthHeaders } from '../shared/backendAddress.js';
 
 const CAT = '[ModelAPI]';
 
@@ -73,6 +74,7 @@ function requestLocal(options) {
     return new Promise((resolve, reject) => {
         const {
             apiUrl,
+            apiAuth,
             userPrompt,
             systemPrompt,
             temperature,
@@ -122,7 +124,8 @@ function requestLocal(options) {
             method: 'POST',
             url: apiUrl,
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...backendAuthHeaders(apiAuth),
             },
             timeout: timeout,
         });

@@ -456,6 +456,19 @@ export const sharedBodyHTML = `
                   <div class="settings-group-title">Local (Ollama / llama.cpp)</div>
                   <div class="settings-grid">
                     <div class="system-settings-ai-local-address"></div>
+                  </div>
+                </div>
+                <div class="settings-group" data-when-ai="Pod">
+                  <div class="settings-group-title">Runpod pod (Ollama)</div>
+                  <div class="settings-grid">
+                    <div class="system-settings-ai-pod-address"></div>
+                    <div class="system-settings-ai-pod-share ui-switch"></div>
+                    <div class="system-settings-ai-pod-auth"></div>
+                  </div>
+                </div>
+                <div class="settings-group" data-when-ai="Local|Pod">
+                  <div class="settings-group-title">Model &amp; sampling</div>
+                  <div class="settings-grid">
                     <div class="system-settings-ai-local-model-mode"></div>
                     <div class="system-settings-ai-local-timeout"></div>
                     <div class="system-settings-ai-local-temperature"></div>

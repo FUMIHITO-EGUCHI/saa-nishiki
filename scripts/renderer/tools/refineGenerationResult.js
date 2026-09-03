@@ -57,14 +57,14 @@ export async function resolveQueuedAiPrompt({
             ...cleanOriginals,
             changes: '',
             preview: '',
-            error: 'Structured Refine output is only accepted from Local Ollama',
+            error: 'Structured Refine output is only accepted from an Ollama endpoint (Local or Pod)',
             envelope: {
                 ...envelope,
                 format: 'invalid',
                 validForGeneration: false,
                 validForEditorApply: false,
                 editorFields: null,
-                error: 'Structured Refine output is only accepted from Local Ollama',
+                error: 'Structured Refine output is only accepted from an Ollama endpoint (Local or Pod)',
             },
             editorFields: null,
         };

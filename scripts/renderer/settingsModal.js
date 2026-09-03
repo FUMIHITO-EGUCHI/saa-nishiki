@@ -61,7 +61,7 @@ export function setupSettingsModal() {
     });
     setPage(activePageId);
 
-    // Conditional blocks: [data-when-api="ComfyUI|WebUI"], [data-when-model-type="Diffusion"], [data-when-ai="Local|Remote"]
+    // Conditional blocks: [data-when-api="ComfyUI|WebUI"], [data-when-model-type="Diffusion"], [data-when-ai="Local|Remote|Pod"]
     function applyConditions() {
         const settings = globalThis.globalSettings ?? {};
         const rules = { api: settings.api_interface, 'model-type': settings.api_model_type, ai: settings.ai_interface };

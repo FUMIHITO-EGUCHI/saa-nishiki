@@ -1,5 +1,5 @@
 import { decodeThumb } from './customThumbGallery.js';
-import { getAiPromptResult, isStructuredRefineRequest } from './remoteAI.js';
+import { currentLocalLlmEndpoint, getAiPromptResult, isStructuredRefineRequest } from './remoteAI.js';
 import { from_renderer_generate_updatePreview } from './generate_backend.js';
 import { seartGenerateRegional } from './generate_regional.js';
 import { startGenerateMiraITU } from './generate_miraITU.js';
@@ -29,7 +29,7 @@ function currentAiRunSettings() {
         systemPrompt: globalThis.ai?.ai_system_prompt?.getValue?.() ?? '',
         refineSystemPrompt: globalThis.ai?.refine_system_prompt?.getValue?.() ?? '',
         modelMode: globalThis.ai?.local_model_mode?.getValue?.() ?? 'Auto',
-        apiUrl: globalThis.ai?.local_address?.getValue?.() ?? '',
+        apiUrl: currentLocalLlmEndpoint().apiUrl,
     };
 }
 
@@ -1035,6 +1035,7 @@ export async function generateImage(dataPack){
     
     const aiPromptInterface = globalThis.ai.interface.getValue();
     const aiPromptCurrentRole = globalThis.ai.ai_select.getValue();
+    const aiEndpoint = currentLocalLlmEndpoint();
     const aiRunSettings = {
         interface: aiPromptInterface,
         role: aiPromptCurrentRole,
@@ -1043,7 +1044,7 @@ export async function generateImage(dataPack){
         systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
         refineSystemPrompt: globalThis.ai.refine_system_prompt.getValue(),
         modelMode: globalThis.ai.local_model_mode.getValue(),
-        apiUrl: globalThis.ai.local_address.getValue(),
+        apiUrl: aiEndpoint.apiUrl,
     };
     const structuredRefine = isStructuredRefineRequest({
         aiInterface: aiPromptInterface,
@@ -1145,6 +1146,7 @@ export async function generateImage(dataPack){
                         timeout: globalThis.ai.remote_timeout.getValue() * 1000
                     } : {
                         apiUrl: aiRunSettings.apiUrl,
+                        apiAuth: aiEndpoint.apiAuth,
                         userPrompt: aiRunSettings.instruction,
                         systemPrompt: aiRunSettings.systemPrompt,
                         modelMode: aiRunSettings.modelMode,

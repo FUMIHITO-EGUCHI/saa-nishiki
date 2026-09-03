@@ -1,5 +1,5 @@
 // Header status pills: "● ComfyUI 127.0.0.1:8189 · VRAM 1.6 / 12 GB" and "● Ollama · Small".
-// Polls the main process (loopback-only probe) every POLL_MS while the window is visible
+// Polls the main process (loopback or HTTPS-pod probe) every POLL_MS while the window is visible
 // and no generation is running. formatBackendStatus is pure for tests.
 
 const POLL_MS = 10_000;
@@ -33,6 +33,7 @@ export function formatBackendStatus(status, { failures = 0, text = {} } = {}) {
 
     if (ollama.configured) {
         const parts = ['Ollama'];
+        if (ollama.remote) parts.push(text.pod ?? 'Pod');
         if (ollama.mode) parts.push(String(ollama.mode));
         let state = 'ok';
         if (!ollama.ok) {

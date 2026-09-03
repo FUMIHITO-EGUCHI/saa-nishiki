@@ -12,13 +12,16 @@ test('Once cache is scoped to the current generation run', async () => {
   assert.deepEqual(isolated, { content: '', fresh: false, source: 'none' }, 'missing first queue item retries instead of accepting an empty Once cache');
 });
 
-test('structured Refine is limited to Local loopback Ollama and excludes runSame', () => {
+test('structured Refine is limited to Ollama endpoints (Local loopback or HTTPS Pod) and excludes runSame', () => {
   const eligible = { aiInterface: 'Local', aiOptions: { promptMode: 'Refine', apiUrl: 'http://127.0.0.1:11434/api/chat' } };
   assert.equal(isStructuredRefineRequest(eligible), true);
   assert.equal(isStructuredRefineRequest({ ...eligible, runSame: true }), false);
   assert.equal(isStructuredRefineRequest({ ...eligible, aiInterface: 'Remote' }), false);
   assert.equal(isStructuredRefineRequest({ ...eligible, aiOptions: { ...eligible.aiOptions, apiUrl: 'http://127.0.0.1:8080/completion' } }), false);
+  // plaintext HTTP is still refused off loopback; a HTTPS pod endpoint is accepted
   assert.equal(isStructuredRefineRequest({ ...eligible, aiOptions: { ...eligible.aiOptions, apiUrl: 'http://example.com:11434/api/chat' } }), false);
+  const pod = { aiInterface: 'Pod', aiOptions: { promptMode: 'Refine', apiUrl: 'https://abc123-11434.proxy.runpod.net/api/chat' } };
+  assert.equal(isStructuredRefineRequest(pod), true);
 });
 
 test('explicit None role is not replaced by the current UI role', async () => {

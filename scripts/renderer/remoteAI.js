@@ -1,6 +1,14 @@
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { isOllamaChatUrl } from '../shared/ollamaUrl.js';
+import { resolveLlmEndpoint } from '../shared/llmEndpoint.js';
 let lastAIPromot = '';
+
+// The Ollama / llama.cpp request target for the current ai_interface:
+// 'Pod' points at the Runpod pod endpoint (with its auth), anything else at
+// the local address.
+export function currentLocalLlmEndpoint() {
+    return resolveLlmEndpoint(globalThis.globalSettings ?? {});
+}
 
 async function remoteGenerateWithPrompt(aiOptions = null) {
     try {
@@ -48,8 +56,10 @@ async function remoteGenerateWithPrompt(aiOptions = null) {
 
 async function localGenerateWithPrompt(aiOptions = null) {
     try {
+        const endpoint = currentLocalLlmEndpoint();
         const options = aiOptions || {
-                apiUrl: globalThis.ai.local_address.getValue(),
+                apiUrl: endpoint.apiUrl,
+                apiAuth: endpoint.apiAuth,
                 userPrompt: globalThis.prompt.ai.getValue(),
                 systemPrompt: globalThis.ai.ai_system_prompt.getValue(),
                 modelMode: globalThis.ai.local_model_mode.getValue(),
@@ -123,8 +133,9 @@ export async function getAiPrompt(loop, overlay_generate_ai, aiInterface=null, a
 }
 
 export function isStructuredRefineRequest({ aiInterface, aiOptions, runSame = false } = {}) {
+    const target = String(aiInterface ?? '').toLowerCase();
     return !runSame
-        && String(aiInterface ?? '').toLowerCase() === 'local'
+        && (target === 'local' || target === 'pod')
         && String(aiOptions?.promptMode ?? '').toLowerCase() === 'refine'
         && isOllamaChatUrl(aiOptions?.apiUrl);
 }

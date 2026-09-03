@@ -197,7 +197,7 @@ function setupAiCard() {
         }
         card.classList.toggle('is-off', mode === 'off');
         card.dataset.mode = mode;
-        if (status) status.textContent = describeAiStatus(SETTINGS, { text: { off: text.off, local: uiText('ui_ai_local', 'Local'), remote: uiText('ui_ai_remote', 'Remote'), lastRun: uiText('ui_ai_last_run', 'last run') } });
+        if (status) status.textContent = describeAiStatus(SETTINGS, { text: { off: text.off, local: uiText('ui_ai_local', 'Local'), remote: uiText('ui_ai_remote', 'Remote'), pod: uiText('ui_ai_pod', 'Pod'), lastRun: uiText('ui_ai_last_run', 'last run') } });
         if (note) {
             note.textContent = mode === 'refine' ? uiText('ui_ai_note_refine', 'Refine rewrites the whole prompt with one Ollama call per batch before the first image.')
                 : mode === 'expand' ? uiText('ui_ai_note_expand', 'Expand inserts AI tags at the marker (or the end) before each batch.')

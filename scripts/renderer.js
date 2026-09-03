@@ -436,7 +436,7 @@ export async function createAI(SETTINGS, FILES, LANG) {
         ai_prompt_preview: setupCheckbox('system-settings-ai-preview', LANG.ai_prompt_preview, SETTINGS.ai_prompt_preview, true,
             (value) => { globalThis.globalSettings.ai_prompt_preview = value; }),
 
-        interface: mySimpleList('system-settings-ai-interface', LANG.ai_interface, ['None', 'Remote', 'Local'], 
+        interface: mySimpleList('system-settings-ai-interface', LANG.ai_interface, ['None', 'Remote', 'Local', 'Pod'],
             (index, value) => {globalThis.globalSettings.ai_interface = value;}, 5, false, true),
         remote_timeout: setupSlider('system-settings-ai-timeout', LANG.remote_ai_timeout, {min:2, max:60, step:1, defaultValue:SETTINGS.remote_ai_timeout}, 
             (value) => { globalThis.globalSettings.remote_ai_timeout = value; }),
@@ -458,6 +458,17 @@ export async function createAI(SETTINGS, FILES, LANG) {
             value: SETTINGS.ai_local_addr,
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.ai_local_addr = value;}),
+        pod_address: setupTextbox('system-settings-ai-pod-address', LANG.ai_pod_addr, {
+            value: SETTINGS.ai_pod_addr,
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.ai_pod_addr = value;}),
+        pod_share_host: setupCheckbox('system-settings-ai-pod-share', LANG.ai_pod_share_host, SETTINGS.ai_pod_share_host, true,
+            (value) => { globalThis.globalSettings.ai_pod_share_host = value; }),
+        pod_auth: setupTextbox('system-settings-ai-pod-auth', LANG.ai_pod_auth, {
+            value: SETTINGS.ai_pod_auth,
+            defaultTextColor: 'CornflowerBlue',
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.ai_pod_auth = value;}, true),
         local_model_mode: mySimpleList('system-settings-ai-local-model-mode', LANG.ai_local_model_mode,
             ['Auto', 'Small', 'Large'],
             (index, value) => { globalThis.globalSettings.ai_local_model_mode = value; }, 5, false, true),
@@ -735,13 +746,13 @@ async function setupWizard(){
         });
     }
 
-    const aiInterfaceSelectIndex = await showDialog('radio', { 
+    const aiInterfaceSelectIndex = await showDialog('radio', {
         message: LANG.setup_remote_ai_interface,
-        items: 'None,Remote,Local',
-        itemsTitle:'None,Remote,Local',
+        items: 'None,Remote,Local,Pod',
+        itemsTitle:'None,Remote,Local,Pod',
         buttonText: LANG.setup_ok
     });
-    const aiInterfaceSelect= ['None', 'Remote', 'Local'];
+    const aiInterfaceSelect= ['None', 'Remote', 'Local', 'Pod'];
     globalThis.globalSettings.ai_interface = aiInterfaceSelect[aiInterfaceSelectIndex];
 
     if(globalThis.globalSettings.ai_interface === 'Remote') {
@@ -769,10 +780,18 @@ async function setupWizard(){
             buttonText: LANG.setup_ok
         });
     } else if(globalThis.globalSettings.ai_interface === 'Local') {
-        globalThis.globalSettings.ai_local_addr = await showDialog('input', { 
+        globalThis.globalSettings.ai_local_addr = await showDialog('input', {
             message: LANG.setup_local_ai_addr,
-            placeholder: SETTINGS.ai_local_addr, 
+            placeholder: SETTINGS.ai_local_addr,
             defaultValue: SETTINGS.ai_local_addr,
+            showCancel: false,
+            buttonText: LANG.setup_ok
+        });
+    } else if(globalThis.globalSettings.ai_interface === 'Pod') {
+        globalThis.globalSettings.ai_pod_addr = await showDialog('input', {
+            message: LANG.setup_pod_ai_addr,
+            placeholder: 'https://{pod}-11434.proxy.runpod.net',
+            defaultValue: SETTINGS.ai_pod_addr,
             showCancel: false,
             buttonText: LANG.setup_ok
         });
