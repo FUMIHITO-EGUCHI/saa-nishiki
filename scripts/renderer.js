@@ -265,6 +265,28 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.pod_image_save_dir = value; }),
 
+        api_fast_enable: setupCheckbox('system-settings-api-fast-enable', LANG.api_fast_enable, SETTINGS.api_fast_enable, true,
+            (value) => {
+                globalThis.globalSettings.api_fast_enable = value;
+                globalThis.uiShell?.fastToggle?.render?.(); // header one-touch switch mirrors this
+            }),
+        api_fast_lora: mySimpleList('system-settings-api-fast-lora', LANG.api_fast_lora,
+            ['None', ...(Array.isArray(FILES.loraList) ? FILES.loraList : [])],
+            (index, value) => { globalThis.globalSettings.api_fast_lora = value; }, 20, true, true),
+        api_fast_lora_strength: setupSlider('system-settings-api-fast-lora-strength', LANG.api_fast_lora_strength,
+            {min:0, max:2, step:0.05, defaultValue:SETTINGS.api_fast_lora_strength},
+            (value) => { globalThis.globalSettings.api_fast_lora_strength = value; }),
+        api_fast_steps: setupSlider('system-settings-api-fast-steps', LANG.api_fast_steps,
+            {min:1, max:20, step:1, defaultValue:SETTINGS.api_fast_steps},
+            (value) => { globalThis.globalSettings.api_fast_steps = value; }),
+        api_fast_cfg: setupSlider('system-settings-api-fast-cfg', LANG.api_fast_cfg,
+            {min:0, max:5, step:0.1, defaultValue:SETTINGS.api_fast_cfg},
+            (value) => { globalThis.globalSettings.api_fast_cfg = value; }),
+        api_fast_sampler: mySimpleList('system-settings-api-fast-sampler', LANG.api_fast_sampler, ['lcm'],
+            (index, value) => { globalThis.globalSettings.api_fast_sampler = value; }, 20, false, true),
+        api_fast_scheduler: mySimpleList('system-settings-api-fast-scheduler', LANG.api_fast_scheduler, ['sgm_uniform'],
+            (index, value) => { globalThis.globalSettings.api_fast_scheduler = value; }, 20, false, true),
+
         model_filter:setupCheckbox('system-settings-api-fliter', LANG.model_filter, SETTINGS.model_filter,
             false, (value) => {
             globalThis.globalSettings.model_filter = value;

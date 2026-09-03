@@ -432,6 +432,19 @@ export const sharedBodyHTML = `
                   </div>
                   <p class="settings-note" data-ui-text="ui_settings_pod_ssh_note">Images stream over SSH and are saved locally only; nothing is written to the pod's disks. The API address above is ignored while this is on.</p>
                 </div>
+                <div class="settings-group" data-when-api="ComfyUI">
+                  <div class="settings-group-title" data-ui-text="ui_settings_fast_group">Fast generation</div>
+                  <div class="settings-grid">
+                    <div class="system-settings-api-fast-enable ui-switch"></div>
+                    <div class="system-settings-api-fast-lora"></div>
+                    <div class="system-settings-api-fast-lora-strength"></div>
+                    <div class="system-settings-api-fast-steps"></div>
+                    <div class="system-settings-api-fast-cfg"></div>
+                    <div class="system-settings-api-fast-sampler"></div>
+                    <div class="system-settings-api-fast-scheduler"></div>
+                  </div>
+                  <p class="settings-note" data-ui-text="ui_settings_fast_note">Applies a step-distillation LoRA (DMD2 / Hyper-SD / Lightning / LCM) and overrides steps, CFG, sampler and scheduler for the base, Hires fix and ADetailer passes. Works on the local ComfyUI and on the pod.</p>
+                </div>
               </section>
 
               <section id="settings-page-model" class="settings-modal-page" role="tabpanel" data-settings-page-content="model" aria-labelledby="settings-page-model-title" tabindex="0" hidden>

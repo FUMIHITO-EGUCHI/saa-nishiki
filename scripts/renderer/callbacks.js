@@ -111,6 +111,11 @@ export async function callback_api_interface(index, selectedValue){
     }
 
     globalThis.hifix.model.setValue(LANG.api_hf_upscaler_selected, globalThis.cachedFiles.upscalerList);
+
+    // Fast-mode LoRA picker follows the freshly scanned LoRA folder
+    const fastLoras = ['None', ...(Array.isArray(globalThis.cachedFiles.loraList) ? globalThis.cachedFiles.loraList : [])];
+    globalThis.generate.api_fast_lora?.setValue(LANG.api_fast_lora, fastLoras);
+    globalThis.generate.api_fast_lora?.updateDefaults(fastLoras.includes(SETTINGS.api_fast_lora) ? SETTINGS.api_fast_lora : 'None');
 }
 
 export async function callback_myCharacterList_updateThumb(){

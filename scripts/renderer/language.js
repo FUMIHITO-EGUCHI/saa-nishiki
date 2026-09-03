@@ -180,7 +180,14 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.generate.api_pod_ssh_key.setTitle(LANG.api_pod_ssh_key);
     globalThis.generate.api_pod_ssh_port.setTitle(LANG.api_pod_ssh_comfy_port);
     globalThis.generate.pod_image_save_dir.setTitle(LANG.pod_image_save_dir);
-    
+    globalThis.generate.api_fast_enable.setTitle(LANG.api_fast_enable);
+    globalThis.generate.api_fast_lora.setTitle(LANG.api_fast_lora);
+    globalThis.generate.api_fast_lora_strength.setTitle(LANG.api_fast_lora_strength);
+    globalThis.generate.api_fast_steps.setTitle(LANG.api_fast_steps);
+    globalThis.generate.api_fast_cfg.setTitle(LANG.api_fast_cfg);
+    globalThis.generate.api_fast_sampler.setTitle(LANG.api_fast_sampler);
+    globalThis.generate.api_fast_scheduler.setTitle(LANG.api_fast_scheduler);
+
     globalThis.generate.model_filter.setTitle(LANG.model_filter);    
     globalThis.generate.model_filter_keyword.setTitle(LANG.model_filter_keyword);
     globalThis.generate.model_filter_keyword_diffusion.setTitle(LANG.model_filter_keyword_diffusion);
@@ -402,6 +409,15 @@ export function updateSettings() {
     globalThis.generate.api_pod_ssh_key.setValue(SETTINGS.api_pod_ssh_key);
     globalThis.generate.api_pod_ssh_port.setValue(`${SETTINGS.api_pod_ssh_comfy_port}`);
     globalThis.generate.pod_image_save_dir.setValue(SETTINGS.pod_image_save_dir);
+    globalThis.generate.api_fast_enable.setValue(SETTINGS.api_fast_enable);
+    globalThis.generate.api_fast_lora.updateDefaults(SETTINGS.api_fast_lora || 'None');
+    globalThis.generate.api_fast_lora_strength.setValue(SETTINGS.api_fast_lora_strength);
+    globalThis.generate.api_fast_steps.setValue(SETTINGS.api_fast_steps);
+    globalThis.generate.api_fast_cfg.setValue(SETTINGS.api_fast_cfg);
+    globalThis.generate.api_fast_sampler.setValue(LANG.api_fast_sampler, SAMPLER_COMFYUI);
+    globalThis.generate.api_fast_sampler.updateDefaults(SAMPLER_COMFYUI.includes(SETTINGS.api_fast_sampler) ? SETTINGS.api_fast_sampler : 'lcm');
+    globalThis.generate.api_fast_scheduler.setValue(LANG.api_fast_scheduler, SCHEDULER_COMFYUI);
+    globalThis.generate.api_fast_scheduler.updateDefaults(SCHEDULER_COMFYUI.includes(SETTINGS.api_fast_scheduler) ? SETTINGS.api_fast_scheduler : 'sgm_uniform');
 
     globalThis.generate.hifix.setValue(SETTINGS.api_hf_enable);
     globalThis.hifix.scale.setValue(SETTINGS.api_hf_scale);
