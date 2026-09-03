@@ -58,11 +58,19 @@ export function toWebsocketOutputWorkflow(workflow) {
     return { workflow: result, saveNodes };
 }
 
-function resolveTextLink(workflow, value) {
+function resolveTextLink(workflow, value, depth = 0) {
     if (typeof value === 'string') return value;
-    if (Array.isArray(value)) {
-        const linked = workflow?.[value[0]];
-        if (typeof linked?.inputs?.text === 'string') return linked.inputs.text;
+    if (depth > 8 || !Array.isArray(value)) return '';
+    const inputs = workflow?.[value[0]]?.inputs;
+    if (!inputs) return '';
+    if (inputs.text !== undefined) return resolveTextLink(workflow, inputs.text, depth + 1);
+    if (inputs.text1 !== undefined || inputs.text2 !== undefined) {
+        // TextCombinerTwo: join what resolves statically; a link into a runtime-only
+        // producer (e.g. a tagger node) contributes nothing at submit time.
+        return [
+            resolveTextLink(workflow, inputs.text1, depth + 1),
+            resolveTextLink(workflow, inputs.text2, depth + 1),
+        ].filter(Boolean).join('\n');
     }
     return '';
 }

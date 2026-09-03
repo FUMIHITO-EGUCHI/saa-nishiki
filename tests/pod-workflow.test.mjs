@@ -55,6 +55,25 @@ test('parameters text resolves the prompt links and core sampling settings', () 
     assert.match(text, /Steps: 30, Sampler: euler_ancestral, Scheduler: normal, CFG scale: 7, Seed: 1234, Model: wai_v160/);
 });
 
+test('parameters text follows chained text links (combiner and tagger workflows)', () => {
+    // Upscale/tagger workflow shape: saver positive -> TextCombinerTwo -> TextBoxMira
+    // plus a runtime-only tagger link that cannot resolve at submit time.
+    const workflow = {
+        '5': { inputs: { model_name: 'wd-v3' }, class_type: 'wd_tagger_mira' },
+        '6': { inputs: { text1: ['9', 0], text2: ['5', 0] }, class_type: 'TextCombinerTwo' },
+        '9': { inputs: { text: 'masterpiece, scenery' }, class_type: 'TextBoxMira' },
+        '14': {
+            inputs: { steps: 20, positive: ['6', 0], negative: ['33', 0], images: ['28', 0] },
+            class_type: 'ImageSaverMira',
+        },
+        '33': { inputs: { text: ['34', 0] }, class_type: 'TextBoxMira' }, // text itself linked
+        '34': { inputs: { text: 'bad quality' }, class_type: 'TextBoxMira' },
+    };
+    const text = buildParametersText(workflow);
+    assert.match(text, /^masterpiece, scenery\n/);
+    assert.match(text, /\nNegative prompt: bad quality\n/);
+});
+
 test('embedPngParameters inserts a tEXt chunk after IHDR and leaves non-PNGs alone', () => {
     // minimal fake PNG: signature + IHDR(13 bytes payload) + IEND-ish tail
     const signature = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
