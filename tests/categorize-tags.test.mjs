@@ -4,12 +4,22 @@ import test from 'node:test';
 import {
   CATEGORIES,
   collectApplicable,
+  isNsfwTag,
   mergeCategories,
   parseMergedRows,
   selectCandidates,
   validateAssignmentRows,
   validateVerificationRows,
 } from '../scripts/categorizeTags.mjs';
+
+test('explicit tags route to the local model, ordinary tags do not', () => {
+  for (const tag of ['sex', 'cum_on_body', 'nipples', 'spread_legs', 'hetero', 'anal_beads']) {
+    assert.equal(isNsfwTag(tag), true, tag);
+  }
+  for (const tag of ['1girl', 'long_hair', 'school_uniform', 'sword', 'glass', 'grass_field', 'cucumber', 'documentary']) {
+    assert.equal(isNsfwTag(tag), false, tag);
+  }
+});
 
 test('category list mirrors the taxonomy without unknown', () => {
   assert.deepEqual(CATEGORIES, ['body', 'pose_action', 'clothing', 'appearance', 'object', 'composition_quality']);
