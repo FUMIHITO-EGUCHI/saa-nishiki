@@ -52,9 +52,14 @@ export function createTagCategoryIndex(categoryData) {
 
     for (const [prompt, record] of Object.entries(categoryData.tags)) {
         if (!normalizePromptKey(prompt) || !record || typeof record !== 'object') continue;
-        if (record.status !== 'verified' || record.source !== 'Danbooru Wiki') continue;
-        if (!VALID_CATEGORIES.has(record.category)) continue;
-        if (typeof record.sourceUrl !== 'string' || !record.sourceUrl.startsWith('https://danbooru.donmai.us/wiki_pages/')) continue;
+        if (record.status !== 'verified' || !VALID_CATEGORIES.has(record.category)) continue;
+        // Two provenance forms are trusted: hand-checked wiki entries, and batch
+        // LLM assignments that passed the categorizeTags.mjs verification pass.
+        const isWiki = record.source === 'Danbooru Wiki'
+            && typeof record.sourceUrl === 'string'
+            && record.sourceUrl.startsWith('https://danbooru.donmai.us/wiki_pages/');
+        const isLlm = record.source === 'LLM' && typeof record.model === 'string' && record.model !== '';
+        if (!isWiki && !isLlm) continue;
         index.set(normalizePromptKey(prompt), record.category);
     }
 

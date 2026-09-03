@@ -16,7 +16,7 @@ import {
   normalizeTagFilterOptions,
 } from '../scripts/main/tagCategories.js';
 
-test('loads only verified Danbooru Wiki categories into a prompt-key index', () => {
+test('loads only verified Danbooru Wiki and verified LLM categories into a prompt-key index', () => {
   const index = createTagCategoryIndex({
     schemaVersion: 1,
     tags: {
@@ -30,7 +30,18 @@ test('loads only verified Danbooru Wiki categories into a prompt-key index', () 
         category: 'object',
         status: 'candidate',
         source: 'LLM',
-        sourceUrl: 'https://example.invalid/unreviewed_tag',
+        model: 'some-model',
+      },
+      llm_verified_tag: {
+        category: 'clothing',
+        status: 'verified',
+        source: 'LLM',
+        model: 'some-model',
+      },
+      llm_without_model: {
+        category: 'clothing',
+        status: 'verified',
+        source: 'LLM',
       },
       unsupported_category: {
         category: 'invented',
@@ -42,7 +53,9 @@ test('loads only verified Danbooru Wiki categories into a prompt-key index', () 
   });
 
   assert.equal(index.get('holding_halo'), 'pose_action');
+  assert.equal(index.get('llm_verified_tag'), 'clothing');
   assert.equal(index.has('unreviewed_tag'), false);
+  assert.equal(index.has('llm_without_model'), false);
   assert.equal(index.has('unsupported_category'), false);
 });
 
