@@ -112,7 +112,12 @@ class PodSshSession {
         setTimeout(bootstrap, 8000); // fallback if the shell never prints a banner
 
         this.ready = new Promise((resolve, reject) => {
-            const timer = setTimeout(() => reject(new Error('relay start timed out (60 s)')), 60_000);
+            const timer = setTimeout(() => {
+                reject(new Error('relay start timed out (60 s)'));
+                // a hung ssh would otherwise keep this.child set and pin the
+                // rejected promise as the cached answer for every later run
+                try { child.kill(); } catch { /* gone */ }
+            }, 60_000);
             this.onReady = () => { clearTimeout(timer); resolve(); };
             this.onFatal = message => { clearTimeout(timer); reject(new Error(message)); };
         });
@@ -155,6 +160,10 @@ class PodSshSession {
     }
 
     request(payload, timeoutMs = 30_000) {
+        const child = this.child;
+        if (!child || child.killed || !child.stdin?.writable) {
+            return Promise.resolve({ ok: false, message: 'pod SSH session is not connected' });
+        }
         const id = ++this.requestId;
         return new Promise(resolve => {
             const timer = setTimeout(() => {
@@ -162,7 +171,13 @@ class PodSshSession {
                 resolve({ ok: false, message: 'request timed out' });
             }, timeoutMs);
             this.pending.set(id, frame => { clearTimeout(timer); resolve(frame); });
-            this.child.stdin.write(`${JSON.stringify({ id, ...payload })}\n`);
+            try {
+                child.stdin.write(`${JSON.stringify({ id, ...payload })}\n`);
+            } catch (error) {
+                clearTimeout(timer);
+                this.pending.delete(id);
+                resolve({ ok: false, message: `write failed: ${error.message}` });
+            }
         });
     }
 
@@ -246,6 +261,7 @@ export async function runPodWorkflow({ settings, workflow, saveNodes, onProgress
     try {
         await session.ensureStarted(config);
     } catch (error) {
+        session.stop(); // drop the half-open session so the next run reconnects instead of replaying this rejection
         return { error: `Error: pod SSH connect failed: ${error.message}` };
     }
     if (session.job && !session.job.settled) return { error: 'Error: pod SSH transport is busy' };

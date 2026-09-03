@@ -244,7 +244,7 @@ class WebUI {
                     ret = `Error: Request timed out after ${this.timeout}ms`;
                 } else {
                     console.error(CAT, 'Request failed:', error.message);
-                    ret = `Error: Request failed:, ${error.message}`;
+                    ret = `Error: Request failed: ${error.message}`;
                 }
                 resolve(ret);
             });
@@ -402,7 +402,7 @@ class WebUI {
                     ret = `Error: Request timed out after ${this.timeout}ms`;
                 } else {
                     console.error(CAT, 'Request failed:', error.message);
-                    ret = `Error: Request failed:, ${error.message}`;
+                    ret = `Error: Request failed: ${error.message}`;
                 }
                 setMutexBackendBusy(false); // Release the mutex lock
                 resolve(ret);
@@ -583,7 +583,7 @@ class WebUI {
                     ret = `Error: Request timed out after ${this.timeout}ms`;
                 } else {
                     console.error(CAT, 'Request failed:', error.message);
-                    ret = `Error: Request failed:, ${error.message}`;
+                    ret = `Error: Request failed: ${error.message}`;
                 }
                 setMutexBackendBusy(false); // Release the mutex lock
                 resolve(ret);
@@ -755,7 +755,7 @@ class WebUI {
                             ret = `Error: Request timed out after ${this.timeout}ms`;
                         } else {
                             console.error(CAT, 'Request failed:', error.message);
-                            ret = `Error: Request failed:, ${error.message}`;
+                            ret = `Error: Request failed: ${error.message}`;
                         }
                         request.destroy(); // Explicitly destroy to close any lingering connection
                         resolve(ret);
@@ -811,7 +811,7 @@ class WebUI {
                             ret = `Error: Request timed out after ${this.timeout}ms`;
                         } else {
                             console.error(CAT, 'Request failed:', error.message);
-                            ret = `Error: Request failed:, ${error.message}`;
+                            ret = `Error: Request failed: ${error.message}`;
                         }
                         request.destroy(); // Explicitly destroy to close any lingering connection
                         resolve(ret);

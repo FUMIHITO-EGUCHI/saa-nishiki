@@ -194,7 +194,10 @@ export function setupGallery(containerId) {
         }
     };
 
-    globalThis.mainGallery.showLoading = function (loadingMEssage, elapsedTimePrefix, elapsedTimeSuffix) {        
+    globalThis.mainGallery.showLoading = function (loadingMEssage, elapsedTimePrefix, elapsedTimeSuffix) {
+        // A new run supersedes any earlier failure; otherwise the error overlay
+        // (and the run bar banner mirroring it) would outlive successful retries.
+        document.getElementById('cg-error-overlay')?.remove();
         const loadingOverlay = customCommonOverlay().createLoadingOverlay(loadingMEssage, elapsedTimePrefix, elapsedTimeSuffix);
         const buttonOverlay = document.getElementById('cg-button-overlay');
         const savedPosition = JSON.parse(localStorage.getItem('overlayPosition'));
@@ -237,6 +240,8 @@ export function setupGallery(containerId) {
         if ('success' !== errorMessage) {
             console.error('Got Error from backend:', copyMessage);
             customCommonOverlay().createErrorOverlay(errorMessage, copyMessage);
+        } else {
+            document.getElementById('cg-error-overlay')?.remove();
         }
         globalThis.mainGallery.isLoading = false;
     };

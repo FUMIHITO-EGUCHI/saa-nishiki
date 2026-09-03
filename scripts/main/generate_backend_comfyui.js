@@ -1017,7 +1017,8 @@ class ComfyUI {
     // check addr blocklist
     const now = Date.now();
     if (ComfyUI.addrBlockList[this.addr] && ComfyUI.addrBlockList[this.addr] > now) {
-      return `Error: This address is temporarily blocked due to previous failures.`;
+      const retryIn = Math.ceil((ComfyUI.addrBlockList[this.addr] - now) / 1000);
+      return `Error: ${this.addr} is temporarily blocked after a connection failure; retry in ${retryIn}s.`;
     }
 
     // verify urlPrefix whitelist
@@ -1043,10 +1044,11 @@ class ComfyUI {
         });
 
         response.on('end', () => {
+          // any HTTP response proves the address is reachable; the blocklist only
+          // guards against hammering an unreachable host, so lift it here
+          delete ComfyUI.addrBlockList[this.addr];
           if (response.statusCode !== 200) {
             console.error(`${CAT} HTTP error: ${response.statusCode}`);
-            // blocklist for failed access
-            ComfyUI.addrBlockList[this.addr] = Date.now() + ComfyUI.blockDuration;
             resolve(`Error: HTTP error ${response.statusCode}`);
             return;
           }
@@ -1074,7 +1076,7 @@ class ComfyUI {
           ret = `Error: Request timed out after ${this.timeout}ms`;
         } else {
           console.error(CAT, 'Request failed:', error.message);
-          ret = `Error: Request failed:, ${error.message}`;
+          ret = `Error: Request failed: ${error.message}`;
         }
         resolve(ret);
       });
@@ -2343,6 +2345,15 @@ class ComfyUI {
   }
 
   async runPod(workflow) {
+    try {
+      return this.runPodUnguarded(workflow);
+    } catch (error) {
+      setMutexBackendBusy(false);
+      return `Error: pod run failed: ${error?.message ?? error}`;
+    }
+  }
+
+  runPodUnguarded(workflow) {
     const { workflow: wsWorkflow, saveNodes } = toWebsocketOutputWorkflow(workflow);
     if (saveNodes.length === 0) {
       setMutexBackendBusy(false);
@@ -2380,13 +2391,19 @@ class ComfyUI {
       setMutexBackendBusy(false);
       return 'Error: no pod run in flight';
     }
-    const result = await run;
-    setMutexBackendBusy(false);
-    if (result.error) return cancelMark ? 'Error: Cancelled' : result.error;
-    const image = embedPngParameters(result.images[0], this.podParameters);
-    this.savePodImage(image);
-    console.log(CAT, `Pod image received over SSH (${result.images.length} image(s))`);
-    return `data:image/png;base64,${image.toString('base64')}`;
+    try {
+      const result = await run;
+      if (result.error) return cancelMark ? 'Error: Cancelled' : result.error;
+      const image = embedPngParameters(result.images[0], this.podParameters);
+      this.savePodImage(image);
+      console.log(CAT, `Pod image received over SSH (${result.images.length} image(s))`);
+      return `data:image/png;base64,${image.toString('base64')}`;
+    } catch (error) {
+      console.error(CAT, 'Pod run failed:', error);
+      return `Error: pod run failed: ${error?.message ?? error}`;
+    } finally {
+      setMutexBackendBusy(false);
+    }
   }
 
   savePodImage(buffer) {
@@ -2431,10 +2448,13 @@ class ComfyUI {
           responseData += chunk
         })
         response.on('end', () => {
+          delete ComfyUI.addrBlockList[this.addr]; // reachable — lift any connection-failure block
           if (response.statusCode !== 200) {
             console.error(`${CAT} HTTP error: ${response.statusCode} - ${responseData}`);
             setMutexBackendBusy(false); // Release the mutex lock so the next run is not reported busy
-            resolve(`Error HTTP ${response.statusCode} - ${responseData}`);
+            // the full body is in the log above; keep the user-facing message readable
+            const detail = responseData.length > 2000 ? `${responseData.slice(0, 2000)}…` : responseData;
+            resolve(`Error HTTP ${response.statusCode} - ${detail}`);
             return;
           }
           resolve(responseData);
@@ -2448,7 +2468,7 @@ class ComfyUI {
           ret = `Error: Request timed out after ${this.timeout}ms`;
         } else {
           console.error(CAT, 'Request failed:', error.message);
-          ret = `Error: Request failed:, ${error.message}`;
+          ret = `Error: Request failed: ${error.message}`;
         }
         setMutexBackendBusy(false); // Release the mutex lock
         resolve(ret);

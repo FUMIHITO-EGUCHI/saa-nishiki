@@ -32,6 +32,33 @@ test('ComfyUI run(): timeout / error handlers resolve instead of throwing on und
   }
 });
 
+test('network failures recover: blocklist lifts on any response, stale error overlay clears, pod requests never throw', () => {
+  // Any HTTP response proves the address reachable — the 5-minute blocklist must lift,
+  // and a non-200 must not (re-)block; only connection errors and timeouts block.
+  const getUrlBody = backend.slice(backend.indexOf('  async getUrl() {'), backend.indexOf('  createWorkflow('));
+  assert.match(getUrlBody, /response\.on\('end', \(\) => \{\n\s*\/\/[\s\S]*?delete ComfyUI\.addrBlockList\[this\.addr\];/, 'getUrl lifts the block on response');
+  assert.doesNotMatch(getUrlBody.slice(getUrlBody.indexOf("response.on('end'"), getUrlBody.indexOf("request.on('error'")), /addrBlockList\[this\.addr\] = /, 'an HTTP status alone no longer blocks the address');
+  const runStart = backend.indexOf('  run(workflow, pythonRun=false) {');
+  const runBody = backend.slice(runStart, backend.indexOf('request.end();', runStart));
+  assert.match(runBody, /delete ComfyUI\.addrBlockList\[this\.addr\];/, 'a reachable /prompt lifts the block too');
+
+  // A new run or a success removes the persistent error overlay (and the run bar banner mirroring it).
+  const gallery = read('scripts/renderer/customGallery.js');
+  assert.match(gallery, /showLoading = function[\s\S]{0,400}?getElementById\('cg-error-overlay'\)\?\.remove\(\);/, 'showLoading drops the stale error overlay');
+  assert.match(gallery, /\} else \{\n\s*document\.getElementById\('cg-error-overlay'\)\?\.remove\(\);\n\s*\}/, 'a successful hideLoading drops it as well');
+
+  // Pod SSH: requests against a dead session resolve an error instead of throwing (which leaked the busy mutex).
+  const pod = read('scripts/main/podSshTransport.js');
+  assert.match(pod, /if \(!child \|\| child\.killed \|\| !child\.stdin\?\.writable\) \{\n\s*return Promise\.resolve\(\{ ok: false/, 'request() guards a missing session');
+  assert.match(pod, /catch \(error\) \{\n\s*clearTimeout\(timer\);\n\s*this\.pending\.delete\(id\);\n\s*resolve\(\{ ok: false/, 'request() resolves on write failure');
+  assert.match(pod, /reject\(new Error\('relay start timed out \(60 s\)'\)\);[\s\S]{0,300}?child\.kill\(\);/, 'a hung ssh is killed so the next run can reconnect');
+  assert.match(pod, /session\.stop\(\); \/\/ drop the half-open session/, 'a failed connect resets the session');
+
+  // Pod run/await paths turn any throw into the backend's error-string style and always release the mutex.
+  assert.match(backend, /async runPod\(workflow\) \{\n\s*try \{\n\s*return this\.runPodUnguarded\(workflow\);/, 'runPod is guarded');
+  assert.match(backend, /const result = await run;[\s\S]*?\} finally \{\n\s*setMutexBackendBusy\(false\);\n\s*\}/, 'awaitPod releases the mutex on every path');
+});
+
 test('renderer queue and generate loops always clear the busy state and re-enable buttons', () => {
   const queue = generate.slice(generate.indexOf('export async function startQueue()'), generate.indexOf('async function seartGenerate('));
   assert.match(queue, /try \{\n    generateData = globalThis\.queueManager\.getFirstSlot\(\);/);
