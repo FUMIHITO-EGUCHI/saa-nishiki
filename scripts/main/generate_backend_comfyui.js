@@ -1172,9 +1172,15 @@ class ComfyUI {
     workflow["29"].inputs.scheduler = scheduler;
     workflow["36"].inputs.scheduler = scheduler;
     workflow["37"].inputs.scheduler = scheduler;
-    
+
+    // Refiner stage follows the run's steps/cfg (it shares the base schedule via
+    // start_at_step); the regional builder already did this, the normal one left
+    // the template's 20/7 behind — fatal with a distilled LoRA at cfg 1.
+    workflow["37"].inputs.steps = step;
+    workflow["37"].inputs.cfg = cfg;
+
     // Set Image Saver seed
-    workflow["29"].inputs.seed_value = seed;        
+    workflow["29"].inputs.seed_value = seed;
     workflow["29"].inputs.steps = step;
     workflow["29"].inputs.cfg = cfg;
     workflow["29"].inputs.path = img_prefix;
