@@ -16410,6 +16410,834 @@
       "status": "verified",
       "source": "LLM",
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "hetero": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "virtual_youtuber": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "eyebrows": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "anthro_penetrated": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "pokemon_(creature)": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "anthro_penetrating_anthro": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "profile": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "pupils": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "dipstick_tail": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "bouncing_balls": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "aged_up": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "injury": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "herm": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "oni": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "male_on_feral": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "nipple_fetish": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "rock": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "urine": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "black_horns": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "enmaided": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "striped_bow": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "sea": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "abyssal_ship": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "toenail_polish": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "growth": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "stud_earrings": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "dragon": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "species_transformation": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "leash": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "blue_halo": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "minigirl": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "male_on_human": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "nude_male": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "sucking": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "bandaid_on_face": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "steaming_body": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "purple_nails": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "sand": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "butterfly_hair_ornament": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "mountain": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "nun": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "tress_ribbon": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "holding_penis": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "hand_on_penis": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "tachi-e": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "angel": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "copyright_notice": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "wristwatch": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "name_tag": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "midriff_peek": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "scales": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "arched_back": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "eighth_note": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "single_bare_shoulder": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "feather_hair_ornament": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "cheerleader": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "cow_ears": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "covered_eyes": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "faceless_human": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "hair_stick": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "frog_hair_ornament": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "plug_(sex_toy)": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "red_halo": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "mini_crown": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "tiger_ears": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "watersports": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "holster": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "yellow_halo": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "precum": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "mechanical_halo": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "thighlet": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "paw_print": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "shibari": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "slightly_chubby_anthro": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "incest": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "frilled_bow": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "bandaged_leg": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "futa_with_female": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "dildo_sitting": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    ":>": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "green_nails": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "penis_jewelry": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "drunk": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "unworn_eyewear": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "brown_ears": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "substance_intoxication": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "large_penetration": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "outdoor_nudity": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "white_ears": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "leather": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "condom_wrapper": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "snowflakes": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "pectoral_cleavage": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "anthro_pred": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "black_markings": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "stitches": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "hibiscus": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "fully_inside": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "apode": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "muneate": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "two_tails": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "goth": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "dominant_anthro": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "old": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "partially_inside": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "bath": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "nosebleed": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "naked_towel": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "bottomless_anthro": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "brothers": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "raised_topwear": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "flower_in_hair": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "muscular_intersex": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "rumbling_stomach": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "strap": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "pubic_tattoo": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "motion_tweening": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "afterimage": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "topless_anthro": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "tate_eboshi": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "tasuki": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "different_sound_effects": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "sanpaku": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "explosion": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "police": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "digit_ring": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "monotone_hair": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "unusual_bodily_fluids": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "one-piece_tan": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "graphite_(medium)": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "latex": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "camouflage": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "tail_fetish": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "bottomless_female": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "dripping": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "unusual_tail": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "2_tails": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "glowing_genitalia": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     }
   }
 }
