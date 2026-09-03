@@ -11,6 +11,7 @@ import { backendAuthHeaders, httpApiUrl, wsApiUrl } from '../shared/backendAddre
 import { buildParametersText, embedPngParameters, findDiskWriterNodes, toWebsocketOutputWorkflow } from '../shared/podWorkflow.js';
 import { interruptPodWorkflow, isPodSshEnabled, runPodWorkflow } from './podSshTransport.js';
 import { getGlobalSettings } from './globalSettings.js';
+import { applyFastMode } from '../shared/fastMode.js';
 
 const CAT = '[ComfyUI]';
 const TIMEOUT = 5000; // 5 seconds timeout for backend response
@@ -470,10 +471,10 @@ function applyADetailer(workflow, adetailers, workflowInfo) {
         "guide_size_for": true,
         "max_size": 1024,
         "seed": randomSeed,
-        "steps": 20,
-        "cfg": 8,
-        "sampler_name": "euler_ancestral",
-        "scheduler": "normal",
+        "steps": adetailer.steps ?? 20,
+        "cfg": adetailer.cfg ?? 8,
+        "sampler_name": adetailer.sampler ?? "euler_ancestral",
+        "scheduler": adetailer.scheduler ?? "normal",
         "denoise": adetailer.denoise,
         "feather": adetailer.mask_blur,
         "noise_mask": true,
@@ -609,10 +610,10 @@ function applyADetailerUnet(workflow, adetailers, workflowInfo) {
         "guide_size_for": true,
         "max_size": 1024,
         "seed": randomSeed,
-        "steps": 20,
-        "cfg": 8,
-        "sampler_name": "euler_ancestral",
-        "scheduler": "normal",
+        "steps": adetailer.steps ?? 20,
+        "cfg": adetailer.cfg ?? 8,
+        "sampler_name": adetailer.sampler ?? "euler_ancestral",
+        "scheduler": adetailer.scheduler ?? "normal",
         "denoise": adetailer.denoise,
         "feather": adetailer.mask_blur,
         "noise_mask": true,
@@ -1198,6 +1199,7 @@ class ComfyUI {
       workflow["20"].inputs.seed = hifix.seed;
       workflow["20"].inputs.denoise = hifix.denoise;
       workflow["20"].inputs.steps = hifix.steps;
+      if (Number.isFinite(hifix.cfg)) workflow["20"].inputs.cfg = hifix.cfg; // fast mode: the hires pass follows the distilled cfg
 
       // Latent or Model hifix
       if (hifix?.model.includes('Latent')) {
@@ -1358,6 +1360,7 @@ class ComfyUI {
       workflow["61"].inputs.seed = hifix.seed;
       workflow["61"].inputs.denoise = hifix.denoise;
       workflow["61"].inputs.steps = hifix.steps;
+      if (Number.isFinite(hifix.cfg)) workflow["61"].inputs.cfg = hifix.cfg; // fast mode: the hires pass follows the distilled cfg
       workflow["61"].inputs.sampler_name = sampler;
       workflow["61"].inputs.scheduler = scheduler;
 
@@ -1527,6 +1530,7 @@ class ComfyUI {
       workflow["20"].inputs.seed = hifix.seed;
       workflow["20"].inputs.denoise = hifix.denoise;
       workflow["20"].inputs.steps = hifix.steps;
+      if (Number.isFinite(hifix.cfg)) workflow["20"].inputs.cfg = hifix.cfg; // fast mode: the hires pass follows the distilled cfg
 
       // Latent or Model hifix
       if (hifix?.model.includes('Latent')) {
@@ -1699,6 +1703,7 @@ class ComfyUI {
       workflow["20"].inputs.seed = hifix.seed;
       workflow["20"].inputs.denoise = hifix.denoise;
       workflow["20"].inputs.steps = hifix.steps;
+      if (Number.isFinite(hifix.cfg)) workflow["20"].inputs.cfg = hifix.cfg; // fast mode: the hires pass follows the distilled cfg
 
       // Latent or Model hifix
       if (hifix?.model.includes('Latent')) {
@@ -2538,6 +2543,7 @@ async function runComfyUI_unguarded(generateData) {
   setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
 
+  generateData = applyFastMode(generateData, getGlobalSettings());
   let workflow;
   if (generateData.unet?.enable){
     workflow = backendComfyUI.createWorkflowUNet(generateData);
@@ -2573,6 +2579,7 @@ async function runComfyUI_Regional_unguarded(generateData) {
   setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
 
+  generateData = applyFastMode(generateData, getGlobalSettings());
   let workflow;
   if (generateData.unet?.enable) {
     workflow = backendComfyUI.createWorkflowRegionalUnet(generateData);
@@ -2693,7 +2700,8 @@ async function python_runComfyUI(generateData, isRegional=false, skeletonKey=fal
     generateData.vae = { vae_override: false, vae: 'None' };
   }
 
-  const workflow = isRegional ? backendComfyUI.createWorkflowRegional(generateData) : backendComfyUI.createWorkflow(generateData);  
+  generateData = applyFastMode(generateData, getGlobalSettings());
+  const workflow = isRegional ? backendComfyUI.createWorkflowRegional(generateData) : backendComfyUI.createWorkflow(generateData);
   backendComfyUI.timeout = TIMEOUT; // Reset timeout to TIMEOUT(5s) for normal workflow    
   const result = await backendComfyUI.run(workflow, true);
 

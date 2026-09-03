@@ -552,6 +552,42 @@ function setupGpuToggle(onChanged) {
     return { render };
 }
 
+// ------------------------------------------------------- fast mode toggle
+// One-touch switch for the distillation-LoRA fast mode (Backend settings page).
+// Only meaningful for ComfyUI; hidden on other backends.
+function setupFastToggle() {
+    const pillHost = document.getElementById('header-status');
+    if (!pillHost) return null;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'fast-mode-toggle';
+    button.className = 'status-pill fast-toggle';
+    const label = document.createTextNode('');
+    button.append(label);
+    pillHost.before(button);
+
+    const render = () => {
+        const SETTINGS = globalThis.globalSettings;
+        button.hidden = SETTINGS.api_interface !== 'ComfyUI';
+        const on = SETTINGS.api_fast_enable === true;
+        label.textContent = on ? uiText('ui_fast_mode_on', 'Fast: On') : uiText('ui_fast_mode_off', 'Fast: Off');
+        button.classList.toggle('is-on', on);
+        button.title = uiText('ui_fast_mode_tip', 'Toggle the distillation-LoRA fast generation mode (Backend settings)');
+    };
+
+    button.addEventListener('click', async () => {
+        if (globalThis.inGenerating) return; // the main process reads the flag per run; don't flip mid-run
+        const next = !(globalThis.globalSettings.api_fast_enable === true);
+        globalThis.globalSettings.api_fast_enable = next;
+        globalThis.generate?.api_fast_enable?.setValue?.(next); // keep the Backend settings switch in sync
+        await globalThis.settingsPersistence?.flush?.(); // the main process applies fast mode from its own settings copy
+        render();
+    });
+
+    render();
+    return { render };
+}
+
 // ------------------------------------------------------------------ entry
 export function setupUiShell() {
     const shell = {};
@@ -583,6 +619,7 @@ export function setupUiShell() {
             podConnecting: uiText('ui_status_pod_connecting', 'connecting'),
         });
         shell.gpuToggle?.render?.();
+        shell.fastToggle?.render?.();
     };
 
     shell.characters = setupCharactersCard();
@@ -612,6 +649,7 @@ export function setupUiShell() {
         });
     }
     shell.gpuToggle = setupGpuToggle(() => shell.pills?.refresh?.());
+    shell.fastToggle = setupFastToggle();
 
     shell.setPreview = base64 => shell.preview?.setPreview(base64);
     shell.refreshViewerStatus = () => shell.leftPanel?.refreshViewerStatus?.();
@@ -623,6 +661,7 @@ export function setupUiShell() {
         shell.aiCard?.render?.();
         shell.runBar?.refresh?.();
         shell.gpuToggle?.render?.();
+        shell.fastToggle?.render?.();
         shell.settingsConditions();
     };
     document.addEventListener('saa-settings-applied', () => requestAnimationFrame(shell.refreshFromSettings));

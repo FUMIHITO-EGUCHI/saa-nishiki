@@ -145,6 +145,14 @@ export const DEFAULT_SETTINGS = Object.freeze({
     api_pod_ssh_comfy_port: 8188,
     pod_image_save_dir: '',
 
+    api_fast_enable: false,
+    api_fast_lora: 'None',
+    api_fast_lora_strength: 1,
+    api_fast_steps: 8,
+    api_fast_cfg: 1,
+    api_fast_sampler: 'lcm',
+    api_fast_scheduler: 'sgm_uniform',
+
     api_hf_enable: false,
     api_hf_scale: 1.5,
     api_hf_denoise: 0.4,
@@ -186,6 +194,7 @@ export const SECTION_KEYS = Object.freeze({
         'language', 'css_style', 'rightToleft', 'ptompt_textbox_autoresize', 'ptompt_textbox_fontsize', 'ptompt_textbox_heights',
         'api_interface', 'api_addr', 'api_preview_refresh_time', 'search_modelinsubfolder',
         'api_pod_ssh_enable', 'api_pod_ssh_target', 'api_pod_ssh_key', 'api_pod_ssh_comfy_port', 'pod_image_save_dir',
+        'api_fast_enable', 'api_fast_lora', 'api_fast_lora_strength', 'api_fast_steps', 'api_fast_cfg', 'api_fast_sampler', 'api_fast_scheduler',
         'model_filter', 'model_filter_keyword', 'model_filter_keyword_diffusion',
         'model_path_comfyui', 'model_path_webui', 'image_save_path_comfyui', 'image_save_path_webui', 'image_save_embed_character_name',
         'webui_auth', 'webui_auth_enable',
