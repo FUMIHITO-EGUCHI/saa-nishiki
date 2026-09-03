@@ -15,6 +15,7 @@ import { setupButtons, toggleButtons, showCancelButtons } from './renderer/compo
 import { setupCollapsed, setupModelReloadToggle, 
     setupFuctionKeys, setupSwapToggle, reloadFiles, doSwap } from './renderer/components/myCollapsed.js';
 import { setupTextbox, setupInfoBox } from './renderer/components/myTextbox.js';
+import { setupPromptFieldManager } from './renderer/components/promptFieldManager.js';
 import { from_main_updateGallery, from_main_updatePreview, from_main_customOverlayProgress } from './renderer/generate_backend.js';
 import { setupLoRA } from './renderer/slots/myLoRASlot.js';
 import { setupControlNet } from './renderer/slots/myControlNetSlot.js';
@@ -423,6 +424,7 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
         applyExclude: (prompt, exclude) => filterPrompts(prompt, prompt, exclude).positivePrompt,
         finalPromptContainer: document.querySelector('#prompt-text-container .prompt-fields') ?? document.querySelector('#prompt-text-container'),
     });
+    globalThis.prompt.fieldManager = setupPromptFieldManager();
 }
 
 export async function createHifixRefiner(SETTINGS, FILES, LANG) {
