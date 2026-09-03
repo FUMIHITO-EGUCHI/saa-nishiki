@@ -1908,6 +1908,9 @@ body {
 .status-pill.is-bad { border-color: var(--saa-danger); color: var(--saa-text); }
 .status-pill.is-off i { background: var(--saa-muted); }
 .status-pill:focus-visible { outline: 2px solid var(--saa-accent); outline-offset: 2px; }
+.status-pill.gpu-toggle { font-weight: 600; }
+.status-pill.gpu-toggle.is-pod { border-color: var(--saa-accent); color: var(--saa-text); }
+.status-pill.gpu-toggle[hidden] { display: none; }
 
 /* ---- characters & views ---- */
 .characters-card .dropdown-character, .characters-card .dropdown-character-regional { display: flex; background: transparent; border: none; padding: 0; margin: 0; }

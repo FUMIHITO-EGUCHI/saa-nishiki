@@ -4,7 +4,7 @@
 #
 # The relay itself is deployed to /dev/shm (RAM) by the SAA main process at session
 # start and speaks a line protocol:
-#   stdin:  one JSON object per line: {"id": n, "cmd": "ping"|"submit"|"interrupt"|"exit", ...}
+#   stdin:  one JSON object per line: {"id": n, "cmd": "ping"|"stats"|"submit"|"interrupt"|"exit", ...}
 #   stdout: frames prefixed with @@SAA@@ followed by one JSON object, newline-terminated.
 #           Responses carry the request id; unsolicited events carry "event".
 # Everything else on stdout (MOTD, echo noise from the forced PTY) is ignored by SAA.
@@ -47,6 +47,11 @@ def emit(obj):
     with write_lock:
         sys.stdout.write('@@SAA@@' + json.dumps(obj, separators=(',', ':')) + '\n')
         sys.stdout.flush()
+
+
+def get_json(path):
+    with urllib.request.urlopen(BASE + path, timeout=5) as response:
+        return json.loads(response.read().decode('utf-8'))
 
 
 def post_json(path, payload):
@@ -125,6 +130,12 @@ def handle(request):
     cmd = request.get('cmd')
     if cmd == 'ping':
         emit({'id': rid, 'ok': True, 'pong': True, 'clientId': CLIENT_ID})
+    elif cmd == 'stats':
+        # health/VRAM for the SAA header pill; GET only, nothing touches disks
+        try:
+            emit({'id': rid, 'ok': True, 'stats': get_json('/system_stats')})
+        except Exception as error:  # noqa: BLE001
+            emit({'id': rid, 'ok': False, 'message': str(error)})
     elif cmd == 'submit':
         job = Job(request.get('workflow'), request.get('saveNodes'))
 

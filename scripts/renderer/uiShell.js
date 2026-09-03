@@ -514,6 +514,44 @@ function setupPreviewMirror() {
     };
 }
 
+// ------------------------------------------------------- GPU target toggle
+// One-touch switch between the local ComfyUI and the registered pod (SSH transport).
+// Hidden until a pod target is registered on the Backend settings page.
+function setupGpuToggle(onChanged) {
+    const pillHost = document.getElementById('header-status');
+    if (!pillHost) return null;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'gpu-target-toggle';
+    button.className = 'status-pill gpu-toggle';
+    const label = document.createTextNode('');
+    button.append(label);
+    pillHost.before(button);
+
+    const render = () => {
+        const SETTINGS = globalThis.globalSettings;
+        const registered = String(SETTINGS.api_pod_ssh_target ?? '').trim() !== '';
+        button.hidden = !registered || SETTINGS.api_interface !== 'ComfyUI';
+        const pod = SETTINGS.api_pod_ssh_enable === true;
+        label.textContent = pod ? uiText('ui_gpu_target_pod', 'GPU: Pod') : uiText('ui_gpu_target_local', 'GPU: Local');
+        button.classList.toggle('is-pod', pod);
+        button.title = uiText('ui_gpu_target_tip', 'Switch image generation between the local ComfyUI and the registered pod');
+    };
+
+    button.addEventListener('click', async () => {
+        if (globalThis.inGenerating) return; // never reroute a run in flight
+        const next = !(globalThis.globalSettings.api_pod_ssh_enable === true);
+        globalThis.globalSettings.api_pod_ssh_enable = next;
+        globalThis.generate?.api_pod_ssh_enable?.setValue?.(next); // keep the Backend settings switch in sync
+        await globalThis.settingsPersistence?.flush?.(); // the main process routes each run from its own settings copy
+        render();
+        onChanged?.();
+    });
+
+    render();
+    return { render };
+}
+
 // ------------------------------------------------------------------ entry
 export function setupUiShell() {
     const shell = {};
@@ -537,7 +575,14 @@ export function setupUiShell() {
             errorHint: uiText('ui_run_error_hint', 'Queue paused · press Create Image to retry'),
             details: uiText('ui_run_error_details', 'Details'),
         });
-        shell.pills?.updateLanguage?.({ noAnswer: uiText('ui_status_no_answer', 'no answer'), comfyOff: uiText('ui_status_comfy_off', 'ComfyUI not set') });
+        shell.pills?.updateLanguage?.({
+            noAnswer: uiText('ui_status_no_answer', 'no answer'),
+            comfyOff: uiText('ui_status_comfy_off', 'ComfyUI not set'),
+            pod: uiText('ui_status_pod', 'Pod'),
+            podStandby: uiText('ui_status_pod_standby', 'standby'),
+            podConnecting: uiText('ui_status_pod_connecting', 'connecting'),
+        });
+        shell.gpuToggle?.render?.();
     };
 
     shell.characters = setupCharactersCard();
@@ -566,6 +611,7 @@ export function setupUiShell() {
             },
         });
     }
+    shell.gpuToggle = setupGpuToggle(() => shell.pills?.refresh?.());
 
     shell.setPreview = base64 => shell.preview?.setPreview(base64);
     shell.refreshViewerStatus = () => shell.leftPanel?.refreshViewerStatus?.();
@@ -576,6 +622,7 @@ export function setupUiShell() {
         shell.pipeline?.refresh?.();
         shell.aiCard?.render?.();
         shell.runBar?.refresh?.();
+        shell.gpuToggle?.render?.();
         shell.settingsConditions();
     };
     document.addEventListener('saa-settings-applied', () => requestAnimationFrame(shell.refreshFromSettings));

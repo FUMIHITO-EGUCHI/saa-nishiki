@@ -39,6 +39,27 @@ test('pills: a pod-backed Ollama is labeled as Pod', () => {
   assert.deepEqual(pills.map(p => [p.id, p.state, p.label]), [['ollama', 'ok', 'Ollama · Pod · Auto']]);
 });
 
+test('pills: pod-routed ComfyUI shows Pod state instead of the local address', () => {
+  const connected = formatBackendStatus({ comfy: { pod: true, configured: true, ok: true, podState: 'connected', address: 'x@ssh.runpod.io', vramUsedMiB: 10342, vramTotalMiB: 24564 } });
+  assert.deepEqual(connected.map(p => [p.id, p.state, p.label]), [['comfy', 'ok', 'ComfyUI · Pod · VRAM 10.1 / 24.0 GB']]);
+  assert.equal(connected[0].title, 'x@ssh.runpod.io');
+  const standby = formatBackendStatus({ comfy: { pod: true, configured: true, ok: true, podState: 'off' } });
+  assert.deepEqual(standby.map(p => [p.state, p.label]), [['off', 'ComfyUI · Pod · standby']]);
+  const connecting = formatBackendStatus({ comfy: { pod: true, configured: true, ok: true, podState: 'connecting' } });
+  assert.deepEqual(connecting.map(p => [p.state, p.label]), [['busy', 'ComfyUI · Pod · connecting']]);
+});
+
+test('main-side probe reports the pod session instead of probing api_addr when pod SSH is on', () => {
+  const source = read('scripts/main/backendStatus.js');
+  assert.match(source, /isPodSshEnabled\(settings\)/);
+  assert.match(source, /podSessionState\(\)/);
+  assert.match(source, /podSessionStats\(\)/, 'VRAM comes over the existing SSH relay, never a new connection');
+  const transport = read('scripts/main/podSshTransport.js');
+  assert.match(transport, /export function podSessionState\(\)/);
+  assert.match(transport, /if \(podSessionState\(\) !== 'connected'\) return null;/, 'stats never open a connection');
+  assert.match(read('scripts/pod/comfy_ws_relay.py'), /elif cmd == 'stats':/);
+});
+
 test('main-side probe covers the Pod target with its auth', () => {
   const source = read('scripts/main/backendStatus.js');
   assert.match(source, /ai_interface === 'Local' \|\| settings\?\.ai_interface === 'Pod'/);

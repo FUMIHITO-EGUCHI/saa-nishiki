@@ -76,6 +76,7 @@ class PodSshSession {
     constructor() {
         this.child = null;
         this.ready = null;
+        this.isReady = false;       // relay printed its 'ready' frame and still answers
         this.requestId = 0;
         this.pending = new Map();   // request id -> resolve
         this.job = null;            // the single in-flight generation
@@ -94,6 +95,7 @@ class PodSshSession {
         const relaySource = fs.readFileSync(RELAY_PATH, 'utf8');
         if (this.child && !this.configChanged(config, relaySource)) return this.ready;
         this.stop();
+        this.isReady = false;
         this.config = { ...config, relaySource };
         const args = buildSshArgs(config);
         console.log(CAT, 'starting ssh relay to', config.target);
@@ -130,6 +132,7 @@ class PodSshSession {
         });
         const die = why => {
             console.warn(CAT, 'session ended:', why);
+            this.isReady = false;
             this.onFatal?.(why);
             this.job?.fail(`Error: pod SSH session ended: ${why}`);
             for (const resolve of this.pending.values()) resolve({ ok: false, message: why });
@@ -144,6 +147,7 @@ class PodSshSession {
     handleFrame(frame) {
         if (frame.event === 'ready') {
             console.log(CAT, 'relay ready (client', frame.clientId, ')');
+            this.isReady = true;
             this.onReady?.();
             return;
         }
@@ -184,6 +188,7 @@ class PodSshSession {
     stop() {
         const child = this.child;
         this.child = null;
+        this.isReady = false;
         this.job?.fail('Error: pod SSH session stopped');
         this.job = null;
         if (!child) return;
@@ -286,4 +291,18 @@ export async function interruptPodWorkflow() {
 
 export function stopPodSshSession() {
     session.stop();
+}
+
+// Status for the header pill: never opens a connection, only reports the existing one.
+export function podSessionState() {
+    if (!session.child) return 'off';
+    return session.isReady ? 'connected' : 'connecting';
+}
+
+// ComfyUI /system_stats fetched through the already-open relay (or null). An older
+// deployed relay answers unknown cmds with ok:false, which also lands on null.
+export async function podSessionStats() {
+    if (podSessionState() !== 'connected') return null;
+    const reply = await session.request({ cmd: 'stats' }, 5000);
+    return reply.ok ? reply.stats ?? null : null;
 }

@@ -14,7 +14,23 @@ export function formatBackendStatus(status, { failures = 0, text = {} } = {}) {
     const ollama = status?.ollama ?? {};
     const pills = [];
 
-    if (comfy.configured) {
+    if (comfy.pod) {
+        // Image generation routed to the pod over SSH: the local address is irrelevant.
+        const parts = ['ComfyUI', text.pod ?? 'Pod'];
+        let state = 'ok';
+        if (comfy.podState === 'connected') {
+            if (comfy.vramUsedMiB !== null && comfy.vramUsedMiB !== undefined && comfy.vramTotalMiB) {
+                parts.push(`VRAM ${gb(comfy.vramUsedMiB)} / ${gb(comfy.vramTotalMiB)} GB`);
+            }
+        } else if (comfy.podState === 'connecting') {
+            state = 'busy';
+            parts.push(text.podConnecting ?? 'connecting');
+        } else {
+            state = 'off';
+            parts.push(text.podStandby ?? 'standby');
+        }
+        pills.push({ id: 'comfy', state, label: parts.join(' · '), title: comfy.address ?? '' });
+    } else if (comfy.configured) {
         let state = 'ok';
         const parts = [`ComfyUI ${comfy.address ?? ''}`.trim()];
         if (comfy.ok) {

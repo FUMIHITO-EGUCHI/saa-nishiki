@@ -5,6 +5,7 @@
 import { net } from 'electron';
 import { backendAuthHeaders } from '../shared/backendAddress.js';
 import { resolvePodOrigin } from '../shared/llmEndpoint.js';
+import { isPodSshEnabled, podSessionState, podSessionStats } from './podSshTransport.js';
 
 const CAT = '[BackendStatus]';
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
@@ -98,7 +99,19 @@ export function summarizeSystemStats(data) {
 export async function probeBackends(settings, options = {}) {
     const result = { comfy: { configured: false, ok: false }, ollama: { configured: false, ok: false }, checkedAt: Date.now() };
 
-    if (settings?.api_interface === 'ComfyUI') {
+    if (settings?.api_interface === 'ComfyUI' && isPodSshEnabled(settings)) {
+        // Images run on the pod over SSH; probing api_addr would report the wrong GPU.
+        // No connection is opened for status: an idle session simply shows as standby.
+        result.comfy.configured = true;
+        result.comfy.pod = true;
+        result.comfy.podState = podSessionState();
+        result.comfy.address = String(settings.api_pod_ssh_target ?? '').trim();
+        result.comfy.ok = true;
+        if (result.comfy.podState === 'connected') {
+            const stats = await podSessionStats();
+            if (stats) Object.assign(result.comfy, summarizeSystemStats(stats));
+        }
+    } else if (settings?.api_interface === 'ComfyUI') {
         const origin = probeOrigin(settings.api_addr);
         result.comfy.configured = Boolean(origin);
         result.comfy.address = origin ? origin.replace(/^https?:\/\//, '') : String(settings.api_addr ?? '');

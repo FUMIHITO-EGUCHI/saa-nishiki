@@ -241,7 +241,10 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
             (value) => { globalThis.globalSettings.api_preview_refresh_time = value; }),
 
         api_pod_ssh_enable: setupCheckbox('system-settings-api-pod-ssh-enable', LANG.api_pod_ssh_enable, SETTINGS.api_pod_ssh_enable, true,
-            (value) => { globalThis.globalSettings.api_pod_ssh_enable = value; }),
+            (value) => {
+                globalThis.globalSettings.api_pod_ssh_enable = value;
+                globalThis.uiShell?.gpuToggle?.render?.(); // header one-touch switch mirrors this
+            }),
         api_pod_ssh_target: setupTextbox('system-settings-api-pod-ssh-target', LANG.api_pod_ssh_target, {
             value: SETTINGS.api_pod_ssh_target,
             maxLines: 1
