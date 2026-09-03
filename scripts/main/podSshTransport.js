@@ -103,12 +103,12 @@ class PodSshSession {
         this.child = child;
         // echo off first (so the deploy is not echoed back), then the staged
         // bootstrap once the remote shell shows signs of life
-        child.stdin.write('stty -echo 2>/dev/null\n');
+        try { child.stdin.write('stty -echo 2>/dev/null\n'); } catch { /* spawn failure lands on 'error' */ }
         let bootstrapped = false;
         const bootstrap = () => {
             if (bootstrapped || this.child !== child) return;
             bootstrapped = true;
-            child.stdin.write(buildBootstrapCommand({ comfyPort: config.comfyPort, relaySource }));
+            try { child.stdin.write(buildBootstrapCommand({ comfyPort: config.comfyPort, relaySource })); } catch { /* dying; 'close' reports it */ }
         };
         child.stdout.once('data', () => setTimeout(bootstrap, 750));
         setTimeout(bootstrap, 8000); // fallback if the shell never prints a banner
@@ -126,16 +126,24 @@ class PodSshSession {
 
         const parse = makeFrameParser(frame => this.handleFrame(frame));
         child.stdout.on('data', parse);
+        // ssh's own diagnostics (auth refused, "Connection closed", the Runpod proxy's
+        // stopped-pod notice) only ever appear on stderr; keep the tail so a failure
+        // reason reaches the user instead of a bare exit code.
+        let lastStderr = '';
         child.stderr.on('data', data => {
             const text = data.toString('utf8').trim();
-            if (text) console.warn(CAT, 'ssh:', text.slice(0, 500));
+            if (!text) return;
+            console.warn(CAT, 'ssh:', text.slice(0, 500));
+            const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+            if (lines.length) lastStderr = lines.at(-1).slice(0, 200);
         });
         const die = why => {
-            console.warn(CAT, 'session ended:', why);
+            const reason = lastStderr ? `${why}: ${lastStderr}` : why;
+            console.warn(CAT, 'session ended:', reason);
             this.isReady = false;
-            this.onFatal?.(why);
-            this.job?.fail(`Error: pod SSH session ended: ${why}`);
-            for (const resolve of this.pending.values()) resolve({ ok: false, message: why });
+            this.onFatal?.(reason);
+            this.job?.fail(`Error: pod SSH session ended: ${reason}`);
+            for (const resolve of this.pending.values()) resolve({ ok: false, message: reason });
             this.pending.clear();
             if (this.child === child) this.child = null;
         };
@@ -267,7 +275,8 @@ export async function runPodWorkflow({ settings, workflow, saveNodes, onProgress
         await session.ensureStarted(config);
     } catch (error) {
         session.stop(); // drop the half-open session so the next run reconnects instead of replaying this rejection
-        return { error: `Error: pod SSH connect failed: ${error.message}` };
+        const hint = /exited|timed out|refused|closed|reset/i.test(error.message) ? ' — is the pod running?' : '';
+        return { error: `Error: pod SSH connect failed: ${error.message}${hint}` };
     }
     if (session.job && !session.job.settled) return { error: 'Error: pod SSH transport is busy' };
 

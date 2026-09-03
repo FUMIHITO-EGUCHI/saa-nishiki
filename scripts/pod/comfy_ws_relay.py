@@ -143,7 +143,10 @@ def handle(request):
             try:
                 job.run()
             except Exception as error:  # noqa: BLE001 - report everything to SAA
-                emit({'event': 'error', 'message': str(error)})
+                message = str(error)
+                if 'refused' in message.lower():
+                    message = f'ComfyUI is not running on the pod (port {COMFY_PORT} refused): {message}'
+                emit({'event': 'error', 'message': message})
 
         threading.Thread(target=runner, daemon=True).start()
         emit({'id': rid, 'ok': True})
