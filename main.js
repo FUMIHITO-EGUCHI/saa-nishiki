@@ -19,6 +19,7 @@ import { setupModelList } from './scripts/main/modelList.js';
 import { setupTagAutoCompleteBackend } from './scripts/main/tagAutoComplete_backend.js';
 import { setupModelApi } from './scripts/main/remoteAI_backend.js';
 import { setupGenerateBackendComfyUI, sendToRenderer } from './scripts/main/generate_backend_comfyui.js';
+import { stopPodSshSession } from './scripts/main/podSshTransport.js';
 import { setupGenerateBackendWebUI } from './scripts/main/generate_backend_webui.js';
 import { setupCachedFiles } from './scripts/main/cachedFiles.js';
 import { setupWildcardsHandlers } from './scripts/main/wildCards.js';
@@ -153,6 +154,13 @@ async function initializeApp() {
 app.on('window-all-closed', async function () {
   // close the WebSocket server
   closeWebSocketServer();
+
+  // Drop the pod SSH relay (if any) so no orphan ssh.exe lingers.
+  try {
+    stopPodSshSession();
+  } catch (error) {
+    console.warn('[Main] Pod SSH shutdown skipped:', error?.message ?? error);
+  }
 
   // Ask the loopback ComfyUI to drop its models so the checkpoint does not stay in VRAM after SAA exits.
   try {

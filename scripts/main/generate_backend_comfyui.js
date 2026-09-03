@@ -1,11 +1,16 @@
-import { ipcMain, BrowserWindow, net } from 'electron';
+import { ipcMain, BrowserWindow, app, net } from 'electron';
 import { WebSocket } from 'ws';
+import fs from 'node:fs';
+import path from 'node:path';
 import * as wsService from '../webserver/back/wsService.js';
 import { getMutexBackendBusy, setMutexBackendBusy } from '../../main-common.js';
 import { WORKFLOW, WORKFLOW_REGIONAL, WORKFLOW_CONTROLNET,
   WORKFLOW_MIRA_ITU, WORKFLOW_UNET, WORKFLOW_REIONAL_UNET,
   WORKFLOW_MIRA_ITU_UNET, WORKFLOW_MIRA_ITU_UNET_PREBAKE, VAE_LOADER} from './comfyui_workflow.js';
 import { backendAuthHeaders, httpApiUrl, wsApiUrl } from '../shared/backendAddress.js';
+import { buildParametersText, embedPngParameters, findDiskWriterNodes, toWebsocketOutputWorkflow } from '../shared/podWorkflow.js';
+import { interruptPodWorkflow, isPodSshEnabled, runPodWorkflow } from './podSshTransport.js';
+import { getGlobalSettings } from './globalSettings.js';
 
 const CAT = '[ComfyUI]';
 const TIMEOUT = 5000; // 5 seconds timeout for backend response
@@ -752,6 +757,7 @@ class ComfyUI {
   }
 
   async openWS(prompt_id, skipFirst = true, index='29'){
+    if (this.podRun || String(prompt_id ?? '').startsWith('pod-')) return this.awaitPod();
     return new Promise((resolve) => {
       this.prompt_id = prompt_id;
       this.preview = 0;
@@ -2330,8 +2336,76 @@ class ComfyUI {
     return workflow;
   }
 
+  // ---- Pod SSH transport (images stream over SSH, nothing lands on pod disks) ----
+
+  podEnabled() {
+    try { return isPodSshEnabled(getGlobalSettings()); } catch { return false; }
+  }
+
+  async runPod(workflow) {
+    const { workflow: wsWorkflow, saveNodes } = toWebsocketOutputWorkflow(workflow);
+    if (saveNodes.length === 0) {
+      setMutexBackendBusy(false);
+      return 'Error: pod workflow has no websocket output node';
+    }
+    const offenders = findDiskWriterNodes(wsWorkflow);
+    if (offenders.length > 0) {
+      setMutexBackendBusy(false);
+      return `Error: pod workflow contains disk-writing nodes: ${offenders.map(o => o.classType).join(', ')}`;
+    }
+
+    this.podParameters = buildParametersText(workflow);
+    this.podSeed = Object.values(workflow).find(node => node?.class_type === 'ImageSaverMira')?.inputs?.seed_value ?? 0;
+    let previewCount = 0;
+    this.podRun = runPodWorkflow({
+      settings: getGlobalSettings(),
+      workflow: wsWorkflow,
+      saveNodes,
+      onProgress: (value, max) => {
+        if (value && max) sendToRenderer(this.uuid, `updateProgress`, value, max);
+      },
+      onPreview: buffer => {
+        if (this.refresh === 0 || previewCount++ % this.refresh !== 0) return;
+        sendToRenderer(this.uuid, `updatePreview`, `data:image/png;base64,${buffer.toString('base64')}`);
+      },
+    });
+    return JSON.stringify({ prompt_id: `pod-${crypto.randomUUID()}` });
+  }
+
+  async awaitPod() {
+    const run = this.podRun;
+    this.podRun = null;
+    if (!run) {
+      setMutexBackendBusy(false);
+      return 'Error: no pod run in flight';
+    }
+    const result = await run;
+    setMutexBackendBusy(false);
+    if (result.error) return cancelMark ? 'Error: Cancelled' : result.error;
+    const image = embedPngParameters(result.images[0], this.podParameters);
+    this.savePodImage(image);
+    console.log(CAT, `Pod image received over SSH (${result.images.length} image(s))`);
+    return `data:image/png;base64,${image.toString('base64')}`;
+  }
+
+  savePodImage(buffer) {
+    try {
+      const settings = getGlobalSettings();
+      const dir = String(settings.pod_image_save_dir ?? '').trim() || path.join(app.getPath('pictures'), 'SAA');
+      fs.mkdirSync(dir, { recursive: true });
+      const stamp = new Date().toISOString().replaceAll(/[:.]/g, '-').slice(0, 19);
+      const file = path.join(dir, `SAA_${stamp}_${this.podSeed}.png`);
+      fs.writeFileSync(file, buffer);
+      console.log(CAT, 'Pod image saved to', file);
+    } catch (error) {
+      // the image still reaches the gallery; local auto-save is best-effort
+      console.warn(CAT, 'Pod image local save failed:', error?.message ?? error);
+    }
+  }
+
   run(workflow, pythonRun=false) {
     this.pythonRun = pythonRun;
+    if (this.podEnabled()) return this.runPod(workflow);
     return new Promise((resolve, reject) => {
       const requestBody = {
         prompt: workflow,
@@ -2642,7 +2716,11 @@ function closeWsComfyUI() {
 async function cancelComfyUI() {
   console.log(CAT, 'Processing interrupted');
   cancelMark = true;
-  await backendComfyUI.cancelGenerate();  
+  if (backendComfyUI.podEnabled()) {
+    await interruptPodWorkflow();
+  } else {
+    await backendComfyUI.cancelGenerate();
+  }
 }
 
 export {

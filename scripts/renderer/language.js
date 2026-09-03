@@ -174,7 +174,12 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     globalThis.generate.api_interface.setTitle(LANG.api_interface);
     globalThis.generate.api_address.setTitle(LANG.api_addr);
-    globalThis.generate.api_preview_refresh_time.setTitle(LANG.api_preview_refresh_time);    
+    globalThis.generate.api_preview_refresh_time.setTitle(LANG.api_preview_refresh_time);
+    globalThis.generate.api_pod_ssh_enable.setTitle(LANG.api_pod_ssh_enable);
+    globalThis.generate.api_pod_ssh_target.setTitle(LANG.api_pod_ssh_target);
+    globalThis.generate.api_pod_ssh_key.setTitle(LANG.api_pod_ssh_key);
+    globalThis.generate.api_pod_ssh_port.setTitle(LANG.api_pod_ssh_comfy_port);
+    globalThis.generate.pod_image_save_dir.setTitle(LANG.pod_image_save_dir);
     
     globalThis.generate.model_filter.setTitle(LANG.model_filter);    
     globalThis.generate.model_filter_keyword.setTitle(LANG.model_filter_keyword);
@@ -392,6 +397,11 @@ export function updateSettings() {
     globalThis.generate.api_interface.updateDefaults(SETTINGS.api_interface);
     globalThis.generate.api_preview_refresh_time.setValue(SETTINGS.api_preview_refresh_time);
     globalThis.generate.api_address.setValue(SETTINGS.api_addr);
+    globalThis.generate.api_pod_ssh_enable.setValue(SETTINGS.api_pod_ssh_enable);
+    globalThis.generate.api_pod_ssh_target.setValue(SETTINGS.api_pod_ssh_target);
+    globalThis.generate.api_pod_ssh_key.setValue(SETTINGS.api_pod_ssh_key);
+    globalThis.generate.api_pod_ssh_port.setValue(`${SETTINGS.api_pod_ssh_comfy_port}`);
+    globalThis.generate.pod_image_save_dir.setValue(SETTINGS.pod_image_save_dir);
 
     globalThis.generate.hifix.setValue(SETTINGS.api_hf_enable);
     globalThis.hifix.scale.setValue(SETTINGS.api_hf_scale);

@@ -236,10 +236,32 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
             value: SETTINGS.api_addr,
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.api_addr = value; }),
-        api_preview_refresh_time: setupSlider('system-settings-api-refresh-rate', 
-            LANG.api_preview_refresh_time, {min:0, max:5, step:1, defaultValue:SETTINGS.api_preview_refresh_time}, 
+        api_preview_refresh_time: setupSlider('system-settings-api-refresh-rate',
+            LANG.api_preview_refresh_time, {min:0, max:5, step:1, defaultValue:SETTINGS.api_preview_refresh_time},
             (value) => { globalThis.globalSettings.api_preview_refresh_time = value; }),
-        
+
+        api_pod_ssh_enable: setupCheckbox('system-settings-api-pod-ssh-enable', LANG.api_pod_ssh_enable, SETTINGS.api_pod_ssh_enable, true,
+            (value) => { globalThis.globalSettings.api_pod_ssh_enable = value; }),
+        api_pod_ssh_target: setupTextbox('system-settings-api-pod-ssh-target', LANG.api_pod_ssh_target, {
+            value: SETTINGS.api_pod_ssh_target,
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.api_pod_ssh_target = value; }),
+        api_pod_ssh_key: setupTextbox('system-settings-api-pod-ssh-key', LANG.api_pod_ssh_key, {
+            value: SETTINGS.api_pod_ssh_key,
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.api_pod_ssh_key = value; }),
+        api_pod_ssh_port: setupTextbox('system-settings-api-pod-ssh-port', LANG.api_pod_ssh_comfy_port, {
+            value: `${SETTINGS.api_pod_ssh_comfy_port}`,
+            maxLines: 1
+            }, true, (value) => {
+                const port = Number.parseInt(value, 10);
+                globalThis.globalSettings.api_pod_ssh_comfy_port = Number.isInteger(port) && port > 0 && port < 65536 ? port : 8188;
+            }),
+        pod_image_save_dir: setupTextbox('system-settings-api-pod-save-dir', LANG.pod_image_save_dir, {
+            value: SETTINGS.pod_image_save_dir,
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.pod_image_save_dir = value; }),
+
         model_filter:setupCheckbox('system-settings-api-fliter', LANG.model_filter, SETTINGS.model_filter,
             false, (value) => {
             globalThis.globalSettings.model_filter = value;

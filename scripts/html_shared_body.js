@@ -421,6 +421,17 @@ export const sharedBodyHTML = `
                     <div class="system-settings-api-webui-auth-enable"></div>
                   </div>
                 </div>
+                <div class="settings-group" data-when-api="ComfyUI">
+                  <div class="settings-group-title">Runpod pod over SSH</div>
+                  <div class="settings-grid">
+                    <div class="system-settings-api-pod-ssh-enable ui-switch"></div>
+                    <div class="system-settings-api-pod-ssh-target"></div>
+                    <div class="system-settings-api-pod-ssh-key"></div>
+                    <div class="system-settings-api-pod-ssh-port"></div>
+                    <div class="system-settings-api-pod-save-dir"></div>
+                  </div>
+                  <p class="settings-note" data-ui-text="ui_settings_pod_ssh_note">Images stream over SSH and are saved locally only; nothing is written to the pod's disks. The API address above is ignored while this is on.</p>
+                </div>
               </section>
 
               <section id="settings-page-model" class="settings-modal-page" role="tabpanel" data-settings-page-content="model" aria-labelledby="settings-page-model-title" tabindex="0" hidden>
