@@ -17,6 +17,7 @@ import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './
 import { resolveQueuedAiPrompt } from './tools/refineGenerationResult.js';
 import { applyRefineEditorPatch } from './tools/refineEditorApplication.js';
 import { completeRefineRunItem, createRefineRunController, recordRefineRunCandidate } from './tools/refineRunState.js';
+import { asFragment, joinOrderedUnits, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
 
@@ -173,26 +174,44 @@ function readViewPromptField(view_list, key, seed) {
     return text.replace(/,\s*$/, '');
 }
 
-export function getViewTags(seed) {
+export function getViewTags(seed, includeFields = true) {
     const tag_angle = createViewTag('angle', globalThis.viewList.getValue()[0], seed, globalThis.viewList.getTextValue(0));
     const tag_camera = createViewTag('camera', globalThis.viewList.getValue()[1], seed, globalThis.viewList.getTextValue(1));
-    const tag_background = readViewPromptField('background', 'background', seed);
-    const tag_style = readViewPromptField('style', 'style', seed);
 
     let combo = '';
-    if(tag_angle !== '') 
+    if(tag_angle !== '')
         combo += `${tag_angle}, `;
 
-    if(tag_camera !== '') 
+    if(tag_camera !== '')
         combo += `${tag_camera}, `;
 
-    if(tag_background !== '') 
-        combo += `${tag_background}, `;
+    // The regional path still folds background / style into the view combo; the
+    // standard path passes includeFields=false and orders them as separate units.
+    if (includeFields) {
+        const tag_background = readViewPromptField('background', 'background', seed);
+        const tag_style = readViewPromptField('style', 'style', seed);
+        if(tag_background !== '')
+            combo += `${tag_background}, `;
 
-    if(tag_style !== '') 
-        combo += `${tag_style}, `;
+        if(tag_style !== '')
+            combo += `${tag_style}, `;
+    }
 
     return combo;
+}
+
+// Custom prompt fields: live component value when the UI has one, stored text otherwise.
+function readCustomFieldValue(field) {
+    const component = globalThis.prompt?.[field.id];
+    if (component?.getValue) return String(component.getValue() ?? '');
+    return field.text || '';
+}
+
+export function getCustomFieldTexts(polarity) {
+    const fields = normalizeCustomFields(globalThis.globalSettings.prompt_custom_fields);
+    return fields
+        .filter(field => field.polarity === polarity)
+        .map(field => ({ id: field.id, text: readCustomFieldValue(field) }));
 }
 
 async function createCharacters(index, seeds, ocIndex = 3) {
@@ -447,35 +466,27 @@ async function getCharacters() {
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
-function appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP) {
-    const commonColor = (globalThis.globalSettings.css_style==='dark')?'darkorange':'Sienna';
-    const viewColor = (globalThis.globalSettings.css_style==='dark')?'BurlyWood':'Brown';
-    const aiColor = (globalThis.globalSettings.css_style==='dark')?'hotpink':'Purple';
-    const characterColor = (globalThis.globalSettings.css_style==='dark')?'DeepSkyBlue':'MidnightBlue';
-    const positiveColor = (globalThis.globalSettings.css_style==='dark')?'LawnGreen':'SeaGreen';
+function appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP, fieldUnits = null) {
+    const SETTINGS = globalThis.globalSettings;
+    const dark = SETTINGS.css_style === 'dark';
+    const commonColor = dark ? 'darkorange' : 'Sienna';
+    const viewColor = dark ? 'BurlyWood' : 'Brown';
+    const aiColor = dark ? 'hotpink' : 'Purple';
+    const characterColor = dark ? 'DeepSkyBlue' : 'MidnightBlue';
+    const positiveColor = dark ? 'LawnGreen' : 'SeaGreen';
+    const customColor = dark ? 'orchid' : 'DarkMagenta';
 
     let common = readPromptValue('common');
-    let positive = readPromptValue('positive');
-    let aiPrompt = ai;
-
-    aiPrompt = aiPrompt.trim();
+    const positive = readPromptValue('positive');
+    let aiPrompt = ai.trim();
     if(aiPrompt !== '' && !aiPrompt.endsWith(','))
         aiPrompt += ', ';
-
-    let prompt = ``;
-    let promptColored = ``;
-
-    // Attach every block if EXIST
-    if(BOP) {
-        prompt += `${BOP}`;
-        promptColored += `${BOP}`;
-    }
 
     if (common) {
         const trimmedCommon = common.trim();
         if (trimmedCommon === '') {
             common = '';
-        } else if (globalThis.globalSettings.api_model_type === 'Diffusion') {
+        } else if (SETTINGS.api_model_type === 'Diffusion') {
             if (trimmedCommon.endsWith('.')) {
                 common = `${trimmedCommon} `;
             } else if (!trimmedCommon.endsWith(',') && !trimmedCommon.endsWith('\n')) {
@@ -486,54 +497,38 @@ function appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP) {
         } else {
             common = trimmedCommon.endsWith(',') ? trimmedCommon : `${trimmedCommon}, `;
         }
-
-        if (common) {
-            prompt += `${common}`;
-            promptColored += `[color=${commonColor}]${common}[/color]`;
-        }
     }
 
-    if(views) {
-        prompt += `${views}`;
-        promptColored += `[color=${viewColor}]${views}[/color]`;
+    const colored = (text, color) => (text ? `[color=${color}]${text}[/color]` : '');
+    const units = {
+        common: { text: common || '', colored: colored(common, commonColor) },
+        views: { text: views || '', colored: colored(views, viewColor) },
+        background: { text: fieldUnits?.background ?? '', colored: colored(fieldUnits?.background ?? '', viewColor) },
+        style: { text: fieldUnits?.style ?? '', colored: colored(fieldUnits?.style ?? '', viewColor) },
+        ai: { text: aiPrompt, colored: colored(aiPrompt, aiColor) },
+        characters: {
+            text: `${BOC || ''}${characters || ''}${EOC || ''}`,
+            colored: `${BOC || ''}${colored(characters, characterColor)}${EOC || ''}`,
+        },
+        positive: { text: positive || '', colored: colored(positive, positiveColor) },
+    };
+    for (const custom of fieldUnits?.customs ?? []) {
+        const text = asFragment(custom.text);
+        units[custom.id] = { text, colored: colored(text, customColor) };
     }
 
-    if(aiPrompt) {
-        prompt += `${aiPrompt}`;
-        promptColored += `[color=${aiColor}]${aiPrompt}[/color]`;
-    }
+    const order = normalizeOrder(SETTINGS.prompt_positive_order, 'positive', SETTINGS.prompt_custom_fields);
+    const { prompt, promptColored } = joinOrderedUnits(order, units);
 
-    if (BOC) {
-        prompt += `${BOC}`;
-        promptColored += `${BOC}`;
-    }
-
-    if(characters) {
-        prompt += `${characters}`;
-        promptColored += `[color=${characterColor}]${characters}[/color]`;
-    }
-
-    if (EOC) {
-        prompt += `${EOC}`;
-        promptColored += `${EOC}`;
-    }
-
-    if(positive) {
-        prompt += `${positive}`;
-        promptColored += `[color=${positiveColor}]${positive}[/color]`;
-    }
-
-    if (EOP) {
-        prompt += `${EOP}`;
-        promptColored += `${EOP}`;
-    }
-    
-    return {tmpPositivePrompt: prompt, tmpPositivePromptColored: promptColored};
+    return {
+        tmpPositivePrompt: `${BOP || ''}${prompt}${EOP || ''}`,
+        tmpPositivePromptColored: `${BOP || ''}${promptColored}${EOP || ''}`,
+    };
 }
 
-function getPrompts(characters, views, ai='', apiInterface = 'None', loop=-1) {       
+function getPrompts(characters, views, ai='', apiInterface = 'None', loop=-1, fieldUnits = null) {
     const {BOP, BOC, EOC, EOP} = getCustomJSON(loop);
-    const {tmpPositivePrompt, tmpPositivePromptColored} = appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP); 
+    const {tmpPositivePrompt, tmpPositivePromptColored} = appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP, fieldUnits);
 
     const exclude = readPromptValue('exclude');
     const {positivePrompt, positivePromptColored} = filterPrompts(tmpPositivePrompt, tmpPositivePromptColored, exclude);
@@ -656,8 +651,13 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         randomSeed = seed;
         finalInfo = information;
 
-        const views = getViewTags(seed);
-        let {pos, posc, lora, refineContext: promptRefineContext} = getPrompts(characters_tag, views, aiPromot, apiInterface, loop);
+        const views = getViewTags(seed, false);
+        const fieldUnits = {
+            background: asFragment(readViewPromptField('background', 'background', seed)),
+            style: asFragment(readViewPromptField('style', 'style', seed)),
+            customs: getCustomFieldTexts('positive'),
+        };
+        let {pos, posc, lora, refineContext: promptRefineContext} = getPrompts(characters_tag, views, aiPromot, apiInterface, loop, fieldUnits);
                 
         pos = await replaceWildcardsAsync(pos, randomSeed);
         posc = await replaceWildcardsAsync(posc, randomSeed);
@@ -674,7 +674,12 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
             finalInfo += `LoRA: [color=${loraColor}]${lora}[/color]\n`;
         }
         positivePromptColored = posc;
-        const mergedNegativePrompt = [readPromptValue('negative'), negative_tags].filter(Boolean).join(', ').trim();
+        // Ordered negative units (built-in field plus custom negative fields), then character negatives.
+        const negativeOrder = normalizeOrder(globalThis.globalSettings.prompt_negative_order, 'negative', globalThis.globalSettings.prompt_custom_fields);
+        const negativeTexts = { negative: readPromptValue('negative') };
+        for (const custom of getCustomFieldTexts('negative')) negativeTexts[custom.id] = custom.text;
+        const orderedNegatives = negativeOrder.map(id => String(negativeTexts[id] ?? '').trim()).filter(Boolean);
+        const mergedNegativePrompt = [...orderedNegatives, negative_tags].filter(Boolean).join(', ').trim();
         negativePrompt = mergedNegativePrompt;
         refineContext = {
             ...promptRefineContext,
