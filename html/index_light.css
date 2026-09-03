@@ -2266,3 +2266,13 @@ body {
 .ai-result-modal-actions { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
 .ai-result-modal-actions button { height: 26px; padding: 0 12px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font-size: 12px; cursor: pointer; }
 .ai-result-modal-actions button:hover { background: var(--saa-bg-hover); }
+
+/* Positive / Negative frames around the prompt fields; per-field collapsing */
+.prompt-group { display: flex; flex-direction: column; gap: 12px; padding: 8px 10px 12px; border: 1px solid var(--saa-border); border-radius: 8px; background: transparent; }
+.prompt-group-title { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--saa-muted2); }
+.prompt-group-positive { box-shadow: inset 3px 0 0 0 var(--saa-stripe-positive); }
+.prompt-group-negative { box-shadow: inset 3px 0 0 0 var(--saa-stripe-negative); }
+.prompt-field-collapse { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 22px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font-size: 11px; cursor: pointer; opacity: 0.7; }
+.prompt-field-collapse:hover { opacity: 1; background: var(--saa-bg-hover); }
+.prompt-field.is-collapsed .myTextbox-container-relative,
+.prompt-field.is-collapsed .tag-capsule-view { display: none; }

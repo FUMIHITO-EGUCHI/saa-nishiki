@@ -99,20 +99,87 @@ export function setupPromptFieldManager() {
         return fieldsHost.querySelector(`.prompt-${id}`);
     }
 
-    // Display order mirrors the concatenation order: positive text units (with
-    // positive-right pinned after positive), then negative units, exclude, AI card.
+    function ensureGroup(name, title) {
+        let group = fieldsHost.querySelector(`.prompt-group-${name}`);
+        if (!group) {
+            group = document.createElement('section');
+            group.className = `prompt-group prompt-group-${name}`;
+            const heading = document.createElement('div');
+            heading.className = 'prompt-group-title';
+            heading.textContent = title;
+            group.appendChild(heading);
+            fieldsHost.appendChild(group);
+        }
+        return group;
+    }
+
+    // Display order mirrors the concatenation order. Text fields live inside a
+    // Positive and a Negative frame (positive-right pinned after positive);
+    // exclude (applies to both) and the AI card stay outside the frames.
     function applyDomOrder() {
-        const sequence = [];
+        const positiveGroup = ensureGroup('positive', 'Positive');
+        const negativeGroup = ensureGroup('negative', 'Negative');
+        fieldsHost.appendChild(positiveGroup);
         for (const id of SETTINGS.prompt_positive_order) {
             if (STRUCTURAL_UNITS.has(id)) continue;
-            sequence.push(unitContainer(id));
-            if (id === 'positive') sequence.push(fieldsHost.querySelector('.prompt-positive-right'));
+            const element = unitContainer(id);
+            if (element) positiveGroup.appendChild(element);
+            if (id === 'positive') {
+                const right = fieldsHost.querySelector('.prompt-positive-right');
+                if (right) positiveGroup.appendChild(right);
+            }
         }
-        for (const id of SETTINGS.prompt_negative_order) sequence.push(unitContainer(id));
-        sequence.push(fieldsHost.querySelector('.prompt-exclude'), fieldsHost.querySelector('.ai-card'));
-        for (const element of sequence) {
+        fieldsHost.appendChild(negativeGroup);
+        for (const id of SETTINGS.prompt_negative_order) {
+            const element = unitContainer(id);
+            if (element) negativeGroup.appendChild(element);
+        }
+        for (const selector of ['.prompt-exclude', '.ai-card']) {
+            const element = fieldsHost.querySelector(selector);
             if (element) fieldsHost.appendChild(element);
         }
+        wireCollapseButtons();
+    }
+
+    // -------------------------------------------------------------- collapsing
+    // Collapsing only hides a field's editor; its text still joins the prompt.
+
+    function collapsedSet() {
+        return new Set(Array.isArray(SETTINGS.prompt_field_collapsed) ? SETTINGS.prompt_field_collapsed : []);
+    }
+
+    function attachCollapseButton(container, id) {
+        if (!container || container.querySelector('.prompt-field-collapse')) return;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'prompt-field-collapse';
+        button.title = 'Collapse / expand this field';
+        const applyState = () => {
+            const collapsed = collapsedSet().has(id);
+            container.classList.toggle('is-collapsed', collapsed);
+            button.textContent = collapsed ? '▸' : '▾';
+        };
+        button.addEventListener('click', () => {
+            const set = collapsedSet();
+            set.has(id) ? set.delete(id) : set.add(id);
+            SETTINGS.prompt_field_collapsed = [...set];
+            applyState();
+        });
+        const tools = container.querySelector('.tag-field-tools');
+        const header = container.querySelector('div[class^="myTextbox-"][class*="-header"]');
+        if (tools) tools.appendChild(button);
+        else if (header) { header.classList.add('has-preset-button'); header.appendChild(button); }
+        else return;
+        applyState();
+    }
+
+    function wireCollapseButtons() {
+        for (const id of [...SETTINGS.prompt_positive_order, ...SETTINGS.prompt_negative_order]) {
+            if (STRUCTURAL_UNITS.has(id)) continue;
+            attachCollapseButton(unitContainer(id), id);
+        }
+        attachCollapseButton(fieldsHost.querySelector('.prompt-positive-right'), 'positive_right');
+        attachCollapseButton(fieldsHost.querySelector('.prompt-exclude'), 'exclude');
     }
 
     // ---------------------------------------------------------------- presets
