@@ -139,7 +139,20 @@ export function setupPromptFieldManager() {
             event.stopPropagation();
             togglePresetPanel(container, key, getComponent, onApplied);
         });
-        container.appendChild(button);
+        // Sit inside the field's header tool row (next to the text/capsule toggle)
+        // rather than floating over it; absolute placement is the last resort.
+        const tools = container.querySelector('.tag-field-tools');
+        const header = container.querySelector('div[class^="myTextbox-"][class*="-header"]');
+        if (tools) {
+            button.classList.add('is-inline');
+            tools.insertBefore(button, tools.firstChild);
+        } else if (header) {
+            button.classList.add('is-inline');
+            header.classList.add('has-preset-button');
+            header.appendChild(button);
+        } else {
+            container.appendChild(button);
+        }
     }
 
     function togglePresetPanel(container, key, getComponent, onApplied) {

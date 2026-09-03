@@ -31,5 +31,15 @@ test('both themes style the field editor and preset panel', () => {
     assert.match(css, /\.prompt-field \{ position: relative; \}/);
     assert.match(css, /\.prompt-field-editor-backdrop \{ position: fixed;/);
     assert.match(css, /\.prompt-preset-panel \{ position: absolute;/);
+    // preset button renders inline in the header tool row (not floating over the capsule toggle)
+    assert.match(css, /\.prompt-preset-button\.is-inline \{ position: static;/);
+    assert.match(css, /\.prompts-card \.prompt-fields \{ gap: 14px; \}/);
   }
+});
+
+test('preset button joins the field header tools instead of overlapping them', () => {
+  const manager = read('scripts/renderer/components/promptFieldManager.js');
+  assert.match(manager, /container\.querySelector\('\.tag-field-tools'\)/);
+  assert.match(manager, /tools\.insertBefore\(button, tools\.firstChild\)/);
+  assert.match(manager, /button\.classList\.add\('is-inline'\)/);
 });

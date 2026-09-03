@@ -2238,3 +2238,12 @@ body {
 .prompt-field-editor-add { display: flex; gap: 6px; margin-top: 10px; }
 .prompt-field-editor-add input { flex: 1; min-width: 0; height: 24px; padding: 0 6px; border: 1px solid var(--saa-border-ctl); border-radius: 4px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; font-size: 12px; }
 .prompt-field-editor-add select, .prompt-field-editor-add-button { height: 26px; padding: 0 8px; border: 1px solid var(--saa-border-ctl); border-radius: 4px; background: var(--saa-bg-control); color: var(--saa-text); font-size: 12px; cursor: pointer; }
+
+/* Preset button lives in the field header tool row; roomier Prompts card */
+.prompt-preset-button.is-inline { position: static; display: inline-flex; align-items: center; justify-content: center; min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); font-size: 12px; opacity: 0.7; }
+.prompt-preset-button.is-inline:hover { opacity: 1; background: var(--saa-bg-hover); }
+.prompt-preset-panel { top: 28px; }
+.myTextbox-wrapper .has-preset-button { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.prompts-card .prompt-fields { gap: 14px; }
+.prompts-card .ui-card-body { padding: 12px; }
+.prompts-card .tag-field-header { margin: 2px 4px 6px; }
