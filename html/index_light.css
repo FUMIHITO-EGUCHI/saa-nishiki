@@ -2247,3 +2247,22 @@ body {
 .prompts-card .prompt-fields { gap: 14px; }
 .prompts-card .ui-card-body { padding: 12px; }
 .prompts-card .tag-field-header { margin: 2px 4px 6px; }
+
+/* Settings grid alignment: even rows, centered switches, more air */
+.settings-grid { gap: 12px 20px; }
+.settings-grid > .ui-switch { align-self: center; min-height: 28px; }
+.settings-group { margin-top: 16px; }
+.settings-group-title { margin-bottom: 8px; }
+
+/* Large modal view for the AI / refine prompt in the info panel */
+.ai-result-panel { position: relative; }
+.ai-result-expand { position: absolute; top: 4px; right: 6px; z-index: 5; min-width: 24px; min-height: 22px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font-size: 12px; cursor: pointer; opacity: 0.6; }
+.ai-result-expand:hover { opacity: 1; background: var(--saa-bg-hover); }
+.ai-result-modal-backdrop { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); }
+.ai-result-modal { display: flex; flex-direction: column; width: min(860px, 90vw); max-height: 84vh; padding: 12px; border: 1px solid var(--saa-border); border-radius: 8px; background: var(--saa-bg-panel); color: var(--saa-text); }
+.ai-result-modal-head { display: flex; align-items: center; justify-content: space-between; font-weight: 600; margin-bottom: 8px; }
+.ai-result-modal-head button { border: none; background: transparent; color: var(--saa-text); font-size: 16px; cursor: pointer; }
+.ai-result-modal-text { flex: 1 1 auto; min-height: 200px; overflow-y: auto; margin: 0; padding: 10px; border: 1px solid var(--saa-border); border-radius: 6px; background: var(--saa-bg-field); white-space: pre-wrap; word-break: break-word; font-size: 13px; line-height: 1.5; user-select: text; }
+.ai-result-modal-actions { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+.ai-result-modal-actions button { height: 26px; padding: 0 12px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font-size: 12px; cursor: pointer; }
+.ai-result-modal-actions button:hover { background: var(--saa-bg-hover); }

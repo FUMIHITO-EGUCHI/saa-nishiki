@@ -378,6 +378,71 @@ function setupLeftPanel() {
         else if (active !== 'ai') tab?.classList.add('has-new');
     }
 
+    // The info panel is short; long AI / refine prompts get a large modal view.
+    // Apply / Discard in the modal proxy the pending-review buttons in the panel,
+    // so the review lifecycle has a single owner.
+    function openAiModal() {
+        document.querySelector('.ai-result-modal-backdrop')?.remove();
+        const backdrop = document.createElement('div');
+        backdrop.className = 'ai-result-modal-backdrop';
+        backdrop.addEventListener('click', (event) => { if (event.target === backdrop) backdrop.remove(); });
+
+        const dialog = document.createElement('div');
+        dialog.className = 'ai-result-modal';
+        const head = document.createElement('div');
+        head.className = 'ai-result-modal-head';
+        const title = document.createElement('span');
+        title.textContent = 'AI prompt';
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.textContent = '×';
+        close.addEventListener('click', () => backdrop.remove());
+        head.append(title, close);
+
+        const pending = aiPanel?.querySelector('.ai-refine-pending');
+        const body = document.createElement('pre');
+        body.className = 'ai-result-modal-text';
+        body.textContent = pending?.querySelector('.ai-refine-summary')?.textContent
+            || aiText?.textContent || '';
+
+        dialog.append(head, body);
+
+        const actions = document.createElement('div');
+        actions.className = 'ai-result-modal-actions';
+        const copy = document.createElement('button');
+        copy.type = 'button';
+        copy.textContent = 'Copy';
+        copy.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(body.textContent);
+                copy.textContent = 'Copied!';
+                setTimeout(() => { copy.textContent = 'Copy'; }, 1500);
+            } catch { copy.textContent = 'Copy failed'; }
+        });
+        actions.appendChild(copy);
+        const pendingButtons = pending ? [...pending.querySelectorAll('.ai-refine-actions button')] : [];
+        for (const source of pendingButtons) {
+            const proxy = document.createElement('button');
+            proxy.type = 'button';
+            proxy.textContent = source.textContent;
+            proxy.addEventListener('click', () => { source.click(); backdrop.remove(); setTab('ai'); });
+            actions.appendChild(proxy);
+        }
+        dialog.appendChild(actions);
+        backdrop.appendChild(dialog);
+        document.body.appendChild(backdrop);
+    }
+
+    if (aiPanel) {
+        const expand = document.createElement('button');
+        expand.type = 'button';
+        expand.className = 'ai-result-expand';
+        expand.textContent = '⤢';
+        expand.title = 'Open large view';
+        expand.addEventListener('click', openAiModal);
+        aiPanel.prepend(expand);
+    }
+
     function showRefinePending({ runId, text, status = 'Pending editor update', canApply = true, onApply, onDiscard, focus = false } = {}) {
         if (!aiPanel || !runId) return;
         pendingRunId = runId;
