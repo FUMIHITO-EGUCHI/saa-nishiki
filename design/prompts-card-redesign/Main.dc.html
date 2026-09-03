@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+  </style>
+</helmet>
+<div style="width: 760px; padding: 16px; background: #111111; box-sizing: border-box;">
+  <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; color: #e8e8ea; overflow: hidden;">
+    <div style="display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 12px; border-bottom: 1px solid #3a3a40;">
+      <span style="font-weight: 600; font-size: 12.5px;">Prompts</span>
+      <span style="font-size: 11px; color: #9a9aa3;">click a field on the left — edit it on the right</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 0;">
+      <!-- field list -->
+      <div style="display: flex; flex-direction: column; gap: 2px; padding: 8px; border-right: 1px solid #3a3a40;">
+        <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #69b85a; padding: 4px 8px 2px;">POSITIVE</div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #d98b3a;"></span>
+          <span style="font-size: 11.5px; color: #bdbdc4;">Common</span>
+          <span style="font-size: 10px; color: #77777f; margin-left: auto;">3</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px; background: #285f8f;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #69b85a;"></span>
+          <span style="font-size: 11.5px; font-weight: 600; color: #ffffff;">Positive</span>
+          <span style="font-size: 10px; color: #cfe6ff; margin-left: auto;">3</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #c8a06a;"></span>
+          <span style="font-size: 11.5px; color: #bdbdc4;">Style</span>
+          <span style="font-size: 10px; color: #77777f; margin-left: auto;">2</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #b06ad6;"></span>
+          <span style="font-size: 11.5px; color: #bdbdc4;">Face</span>
+          <span style="font-size: 10px; color: #77777f; margin-left: auto;">2</span>
+        </div>
+        <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #d64b5c; padding: 8px 8px 2px;">NEGATIVE</div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #d64b5c;"></span>
+          <span style="font-size: 11.5px; color: #bdbdc4;">Negative</span>
+          <span style="font-size: 10px; color: #77777f; margin-left: auto;">5</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #b06ad6;"></span>
+          <span style="font-size: 11.5px; color: #bdbdc4;">Bans</span>
+          <span style="font-size: 10px; color: #77777f; margin-left: auto;">2</span>
+        </div>
+        <button style="margin: 8px 8px 4px; height: 26px; border: 1px dashed #4a4a52; border-radius: 5px; background: transparent; color: #9a9aa3; font-size: 11px; cursor: pointer;">+ Add field</button>
+      </div>
+      <!-- big editor bound to the selected field -->
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="width: 8px; height: 8px; border-radius: 2px; background: #69b85a;"></span>
+          <span style="font-size: 13px; font-weight: 600;">Positive</span>
+          <div style="display: flex; gap: 4px; margin-left: auto;">
+            <button style="height: 24px; padding: 0 9px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font-size: 11px; cursor: pointer;">Presets</button>
+            <button style="height: 24px; padding: 0 9px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font-size: 11px; cursor: pointer;">Choose tags</button>
+            <button style="height: 24px; padding: 0 9px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font-size: 11px; cursor: pointer;">Capsules</button>
+          </div>
+        </div>
+        <div style="flex: 1; min-height: 260px; padding: 10px 12px; border: 1px solid #3a3a40; border-left: 3px solid #69b85a; border-radius: 6px; background: #27272a; font-size: 13px; line-height: 1.6; color: #e8e8ea;">1girl, (detailed eyes:1.10), sitting</div>
+        <div style="font-size: 11px; color: #77777f;">One large editor — no cramped per-field boxes; the list keeps the whole chain visible.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

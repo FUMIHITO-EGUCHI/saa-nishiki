@@ -2277,3 +2277,30 @@ body {
 .prompt-field-collapse:hover { opacity: 1; background: var(--saa-bg-hover); }
 .prompt-field.is-collapsed .myTextbox-container-relative,
 .prompt-field.is-collapsed .tag-capsule-view { display: none; }
+
+/* List + focus editor layout for the Prompts card (supersedes the grouped frames) */
+.prompt-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 12px; align-items: start; }
+.prompt-field-list { display: flex; flex-direction: column; gap: 2px; padding-right: 10px; border-right: 1px solid var(--saa-border); position: sticky; top: 0; }
+.prompt-field-list-section { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: var(--saa-muted2); padding: 8px 8px 2px; }
+.prompt-field-list-section.is-positive { color: var(--saa-stripe-positive); }
+.prompt-field-list-section.is-negative { color: var(--saa-stripe-negative); }
+.prompt-field-list-section.is-exclude { color: var(--saa-stripe-exclude); }
+.prompt-field-list-row { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border: none; border-radius: 5px; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 11.5px; cursor: pointer; text-align: left; }
+.prompt-field-list-row:hover { background: var(--saa-bg-hover); }
+.prompt-field-list-row.is-selected { background: var(--saa-bg-selected); color: #ffffff; font-weight: 600; }
+.prompt-field-list-dot { width: 7px; height: 7px; border-radius: 2px; background: var(--saa-border-strong); flex: none; }
+.prompt-field-list-dot[data-stripe="common"] { background: var(--saa-stripe-common); }
+.prompt-field-list-dot[data-stripe="view"] { background: var(--saa-stripe-view); }
+.prompt-field-list-dot[data-stripe="positive"] { background: var(--saa-stripe-positive); }
+.prompt-field-list-dot[data-stripe="negative"] { background: var(--saa-stripe-negative); }
+.prompt-field-list-dot[data-stripe="ai"] { background: var(--saa-stripe-ai); }
+.prompt-field-list-dot[data-stripe="exclude"] { background: var(--saa-stripe-exclude); }
+.prompt-field-list-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prompt-field-list-count { font-size: 10px; color: var(--saa-muted); flex: none; }
+.prompt-field-list-row.is-selected .prompt-field-list-count { color: #cfe6ff; }
+.prompt-field-list-add { margin: 8px 4px 2px; height: 26px; border: 1px dashed var(--saa-border-ctl); border-radius: 5px; background: transparent; color: var(--saa-muted); font-size: 11px; cursor: pointer; }
+.prompt-field-list-add:hover { background: var(--saa-bg-hover); }
+.prompt-editor-host { min-height: 280px; }
+.prompt-editor-host .prompt-field.is-off-screen { display: none !important; }
+.prompt-editor-host [class^="myTextbox-"][class*="-textarea"] { min-height: 200px; }
+.prompt-editor-host .tag-capsule-view { min-height: 200px; }

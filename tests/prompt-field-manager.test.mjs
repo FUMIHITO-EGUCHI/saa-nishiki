@@ -12,8 +12,8 @@ test('field manager wires custom fields into the prompt registry and settings', 
   assert.match(manager, /SETTINGS\.prompt_custom_fields = fields\.map\(field => \(\{ \.\.\.field \}\)\)/);
   // stored orders are re-normalized on every persist so deletes never leave stale ids
   assert.match(manager, /SETTINGS\.prompt_positive_order = normalizeOrder\(SETTINGS\.prompt_positive_order, 'positive', fields\)/);
-  // DOM display order follows the concatenation order, with positive-right pinned after positive
-  assert.match(manager, /if \(id === 'positive'\) \{\s*\n\s*const right = fieldsHost\.querySelector\('\.prompt-positive-right'\);/);
+  // list order follows the concatenation order, with positive-right pinned after positive
+  assert.match(manager, /if \(id === 'positive'\) entries\.push\(\{ id: 'positive_right' \}\)/);
   // presets: setValue does not fire the input callback, so the applied text is written back explicitly
   assert.match(manager, /onApplied\(preset\.text\); \/\/ setValue does not fire the input callback/);
   // background / style built-ins get preset buttons mapped to their settings keys
@@ -37,23 +37,22 @@ test('both themes style the field editor and preset panel', () => {
   }
 });
 
-test('fields render inside Positive / Negative frames and collapse per field', () => {
+test('list + focus layout: field list drives one large editor', () => {
   const manager = read('scripts/renderer/components/promptFieldManager.js');
-  assert.match(manager, /ensureGroup\('positive', 'Positive'\)/);
-  assert.match(manager, /ensureGroup\('negative', 'Negative'\)/);
-  // exclude and the AI card stay outside the frames
-  assert.match(manager, /\['\.prompt-exclude', '\.ai-card'\]/);
-  // collapsing is display-only state kept in settings
-  assert.match(manager, /SETTINGS\.prompt_field_collapsed = \[\.\.\.set\]/);
-  assert.match(manager, /container\.classList\.toggle\('is-collapsed', collapsed\)/);
-
-  const sections = read('scripts/shared/settingsSections.js');
-  assert.match(sections, /prompt_field_collapsed: \[\]/);
+  // both chains plus exclude render as list entries; the AI card stays below
+  assert.match(manager, /entries\.push\(\{ section: 'POSITIVE', stripe: 'positive' \}\)/);
+  assert.match(manager, /entries\.push\(\{ section: 'NEGATIVE', stripe: 'negative' \}\)/);
+  assert.match(manager, /entries\.push\(\{ id: 'exclude' \}\)/);
+  // hiding must beat the regional toggle's inline display on positive_right
+  assert.match(manager, /container\.classList\.toggle\('is-off-screen', container !== target\)/);
+  assert.match(manager, /container\.style\.display !== 'none'/);
+  // selection is a per-viewer convenience, not shared settings
+  assert.match(manager, /localStorage\.setItem\('saa\.promptField', id\)/);
 
   for (const file of ['html/index_dark.css', 'html/index_light.css']) {
     const css = read(file);
-    assert.match(css, /\.prompt-field\.is-collapsed \.myTextbox-container-relative,/);
-    assert.match(css, /\.prompt-group \{ display: flex;/);
+    assert.match(css, /\.prompt-layout \{ display: grid; grid-template-columns: 200px minmax\(0, 1fr\);/);
+    assert.match(css, /\.prompt-editor-host \.prompt-field\.is-off-screen \{ display: none !important; \}/);
   }
 });
 

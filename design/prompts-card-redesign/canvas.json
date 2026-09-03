@@ -1,0 +1,9 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 760, "h": 560, "title": "List + focus editor" }
+  ],
+  "annotations": [
+    { "id": "brief", "x": 0, "y": -150, "w": 320, "text": "Chosen direction: List + focus editor.\nLeft: every field of both chains, always visible (name, color, tag count).\nRight: one large editor bound to the selected field; Presets / Choose tags / Capsules ride its header." }
+  ],
+  "launch": { "view": "canvas" }
+}

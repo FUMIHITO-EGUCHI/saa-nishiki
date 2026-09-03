@@ -99,87 +99,166 @@ export function setupPromptFieldManager() {
         return fieldsHost.querySelector(`.prompt-${id}`);
     }
 
-    function ensureGroup(name, title) {
-        let group = fieldsHost.querySelector(`.prompt-group-${name}`);
-        if (!group) {
-            group = document.createElement('section');
-            group.className = `prompt-group prompt-group-${name}`;
-            const heading = document.createElement('div');
-            heading.className = 'prompt-group-title';
-            heading.textContent = title;
-            group.appendChild(heading);
-            fieldsHost.appendChild(group);
+    // ------------------------------------------------- list + focus editor layout
+    // One field list on the left (both chains, always visible), one large editor
+    // on the right showing the selected field's existing container - the field
+    // components (capsule view, choose-tags, presets) move with their container.
+
+    const BUILTIN_STRIPES = {
+        common: 'common', background: 'view', style: 'view', positive: 'positive',
+        positive_right: 'positive', negative: 'negative', exclude: 'exclude',
+    };
+
+    let selectedField = '';
+    try { selectedField = localStorage.getItem('saa.promptField') || 'positive'; } catch { selectedField = 'positive'; }
+
+    function ensureLayout() {
+        let layout = fieldsHost.querySelector('.prompt-layout');
+        if (!layout) {
+            layout = document.createElement('div');
+            layout.className = 'prompt-layout';
+            const list = document.createElement('div');
+            list.className = 'prompt-field-list';
+            const editor = document.createElement('div');
+            editor.className = 'prompt-editor-host';
+            layout.append(list, editor);
+            fieldsHost.appendChild(layout);
+            editor.addEventListener('input', () => scheduleCountRefresh());
         }
-        return group;
+        return layout;
     }
 
-    // Display order mirrors the concatenation order. Text fields live inside a
-    // Positive and a Negative frame (positive-right pinned after positive);
-    // exclude (applies to both) and the AI card stay outside the frames.
-    function applyDomOrder() {
-        const positiveGroup = ensureGroup('positive', 'Positive');
-        const negativeGroup = ensureGroup('negative', 'Negative');
-        fieldsHost.appendChild(positiveGroup);
+    function fieldValue(id) {
+        return String(globalThis.prompt?.[id]?.getValue?.() ?? '');
+    }
+
+    function tagCount(id) {
+        return fieldValue(id).split(/[,\n]/).map(part => part.trim()).filter(Boolean).length;
+    }
+
+    function listEntries() {
+        const entries = [];
+        entries.push({ section: 'POSITIVE', stripe: 'positive' });
         for (const id of SETTINGS.prompt_positive_order) {
             if (STRUCTURAL_UNITS.has(id)) continue;
-            const element = unitContainer(id);
-            if (element) positiveGroup.appendChild(element);
-            if (id === 'positive') {
-                const right = fieldsHost.querySelector('.prompt-positive-right');
-                if (right) positiveGroup.appendChild(right);
+            entries.push({ id });
+            if (id === 'positive') entries.push({ id: 'positive_right' });
+        }
+        entries.push({ section: 'NEGATIVE', stripe: 'negative' });
+        for (const id of SETTINGS.prompt_negative_order) entries.push({ id });
+        entries.push({ section: 'BOTH', stripe: 'exclude' });
+        entries.push({ id: 'exclude' });
+        return entries;
+    }
+
+    function fieldLabel(id) {
+        const custom = fields.find(field => field.id === id);
+        if (custom) return custom.name;
+        const container = unitContainer(id);
+        const label = container?.querySelector('.tag-field-label')?.textContent
+            || container?.querySelector('div[class^="myTextbox-"][class*="-header"]')?.firstChild?.textContent;
+        if (label && label.trim() !== '') return label.trim();
+        return { common: 'Common', background: 'Background', style: 'Style', positive: 'Positive', positive_right: 'Positive (right)', negative: 'Negative', exclude: 'Exclude' }[id] || id;
+    }
+
+    // positive_right toggles via inline display (regional mode); a class with
+    // !important is the only hiding that wins over that inline style.
+    function isAvailable(container) {
+        return Boolean(container) && container.style.display !== 'none';
+    }
+
+    function selectField(id) {
+        selectedField = id;
+        try { localStorage.setItem('saa.promptField', id); } catch { /* ignore */ }
+        const layout = ensureLayout();
+        const editor = layout.querySelector('.prompt-editor-host');
+        const target = unitContainer(id);
+        for (const container of editor.querySelectorAll('.prompt-field')) {
+            container.classList.toggle('is-off-screen', container !== target);
+        }
+        renderFieldList();
+    }
+
+    function renderFieldList() {
+        const layout = ensureLayout();
+        const list = layout.querySelector('.prompt-field-list');
+        list.innerHTML = '';
+        for (const entry of listEntries()) {
+            if (entry.section) {
+                const heading = document.createElement('div');
+                heading.className = `prompt-field-list-section is-${entry.stripe}`;
+                heading.textContent = entry.section;
+                list.appendChild(heading);
+                continue;
             }
+            const container = unitContainer(entry.id);
+            // mirror app-side visibility (e.g. positive_right only in regional mode)
+            if (!isAvailable(container)) continue;
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'prompt-field-list-row';
+            row.classList.toggle('is-selected', entry.id === selectedField);
+            row.dataset.fieldId = entry.id;
+            const dot = document.createElement('span');
+            dot.className = 'prompt-field-list-dot';
+            dot.dataset.stripe = container.dataset.stripe || BUILTIN_STRIPES[entry.id] || 'view';
+            const name = document.createElement('span');
+            name.className = 'prompt-field-list-name';
+            name.textContent = fieldLabel(entry.id);
+            const count = document.createElement('span');
+            count.className = 'prompt-field-list-count';
+            const n = tagCount(entry.id);
+            count.textContent = n > 0 ? String(n) : '';
+            row.append(dot, name, count);
+            row.addEventListener('click', () => selectField(entry.id));
+            list.appendChild(row);
         }
-        fieldsHost.appendChild(negativeGroup);
-        for (const id of SETTINGS.prompt_negative_order) {
-            const element = unitContainer(id);
-            if (element) negativeGroup.appendChild(element);
-        }
-        for (const selector of ['.prompt-exclude', '.ai-card']) {
-            const element = fieldsHost.querySelector(selector);
-            if (element) fieldsHost.appendChild(element);
-        }
-        wireCollapseButtons();
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'prompt-field-list-add';
+        add.textContent = '+ Add field';
+        add.addEventListener('click', openEditor);
+        list.appendChild(add);
     }
 
-    // -------------------------------------------------------------- collapsing
-    // Collapsing only hides a field's editor; its text still joins the prompt.
-
-    function collapsedSet() {
-        return new Set(Array.isArray(SETTINGS.prompt_field_collapsed) ? SETTINGS.prompt_field_collapsed : []);
+    let countTimer = 0;
+    function scheduleCountRefresh() {
+        clearTimeout(countTimer);
+        countTimer = setTimeout(() => {
+            const layout = fieldsHost.querySelector('.prompt-layout');
+            if (!layout) return;
+            for (const row of layout.querySelectorAll('.prompt-field-list-row')) {
+                const n = tagCount(row.dataset.fieldId);
+                row.querySelector('.prompt-field-list-count').textContent = n > 0 ? String(n) : '';
+            }
+        }, 400);
     }
-
-    function attachCollapseButton(container, id) {
-        if (!container || container.querySelector('.prompt-field-collapse')) return;
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'prompt-field-collapse';
-        button.title = 'Collapse / expand this field';
-        const applyState = () => {
-            const collapsed = collapsedSet().has(id);
-            container.classList.toggle('is-collapsed', collapsed);
-            button.textContent = collapsed ? '▸' : '▾';
-        };
-        button.addEventListener('click', () => {
-            const set = collapsedSet();
-            set.has(id) ? set.delete(id) : set.add(id);
-            SETTINGS.prompt_field_collapsed = [...set];
-            applyState();
-        });
-        const tools = container.querySelector('.tag-field-tools');
-        const header = container.querySelector('div[class^="myTextbox-"][class*="-header"]');
-        if (tools) tools.appendChild(button);
-        else if (header) { header.classList.add('has-preset-button'); header.appendChild(button); }
-        else return;
-        applyState();
-    }
-
-    function wireCollapseButtons() {
-        for (const id of [...SETTINGS.prompt_positive_order, ...SETTINGS.prompt_negative_order]) {
-            if (STRUCTURAL_UNITS.has(id)) continue;
-            attachCollapseButton(unitContainer(id), id);
+    // capsule edits and preset applies bypass textarea input events, and the
+    // regional toggle changes which fields exist; a slow poll keeps the counts
+    // honest and re-renders the list when availability changes
+    let availabilityKey = '';
+    setInterval(() => {
+        if (document.hidden) return;
+        const key = listEntries().filter(entry => entry.id && isAvailable(unitContainer(entry.id))).map(entry => entry.id).join(',');
+        if (key !== availabilityKey) {
+            availabilityKey = key;
+            renderFieldList();
         }
-        attachCollapseButton(fieldsHost.querySelector('.prompt-positive-right'), 'positive_right');
-        attachCollapseButton(fieldsHost.querySelector('.prompt-exclude'), 'exclude');
+        scheduleCountRefresh();
+    }, 2500);
+
+    function applyDomOrder() {
+        const layout = ensureLayout();
+        const editor = layout.querySelector('.prompt-editor-host');
+        for (const entry of listEntries()) {
+            if (entry.section) continue;
+            const container = unitContainer(entry.id);
+            if (container) editor.appendChild(container);
+        }
+        const aiCard = fieldsHost.querySelector('.ai-card');
+        if (aiCard) fieldsHost.appendChild(aiCard);
+        if (!unitContainer(selectedField)) selectedField = 'positive';
+        selectField(selectedField);
     }
 
     // ---------------------------------------------------------------- presets
