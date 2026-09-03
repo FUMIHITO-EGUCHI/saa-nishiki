@@ -1338,19 +1338,13 @@ export async function startQueue(){
                 console.error('AI Refine failed, preserving original prompts:', promptResult.error);
             }
             if (Number(queueManager.aiRole) !== 0 && String(queueManager.aiInterface).toLowerCase() !== 'none' && globalThis.infoPanel?.showAiResult) {
-                // AI result goes to the Info panel's AI tab (focused when "Show result" is on) instead of a floating overlay.
+                // AI result goes to the Info panel's AI tab (focused when "Show result" is on).
+                // The floating per-generation overlay is gone by request; any leftover
+                // from an older run is closed so nothing keeps popping over the gallery.
                 const aiResultText = aiPreview === '' ? LANG.ai_no_prompt_generate : aiPreview;
                 globalThis.infoPanel.showAiResult(aiResultText, { focus: Boolean(globalThis.globalSettings.ai_prompt_preview) });
-            } else if (globalThis.globalSettings.ai_prompt_preview && globalThis.globalSettings.ai_prompt_role !== 0) {
-                globalThis.overlay.custom.closeCustomOverlaysByGroup('aiText'); // close exist
-                if(aiPreview === '') {
-                    globalThis.overlay.custom.createCustomOverlay('none', `\n\n[color=gray]${LANG.ai_no_prompt_generate}[/color]`,
-                                                        384, 'center', 'left', null, 'aiText');
-                } else {
-                    globalThis.overlay.custom.createCustomOverlay('none', `\n\n${aiPreview}`,
-                                                        384, 'center', 'left', null, 'aiText');
-                }
             }
+            globalThis.overlay.custom.closeCustomOverlaysByGroup('aiText');
 
             const finalInfo = renderAiPromptInfo({
                 info: String(queueManager.finalInfo),

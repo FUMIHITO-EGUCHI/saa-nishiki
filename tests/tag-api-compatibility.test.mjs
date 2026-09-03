@@ -17,6 +17,16 @@ test('keeps the optional tagGet options compatible across preload, IPC, and WebS
   assert.match(websocket, /'tagGet': \(params = \[\]\)=> tagGet\(\.\.\.params\)/);
 });
 
+test('suggestions match anywhere in the tag and rank prefix matches first', () => {
+  const backend = read('scripts/main/tagAutoComplete_backend.js');
+
+  // substring matching is the default (no wildcard needed for e.g. "hair" -> long_hair)
+  assert.match(backend, /!lastWord\.includes\('\*'\) && prompt\.toLowerCase\(\)\.includes\(lastWord\.toLowerCase\(\)\)/);
+  assert.doesNotMatch(backend, /!lastWord\.includes\('\*'\) && prompt\.toLowerCase\(\)\.startsWith\(/);
+  // prefix matches sort ahead of pure substring matches, then by heat
+  assert.match(backend, /startsWithWord\(b\) - startsWithWord\(a\) \|\| b\.heat - a\.heat/);
+});
+
 test('retains the legacy group argument while adding the optional filter argument', () => {
   const backend = read('scripts/main/tagAutoComplete_backend.js');
 

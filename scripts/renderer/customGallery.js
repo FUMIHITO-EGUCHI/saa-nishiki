@@ -1,4 +1,5 @@
 import { customCommonOverlay, addDragFunctionality } from './customOverlay.js';
+import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 
 function setupScrollableContainer(container) {
     let isDragging = false, startX, scrollLeft;
@@ -636,6 +637,7 @@ export function setupGallery(containerId) {
         }, 'cg-switch-mode-button', images.length);
         ensureSeedButton();
         ensureTagButton();
+        ensureInfoButton();
         ensurePrivacyButton();
         adjustPreviewContainer(previewContainer);
     }
@@ -694,6 +696,36 @@ export function setupGallery(containerId) {
             globalThis.generate.seed.setValue(-1);
         } else {
             globalThis.generate.seed.setValue(newSeed);
+        }
+    }
+
+    function ensureInfoButton() {
+        let infoButton = document.getElementById('cg-info-button');
+        if (!infoButton) {
+            infoButton = document.createElement('button');
+            infoButton.id = 'cg-info-button';
+            infoButton.className = 'cg-button';
+            infoButton.textContent = 'Info';
+            infoButton.addEventListener('click', async () => {
+                const dataUrl = images?.[currentIndex];
+                if (!dataUrl?.startsWith?.('data:image/')) return;
+
+                let text = '';
+                try {
+                    const result = globalThis.inBrowser
+                        ? await sendWebSocketMessage({ type: 'API', method: 'readBase64Image', params: [dataUrl] })
+                        : await globalThis.api.readBase64Image(dataUrl);
+                    // PNG carries "parameters", JPEG/WebP carry "data"
+                    text = result?.metadata?.parameters || result?.metadata?.data || '';
+                } catch (error) {
+                    console.warn('Failed to read image metadata:', error);
+                }
+                globalThis.overlay.custom.closeCustomOverlaysByGroup('Info'); // close exist
+                globalThis.overlay.custom.createCustomOverlay(
+                    'none', `\n\n${text || 'No generation metadata found in this image.'}`,
+                    384, 'center', 'left', null, 'Info');
+            });
+            container.appendChild(infoButton);
         }
     }
 

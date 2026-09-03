@@ -380,6 +380,13 @@ body {
     background: #e74c3c;
 }
 
+/* Info Button for Gallery */
+#cg-info-button {
+    right: 10px;
+    top: 90px;
+    background: #9b59b6;
+}
+
 /* Switch Mode Button for Thumb */
 #cg-thumb-switch-mode-button {
     position: absolute; 

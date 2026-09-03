@@ -196,7 +196,9 @@ class PromptManager {
             if (Object.keys(matches).length >= limit) break;
         }
 
-        return Object.values(matches).sort((a, b) => b.heat - a.heat);
+        // Prefix matches first, then by popularity within each band.
+        const startsWithWord = match => (match.prompt.toLowerCase().startsWith(lastWord) ? 1 : 0);
+        return Object.values(matches).sort((a, b) => startsWithWord(b) - startsWithWord(a) || b.heat - a.heat);
     }
 
     matchPrompt(lastWord, prompt, aliases) {
@@ -252,11 +254,12 @@ class PromptManager {
             return true;
         }
         
-        // if no wildcard, check startsWith
-        if (!lastWord.includes('*') && prompt.toLowerCase().startsWith(lastWord.toLowerCase())) {
+        // if no wildcard, any substring of the prompt matches (so "hair" also
+        // surfaces long_hair etc.); prefix matches are ranked first in the sort
+        if (!lastWord.includes('*') && prompt.toLowerCase().includes(lastWord.toLowerCase())) {
             return true;
         }
-        
+
         return false;
     }
 

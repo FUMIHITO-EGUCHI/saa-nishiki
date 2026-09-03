@@ -129,15 +129,21 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
             return;
         }
 
+        // Never grow past ~60% of the viewport: a taller box pushes its own tail
+        // off-screen (the panel scrollbar is separate from the caret), which made
+        // long prompts effectively uneditable. Past the cap the textarea scrolls
+        // internally and keeps the caret in view.
+        const viewportCapLines = Math.max(minLines, Math.floor((globalThis.innerHeight * 0.6) / lineHeight));
+
         // Auto mode: calculate needed lines strictly based on current content
         if (isAutoMode) {
             textbox.style.height = 'auto';
             const neededLines = Math.ceil(textbox.scrollHeight / lineHeight);
-            currentAllowedLines = Math.max(minLines, Math.min(maxLines, neededLines));
+            currentAllowedLines = Math.max(minLines, Math.min(maxLines, viewportCapLines, neededLines));
         }
 
         // Apply clamped allowed lines limit
-        const clampedLines = Math.max(minLines, Math.min(maxLines, currentAllowedLines));
+        const clampedLines = Math.max(minLines, Math.min(maxLines, viewportCapLines, currentAllowedLines));
         const targetHeight = clampedLines * lineHeight;
 
         textbox.style.height = `${targetHeight}px`;
@@ -191,6 +197,9 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
     setTimeout(() => {
         adjustHeight();
     }, 0);
+
+    // The viewport cap depends on the window height
+    globalThis.addEventListener('resize', adjustHeight);
 
     let realValue = textbox.value;
     if (passwordMode) {

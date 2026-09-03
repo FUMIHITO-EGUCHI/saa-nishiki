@@ -380,6 +380,13 @@ body {
     background: #D98C7C; /* Muted coral-red */
 }
 
+/* Info Button for Gallery */
+#cg-info-button {
+    right: 10px;
+    top: 90px;
+    background: #B48EC9; /* Muted purple */
+}
+
 /* Switch Mode Button for Thumb */
 #cg-thumb-switch-mode-button {
     position: absolute;
