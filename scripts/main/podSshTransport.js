@@ -38,20 +38,38 @@ export function makeFrameParser(onFrame) {
     };
 }
 
-export function buildSshArgs({ target, keyPath, comfyPort = 8188, relaySource }) {
+// Runpod's basic proxy ignores an exec command and always drops into an
+// interactive shell, so the ssh args carry no remote command; the bootstrap is
+// typed into the shell over stdin instead (buildBootstrapCommand).
+export function buildSshArgs({ target, keyPath }) {
     const key = String(keyPath ?? '').trim() || path.join(os.homedir(), '.ssh', 'id_ed25519');
-    const encoded = Buffer.from(relaySource, 'utf8').toString('base64');
-    const remote = `stty raw -echo 2>/dev/null; printf %s ${encoded} | base64 -d > /dev/shm/saa_relay.py; exec python3 -u /dev/shm/saa_relay.py --port ${Number(comfyPort) || 8188}`;
     return [
         '-tt',
+        '-o', 'BatchMode=yes',
         '-o', 'IdentitiesOnly=yes',
         '-o', 'StrictHostKeyChecking=accept-new',
         '-o', 'ConnectTimeout=20',
         '-o', 'ServerAliveInterval=30',
         '-i', key,
         String(target ?? '').trim(),
-        remote,
     ];
+}
+
+// The PTY starts in canonical mode, whose per-line input limit (MAX_CANON, 4 KB)
+// would truncate both a single-line deploy and later multi-KB workflow JSON. So:
+// echo off first, then the relay as a heredoc of short base64 lines, and `stty raw`
+// only right before exec'ing the relay — raw mode persists across exec, lifting the
+// line limit for the protocol while python owns the tty.
+export function buildBootstrapCommand({ comfyPort = 8188, relaySource }) {
+    const encoded = Buffer.from(relaySource, 'utf8').toString('base64');
+    const wrapped = encoded.match(/.{1,76}/g).join('\n');
+    return [
+        "base64 -d > /dev/shm/saa_relay.py <<'SAA_EOF'",
+        wrapped,
+        'SAA_EOF',
+        `stty raw 2>/dev/null; exec python3 -u /dev/shm/saa_relay.py --port ${Number(comfyPort) || 8188}`,
+        '',
+    ].join('\n');
 }
 
 class PodSshSession {
@@ -64,22 +82,34 @@ class PodSshSession {
         this.config = null;
     }
 
-    configChanged(config) {
+    configChanged(config, relaySource) {
         return !this.config
             || this.config.target !== config.target
             || this.config.keyPath !== config.keyPath
-            || this.config.comfyPort !== config.comfyPort;
+            || this.config.comfyPort !== config.comfyPort
+            || this.config.relaySource !== relaySource; // redeploy an updated relay
     }
 
     async ensureStarted(config) {
-        if (this.child && !this.configChanged(config)) return this.ready;
-        this.stop();
-        this.config = { ...config };
         const relaySource = fs.readFileSync(RELAY_PATH, 'utf8');
-        const args = buildSshArgs({ ...config, relaySource });
+        if (this.child && !this.configChanged(config, relaySource)) return this.ready;
+        this.stop();
+        this.config = { ...config, relaySource };
+        const args = buildSshArgs(config);
         console.log(CAT, 'starting ssh relay to', config.target);
         const child = spawn('ssh', args, { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
         this.child = child;
+        // echo off first (so the deploy is not echoed back), then the staged
+        // bootstrap once the remote shell shows signs of life
+        child.stdin.write('stty -echo 2>/dev/null\n');
+        let bootstrapped = false;
+        const bootstrap = () => {
+            if (bootstrapped || this.child !== child) return;
+            bootstrapped = true;
+            child.stdin.write(buildBootstrapCommand({ comfyPort: config.comfyPort, relaySource }));
+        };
+        child.stdout.once('data', () => setTimeout(bootstrap, 750));
+        setTimeout(bootstrap, 8000); // fallback if the shell never prints a banner
 
         this.ready = new Promise((resolve, reject) => {
             const timer = setTimeout(() => reject(new Error('relay start timed out (60 s)')), 60_000);
@@ -108,6 +138,7 @@ class PodSshSession {
 
     handleFrame(frame) {
         if (frame.event === 'ready') {
+            console.log(CAT, 'relay ready (client', frame.clientId, ')');
             this.onReady?.();
             return;
         }
@@ -222,10 +253,12 @@ export async function runPodWorkflow({ settings, workflow, saveNodes, onProgress
     const job = new PodJob({ onProgress, onPreview, timeoutMs });
     session.job = job;
     const ack = await session.request({ cmd: 'submit', workflow, saveNodes });
+    console.log(CAT, 'submit ack:', JSON.stringify(ack).slice(0, 200));
     if (!ack.ok) {
         job.fail(`Error: pod submit failed: ${ack.message ?? 'no ack'}`);
     }
     const result = await job.promise;
+    console.log(CAT, 'job finished:', result.error ?? `${result.images?.length} image(s), prompt ${result.promptId}`);
     if (session.job === job) session.job = null;
     return result;
 }

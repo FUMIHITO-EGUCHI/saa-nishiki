@@ -2373,6 +2373,7 @@ class ComfyUI {
   }
 
   async awaitPod() {
+    console.log(CAT, 'awaiting pod run result');
     const run = this.podRun;
     this.podRun = null;
     if (!run) {

@@ -7,7 +7,7 @@ import {
     findDiskWriterNodes,
     toWebsocketOutputWorkflow,
 } from '../scripts/shared/podWorkflow.js';
-import { buildSshArgs, makeFrameParser } from '../scripts/main/podSshTransport.js';
+import { buildBootstrapCommand, buildSshArgs, makeFrameParser } from '../scripts/main/podSshTransport.js';
 
 const WORKFLOW = {
     '17': { inputs: { width: 1024 }, class_type: 'CanvasCreatorAdvanced' },
@@ -88,13 +88,18 @@ test('frame parser extracts sentinel-framed JSON and ignores PTY noise', () => {
     ]);
 });
 
-test('ssh args force PTY-safe transport and deploy the relay to RAM', () => {
-    const args = buildSshArgs({ target: 'pod-user@ssh.runpod.io', keyPath: 'C:/keys/id', comfyPort: 8188, relaySource: 'print(1)' });
+test('ssh args carry no exec command (the proxy ignores it); bootstrap goes over stdin to RAM', () => {
+    const args = buildSshArgs({ target: 'pod-user@ssh.runpod.io', keyPath: 'C:/keys/id' });
     assert.equal(args[0], '-tt');
-    assert.equal(args.includes('pod-user@ssh.runpod.io'), true);
-    const remote = args.at(-1);
-    assert.match(remote, /^stty raw -echo/);
-    assert.match(remote, /\/dev\/shm\/saa_relay\.py/);
-    assert.match(remote, /base64 -d/);
-    assert.doesNotMatch(remote, /workspace/);
+    // the target is the last arg: no remote command, the proxy always opens a shell
+    assert.equal(args.at(-1), 'pod-user@ssh.runpod.io');
+
+    const bootstrap = buildBootstrapCommand({ comfyPort: 8188, relaySource: 'x'.repeat(300) });
+    assert.match(bootstrap, /base64 -d > \/dev\/shm\/saa_relay\.py <<'SAA_EOF'/);
+    // canonical-mode PTY truncates long lines: every bootstrap line stays short
+    for (const line of bootstrap.split('\n')) assert.ok(line.length <= 120, `line too long: ${line.length}`);
+    // raw mode is set only right before exec so the protocol lines are unlimited
+    assert.match(bootstrap, /stty raw 2>\/dev\/null; exec python3 -u \/dev\/shm\/saa_relay\.py --port 8188/);
+    assert.match(bootstrap, /\n$/);
+    assert.doesNotMatch(bootstrap, /workspace/);
 });

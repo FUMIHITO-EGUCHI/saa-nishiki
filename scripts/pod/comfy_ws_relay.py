@@ -52,8 +52,16 @@ def emit(obj):
 def post_json(path, payload):
     data = json.dumps(payload).encode('utf-8')
     req = urllib.request.Request(BASE + path, data=data, headers={'Content-Type': 'application/json'})
-    with urllib.request.urlopen(req, timeout=30) as response:
-        return json.loads(response.read().decode('utf-8'))
+    try:
+        with urllib.request.urlopen(req, timeout=30) as response:
+            return json.loads(response.read().decode('utf-8'))
+    except urllib.error.HTTPError as error:
+        body = ''
+        try:
+            body = error.read().decode('utf-8', 'replace')[:1500]
+        except Exception:
+            pass
+        raise RuntimeError(f'{path} HTTP {error.code}: {body}') from error
 
 
 class Job:
