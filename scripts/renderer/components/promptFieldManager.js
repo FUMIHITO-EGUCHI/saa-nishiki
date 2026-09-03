@@ -279,8 +279,14 @@ export function setupPromptFieldManager() {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'prompt-preset-button';
-        button.textContent = '📑';
         button.title = 'Presets';
+        const glyph = document.createElement('span');
+        glyph.className = 'preset-icon';
+        glyph.setAttribute('role', 'img');
+        glyph.setAttribute('aria-label', 'presets');
+        glyph.style.webkitMask = "url('scripts/svg/preset.svg') no-repeat center / contain";
+        glyph.style.mask = "url('scripts/svg/preset.svg') no-repeat center / contain";
+        button.appendChild(glyph);
         button.addEventListener('click', (event) => {
             event.stopPropagation();
             togglePresetPanel(container, key, getComponent, onApplied);

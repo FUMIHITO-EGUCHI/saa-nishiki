@@ -4,12 +4,16 @@ import { buildPresetOptions, resolveSaveName, nextCurrentAfterDelete, formatPres
 
 const CAT = '[PresetControl]';
 
+// The svg files carry a hardcoded black stroke, so an <img> is invisible on the
+// dark theme; a CSS mask lets the theme color the glyph instead.
 function icon(src, alt) {
-    const image = document.createElement('img');
-    image.src = src;
-    image.alt = alt;
-    image.setAttribute('fill', 'currentColor');
-    return image;
+    const glyph = document.createElement('span');
+    glyph.className = 'preset-icon';
+    glyph.setAttribute('role', 'img');
+    glyph.setAttribute('aria-label', alt);
+    glyph.style.webkitMask = `url('${src}') no-repeat center / contain`;
+    glyph.style.mask = `url('${src}') no-repeat center / contain`;
+    return glyph;
 }
 
 export function createPresetControl({

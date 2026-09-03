@@ -2303,3 +2303,10 @@ body {
 .prompt-editor-host .prompt-field.is-off-screen { display: none !important; }
 .prompt-editor-host [class^="myTextbox-"][class*="-textarea"] { min-height: 200px; }
 .prompt-editor-host .tag-capsule-view { min-height: 200px; }
+
+/* Theme-colored preset glyphs (the svg sources have a hardcoded black stroke) */
+.preset-icon { display: inline-block; width: 13px; height: 13px; background: var(--saa-muted2); flex: none; }
+.preset-button:hover .preset-icon { background: var(--saa-text); }
+.preset-delete:hover .preset-icon { background: var(--saa-danger); }
+.prompt-preset-button .preset-icon { width: 13px; height: 13px; }
+.prompt-preset-button:hover .preset-icon { background: var(--saa-text); }
