@@ -1369,7 +1369,14 @@ export async function startQueue(){
                 negative: promptResult.negative,
                 regional: queueManager.isRegional,
             });
-            globalThis.infoBox.image.appendValue(finalInfo);            
+            globalThis.infoBox.image.appendValue(finalInfo);
+            // the gallery attaches this to the image once it arrives (keyed by seed) so
+            // selecting an image later shows its own info, not the last run's
+            globalThis.generate.infoBySeed ??= new Map();
+            globalThis.generate.infoBySeed.set(String(generateData.seed), finalInfo);
+            if (globalThis.generate.infoBySeed.size > 512) {
+                globalThis.generate.infoBySeed.delete(globalThis.generate.infoBySeed.keys().next().value);
+            }
             globalThis.generate.loadingMessage = LANG.generate_start.replace('{0}', `${queueManager.id}`).replace('{1}', `[${queueManager.loop + 1}/${queueManager.loops}]`);
 
             if(queueManager.isRegional) {

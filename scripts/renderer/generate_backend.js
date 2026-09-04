@@ -4,7 +4,8 @@ export function from_main_updateGallery(base64, seed, tagsString){
     const keepGallery = globalThis.generate.keepGallery.getValue();
     if(!keepGallery)
         globalThis.mainGallery.clearGallery();
-    globalThis.mainGallery.appendImageData(base64, seed, tagsString, keepGallery, globalThis.globalSettings.scroll_to_last);
+    const info = globalThis.generate?.infoBySeed?.get?.(String(seed)) ?? '';
+    globalThis.mainGallery.appendImageData(base64, seed, tagsString, keepGallery, globalThis.globalSettings.scroll_to_last, info);
 }
 
 export function from_main_updatePreview(base64){

@@ -128,6 +128,7 @@ export function setupGallery(containerId) {
     let images = [];
     let seeds = [];
     let tags = [];
+    let infos = [];   // per-image generation info (BBCode) shown in the Info panel
     let renderedImageCount = 0;
 
     const container = document.querySelector(`.${containerId}`);
@@ -140,6 +141,7 @@ export function setupGallery(containerId) {
         images = [];
         seeds = [];
         tags = [];
+        infos = [];
         renderedImageCount = 0;
         currentIndex = 0;
         container.innerHTML = '';
@@ -152,6 +154,7 @@ export function setupGallery(containerId) {
                 images.splice(index, 1);
                 seeds.splice(index, 1);
                 tags.splice(index, 1);
+                infos.splice(index, 1);
 
                 renderedImageCount = images.length;
                 currentIndex = 0;
@@ -161,6 +164,7 @@ export function setupGallery(containerId) {
             images.splice(currentIndex, 1);
             seeds.splice(currentIndex, 1);
             tags.splice(currentIndex, 1);
+            infos.splice(currentIndex, 1);
             renderedImageCount = images.length;
             currentIndex = currentIndex - 1;
             if(currentIndex < 0)
@@ -169,14 +173,15 @@ export function setupGallery(containerId) {
         }            
     };
 
-    globalThis.mainGallery.appendImageData = function (base64, seed, tagsString, keep_gallery, switchToLatest = false) {
+    globalThis.mainGallery.appendImageData = function (base64, seed, tagsString, keep_gallery, switchToLatest = false, info = '') {
         if ('False' === keep_gallery) {
             globalThis.mainGallery.clearGallery();
         }
 
-        images.push(base64); 
+        images.push(base64);
         seeds.push(seed);
         tags.push(tagsString || '');
+        infos.push(typeof info === 'string' ? info : '');
 
         if (seeds.length !== tags.length || images.length !== seeds.length) {
             console.warn('[appendImageData] Mismatch: images:', images.length, 'seeds:', seeds.length, 'tags:', tags.length);
@@ -425,9 +430,11 @@ export function setupGallery(containerId) {
             } else if (e.key === 'ArrowRight' || e.key === ' ') {
                 currentIndex = (currentIndex - 1 + images.length) % images.length;
                 fullScreenImg.src = images[currentIndex];
+                syncInfoPanel();
             } else if (e.key === 'ArrowLeft') {
                 currentIndex = (currentIndex + 1) % images.length;
                 fullScreenImg.src = images[currentIndex];
+                syncInfoPanel();
             }
         }
 
@@ -477,7 +484,8 @@ export function setupGallery(containerId) {
                     const imgContainer = e.target.closest('.cg-gallery-item');
                     if (imgContainer) {
                         const index = Number.parseInt(imgContainer.dataset.index);
-                        currentIndex = index; 
+                        currentIndex = index;
+                        syncInfoPanel();
                         enterFullscreen(index);
                     }
                 });
@@ -653,6 +661,38 @@ export function setupGallery(containerId) {
         if (domIndex >= 0 && domIndex < previewImages.length) {
             previewImages[domIndex].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }
+        syncInfoPanel();
+    }
+
+    // The Info panel follows the selected image: the run's own info when the gallery
+    // has it, otherwise the parameters embedded in the file (loaded / older images).
+    let infoSyncToken = 0;
+    function syncInfoPanel() {
+        const box = globalThis.infoBox?.image;
+        if (!box?.setValue || images.length === 0) return;
+        const index = currentIndex;
+        const token = ++infoSyncToken;
+        const stored = infos[index];
+        if (stored) {
+            box.setValue(stored);
+            return;
+        }
+        const dataUrl = images[index];
+        if (!dataUrl?.startsWith?.('data:image/')) return;
+        const seedLine = seeds[index] ? `Seed: [${seeds[index]}]\n` : '';
+        box.setValue(seedLine);
+        (async () => {
+            try {
+                const result = globalThis.inBrowser
+                    ? await sendWebSocketMessage({ type: 'API', method: 'readBase64Image', params: [dataUrl] })
+                    : await globalThis.api.readBase64Image(dataUrl);
+                const text = result?.metadata?.parameters || result?.metadata?.data || '';
+                if (token !== infoSyncToken || currentIndex !== index) return; // selection moved on
+                if (text) box.setValue(`${seedLine}${text}`);
+            } catch (error) {
+                console.warn('[gallery] embedded metadata read failed:', error?.message ?? error);
+            }
+        })();
     }
 
     function ensureSeedButton() {
