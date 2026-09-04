@@ -18,6 +18,7 @@ export const TAG_UI_DEFAULTS = Object.freeze({
     tag_ui_badge_variable: '{0} variable · image #1 values',
     tag_ui_excluded: 'Removed by Exclude',
     tag_ui_disabled: 'Disabled',
+    tag_ui_step_auto: '÷ batch count',
     tag_ui_disable_tag: 'Disable this tag',
     tag_ui_enable_tag: 'Enable this tag',
     tag_ui_weight_for: 'Weight · {0}',

@@ -152,6 +152,13 @@ export function createWeightPopover({ text = tagText } = {}) {
     const planStepLabel = el('span', 'tag-weight-label');
     const planStepInput = numberInput('tag-weight-number', 0.01, 'Step');
     planStepField.append(planStepLabel, planStepInput);
+    // "÷ batch count": step derived from the run's batch count so min → max lands exactly
+    const autoStepLabel = el('label', 'tag-weight-toggle tag-weight-autostep');
+    const autoStepInput = el('input', 'tag-weight-switch');
+    autoStepInput.type = 'checkbox';
+    const autoStepText = el('span', 'tag-weight-toggle-text');
+    autoStepLabel.append(autoStepInput, autoStepText);
+    planStepField.append(autoStepLabel);
     rangeRow.append(minField, maxField, planStepField);
     planPanel.appendChild(rangeRow);
 
@@ -218,6 +225,8 @@ export function createWeightPopover({ text = tagText } = {}) {
         minInput.setAttribute('aria-label', text('tag_ui_min'));
         maxInput.setAttribute('aria-label', text('tag_ui_max'));
         planStepInput.setAttribute('aria-label', text('tag_ui_step'));
+        autoStepText.textContent = text('tag_ui_step_auto');
+        autoStepInput.setAttribute('aria-label', text('tag_ui_step_auto'));
         seedLabel.textContent = text('tag_ui_seed');
         followText.textContent = text('tag_ui_follow_seed');
         seedInput.setAttribute('aria-label', text('tag_ui_seed'));
@@ -261,6 +270,8 @@ export function createWeightPopover({ text = tagText } = {}) {
         minInput.value = formatTagWeight(planDraft.min);
         maxInput.value = formatTagWeight(planDraft.max);
         planStepInput.value = formatTagWeight(planDraft.step);
+        autoStepInput.checked = planDraft.autoStep === true;
+        planStepInput.disabled = planDraft.autoStep === true;
         const warn = weightWarning(planDraft);
         minInput.classList.toggle('is-warn', warn && planDraft.min < 0.5);
         maxInput.classList.toggle('is-warn', warn && planDraft.max > 1.5);
@@ -453,6 +464,9 @@ export function createWeightPopover({ text = tagText } = {}) {
         followSeed = followInput.checked;
         renderPlan();
         if (!followSeed) seedInput.focus();
+    });
+    autoStepInput.addEventListener('change', () => {
+        updatePlan({ autoStep: autoStepInput.checked });
     });
 
     for (const button of modeButtons) {

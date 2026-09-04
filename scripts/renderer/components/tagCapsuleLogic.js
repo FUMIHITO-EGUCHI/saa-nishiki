@@ -50,13 +50,25 @@ export function normalizeWeightPlan(plan = {}) {
     const second = finiteNumber(plan?.max, first);
     const step = Math.max(EPSILON, Math.abs(finiteNumber(plan?.step, DEFAULT_STEP)));
     const seed = Math.max(0, Math.floor(finiteNumber(plan?.seed, 0)));
+    // autoStep: the step is derived from the batch count at expansion time so the
+    // plan walks min → max in exactly `count` images (see effectiveStep).
+    const autoStep = plan?.autoStep === true;
 
     if (mode === 'fixed') {
-        return { mode, min: first, max: first, step, seed };
+        return { mode, min: first, max: first, step, seed, autoStep: false };
     }
     const min = Math.min(first, second);
     const max = Math.max(first, second);
-    return { mode, min, max, step, seed };
+    return { mode, min, max, step, seed, autoStep };
+}
+
+export function effectiveStep(plan, batchCount) {
+    const normalized = normalizeWeightPlan(plan);
+    if (!normalized.autoStep || !isVariablePlan(normalized)) return normalized.step;
+    const count = Math.max(1, Math.floor(finiteNumber(batchCount, 1)));
+    const span = Math.abs(normalized.max - normalized.min);
+    if (span <= EPSILON) return normalized.step;
+    return count > 1 ? span / (count - 1) : span;
 }
 
 export function isVariablePlan(plan) {
@@ -70,7 +82,8 @@ export function plansEqual(a, b) {
         && Math.abs(left.min - right.min) <= EPSILON
         && Math.abs(left.max - right.max) <= EPSILON
         && Math.abs(left.step - right.step) <= EPSILON
-        && left.seed === right.seed;
+        && left.seed === right.seed
+        && left.autoStep === right.autoStep;
 }
 
 function candidateCount(min, max, step) {
@@ -78,11 +91,12 @@ function candidateCount(min, max, step) {
     return Math.max(0, Math.floor(((max - min) / step) + EPSILON));
 }
 
-export function buildWeightCandidates(plan = {}) {
+export function buildWeightCandidates(plan = {}, options = {}) {
     const normalized = normalizeWeightPlan(plan);
-    const { mode, min, max, step } = normalized;
+    const { mode, min, max } = normalized;
     if (mode === 'fixed' || Math.abs(min - max) <= EPSILON) return [roundWeight(min)];
 
+    const step = effectiveStep(normalized, options.batchCount);
     const count = candidateCount(min, max, step);
     const values = [];
     for (let index = 0; index <= count; index += 1) {
@@ -128,7 +142,7 @@ function randomCandidateIndex(candidates, plan, options) {
 
 export function resolveWeight(plan = {}, options = {}) {
     const normalized = normalizeWeightPlan(plan);
-    const candidates = buildWeightCandidates(normalized);
+    const candidates = buildWeightCandidates(normalized, { batchCount: options.batchCount });
     if (normalized.mode === 'random') {
         return candidates[randomCandidateIndex(candidates, normalized, options)];
     }
@@ -138,11 +152,11 @@ export function resolveWeight(plan = {}, options = {}) {
 }
 
 // True when an increment/decrement plan has run out of candidates before imageIndex.
-export function isTerminalAt(plan, imageIndex) {
+export function isTerminalAt(plan, imageIndex, batchCount) {
     const normalized = normalizeWeightPlan(plan);
     if (normalized.mode !== 'increment' && normalized.mode !== 'decrement') return false;
     const index = Math.max(0, Math.floor(finiteNumber(imageIndex, 0)));
-    return index >= buildWeightCandidates(normalized).length;
+    return index >= buildWeightCandidates(normalized, { batchCount }).length;
 }
 
 // ---------------------------------------------------------------- identity
@@ -198,6 +212,7 @@ export function serializeCapsules(capsules = [], options = {}) {
                 generationSeed,
                 imageIndex,
                 tokenId: `${tokenPrefix}${capsule.id}`,
+                batchCount: options.batchCount,
             });
             const token = Math.abs(weight - DEFAULT_WEIGHT) <= EPSILON
                 ? value
@@ -276,7 +291,10 @@ export function collectPlans(capsules = []) {
 export function serializePlans(plans = {}) {
     return Object.entries(plans ?? {})
         .filter(([, plan]) => isVariablePlan(plan))
-        .map(([id, plan]) => ({ id, ...normalizeWeightPlan(plan) }));
+        .map(([id, plan]) => {
+            const { autoStep, ...rest } = normalizeWeightPlan(plan);
+            return autoStep ? { id, ...rest, autoStep } : { id, ...rest }; // stored form stays compact
+        });
 }
 
 export function parsePlans(entries = []) {
@@ -326,7 +344,8 @@ export function adjustWeight(value, delta) {
 export function describePlan(plan) {
     const normalized = normalizeWeightPlan(plan);
     if (isVariablePlan(normalized)) {
-        return `${formatTagWeight(normalized.min)}–${formatTagWeight(normalized.max)}`;
+        const range = `${formatTagWeight(normalized.min)}–${formatTagWeight(normalized.max)}`;
+        return normalized.autoStep ? `${range} ÷n` : range;
     }
     return Math.abs(normalized.min - DEFAULT_WEIGHT) <= EPSILON ? '' : `:${formatTagWeight(normalized.min)}`;
 }
@@ -442,7 +461,7 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
     const expandField = (key, imageIndex) => {
         const field = byKey.get(key);
         if (!field) return '';
-        return serializeCapsules(field.capsules ?? [], { generationSeed: baseSeed, imageIndex, tokenPrefix: key, omitDisabled: true });
+        return serializeCapsules(field.capsules ?? [], { generationSeed: baseSeed, imageIndex, tokenPrefix: key, omitDisabled: true, batchCount: total });
     };
     const BUILTIN_KEYS = new Set(['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'exclude']);
 
@@ -453,8 +472,8 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
             for (const capsule of field.capsules ?? []) {
                 if (!isVariablePlan(capsule.weightPlan)) continue;
                 const tokenId = `${field.key}/${capsule.id}`;
-                weights[tokenId] = resolveWeight(capsule.weightPlan, { generationSeed: baseSeed, imageIndex, tokenId });
-                if (isTerminalAt(capsule.weightPlan, imageIndex)) terminal.push(tokenId);
+                weights[tokenId] = resolveWeight(capsule.weightPlan, { generationSeed: baseSeed, imageIndex, tokenId, batchCount: total });
+                if (isTerminalAt(capsule.weightPlan, imageIndex, total)) terminal.push(tokenId);
             }
         }
         const common = expandField('common', imageIndex);
