@@ -5,6 +5,7 @@
 // UI refresh functions are injected from renderer.js to keep this module free of the
 // language.js / callbacks.js import tangle.
 import { PRESET_SECTIONS, SECTION_KEYS, clone, pickSection, sectionOf } from '../shared/settingsSections.js';
+import { mergePromptFieldLayout } from '../shared/promptFieldOrder.js';
 import { createAutosave, createSettingsProxy } from './tools/settingsAutosave.js';
 import { createEditHistory } from './tools/editHistory.js';
 import { createPresetControl } from './components/presetControl.js';
@@ -105,14 +106,22 @@ export function collectSection(section) {
     return pickSection(raw, section, { warn: message => console.warn(CAT, message) });
 }
 
-/** Atomically write multiple editable sections, then refresh derived UI once. */
-export function applySectionsData(sectionData = {}) {
+/**
+ * Atomically write multiple editable sections, then refresh derived UI once.
+ * `mergeLayout` (default): a prompt section keeps the current custom prompt
+ * fields / chain order and only takes the preset's texts — loading an older
+ * preset must not delete fields. Undo / redo restore exact snapshots instead.
+ */
+export function applySectionsData(sectionData = {}, { mergeLayout = true } = {}) {
     if (!raw || !sectionData || typeof sectionData !== 'object') return false;
     const sections = Object.keys(sectionData).filter(section => EDITABLE_SECTIONS.has(section) && SECTION_KEYS[section]);
     if (sections.length === 0) return false;
 
     for (const section of sections) {
-        const data = sectionData[section];
+        let data = sectionData[section];
+        if (section === 'prompt' && mergeLayout && data && typeof data === 'object') {
+            data = { ...data, ...mergePromptFieldLayout(raw, data) };
+        }
         for (const key of SECTION_KEYS[section]) {
             if (Object.hasOwn(data ?? {}, key)) raw[key] = clone(data[key]);
         }
@@ -279,7 +288,7 @@ export function setupSettingsPersistence(uiHooks = {}) {
     if (!autosave) throw new Error('installSettingsProxy() must run before setupSettingsPersistence()');
     editHistory = createEditHistory({
         capture: section => collectSection(section),
-        restore: snapshots => applySectionsData(snapshots),
+        restore: snapshots => applySectionsData(snapshots, { mergeLayout: false }),
         captureFocus: () => globalThis.editHistoryFocus?.capture?.() ?? null,
         restoreFocus: focus => globalThis.editHistoryFocus?.restore?.(focus),
         onChange: status => document.dispatchEvent(new CustomEvent('saa-edit-history-changed', { detail: status })),

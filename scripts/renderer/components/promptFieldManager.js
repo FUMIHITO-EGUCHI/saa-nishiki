@@ -58,6 +58,15 @@ export function setupPromptFieldManager() {
         SETTINGS.prompt_negative_order = normalizeOrder(SETTINGS.prompt_negative_order, 'negative', fields);
     }
 
+    // Looked up by id at call time: `fields` is replaced wholesale when the settings
+    // are reloaded (preset load, undo), so a closure over a field object would go stale.
+    function setFieldText(id, text) {
+        const field = fields.find(entry => entry.id === id);
+        if (!field) return;
+        field.text = text;
+        persistFields();
+    }
+
     const customColor = () => (SETTINGS.css_style === 'dark' ? 'orchid' : 'DarkMagenta');
 
     function renderCustomFields() {
@@ -90,24 +99,24 @@ export function setupPromptFieldManager() {
                     defaultTextColor: customColor(),
                     minLines: 2,
                     maxLines: 10,
-                }, true, (value) => {
-                    field.text = value;
-                    persistFields();
-                });
+                }, true, (value) => setFieldText(field.id, value));
                 // Same tag picker + capsule view as the built-in fields (the picker's
                 // trigger must exist before the capsule header adopts it).
                 const control = globalThis.prompt[field.id];
                 setupTagSelectionModal([control], [field.id]);
                 globalThis.prompt.tagCapsuleFields?.add?.(control, field.id);
                 attachPresetButton(container, field.id, () => globalThis.prompt[field.id],
-                    (text) => { field.text = text; persistFields(); });
+                    (text) => setFieldText(field.id, text));
             } else {
-                globalThis.prompt[field.id]?.setTitle?.(field.name);
+                const control = globalThis.prompt[field.id];
+                control?.setTitle?.(field.name);
+                // settings reload (preset, undo): push the stored text into the live textbox
+                if (control?.getValue && String(control.getValue() ?? '') !== field.text) control.setValue(field.text);
                 // setTitle rewrites the textbox header's textContent, which used to wipe a
                 // preset button parked there — put it back if it is gone
                 if (!container.querySelector('.prompt-preset-button')) {
                     attachPresetButton(container, field.id, () => globalThis.prompt[field.id],
-                        (text) => { field.text = text; persistFields(); });
+                        (text) => setFieldText(field.id, text));
                 }
             }
         }
@@ -559,7 +568,14 @@ export function setupPromptFieldManager() {
     applyDomOrder();
 
     return {
-        refresh: () => { renderCustomFields(); applyDomOrder(); },
+        // Re-syncs the containers from the settings (definitions, texts, order):
+        // called after a preset load / undo has rewritten prompt_custom_fields.
+        refresh: () => {
+            fields = normalizeCustomFields(SETTINGS.prompt_custom_fields);
+            persistFields();
+            renderCustomFields();
+            applyDomOrder();
+        },
         openEditor,
         // visible prompt fields in chain order (right-click "Move to" targets)
         listFields: () => listEntries()

@@ -54,6 +54,40 @@ export function normalizeOrder(rawOrder, polarity, customFields) {
 }
 
 /**
+ * Layout-preserving merge used when a prompt preset (or any partial prompt
+ * section) is applied: custom field definitions and the chain order are layout,
+ * the preset only carries content.
+ *   - every current field survives; a field the preset knows takes the preset's
+ *     text, a field it does not know is emptied (so no content leaks between
+ *     presets) — unless the preset predates custom fields (no key), then texts stay
+ *   - fields the preset carries but the layout lacks are added
+ *   - the current order is kept, new fields append; per-field presets are unioned
+ *     with the current ones winning
+ */
+export function mergePromptFieldLayout(current = {}, incoming = {}) {
+    const currentFields = normalizeCustomFields(current?.prompt_custom_fields);
+    const hasIncomingFields = Object.hasOwn(incoming ?? {}, 'prompt_custom_fields');
+    const incomingFields = normalizeCustomFields(incoming?.prompt_custom_fields);
+    const incomingById = new Map(incomingFields.map(field => [field.id, field]));
+    const fields = currentFields.map(field => {
+        const match = incomingById.get(field.id);
+        if (match) return { ...field, text: match.text };
+        return hasIncomingFields ? { ...field, text: '' } : field;
+    });
+    for (const field of incomingFields) {
+        if (!currentFields.some(existing => existing.id === field.id)) fields.push({ ...field });
+    }
+    const currentPresets = current?.prompt_field_presets && typeof current.prompt_field_presets === 'object' ? current.prompt_field_presets : {};
+    const incomingPresets = incoming?.prompt_field_presets && typeof incoming.prompt_field_presets === 'object' ? incoming.prompt_field_presets : {};
+    return {
+        prompt_custom_fields: fields,
+        prompt_positive_order: normalizeOrder(current?.prompt_positive_order, 'positive', fields),
+        prompt_negative_order: normalizeOrder(current?.prompt_negative_order, 'negative', fields),
+        prompt_field_presets: { ...incomingPresets, ...currentPresets },
+    };
+}
+
+/**
  * Concatenate ordered units. `units` maps unit id to { text, colored? }; empty
  * or missing texts are skipped. Returns plain and BBCode-colored strings.
  */

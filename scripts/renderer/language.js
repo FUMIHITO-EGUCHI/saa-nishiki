@@ -384,6 +384,9 @@ export function updateSettings() {
     globalThis.prompt.ai.setValue(SETTINGS.ai_prompt);
     globalThis.prompt.exclude.setValue(SETTINGS.prompt_ban);
     globalThis.prompt.tagCapsuleFields?.loadFromSettings?.(SETTINGS);
+    // custom prompt fields (definitions, texts, order) follow the settings too — a
+    // preset load or undo must re-sync the containers, not just the built-in textboxes
+    globalThis.prompt.fieldManager?.refresh?.();
     globalThis.prompt.autoResize.setValue(SETTINGS.ptompt_textbox_autoresize);
     globalThis.prompt.fontSize.setValue(SETTINGS.ptompt_textbox_fontsize);
 
