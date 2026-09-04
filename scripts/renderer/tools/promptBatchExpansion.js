@@ -45,7 +45,10 @@ export function planBatchExpansion({ loops = 1 } = {}, options = {}) {
 
     const sliderSeed = Number(options.sliderSeed ?? globalThis.generate?.seed?.getValue?.() ?? -1);
     const randomSeed = typeof options.generateRandomSeed === 'function' ? options.generateRandomSeed : () => Math.floor(Math.random() * 4294967295);
-    const baseSeed = Number.isFinite(sliderSeed) && sliderSeed >= 0 ? sliderSeed : randomSeed();
+    // A fixed slider seed is pinned for every image (only the weights vary); -1 draws
+    // one base seed and steps it by +1 per image.
+    const fixedSeed = Number.isFinite(sliderSeed) && sliderSeed >= 0;
+    const baseSeed = fixedSeed ? sliderSeed : randomSeed();
     const plannedLoops = loops <= 1 ? plan.count : loops;
     const rows = Array.from({ length: plannedLoops }, (_, imageIndex) => {
         const row = set.getPromptOverrides?.(imageIndex, baseSeed);
@@ -62,6 +65,7 @@ export function planBatchExpansion({ loops = 1 } = {}, options = {}) {
         enabled: true,
         count: plan.count,
         baseSeed,
+        fixedSeed,
         rows: Object.freeze(rows),
         ...(baseFields ? { baseFields } : {}),
     };
@@ -85,7 +89,7 @@ export function beginImageOverride(expansion, loop, options = {}) {
         fields: row.fields,
         weights: row.weights ?? {},
         terminal: row.terminal ?? [],
-        seed: expansion.baseSeed + loop,
+        seed: expansion.fixedSeed ? expansion.baseSeed : expansion.baseSeed + loop,
         imageIndex: loop,
     };
     return activeOverride;

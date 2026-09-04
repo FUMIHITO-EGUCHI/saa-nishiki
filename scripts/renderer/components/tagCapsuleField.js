@@ -579,7 +579,8 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
     }
 
     function expandRows(count, seed) {
-        return expandAll(expansionFields(), seed, count, { applyExclude });
+        // slider ≥ 0: the seed is pinned for the whole batch, weights are the only variable
+        return expandAll(expansionFields(), seed, count, { applyExclude, fixedSeed: getGenerationSeed() >= 0 });
     }
 
     function getBatchExpansion() {

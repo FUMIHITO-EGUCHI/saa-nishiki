@@ -505,7 +505,8 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
         }
         return {
             imageIndex,
-            seed: baseSeed + imageIndex,
+            // a fixed slider seed stays fixed so only the weights change between images
+            seed: options.fixedSeed ? baseSeed : baseSeed + imageIndex,
             positive,
             positiveRight,
             negative,

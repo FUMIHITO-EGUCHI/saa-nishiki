@@ -58,7 +58,18 @@ test('a single generate becomes count × batch_size=1 sends with expanded prompt
     endImageOverride();
   }
   assert.equal(getActiveOverride(), null);
-  assert.deepEqual(seen.map(s => s.seed), [20260825, 20260826, 20260827, 20260828, 20260829, 20260830, 20260831, 20260832]);
+  // a fixed slider seed is pinned: only the weights differ between the images
+  assert.deepEqual(seen.map(s => s.seed), Array(8).fill(20260825));
+  assert.equal(expansion.fixedSeed, true);
+  // seed -1 draws one base seed and steps it per image
+  const rolling = planBatchExpansion({ loops: 1, runSame: false }, { fieldSet: set, sliderSeed: -1, generateRandomSeed: () => 100 });
+  const rollingSeeds = [];
+  for (let loop = 0; loop < 3; loop += 1) {
+    beginImageOverride(rolling, loop, { fieldSet: set });
+    rollingSeeds.push(overrideSeed(-1));
+    endImageOverride();
+  }
+  assert.deepEqual(rollingSeeds, [100, 101, 102]);
   assert.equal(seen[0].positive, '1girl, detailed eyes');
   assert.equal(seen[1].positive, '1girl, (detailed eyes:1.05)');
   assert.equal(seen[6].positive, '1girl, (detailed eyes:1.30)');

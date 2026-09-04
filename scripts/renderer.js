@@ -148,11 +148,14 @@ function setFastSetting(key, value) {
     globalThis.settingsPersistence?.flush?.();
 }
 
-// A batch with a fixed seed repeats (or only increments) the same image; ask first.
+// A batch with a fixed seed and nothing else varying repeats the same image; ask first.
+// With variable weight plans the fixed seed is the point (only the weights change).
 async function confirmBatchSeed() {
     const loops = Number(globalThis.generate?.batch?.getValue?.() ?? 1);
     const seed = Number(globalThis.generate?.seed?.getValue?.() ?? -1);
     if (loops <= 1 || seed < 0) return true;
+    const plan = globalThis.prompt?.tagCapsuleFields?.getBatchExpansion?.();
+    if (Number(plan?.variable ?? 0) > 0) return true;
     const LANG = globalThis.cachedFiles.language[globalThis.globalSettings.language];
     return showDialog('confirm', {
         message: (LANG.batch_seed_confirm ?? 'Seed is fixed ({0}). Run the batch of {1} anyway?')
