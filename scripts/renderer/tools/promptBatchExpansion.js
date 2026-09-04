@@ -51,7 +51,7 @@ export function planBatchExpansion({ loops = 1 } = {}, options = {}) {
     const baseSeed = fixedSeed ? sliderSeed : randomSeed();
     const plannedLoops = loops <= 1 ? plan.count : loops;
     const rows = Array.from({ length: plannedLoops }, (_, imageIndex) => {
-        const row = set.getPromptOverrides?.(imageIndex, baseSeed);
+        const row = set.getPromptOverrides?.(imageIndex, baseSeed, plannedLoops);
         if (!row) return null;
         const { weights, terminal, ...fields } = row;
         return Object.freeze({
@@ -79,7 +79,7 @@ export function beginImageOverride(expansion, loop, options = {}) {
     }
     const frozenRow = expansion.rows?.[loop];
     const set = options.fieldSet ?? fieldSet();
-    const liveRow = frozenRow ? null : set?.getPromptOverrides?.(loop, expansion.baseSeed);
+    const liveRow = frozenRow ? null : set?.getPromptOverrides?.(loop, expansion.baseSeed, expansion.loops);
     const row = frozenRow ?? (liveRow ? (() => {
         const { weights, terminal, ...fields } = liveRow;
         return { fields, weights, terminal };

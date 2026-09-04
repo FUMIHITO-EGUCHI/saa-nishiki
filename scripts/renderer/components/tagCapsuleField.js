@@ -690,8 +690,11 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         },
         expandAll: (count, seed) => expandRows(count, seed),
         getBatchExpansion,
-        getPromptOverrides: (imageIndex, seed) => {
-            const row = expandRows(imageIndex + 1, seed)[imageIndex];
+        // `count` is the whole batch: "÷ batch count" plans derive their step from it,
+        // so expanding image i as a batch of i + 1 would give every image a different step.
+        getPromptOverrides: (imageIndex, seed, count = imageIndex + 1) => {
+            const total = Math.max(imageIndex + 1, Math.floor(Number(count) || 0));
+            const row = expandRows(total, seed)[imageIndex];
             return row ? { ...row.fields, weights: row.weights, terminal: row.terminal } : null;
         },
         loadFromSettings: (stored = settings()) => {

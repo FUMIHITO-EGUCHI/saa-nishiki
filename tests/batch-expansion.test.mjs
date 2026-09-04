@@ -29,12 +29,35 @@ function fakeFieldSet(count, enabled = true) {
   ];
   return {
     getBatchExpansion: () => ({ enabled, count, variable: 1 }),
-    getPromptOverrides: (imageIndex, seed) => {
-      const row = expandAll(fields, seed, imageIndex + 1)[imageIndex];
+    getPromptOverrides: (imageIndex, seed, total = imageIndex + 1) => {
+      const row = expandAll(fields, seed, Math.max(total, imageIndex + 1))[imageIndex];
       return { ...row.fields, weights: row.weights, terminal: row.terminal };
     },
   };
 }
+
+test('a "÷ batch count" plan is expanded against the whole batch, not image i as a batch of i + 1', () => {
+  const positive = setCapsulePlan(parsePromptToCapsules('1girl, moral cacoethes'), 'moral cacoethes#0',
+    { mode: 'increment', min: 1, max: 1.6, step: 0.05, autoStep: true });
+  const fields = [{ key: 'positive', capsules: positive, batch: { enabled: false, count: 4 } }];
+  const set = {
+    getBatchExpansion: () => ({ enabled: false, count: 1, variable: 1 }),
+    getPromptOverrides: (imageIndex, seed, total = imageIndex + 1) => {
+      const row = expandAll(fields, seed, Math.max(total, imageIndex + 1))[imageIndex];
+      return { ...row.fields, weights: row.weights, terminal: row.terminal };
+    },
+  };
+  const expansion = planBatchExpansion({ loops: 4 }, { fieldSet: set, sliderSeed: 283297266 });
+  const prompts = [];
+  for (let loop = 0; loop < 4; loop += 1) {
+    beginImageOverride(expansion, loop, { fieldSet: set });
+    prompts.push(readPromptValue('positive'));
+    endImageOverride();
+  }
+  assert.deepEqual(prompts, [
+    '1girl, moral cacoethes', '1girl, (moral cacoethes:1.20)', '1girl, (moral cacoethes:1.40)', '1girl, (moral cacoethes:1.60)',
+  ]);
+});
 
 test('a single generate becomes count × batch_size=1 sends with expanded prompts and seed + n − 1', () => {
   const set = fakeFieldSet(8);

@@ -15,6 +15,9 @@ import { applyFastMode } from '../shared/fastMode.js';
 
 const CAT = '[ComfyUI]';
 const TIMEOUT = 5000; // 5 seconds timeout for backend response
+// POST /prompt is answered by ComfyUI's single event loop; while the GPU is busy
+// (model staging, a running FaceDetailer) the reply routinely exceeds 5 s.
+const PROMPT_TIMEOUT = 30000;
 
 let backendComfyUI = null;
 let cancelMark = false;
@@ -2434,6 +2437,7 @@ class ComfyUI {
 
   run(workflow, pythonRun=false) {
     this.pythonRun = pythonRun;
+    const promptTimeout = Math.max(this.timeout, PROMPT_TIMEOUT);
     if (this.podEnabled()) return this.runPod(workflow);
     return new Promise((resolve, reject) => {
       const requestBody = {
@@ -2450,7 +2454,7 @@ class ComfyUI {
             'Content-Type': 'application/json',
             ...backendAuthHeaders(this.auth)
         },
-        timeout: this.timeout,
+        timeout: promptTimeout,
       });
 
       request.on('response', (response) => {
@@ -2475,8 +2479,8 @@ class ComfyUI {
       request.on('error', (error) => {
         let ret = '';
         if (error.code === 'ECONNABORTED') {
-          console.error(`${CAT} Request timed out after ${this.timeout}ms`);
-          ret = `Error: Request timed out after ${this.timeout}ms`;
+          console.error(`${CAT} Request timed out after ${promptTimeout}ms`);
+          ret = `Error: Request timed out after ${promptTimeout}ms`;
         } else {
           console.error(CAT, 'Request failed:', error.message);
           ret = `Error: Request failed: ${error.message}`;
@@ -2487,9 +2491,9 @@ class ComfyUI {
 
       request.on('timeout', () => {
         try { request.destroy(); } catch (err) { console.error(CAT, 'Request destroy error:', err); }
-        console.error(`${CAT} Request timed out after ${this.timeout}ms`);
+        console.error(`${CAT} Request timed out after ${promptTimeout}ms`);
         setMutexBackendBusy(false); // Release the mutex lock
-        resolve(`Error: Request timed out after ${this.timeout}ms`);
+        resolve(`Error: Request timed out after ${promptTimeout}ms`);
       });
 
       request.write(body);
