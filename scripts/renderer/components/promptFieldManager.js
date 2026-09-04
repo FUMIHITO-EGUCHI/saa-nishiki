@@ -103,6 +103,12 @@ export function setupPromptFieldManager() {
                     (text) => { field.text = text; persistFields(); });
             } else {
                 globalThis.prompt[field.id]?.setTitle?.(field.name);
+                // setTitle rewrites the textbox header's textContent, which used to wipe a
+                // preset button parked there — put it back if it is gone
+                if (!container.querySelector('.prompt-preset-button')) {
+                    attachPresetButton(container, field.id, () => globalThis.prompt[field.id],
+                        (text) => { field.text = text; persistFields(); });
+                }
             }
         }
     }
