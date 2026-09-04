@@ -9,7 +9,7 @@ import { processRandomString } from './tools/nestedBraceParsing.js';
 import { convertToMultipleOfNFloor, checkNumberInRange } from './tools/numbers.js';
 import { setQueueAutoStart } from './callbacks.js';
 import { filterPrompts } from './tools/promptFilter.js';
-import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue } from './tools/promptBatchExpansion.js';
+import { beginImageOverride, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
 import { removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { normalizeApiAddress } from '../shared/backendAddress.js';
@@ -638,15 +638,22 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let refineContext = null;
 
     if(runSame) {
-        let seed = globalThis.generate.seed.getValue();
-        if (seed === -1){
-            randomSeed = generateRandomSeed();
-        }
+        // Fixed slider seed is the seed (it used to stay -1 and fail ComfyUI validation);
+        // a batch expansion override supplies seed + n − 1.
+        const seed = overrideSeed(globalThis.generate.seed.getValue());
+        randomSeed = (seed === -1) ? generateRandomSeed() : seed;
         positivePrompt = globalThis.generate.lastPos;
         positivePromptColored = globalThis.generate.lastPosColored;
         negativePrompt = globalThis.generate.lastNeg;
         charactersName = globalThis.generate.lastCharacter;
         img_prefix = globalThis.generate.lastImagePrefix;
+        // Batch (Last) keeps the previous prompt but still walks the weight plans.
+        const override = getActiveOverride();
+        if (override?.weights && Object.keys(override.weights).length > 0) {
+            const applied = reapplyPlanWeights({ positive: positivePrompt, negative: negativePrompt }, override.weights);
+            positivePrompt = applied.positive;
+            negativePrompt = applied.negative;
+        }
     } else {            
         const {thumb, characters_tag, information, seed, characters, negative_tags, image_prefix} = await getCharacters();
         randomSeed = seed;

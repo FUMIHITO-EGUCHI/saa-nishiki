@@ -28,16 +28,20 @@ export function overrideSeed(sliderSeed) {
     return sliderSeed;
 }
 
-export function planBatchExpansion({ loops = 1, runSame = false } = {}, options = {}) {
+export function planBatchExpansion({ loops = 1 } = {}, options = {}) {
     const baseFields = options.baseFields && typeof options.baseFields === 'object'
         ? Object.freeze({ ...options.baseFields })
         : null;
     const base = { loops, enabled: false, count: 1, baseSeed: -1 };
     if (baseFields) base.baseFields = baseFields;
     const set = options.fieldSet ?? fieldSet();
-    if (runSame || !set?.getBatchExpansion) return base;
+    if (!set?.getBatchExpansion) return base;
     const plan = set.getBatchExpansion();
-    if (!plan?.enabled) return base;
+    // A single click expands only when a field asked for it ("Expand weights per
+    // image"). An explicit batch (Random or Last with count > 1) expands whenever any
+    // variable weight plan exists — the plans are what the user set up to vary.
+    const hasVariable = Number(plan?.variable ?? 0) > 0;
+    if (!plan?.enabled && !(loops > 1 && hasVariable)) return base;
 
     const sliderSeed = Number(options.sliderSeed ?? globalThis.generate?.seed?.getValue?.() ?? -1);
     const randomSeed = typeof options.generateRandomSeed === 'function' ? options.generateRandomSeed : () => Math.floor(Math.random() * 4294967295);

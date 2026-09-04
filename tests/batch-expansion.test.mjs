@@ -96,19 +96,29 @@ test('prompt values and expansion rows are frozen before queue preparation start
   assert.equal(expanded.fields.positive, 'before-1');
   endImageOverride();
 
+  const idle = { getBatchExpansion: () => ({ enabled: false, count: 1, variable: 0 }), getPromptOverrides: () => null };
   const fixed = planBatchExpansion(
     { loops: 1, runSame: true },
-    { fieldSet: set, baseFields: { positive: 'snapshot value' } },
+    { fieldSet: idle, baseFields: { positive: 'snapshot value' } },
   );
-  assert.equal(beginImageOverride(fixed, 0, { fieldSet: set }), null);
+  assert.equal(beginImageOverride(fixed, 0, { fieldSet: idle }), null);
   assert.equal(readPromptValue('positive'), 'snapshot value', 'disabled expansion still reads the run snapshot');
   endImageOverride();
 });
 
-test('expansion is skipped for Batch (Last), disabled fields, and keeps the caller loop count when larger', () => {
+test('an explicit batch expands whenever a variable plan exists; a single click still needs the field switch', () => {
   const set = fakeFieldSet(4);
-  assert.deepEqual(planBatchExpansion({ loops: 1, runSame: true }, { fieldSet: set, sliderSeed: 5 }), { loops: 1, enabled: false, count: 1, baseSeed: -1 });
-  assert.deepEqual(planBatchExpansion({ loops: 3 }, { fieldSet: fakeFieldSet(4, false), sliderSeed: 5 }), { loops: 3, enabled: false, count: 1, baseSeed: -1 });
+  // Batch (Last) is a batch like any other: the previous prompt walks the plans
+  const last = planBatchExpansion({ loops: 3, runSame: true }, { fieldSet: set, sliderSeed: 5 });
+  assert.deepEqual({ loops: last.loops, enabled: last.enabled, baseSeed: last.baseSeed }, { loops: 3, enabled: true, baseSeed: 5 });
+  // field switch off, but the user asked for 3 images and has a plan → expand
+  const unflagged = planBatchExpansion({ loops: 3 }, { fieldSet: fakeFieldSet(4, false), sliderSeed: 5 });
+  assert.deepEqual({ loops: unflagged.loops, enabled: unflagged.enabled, rows: unflagged.rows.length }, { loops: 3, enabled: true, rows: 3 });
+  // field switch off and a single click → plain run
+  assert.deepEqual(planBatchExpansion({ loops: 1 }, { fieldSet: fakeFieldSet(4, false), sliderSeed: 5 }), { loops: 1, enabled: false, count: 1, baseSeed: -1 });
+  // no variable plan at all → an explicit batch stays plain
+  const none = { getBatchExpansion: () => ({ enabled: false, count: 1, variable: 0 }), getPromptOverrides: () => null };
+  assert.deepEqual(planBatchExpansion({ loops: 3 }, { fieldSet: none, sliderSeed: 5 }), { loops: 3, enabled: false, count: 1, baseSeed: -1 });
   const bigger = planBatchExpansion({ loops: 10 }, { fieldSet: set, sliderSeed: 5 });
   assert.equal(bigger.loops, 10);
   const random = planBatchExpansion({ loops: 1 }, { fieldSet: set, sliderSeed: -1, generateRandomSeed: () => 4242 });
