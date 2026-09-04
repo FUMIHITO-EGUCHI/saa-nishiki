@@ -22,6 +22,7 @@ test('LoRA extraction is one Prompt plus LoRA transaction and commits the cleane
   const source = read('scripts/renderer/components/myRightClickMenu.js');
   assert.match(source, /source:\s*'send-lora-to-slot'/);
   assert.match(source, /sections:\s*\['prompt', 'lora'\]/);
-  assert.match(source, /prompt\.common\.commitValue/);
-  assert.match(source, /prompt\.positive\.commitValue/);
+  // one entry serves every prompt field (custom ones included): the cleaned prompt goes
+  // back through the field control's commitValue inside the transaction
+  assert.match(source, /fieldControl\(key\)\.commitValue\(textPrompt\.trim\(\)\)/);
 });

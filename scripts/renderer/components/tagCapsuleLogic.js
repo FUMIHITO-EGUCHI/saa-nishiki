@@ -402,6 +402,72 @@ export function excludedTagSet(excludeText = '') {
     return set;
 }
 
+// ---------------------------------------------------------------- cross-field transfer
+
+// Moves (or copies) one capsule from `source` into `target` at `at`, keeping its weight
+// plan and disabled state. Returns the new lists and the inserted capsule (null when
+// the id is unknown). Same-field reordering stays with moveCapsule.
+export function transferCapsule(source = [], target = [], capsuleId, options = {}) {
+    const { at = target.length, copy = false } = options;
+    const index = source.findIndex(capsule => capsule.id === capsuleId);
+    if (index < 0) return { source, target, moved: null };
+    const capsule = source[index];
+    const clone = {
+        value: capsule.value,
+        weightPlan: normalizeWeightPlan(capsule.weightPlan),
+        disabled: capsule.disabled === true,
+    };
+    const position = Math.max(0, Math.min(target.length, Math.floor(finiteNumber(at, target.length))));
+    const nextTarget = assignCapsuleIds([...target.slice(0, position), clone, ...target.slice(position)]);
+    const nextSource = copy ? source : assignCapsuleIds(source.filter((_, position_) => position_ !== index));
+    return { source: nextSource, target: nextTarget, moved: nextTarget[position] };
+}
+
+// Text-mode counterparts (a textarea selection moved to another field): tokens are
+// matched by normalized name, the first occurrence of each is removed, and the
+// remaining text keeps its line structure.
+function splitTokens(text) {
+    return String(text ?? '').split(/[,\n]/).map(token => token.trim()).filter(Boolean);
+}
+
+function tokenName(token) {
+    const body = token.startsWith(DISABLED_TAG_MARKER) ? token.slice(DISABLED_TAG_MARKER.length) : token;
+    const weighted = /^\((.*):\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\)$/.exec(body.trim());
+    return normalizeTagName(weighted ? weighted[1] : body);
+}
+
+export function appendTagsToText(text = '', tags = []) {
+    const additions = (Array.isArray(tags) ? tags : splitTokens(tags)).map(tag => String(tag ?? '').trim()).filter(Boolean);
+    if (additions.length === 0) return String(text ?? '');
+    const base = String(text ?? '').replace(/[\s,]+$/, '');
+    return base ? `${base}, ${additions.join(', ')}` : additions.join(', ');
+}
+
+export function removeTagsFromText(text = '', tags = []) {
+    const wanted = new Map();
+    for (const tag of (Array.isArray(tags) ? tags : splitTokens(tags))) {
+        const name = tokenName(String(tag ?? '').trim());
+        if (name) wanted.set(name, (wanted.get(name) ?? 0) + 1);
+    }
+    if (wanted.size === 0) return String(text ?? '');
+    return String(text ?? '')
+        .split('\n')
+        .map(line => line
+            .split(',')
+            .filter(token => {
+                const name = tokenName(token.trim());
+                const remaining = wanted.get(name) ?? 0;
+                if (remaining <= 0) return true;
+                wanted.set(name, remaining - 1);
+                return false;
+            })
+            .map(token => token.trim())
+            .filter(Boolean)
+            .join(', '))
+        .filter(line => line !== '')
+        .join('\n');
+}
+
 // ---------------------------------------------------------------- keyboard reducer (§9.2)
 
 // state = { index: number, count: number }  index === count means the "+ Add tag" slot.

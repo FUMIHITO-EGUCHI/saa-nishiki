@@ -20,6 +20,8 @@ const ICON_PATHS = Object.freeze({
     star: ['M8 2.2l1.8 3.7 4.1.6-3 2.9.7 4.1L8 11.6l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 2.2z'],
     undo: ['M6 5L3 8l3 3', 'M3 8h6a4 4 0 0 1 4 4'],
     redo: ['M10 5l3 3-3 3', 'M13 8H7a4 4 0 0 0-4 4'],
+    spark: ['M8 2.5v11', 'M2.5 8h11', 'M4.1 4.1l7.8 7.8', 'M11.9 4.1l-7.8 7.8'],
+    arrowRight: ['M3 8h10', 'M9 4l4 4-4 4'],
 });
 
 export function createIcon(name, size = 14) {

@@ -2329,3 +2329,54 @@ body {
 .preset-delete:hover .preset-icon { background: var(--saa-danger); }
 .prompt-preset-button .preset-icon { width: 13px; height: 13px; }
 .prompt-preset-button:hover .preset-icon { background: var(--saa-text); }
+
+/* Related-tag strip under the chip row (offline co-occurrence dictionary) */
+.tag-capsule-suggest {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 5px 7px;
+    border: 1px dashed #4a4a55;
+    border-radius: 6px;
+    background: #1f1f24;
+}
+.tag-capsule-suggest-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.tag-capsule-suggest-title { font-size: 11px; color: #bbb; }
+.tag-capsule-suggest-close {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; padding: 0; border: none; border-radius: 4px;
+    background: transparent; color: #999; cursor: pointer;
+}
+.tag-capsule-suggest-close:hover { background: #33333a; color: #eee; }
+.tag-capsule-suggest-body { display: flex; flex-direction: column; gap: 3px; }
+.tag-capsule-suggest-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.tag-capsule-suggest-label { font-size: 11px; color: #8ec5ff; margin-right: 2px; white-space: nowrap; }
+.tag-capsule-suggest-chip {
+    display: inline-flex; align-items: center; height: 20px; padding: 0 8px;
+    border: 1px solid #4a4a55; border-radius: 10px; background: #2a2a2f; color: #ddd;
+    font: inherit; font-size: 11px; line-height: 1; white-space: nowrap; cursor: pointer;
+}
+.tag-capsule-suggest-chip:hover { background: #393941; border-color: #8ec5ff; color: #fff; }
+.tag-capsule-suggest-empty { font-size: 11px; color: #888; }
+.tag-capsule-footer-tools { display: flex; align-items: center; gap: 6px; }
+.tag-capsule-suggest-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; padding: 0; border: 1px solid #555; border-radius: 6px;
+    background: #2a2a2f; color: #999; cursor: pointer;
+}
+.tag-capsule-suggest-toggle:hover { color: #eee; }
+.tag-capsule-suggest-toggle.is-on { color: #8ec5ff; border-color: #3d6a99; }
+
+/* Chip row receiving a capsule dragged from another field */
+.tag-capsule-chips.is-drop-target {
+    outline: 1px dashed #8ec5ff;
+    outline-offset: 3px;
+    border-radius: 6px;
+}
+
+/* Context menu: accordion submenu ("Move to ▸ field") */
+.right-click-menu .menu-item.has-submenu::after { content: ' ▸'; color: #999; }
+.right-click-menu .menu-item.has-submenu.is-open::after { content: ' ▾'; }
+.right-click-menu .menu-submenu { border-left: 2px solid #444; margin: 0 0 2px 10px; }
+.right-click-menu .menu-subitem { padding-left: 16px !important; font-size: 13px !important; }
+.right-click-menu .menu-item.is-disabled { color: #888; }

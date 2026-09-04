@@ -426,9 +426,15 @@ function tagGet(text, options) {
     return tagBackend.updateSuggestions(text, options);
 }
 
+// Loaded tag entries ({ prompt, group, heat, aliases }), heat-sorted; empty until loaded.
+function getPromptList() {
+    return tagBackend.dataLoaded ? tagBackend.prompts : [];
+}
+
 export {
     setupTagAutoCompleteBackend,
     tagReload,
-    tagGet
+    tagGet,
+    getPromptList
 };
 

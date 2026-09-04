@@ -1,6 +1,11 @@
+// Context menu. Every entry is scoped to what was right-clicked (a tag capsule, a prompt
+// field, an image, the gallery, the AI prompt); nothing is shown everywhere. Scoped
+// handlers are { selector, func, visible?, label?, items? }: `visible(scope)` gates the
+// entry, `label(scope)` overrides its text, and `items(scope)` turns it into an accordion
+// submenu (expands in place — the menu box clips flyouts).
 import { getAiPrompt } from '../remoteAI.js';
-import { showDialog } from './myDialog.js';
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
+import { appendTagsToText, removeTagsFromText } from './tagCapsuleLogic.js';
 
 function debounce(func, wait) {
     let timeout;
@@ -14,6 +19,35 @@ let menuBox = null;
 let currentSelectedText = '';
 let currentMenuX = 0;
 let currentMenuY = 0;
+
+const PROMPT_TEXTAREA = /(^|\s)myTextbox-prompt-[\w-]+-textarea(\s|$)/;
+
+function lang() {
+    const SETTINGS = globalThis.globalSettings;
+    const FILES = globalThis.cachedFiles;
+    return FILES?.language?.[SETTINGS?.language] ?? {};
+}
+
+function styleMenuItem(menuItem) {
+    menuItem.className = 'menu-item';
+    menuItem.style.padding = '6px 12px';
+    menuItem.style.cursor = 'pointer';
+    menuItem.style.fontSize = '14px';
+    menuItem.style.userSelect = 'none';
+    menuItem.addEventListener('mouseenter', () => {
+        if (!menuItem.classList.contains('is-disabled')) menuItem.style.background = 'rgba(192, 192, 192, 0.5)';
+    });
+    menuItem.addEventListener('mouseleave', () => {
+        menuItem.style.background = 'none';
+    });
+    return menuItem;
+}
+
+function closeMenu() {
+    if (!menuBox) return;
+    menuBox.style.display = 'none';
+    currentSelectedText = '';
+}
 
 export function addSpellCheckSuggestions(suggestions, word) {
     if (menuBox?.style.display === 'none') {
@@ -37,69 +71,39 @@ export function addSpellCheckSuggestions(suggestions, word) {
 
     if (suggestions.length > 0) {
         let index = 0;
-        for( const suggestion of suggestions) {
-            const menuItem = document.createElement('div');
-            menuItem.className = 'menu-item';
-            menuItem.style.padding = '6px 12px';
-            menuItem.style.cursor = 'pointer';
-            menuItem.style.fontSize = '14px';
-            menuItem.style.userSelect = 'none';
-            menuItem.innerHTML = suggestion;
+        for (const suggestion of suggestions) {
+            const menuItem = styleMenuItem(document.createElement('div'));
+            menuItem.textContent = suggestion;
             menuItem.dataset.index = `spellcheck_${index}`;
-
-            menuItem.addEventListener('mouseenter', () => {
-                menuItem.style.background = 'rgba(192, 192, 192, 0.5)';
-            });
-            menuItem.addEventListener('mouseleave', () => {
-                menuItem.style.background = 'none';
-            });
-
             menuItem.addEventListener('click', async () => {
                 try {
                     await globalThis.api.replaceMisspelling(suggestion);
-                    menuBox.style.display = 'none';
+                    closeMenu();
                 } catch (error) {
                     console.error('Error replacing misspelling:', error);
                 }
             });
-
             tempDiv.textContent = suggestion;
             maxWidth = Math.max(maxWidth, tempDiv.offsetWidth);
             spellCheckFragment.appendChild(menuItem);
             index++;
         }
 
-        // Add to dictionary option
-        const addToDictItem = document.createElement('div');
-        addToDictItem.className = 'menu-item';
-        addToDictItem.style.padding = '6px 12px';
-        addToDictItem.style.cursor = 'pointer';
-        addToDictItem.style.fontSize = '14px';
-        addToDictItem.style.userSelect = 'none';
-        addToDictItem.innerHTML = 'Add to dictionary';
+        const addToDictItem = styleMenuItem(document.createElement('div'));
+        addToDictItem.textContent = 'Add to dictionary';
         addToDictItem.dataset.index = 'spellcheck_add_to_dict';
-
-        addToDictItem.addEventListener('mouseenter', () => {
-            addToDictItem.style.background = 'rgba(192, 192, 192, 0.5)';
-        });
-        addToDictItem.addEventListener('mouseleave', () => {
-            addToDictItem.style.background = 'none';
-        });
-
         addToDictItem.addEventListener('click', async () => {
             try {
                 await globalThis.api.addToDictionary(word);
-                menuBox.style.display = 'none';
+                closeMenu();
             } catch (error) {
                 console.error('Error adding to dictionary:', error);
             }
         });
-
         tempDiv.textContent = 'Add to dictionary';
         maxWidth = Math.max(maxWidth, tempDiv.offsetWidth);
         spellCheckFragment.appendChild(addToDictItem);
 
-        // Add separator
         const separator = document.createElement('div');
         separator.className = 'menu-separator';
         spellCheckFragment.appendChild(separator);
@@ -115,7 +119,6 @@ export function addSpellCheckSuggestions(suggestions, word) {
         menuBox.appendChild(child);
     }
 
-    // update the menu width
     menuBox.style.width = `${Math.min(maxWidth + 24, 300)}px`;
     updateMenuPosition(currentMenuX, currentMenuY);
 }
@@ -166,8 +169,7 @@ export function setupRightClickMenu() {
                 console.warn(`Index ${index} already exists, use update or remove first`);
                 return;
             }
-            const newItem = { index, displayName, handler };
-            menuConfig.push(newItem); // Append at end
+            menuConfig.push({ index, displayName, handler });
         },
         remove: (index) => {
             const itemIndex = menuConfig.findIndex(item => item.index === index);
@@ -191,7 +193,8 @@ export function setupRightClickMenu() {
         },
         updateLanguage: () => {
             updateRightClickMenu();
-        }
+        },
+        close: closeMenu,
     };
 
     if (!globalThis.inBrowser) {
@@ -210,7 +213,7 @@ export function setupRightClickMenu() {
         }
     });
 
-    document.addEventListener('mousemove', (e) => {        
+    document.addEventListener('mousemove', (e) => {
         if (typeof rightClickStartX === 'number' && typeof rightClickStartY === 'number' && allowMenu) {
             const deltaX = Math.abs(e.clientX - rightClickStartX);
             const deltaY = Math.abs(e.clientY - rightClickStartY);
@@ -224,10 +227,10 @@ export function setupRightClickMenu() {
     document.addEventListener('contextmenu', async (e) => {
         // If menu is already visible, prevent opening a new one
         if (menuBox.style.display !== 'none') {
-            e.preventDefault(); 
+            e.preventDefault();
             return;
         }
-        
+
         //e.preventDefault(); // Keep commented to allow main process context-menu
         if (!menuConfig.length) return;
 
@@ -256,10 +259,10 @@ export function setupRightClickMenu() {
     });
 
     document.addEventListener('click', (e) => {
-        if (!menuBox.contains(e.target)) {
-            menuBox.style.display = 'none';
-            currentSelectedText = ''; // Clear selected text when menu closes
-        }
+        if (!menuBox.contains(e.target)) closeMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menuBox.style.display !== 'none') closeMenu();
     });
 
     document.addEventListener('scroll', debounce(() => {
@@ -270,8 +273,8 @@ export function setupRightClickMenu() {
 
     // Prevent right-click on the menu itself from triggering a new menu
     menuBox.addEventListener('contextmenu', (e) => {
-        e.preventDefault(); 
-        e.stopPropagation(); 
+        e.preventDefault();
+        e.stopPropagation();
     });
 
     // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -283,24 +286,17 @@ export function setupRightClickMenu() {
         tempDiv.style.visibility = 'hidden';
         tempDiv.style.whiteSpace = 'nowrap';
         document.body.appendChild(tempDiv);
+        const measure = title => {
+            tempDiv.textContent = title;
+            maxWidth = Math.max(maxWidth, tempDiv.offsetWidth);
+        };
 
-        const spellCheckClasses = [
-            'myTextbox-prompt-common-textarea',
-            'myTextbox-prompt-background-textarea',
-            'myTextbox-prompt-style-textarea',
-            'myTextbox-prompt-positive-textarea',
-            'myTextbox-prompt-positive-right-textarea',
-            'myTextbox-prompt-negative-textarea',
-            'myTextbox-prompt-ai-textarea',
-            'myTextbox-prompt-exclude-textarea'
-        ];
+        const isTextInput = targetElement instanceof HTMLTextAreaElement && PROMPT_TEXTAREA.test(targetElement.className);
 
-        const isTextInput = spellCheckClasses.includes(targetElement.className.trim());
-
-        // update currentSelectedText
+        // update currentSelectedText (the main process answers with spellcheck suggestions)
         currentSelectedText = '';
         if (isTextInput) {
-            if (targetElement.selectionStart === targetElement.selectionEnd) {                
+            if (targetElement.selectionStart === targetElement.selectionEnd) {
                 // cursor word
                 const text = targetElement.value;
                 const cursorPos = targetElement.selectionStart;
@@ -323,52 +319,81 @@ export function setupRightClickMenu() {
         currentMenuY = y;
 
         // render menu items
-        for(const item of menuConfig) {
-            if (item.displayName === null || item.handler === null) {
-                if (item.handler && !targetElement.closest(item.handler.selector)) {
-                    continue;
-                }
+        for (const item of menuConfig) {
+            const handler = item.handler;
+            const scoped = Boolean(handler && typeof handler === 'object' && handler.selector);
+            const scope = scoped ? targetElement.closest(handler.selector) : null;
+            if (scoped && !scope) continue;
+            if (scoped && typeof handler.visible === 'function' && !handler.visible(scope, targetElement)) continue;
 
+            if (item.displayName === null || handler === null) {
                 const separator = document.createElement('div');
                 separator.className = 'menu-separator';
                 fragment.appendChild(separator);
                 continue;
             }
 
-            if (typeof item.handler === 'object' && item.handler.selector) {
-                if (!targetElement.closest(item.handler.selector)) {
-                    continue;
+            const title = scoped && typeof handler.label === 'function' ? handler.label(scope, targetElement) : item.displayName;
+            const menuItem = styleMenuItem(document.createElement('div'));
+            menuItem.textContent = title;
+            menuItem.dataset.index = item.index;
+            measure(title);
+
+            if (scoped && typeof handler.items === 'function') {
+                // accordion submenu; entries with func === null render disabled
+                menuItem.classList.add('has-submenu');
+                const submenu = document.createElement('div');
+                submenu.className = 'menu-submenu';
+                submenu.hidden = true;
+                const entries = handler.items(scope, targetElement) ?? [];
+                for (const entry of entries) {
+                    const subItem = styleMenuItem(document.createElement('div'));
+                    subItem.classList.add('menu-subitem');
+                    subItem.textContent = entry.label;
+                    measure(`    ${entry.label}`);
+                    if (typeof entry.func !== 'function') {
+                        subItem.classList.add('is-disabled');
+                        subItem.style.cursor = 'default';
+                        subItem.style.opacity = '0.6';
+                    } else {
+                        subItem.addEventListener('click', () => {
+                            try {
+                                entry.func(scope, targetElement);
+                            } catch (error) {
+                                console.error('Error executing menu action:', error);
+                            }
+                            closeMenu();
+                        });
+                    }
+                    submenu.appendChild(subItem);
                 }
+                menuItem.addEventListener('click', () => {
+                    submenu.hidden = !submenu.hidden;
+                    menuItem.classList.toggle('is-open', !submenu.hidden);
+                    updateMenuPosition();
+                });
+                fragment.append(menuItem, submenu);
+                continue;
             }
 
-            const menuItem = document.createElement('div');
-            menuItem.className = 'menu-item';
-            menuItem.style.padding = '6px 12px';
-            menuItem.style.cursor = 'pointer';
-            menuItem.style.fontSize = '14px';
-            menuItem.style.userSelect = 'none';
-            menuItem.innerHTML = item.displayName;
-            menuItem.dataset.index = item.index;
-
-            menuItem.addEventListener('mouseenter', () => {
-                menuItem.style.background = 'rgba(192, 192, 192, 0.5)';
-            });
-            menuItem.addEventListener('mouseleave', () => {
-                menuItem.style.background = 'none';
-            });
-
             menuItem.addEventListener('click', () => {
-                executeMenuAction(item.handler, targetElement);
-                menuBox.style.display = 'none';
-                currentSelectedText = ''; // Clear selected text when menu closes
+                executeMenuAction(handler, targetElement);
+                closeMenu();
             });
-
-            tempDiv.textContent = item.displayName;
-            maxWidth = Math.max(maxWidth, tempDiv.offsetWidth);
             fragment.appendChild(menuItem);
         }
 
         tempDiv.remove();
+
+        // no leading / trailing / doubled separators once scoping has thinned the list
+        const children = Array.from(fragment.children);
+        let previousWasSeparator = true;
+        for (const child of children) {
+            const isSeparator = child.classList.contains('menu-separator');
+            if (isSeparator && previousWasSeparator) child.remove();
+            previousWasSeparator = isSeparator;
+        }
+        if (fragment.lastElementChild?.classList.contains('menu-separator')) fragment.lastElementChild.remove();
 
         if (!fragment.children.length && !currentSelectedText) {
             menuBox.style.display = 'none';
@@ -392,7 +417,7 @@ function executeMenuAction(handler, targetElement) {
         } else if (typeof handler === 'object' && handler.func && handler.selector) {
             const element = targetElement.closest(handler.selector);
             if (element) {
-                handler.func(element);
+                handler.func(element, targetElement);
             }
         } else {
             console.warn('Invalid handler:', handler);
@@ -417,158 +442,293 @@ function updateMenuPosition(x = currentMenuX, y = currentMenuY) {
         newLeft = Math.max(0, windowWidth - menuWidth - paddingX);
     }
     if (newTop + menuHeight > windowHeight - paddingY) {
-        newTop = Math.max(0, y - menuHeight - paddingY);
+        newTop = Math.max(0, Math.min(y, windowHeight - menuHeight - paddingY));
     }
 
     menuBox.style.left = `${newLeft}px`;
     menuBox.style.top = `${newTop}px`;
 }
 
-function updateRightClickMenu(){
-    const SETTINGS = globalThis.globalSettings;
-    const FILES = globalThis.cachedFiles;
-    const LANG = FILES.language[SETTINGS.language];
+// index → language key; labels are refreshed on language change through setTitle
+const MENU_TITLES = Object.freeze({
+    copy_image: 'right_menu_copy_image',
+    copy_image_metadata: 'right_menu_copy_image_metadata',
+    copy_image_grid: 'right_menu_copy_image',
+    copy_image_metadata_grid: 'right_menu_copy_image_metadata',
+    copy_image_full_screen: 'right_menu_copy_image',
+    copy_image_metadata_full_screen: 'right_menu_copy_image_metadata',
+    copy_image_preview: 'right_menu_copy_image',
+    copy_image_preview_grid: 'right_menu_copy_image',
+    remove_current_image: 'right_menu_remove_current_image',
+    remove_current_image_grid: 'right_menu_remove_current_image',
+    clear_gallery: 'right_menu_clear_gallery',
+    tag_edit_weight: 'right_menu_edit_weight',
+    tag_toggle: 'right_menu_disable_tag',
+    tag_related: 'right_menu_related_tags',
+    tag_move_to: 'right_menu_move_to',
+    tag_copy_to: 'right_menu_copy_to',
+    tag_copy_text: 'right_menu_copy_tag',
+    tag_remove: 'right_menu_remove_tag',
+    field_enable_all: 'right_menu_enable_all',
+    field_disable_all: 'right_menu_disable_all',
+    field_move_selection: 'right_menu_move_selection_to',
+    field_copy_selection: 'right_menu_copy_selection_to',
+    field_lora_to_slot: 'right_menu_send_lora_to_slot',
+    field_copy_text: 'right_menu_copy_field',
+    field_clear: 'right_menu_clear_field',
+    test_ai_generate: 'right_menu_test_ai_generate',
+});
 
-    globalThis.rightClick.setTitle('copy_image', LANG.right_menu_copy_image);
-    globalThis.rightClick.setTitle('copy_image_metadata', LANG.right_menu_copy_image_metadata);
-    globalThis.rightClick.setTitle('copy_image_grid', LANG.right_menu_copy_image);
-    globalThis.rightClick.setTitle('copy_image_metadata_grid', LANG.right_menu_copy_image_metadata);    
-    globalThis.rightClick.setTitle('copy_image_full_screen', LANG.right_menu_copy_image);
-    globalThis.rightClick.setTitle('copy_image_metadata_full_screen', LANG.right_menu_copy_image_metadata);
-    
-    globalThis.rightClick.setTitle('remove_current_image', LANG.right_menu_remove_current_image);
-    globalThis.rightClick.setTitle('remove_current_image_grid', LANG.right_menu_remove_current_image);
+function updateRightClickMenu() {
+    const LANG = lang();
+    for (const [index, key] of Object.entries(MENU_TITLES)) {
+        if (typeof LANG[key] === 'string') globalThis.rightClick.setTitle(index, LANG[key]);
+    }
+}
 
-    globalThis.rightClick.setTitle('clear_gallery', LANG.right_menu_clear_gallery);
-    globalThis.rightClick.setTitle('bcryptHash', LANG.right_menu_bcrypt_hash);
+// ---------------------------------------------------------------- prompt-field helpers
 
-    globalThis.rightClick.setTitle('lora_common_to_slot', LANG.right_menu_send_lora_to_slot);
-    globalThis.rightClick.setTitle('lora_positive_to_slot', LANG.right_menu_send_lora_to_slot);
-    globalThis.rightClick.setTitle('test_ai_generate', LANG.right_menu_test_ai_generate);
+function fieldSet() {
+    return globalThis.prompt?.tagCapsuleFields ?? null;
+}
+
+function fieldKeyOf(scope) {
+    return scope?.dataset?.fieldKey ?? null;
+}
+
+function fieldApi(scope) {
+    const key = fieldKeyOf(scope);
+    return key ? fieldSet()?.get?.(key) ?? null : null;
+}
+
+function fieldControl(key) {
+    return key ? globalThis.prompt?.[key] ?? null : null;
+}
+
+// Other prompt fields, in chain order, that can receive tags from `key`.
+function transferTargets(key) {
+    const set = fieldSet();
+    const listed = globalThis.prompt?.fieldManager?.listFields?.();
+    const entries = Array.isArray(listed) && listed.length > 0
+        ? listed
+        : [...(set?.fields?.keys() ?? [])].map(id => ({ id, label: set.get(id)?.getLabel?.() ?? id }));
+    return entries.filter(entry => entry.id !== key && set?.get?.(entry.id) && fieldControl(entry.id));
+}
+
+function targetEntries(key, apply) {
+    const targets = transferTargets(key);
+    if (targets.length === 0) return [{ label: lang().right_menu_no_target ?? '(no other field)', func: null }];
+    return targets.map(target => ({ label: target.label, func: () => apply(target.id) }));
+}
+
+function chipContext(chip) {
+    const key = fieldKeyOf(chip.closest('[data-field-key]'));
+    const field = key ? fieldSet()?.get?.(key) ?? null : null;
+    const capsule = field?.findCapsule?.(chip.dataset.capsuleId) ?? null;
+    return { key, field, capsule };
+}
+
+function textareaSelection(scope) {
+    if (!(scope instanceof HTMLTextAreaElement)) return [];
+    if (scope.selectionStart === scope.selectionEnd) return [];
+    return scope.value.slice(scope.selectionStart, scope.selectionEnd)
+        .split(/[,\n]/).map(token => token.trim()).filter(Boolean);
+}
+
+function transferSelection(scope, targetId, { copy }) {
+    const key = fieldKeyOf(scope);
+    const tokens = textareaSelection(scope);
+    const target = fieldControl(targetId);
+    const source = fieldControl(key);
+    if (tokens.length === 0 || !target || !source) return;
+    const mutate = () => {
+        target.commitValue(appendTagsToText(target.getValue(), tokens));
+        if (!copy) source.commitValue(removeTagsFromText(source.getValue(), tokens));
+    };
+    if (globalThis.settingsPersistence?.runEditTransaction) {
+        globalThis.settingsPersistence.runEditTransaction({ source: 'move-selection', sections: ['prompt'] }, mutate);
+    } else {
+        mutate();
+    }
+}
+
+async function copyText(value) {
+    try {
+        await navigator.clipboard.writeText(String(value ?? ''));
+    } catch (error) {
+        console.warn('Failed to copy text to clipboard:', error);
+    }
 }
 
 function registerDefaultMenuItems() {
-    const SETTINGS = globalThis.globalSettings;
-    const FILES = globalThis.cachedFiles;
-    const LANG = FILES.language[SETTINGS.language];
+    const LANG = lang();
+    const rc = globalThis.rightClick;
 
-    //Dynamic menu
-    // split mode
-    globalThis.rightClick.append('copy_image', LANG.right_menu_copy_image, {
-        selector: '.cg-main-image-container',
-        func: (element) => menu_copyImage(element)
+    // ---------------------------------------------------------------- tag capsule
+    rc.append('tag_edit_weight', LANG.right_menu_edit_weight, {
+        selector: '.tag-capsule-chip',
+        func: (chip) => chip.click(),
     });
-    globalThis.rightClick.append('copy_image_metadata', LANG.right_menu_copy_image_metadata, {
-        selector: '.cg-main-image-container',
-        func: async (element) => await menu_copyImageMetadata(element)
+    rc.append('tag_toggle', LANG.right_menu_disable_tag, {
+        selector: '.tag-capsule-chip',
+        label: chip => (chip.classList.contains('is-disabled') ? lang().right_menu_enable_tag : lang().right_menu_disable_tag),
+        func: (chip) => chip.querySelector('.tag-capsule-chip-toggle')?.click(),
     });
-    // line-------------------
-    globalThis.rightClick.append('separator_split_mode', null, {
-        selector: '.cg-main-image-container'
+    rc.append('tag_related', LANG.right_menu_related_tags, {
+        selector: '.tag-capsule-chip',
+        visible: () => Boolean(fieldSet()?.hasRelated),
+        func: (chip) => {
+            const { field, capsule } = chipContext(chip);
+            if (field && capsule) field.showRelated(capsule.id);
+        },
     });
-    globalThis.rightClick.append('remove_current_image', LANG.right_menu_remove_current_image, {
-        selector: '.cg-main-image-container',
-        func: (element) => { globalThis.mainGallery.removeCurrentImage(element); }
+    rc.append('separator_tag_1', null, { selector: '.tag-capsule-chip' });
+    rc.append('tag_move_to', LANG.right_menu_move_to, {
+        selector: '.tag-capsule-chip',
+        items: chip => {
+            const { key, capsule } = chipContext(chip);
+            return targetEntries(key, targetId => fieldSet()?.transfer(key, capsule?.id, targetId, { copy: false }));
+        },
+    });
+    rc.append('tag_copy_to', LANG.right_menu_copy_to, {
+        selector: '.tag-capsule-chip',
+        items: chip => {
+            const { key, capsule } = chipContext(chip);
+            return targetEntries(key, targetId => fieldSet()?.transfer(key, capsule?.id, targetId, { copy: true }));
+        },
+    });
+    rc.append('separator_tag_2', null, { selector: '.tag-capsule-chip' });
+    rc.append('tag_copy_text', LANG.right_menu_copy_tag, {
+        selector: '.tag-capsule-chip',
+        func: (chip) => copyText(chipContext(chip).capsule?.value ?? chip.querySelector('.tag-capsule-chip-name')?.textContent ?? ''),
+    });
+    rc.append('tag_remove', LANG.right_menu_remove_tag, {
+        selector: '.tag-capsule-chip',
+        func: (chip) => chip.querySelector('.tag-capsule-chip-remove')?.click(),
+    });
+    rc.append('separator_tag_3', null, { selector: '.tag-capsule-chip' });
+
+    // ---------------------------------------------------------------- prompt field
+    // (textarea in text mode, chip row / capsule view in capsule mode; custom fields included)
+    const FIELD = '[data-field-key]';
+    rc.append('field_move_selection', LANG.right_menu_move_selection_to, {
+        selector: FIELD,
+        visible: scope => textareaSelection(scope).length > 0,
+        items: scope => targetEntries(fieldKeyOf(scope), targetId => transferSelection(scope, targetId, { copy: false })),
+    });
+    rc.append('field_copy_selection', LANG.right_menu_copy_selection_to, {
+        selector: FIELD,
+        visible: scope => textareaSelection(scope).length > 0,
+        items: scope => targetEntries(fieldKeyOf(scope), targetId => transferSelection(scope, targetId, { copy: true })),
+    });
+    rc.append('separator_field_1', null, { selector: FIELD });
+    rc.append('field_enable_all', LANG.right_menu_enable_all, {
+        selector: FIELD,
+        visible: scope => (fieldApi(scope)?.getCapsules?.() ?? []).some(capsule => capsule.disabled),
+        func: scope => fieldApi(scope)?.setAllDisabled(false),
+    });
+    rc.append('field_disable_all', LANG.right_menu_disable_all, {
+        selector: FIELD,
+        visible: scope => (fieldApi(scope)?.getCapsules?.() ?? []).some(capsule => !capsule.disabled),
+        func: scope => fieldApi(scope)?.setAllDisabled(true),
+    });
+    rc.append('field_lora_to_slot', LANG.right_menu_send_lora_to_slot, {
+        selector: FIELD,
+        visible: scope => {
+            const key = fieldKeyOf(scope);
+            if (key === 'negative' || key === 'exclude') return false;
+            return /<lora:[^>]+>/.test(String(fieldControl(key)?.getValue?.() ?? ''));
+        },
+        func: scope => {
+            const key = fieldKeyOf(scope);
+            runSendLoraTransaction(() => {
+                const textPrompt = prompt_sendLoRAtoSlot(fieldControl(key));
+                if (textPrompt !== null) {
+                    fieldControl(key).commitValue(textPrompt.trim());
+                    globalThis.collapsedTabs?.lora?.setCollapsed?.(false);
+                }
+            });
+        },
+    });
+    rc.append('separator_field_2', null, { selector: FIELD });
+    rc.append('field_copy_text', LANG.right_menu_copy_field, {
+        selector: FIELD,
+        visible: scope => String(fieldControl(fieldKeyOf(scope))?.getValue?.() ?? '').trim() !== '',
+        func: scope => copyText(fieldControl(fieldKeyOf(scope))?.getValue?.() ?? ''),
+    });
+    rc.append('field_clear', LANG.right_menu_clear_field, {
+        selector: FIELD,
+        visible: scope => String(fieldControl(fieldKeyOf(scope))?.getValue?.() ?? '').trim() !== '',
+        func: scope => fieldControl(fieldKeyOf(scope))?.commitValue(''),
     });
 
-    // grid mode    
-    globalThis.rightClick.append('copy_image_grid', LANG.right_menu_copy_image, {
-        selector: '.cg-gallery-item',
-        func: (element) => menu_copyImage(element)
-    });
-    globalThis.rightClick.append('copy_image_metadata_grid', LANG.right_menu_copy_image_metadata, {
-        selector: '.cg-gallery-item',
-        func: async (element) => await menu_copyImageMetadata(element)
-    });
-    // line-------------------
-    globalThis.rightClick.append('separator_grid_mode', null, {
-        selector: '.cg-gallery-item'
-    });
-    globalThis.rightClick.append('remove_current_image_grid', LANG.right_menu_remove_current_image, {
-        selector: '.cg-gallery-item',
-        func: (element) => { 
-            const img = element.querySelector('img');
-            globalThis.mainGallery.removeCurrentImage(img.src); 
-        }
-    });
-
-    // full screen mode
-    globalThis.rightClick.append('copy_image_full_screen', LANG.right_menu_copy_image, {
-        selector: '.cg-fullscreen-overlay',
-        func: (element) => menu_copyImage(element)
-    });
-    globalThis.rightClick.append('copy_image_metadata_full_screen', LANG.right_menu_copy_image_metadata, {
-        selector: '.cg-fullscreen-overlay',
-        func: async (element) => await menu_copyImageMetadata(element)
-    });
-
-
-    // Copy thumb preview image
-    globalThis.rightClick.append('copy_image_preview', LANG.right_menu_copy_image, {
-        selector: '.cg-thumb-scroll-container',
-        func: (element) => menu_copyImage(element)
-    });
-    globalThis.rightClick.append('copy_image_preview_grid', LANG.right_menu_copy_image, {
-        selector: '.cg-thumb-item',
-        func: (element) => menu_copyImage(element)
-    });
-
-    // Common
-    globalThis.rightClick.append('lora_common_to_slot', LANG.right_menu_send_lora_to_slot, {
-        selector: '.prompt-common',
-        func: (element) => runSendLoraTransaction(() => {
-            const textPrompt = prompt_sendLoRAtoSlot(element, '.myTextbox-prompt-common-textarea ')
-            if(textPrompt) {
-                globalThis.prompt.common.commitValue(textPrompt.trim());
-                globalThis.collapsedTabs.lora.setCollapsed(false);
-            }
-        })
-    });
-    // Positive
-    globalThis.rightClick.append('lora_positive_to_slot', LANG.right_menu_send_lora_to_slot, {
-        selector: '.prompt-positive',
-        func: (element) => runSendLoraTransaction(() => {
-            const textPrompt = prompt_sendLoRAtoSlot(element, '.myTextbox-prompt-positive-textarea ')
-            if(textPrompt){
-                globalThis.prompt.positive.commitValue(textPrompt.trim());
-                globalThis.collapsedTabs.lora.setCollapsed(false);
-            }
-        })
-    });
-
-    // AI prompt
-    globalThis.rightClick.append('test_ai_generate', LANG.right_menu_test_ai_generate, {
+    // ---------------------------------------------------------------- AI prompt
+    rc.append('test_ai_generate', LANG.right_menu_test_ai_generate, {
         selector: '.prompt-ai',
         func: async (element) => await prompt_testAIgenerate(element)
     });
 
-    // line-------------------
-    globalThis.rightClick.append('separator_1', null, null);
-
-    // Static menu
-    globalThis.rightClick.append('clear_gallery', LANG.right_menu_clear_gallery, () => {
-        globalThis.mainGallery.clearGallery();
+    // ---------------------------------------------------------------- images
+    // split mode
+    rc.append('copy_image', LANG.right_menu_copy_image, {
+        selector: '.cg-main-image-container',
+        func: (element) => menu_copyImage(element)
+    });
+    rc.append('copy_image_metadata', LANG.right_menu_copy_image_metadata, {
+        selector: '.cg-main-image-container',
+        func: async (element) => await menu_copyImageMetadata(element)
+    });
+    rc.append('separator_split_mode', null, { selector: '.cg-main-image-container' });
+    rc.append('remove_current_image', LANG.right_menu_remove_current_image, {
+        selector: '.cg-main-image-container',
+        func: (element) => { globalThis.mainGallery.removeCurrentImage(element); }
     });
 
-    if(!globalThis.inBrowser) {
-        globalThis.rightClick.append('bcryptHash', LANG.right_menu_bcrypt_hash, async () => {
-            const SETTINGS = globalThis.globalSettings;
-            const FILES = globalThis.cachedFiles;
-            const LANG = FILES.language[SETTINGS.language];
-            const password = await showDialog('input', { 
-                message: LANG.right_menu_bcrypt_hash_text,
-                placeholder: 'Password', 
-                defaultValue: '',
-                showCancel: false,
-                buttonText: LANG.setup_ok
-            });
+    // grid mode
+    rc.append('copy_image_grid', LANG.right_menu_copy_image, {
+        selector: '.cg-gallery-item',
+        func: (element) => menu_copyImage(element)
+    });
+    rc.append('copy_image_metadata_grid', LANG.right_menu_copy_image_metadata, {
+        selector: '.cg-gallery-item',
+        func: async (element) => await menu_copyImageMetadata(element)
+    });
+    rc.append('separator_grid_mode', null, { selector: '.cg-gallery-item' });
+    rc.append('remove_current_image_grid', LANG.right_menu_remove_current_image, {
+        selector: '.cg-gallery-item',
+        func: (element) => {
+            const img = element.querySelector('img');
+            globalThis.mainGallery.removeCurrentImage(img.src);
+        }
+    });
 
-            const hashedPassword = await globalThis.api.bcryptHash(password);
-            globalThis.overlay.custom.createCustomOverlay(
-                'none', `\n\nRAW:\n${password}\n\nHASH:\n${hashedPassword}`,
-                384, 'center', 'left', null, 'Info');
-        });
-    }
+    // full screen mode
+    rc.append('copy_image_full_screen', LANG.right_menu_copy_image, {
+        selector: '.cg-fullscreen-overlay',
+        func: (element) => menu_copyImage(element)
+    });
+    rc.append('copy_image_metadata_full_screen', LANG.right_menu_copy_image_metadata, {
+        selector: '.cg-fullscreen-overlay',
+        func: async (element) => await menu_copyImageMetadata(element)
+    });
+
+    // thumb strip
+    rc.append('copy_image_preview', LANG.right_menu_copy_image, {
+        selector: '.cg-thumb-scroll-container',
+        func: (element) => menu_copyImage(element)
+    });
+    rc.append('copy_image_preview_grid', LANG.right_menu_copy_image, {
+        selector: '.cg-thumb-item',
+        func: (element) => menu_copyImage(element)
+    });
+
+    // ---------------------------------------------------------------- gallery
+    // Clear gallery only where the gallery is (it used to sit in every menu).
+    rc.append('separator_gallery', null, { selector: '.gallery-main-main' });
+    rc.append('clear_gallery', LANG.right_menu_clear_gallery, {
+        selector: '.gallery-main-main',
+        func: () => { globalThis.mainGallery.clearGallery(); }
+    });
 }
 
 function runSendLoraTransaction(mutation) {
@@ -621,10 +781,10 @@ function proceedWithCopy(img) {
                         console.log('Image successfully copied to clipboard');
                     } catch (err) {
                         console.warn('Failed to copy PNG image to clipboard (first attempt):', err);
-                        
+
                         // wait 1000ms then retry once
                         await new Promise(resolve => setTimeout(resolve, 1000));
-                        
+
                         try {
                         await navigator.clipboard.write([
                             new ClipboardItem({ 'image/png': blob })
@@ -632,9 +792,7 @@ function proceedWithCopy(img) {
                             console.log('Image successfully copied to clipboard (retry succeeded)');
                         } catch (error) {
                             console.warn('Failed to copy PNG image to clipboard (retry also failed):', error);
-                            const SETTINGS = globalThis.globalSettings;
-                            const FILES = globalThis.cachedFiles;
-                            const LANG = FILES.language[SETTINGS.language];
+                            const LANG = lang();
                             globalThis.overlay.custom.createCustomOverlay(
                                 'none',
                                 LANG.saac_macos_copy_image,
@@ -674,31 +832,25 @@ async function menu_copyImageMetadata(element) {
                 await navigator.clipboard.writeText(result.metadata?.parameters || result.metadata?.data);
             } catch (err){
                 console.warn('Failed to copy PNG image metadata to clipboard:', err);
-                const SETTINGS = globalThis.globalSettings;
-                const FILES = globalThis.cachedFiles;
-                const LANG = FILES.language[SETTINGS.language];
+                const LANG = lang();
                 globalThis.overlay.custom.createCustomOverlay(
                     'none', LANG.saac_macos_clipboard.replace('{0}', result.metadata),
                     384, 'center', 'left', null, 'Clipboard');
             }
-            
+
         } catch (error) {
             throw new Error(`Metadata extraction failed: ${error.message}`);
         }
     }
 }
 
-function prompt_sendLoRAtoSlot(element, textArea){
+// Pulls every <lora:…> out of a prompt field control, loads them into the LoRA slot and
+// returns the remaining prompt text (null when the field is empty / missing).
+function prompt_sendLoRAtoSlot(control) {
     try {
-        const textarea = element.querySelector(textArea);
-        if (!textarea) {
-            console.warn(`No textarea found with class ${textArea}`,);
-            return null;
-        }
-
-        const text = textarea.value.trim();
+        const text = String(control?.getValue?.() ?? '').trim();
         if (!text) {
-            console.warn(`${textArea} is empty`);
+            console.warn('Prompt field is empty');
             return null;
         }
 
@@ -707,15 +859,15 @@ function prompt_sendLoRAtoSlot(element, textArea){
         const allLora = loraMatches.join(' ');
         const allPrompt = text.replaceAll(loraRegex, '').replaceAll(/,\s*,/g, ',').replaceAll(/^,\s+|,\s+$/gm, '').trim();
 
-        if(allLora.trim() === '') {
-            console.warn(`No LoRA in ${textArea}`);
+        if (allLora.trim() === '') {
+            console.warn('No LoRA in prompt field');
         } else {
             globalThis.lora.flushSlot(allLora);
         }
 
         return `${allPrompt} `;
     } catch (err) {
-        console.error(`Error on get ${textArea} prompt:`, err);
+        console.error('Error on get prompt field text:', err);
         return null;
     }
 }

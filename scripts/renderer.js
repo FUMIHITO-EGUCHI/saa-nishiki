@@ -28,6 +28,7 @@ import { setupThemeToggle } from './renderer/theme.js';
 import { setupSettingsModal } from './renderer/settingsModal.js';
 import { setupTagSelectionModal } from './renderer/tagSelectionModal.js';
 import { setupTagCapsuleFields } from './renderer/components/tagCapsuleField.js';
+import { fetchRelatedTags } from './renderer/tagRelatedClient.js';
 import { setupUiShell } from './renderer/uiShell.js';
 import { setupListManager } from './renderer/listManager.js';
 import { filterPrompts } from './renderer/tools/promptFilter.js';
@@ -451,6 +452,7 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
     ], {
         keys: ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'exclude'],
         applyExclude: (prompt, exclude) => filterPrompts(prompt, prompt, exclude).positivePrompt,
+        fetchRelated: value => fetchRelatedTags(value),
         finalPromptContainer: document.querySelector('#prompt-text-container .prompt-fields') ?? document.querySelector('#prompt-text-container'),
     });
     globalThis.prompt.fieldManager = setupPromptFieldManager();

@@ -114,6 +114,8 @@ contextBridge.exposeInMainWorld('api', {
   // Tag Auto Complete
   tagReload: async (language) => ipcRenderer.invoke('tag-reload', language),
   tagGet: async (text, options) => ipcRenderer.invoke('tag-get-suggestions', text, options),
+  tagRelated: async (tag, options) => ipcRenderer.invoke('tag-related', tag, options),
+  tagRelatedAvailable: async () => ipcRenderer.invoke('tag-related-available'),
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),

@@ -83,6 +83,12 @@ export const TAG_UI_DEFAULTS = Object.freeze({
     tag_ui_fav_remove: 'Remove {0} from favorites',
     tag_ui_modal_favorites_prompt: 'Showing favorites. Type to search all tags; Enter adds unknown text as a new tag.',
     tag_ui_modal_search_prompt: 'Enter a tag or character name to search. Enter adds unknown text as a new tag.',
+    tag_ui_related_title: 'Related · {0}',
+    tag_ui_related_cooccur: 'Often together',
+    tag_ui_related_family: '…{0}',
+    tag_ui_related_none: 'No suggestions',
+    tag_ui_related_loading: 'Loading…',
+    tag_ui_related_toggle: 'Tag suggestions (offline co-occurrence dictionary)',
 });
 
 export function formatText(template, args = []) {

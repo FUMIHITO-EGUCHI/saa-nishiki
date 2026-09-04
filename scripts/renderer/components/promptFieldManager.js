@@ -561,5 +561,9 @@ export function setupPromptFieldManager() {
     return {
         refresh: () => { renderCustomFields(); applyDomOrder(); },
         openEditor,
+        // visible prompt fields in chain order (right-click "Move to" targets)
+        listFields: () => listEntries()
+            .filter(entry => entry.id && isAvailable(unitContainer(entry.id)))
+            .map(entry => ({ id: entry.id, label: fieldLabel(entry.id) })),
     };
 }

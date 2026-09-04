@@ -8,9 +8,11 @@ import {
     excludedTagSet,
     expandAll,
     handleChipKey,
+    insertCapsules,
     isVariablePlan,
     moveCapsule,
     normalizeBatch,
+    normalizeTagName,
     nudgeCapsuleWeight,
     parsePlans,
     parsePromptToCapsules,
@@ -22,6 +24,7 @@ import {
     setAllCapsulesDisabled,
     setCapsulePlan,
     toggleCapsuleDisabled,
+    transferCapsule,
 } from './tagCapsuleLogic.js';
 import { createIcon, renderChips } from './tagCapsuleChip.js';
 import { FAVORITE_TAGS_CHANGED_EVENT, favGroupForKey, isFavoriteTag } from './favoriteTags.js';
@@ -64,6 +67,8 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         onSeedChange = null,
         onModeChange = null,     // (mode) — the field set mirrors the Text/Capsules choice to every field
         initialMode = 'string',
+        onExternalDrop = null,   // ({ field, id }, at, { copy }) — a chip dragged in from another field
+        fetchRelated = null,     // async (tagValue) => { related: [{tag, score}], family: [{tag}] }
     } = options;
 
     const textbox = textboxControl?.getElement?.();
@@ -124,6 +129,10 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     view.hidden = true;
     const chips = el('div', 'tag-capsule-chips');
     chips.setAttribute('role', 'group');
+    // the right-click menu and cross-field drag-and-drop find the owning field by this key
+    view.dataset.fieldKey = key;
+    chips.dataset.fieldKey = key;
+    textbox.dataset.fieldKey = key;
     const addButton = el('button', 'tag-capsule-add');
     addButton.type = 'button';
     addButton.tabIndex = -1;
@@ -134,6 +143,20 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     addSlot.append(addButton);
     chips.appendChild(addSlot);
     view.appendChild(chips);
+
+    // Related-tag strip: fed by the offline co-occurrence dictionary for the focused chip.
+    const suggest = el('div', 'tag-capsule-suggest');
+    suggest.hidden = true;
+    const suggestHead = el('div', 'tag-capsule-suggest-head');
+    const suggestTitle = el('span', 'tag-capsule-suggest-title');
+    const suggestClose = el('button', 'tag-capsule-suggest-close');
+    suggestClose.type = 'button';
+    suggestClose.tabIndex = -1;
+    suggestClose.appendChild(createIcon('close', 11));
+    suggestHead.append(suggestTitle, suggestClose);
+    const suggestBody = el('div', 'tag-capsule-suggest-body');
+    suggest.append(suggestHead, suggestBody);
+    view.appendChild(suggest);
 
     const footer = el('div', 'tag-capsule-footer');
     const stats = el('div', 'tag-capsule-stats');
@@ -150,7 +173,13 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     batchButton.appendChild(createIcon('layers', 13));
     const batchButtonText = el('span', 'tag-capsule-batch-text');
     batchButton.appendChild(batchButtonText);
-    footer.append(stats, batchButton);
+    const suggestButton = el('button', 'tag-capsule-suggest-toggle');
+    suggestButton.type = 'button';
+    suggestButton.hidden = typeof fetchRelated !== 'function';
+    suggestButton.appendChild(createIcon('spark', 13));
+    const footerTools = el('div', 'tag-capsule-footer-tools');
+    footerTools.append(suggestButton, batchButton);
+    footer.append(stats, footerTools);
     view.appendChild(footer);
     wrapper.appendChild(view);
 
@@ -177,6 +206,10 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         addButtonText.textContent = text('tag_ui_add_tag');
         addButton.setAttribute('aria-label', text('tag_ui_add_tag'));
         batchButtonText.textContent = text('tag_ui_batch_weights');
+        suggestButton.title = text('tag_ui_related_toggle');
+        suggestButton.setAttribute('aria-label', text('tag_ui_related_toggle'));
+        suggestClose.title = text('tag_ui_close');
+        suggestClose.setAttribute('aria-label', text('tag_ui_close'));
         chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
         renderFooter();
         renderBadge();
@@ -220,6 +253,101 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         onChange?.(api);
     }
 
+    // ---------------------------------------------------------------- related-tag strip
+    const SUGGEST_STORAGE_KEY = 'saa.tagSuggest';
+    function suggestEnabled() {
+        try { return localStorage.getItem(SUGGEST_STORAGE_KEY) !== 'off'; } catch { return true; }
+    }
+    function setSuggestEnabled(enabled) {
+        try { localStorage.setItem(SUGGEST_STORAGE_KEY, enabled ? 'on' : 'off'); } catch { /* storage blocked */ }
+        suggestButton.classList.toggle('is-on', enabled);
+        if (!enabled) hideSuggestions();
+    }
+    let suggestFor = '';
+    let suggestToken = 0;
+    let suggestTimer = 0;
+
+    function hideSuggestions() {
+        suggestFor = '';
+        suggestToken += 1;
+        suggest.hidden = true;
+        suggestBody.replaceChildren();
+    }
+
+    function displayTag(tag) {
+        return String(tag ?? '').replaceAll('_', ' ');
+    }
+
+    function renderSuggestions(capsule, result) {
+        const present = new Set(capsules.map(item => normalizeTagName(item.value)));
+        const groups = [
+            { label: text('tag_ui_related_cooccur'), items: result?.related ?? [] },
+            { label: text('tag_ui_related_family', displayTag(result?.familyWord ?? '')), items: result?.family ?? [] },
+        ];
+        suggestTitle.textContent = text('tag_ui_related_title', capsule.value);
+        suggestBody.replaceChildren();
+        let shown = 0;
+        for (const group of groups) {
+            const items = group.items.filter(item => !present.has(normalizeTagName(displayTag(item.tag))));
+            if (items.length === 0) continue;
+            const row = el('div', 'tag-capsule-suggest-row');
+            row.appendChild(el('span', 'tag-capsule-suggest-label', group.label));
+            for (const item of items) {
+                const button = el('button', 'tag-capsule-suggest-chip', displayTag(item.tag));
+                button.type = 'button';
+                button.tabIndex = -1;
+                button.dataset.tag = displayTag(item.tag);
+                if (Number.isFinite(item.score)) button.title = `${displayTag(item.tag)} · ${item.score}`;
+                row.appendChild(button);
+                shown += 1;
+            }
+            suggestBody.appendChild(row);
+        }
+        if (shown === 0) suggestBody.appendChild(el('span', 'tag-capsule-suggest-empty', text('tag_ui_related_none')));
+        suggest.hidden = false;
+    }
+
+    async function showSuggestions(index, { force = false } = {}) {
+        if (typeof fetchRelated !== 'function') return;
+        if (!force && !suggestEnabled()) return;
+        const capsule = capsules[index];
+        if (!capsule) return;
+        if (suggestFor === capsule.value && !suggest.hidden) return;
+        suggestFor = capsule.value;
+        const token = ++suggestToken;
+        suggestTitle.textContent = text('tag_ui_related_title', capsule.value);
+        suggestBody.replaceChildren(el('span', 'tag-capsule-suggest-empty', text('tag_ui_related_loading')));
+        suggest.hidden = false;
+        let result = null;
+        try { result = await fetchRelated(capsule.value); } catch (error) { console.warn('[tagCapsuleField] related tags failed:', error); }
+        if (token !== suggestToken) return;
+        renderSuggestions(capsule, result);
+    }
+
+    function scheduleSuggestions(index) {
+        clearTimeout(suggestTimer);
+        suggestTimer = setTimeout(() => { showSuggestions(index); }, 160);
+    }
+
+    suggestBody.addEventListener('click', event => {
+        const button = event.target.closest('.tag-capsule-suggest-chip');
+        if (!button) return;
+        const sourceIndex = capsules.findIndex(item => item.value === suggestFor);
+        const at = sourceIndex >= 0 ? sourceIndex + 1 : capsules.length;
+        const next = insertCapsules(capsules, [button.dataset.tag], at);
+        if (next === capsules) return;
+        commitCapsules(next);
+        button.remove();
+        focusChip(at);
+    });
+    suggestClose.addEventListener('click', () => hideSuggestions());
+    suggestButton.addEventListener('click', () => {
+        const enabled = !suggestEnabled();
+        setSuggestEnabled(enabled);
+        if (enabled && focusIndex < capsules.length) showSuggestions(focusIndex, { force: true });
+    });
+    suggestButton.classList.toggle('is-on', suggestEnabled());
+
     function renderBadge() {
         const { variable } = capsuleStats(capsules);
         const show = mode === 'string' && variable > 0;
@@ -259,6 +387,8 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         }
         renderFooter();
         renderBadge();
+        // the strip follows a chip; once that chip is gone the strip goes too
+        if (suggestFor && !capsules.some(item => item.value === suggestFor)) hideSuggestions();
     }
 
     function focusChip(index, { fallbackToAdd = true } = {}) {
@@ -294,6 +424,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             if (focus) focusChip(0);
         } else {
             getWeightPopover().close();
+            hideSuggestions();
             writeCurrentText();
             mode = 'string';
             relativeContainer.hidden = false;
@@ -370,7 +501,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
 
     chips.addEventListener('focusin', event => {
         const index = chipIndexOf(event.target);
-        if (index >= 0) { focusIndex = index; updateRoving(); }
+        if (index >= 0) { focusIndex = index; updateRoving(); scheduleSuggestions(index); }
     });
 
     chips.addEventListener('keydown', event => {
@@ -416,12 +547,17 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         }
     });
 
-    // Drag = Ctrl+←→ equivalent (§9.6)
+    // Drag = Ctrl+←→ equivalent (§9.6) inside one field; dropping on another field's chip
+    // row moves the capsule there (Ctrl/Alt held = copy). The payload rides under its own
+    // MIME type so only chip rows accept it.
+    const CAPSULE_MIME = 'application/x-saa-capsule';
+    const isExternalDrag = event => dragIndex < 0 && Array.from(event.dataTransfer?.types ?? []).includes(CAPSULE_MIME);
     chips.addEventListener('dragstart', event => {
         dragIndex = chipIndexOf(event.target);
         if (dragIndex < 0) { event.preventDefault(); return; }
-        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.effectAllowed = 'copyMove';
         event.dataTransfer.setData('text/plain', capsules[dragIndex]?.value ?? '');
+        event.dataTransfer.setData(CAPSULE_MIME, JSON.stringify({ field: key, id: capsules[dragIndex]?.id ?? '' }));
         event.target.classList.add('is-dragging');
     });
     chips.addEventListener('dragend', event => {
@@ -429,20 +565,40 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         dragIndex = -1;
     });
     chips.addEventListener('dragover', event => {
-        if (dragIndex < 0) return;
+        if (dragIndex >= 0) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            return;
+        }
+        if (!isExternalDrag(event)) return;
         event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
+        event.dataTransfer.dropEffect = event.ctrlKey || event.altKey ? 'copy' : 'move';
+        chips.classList.add('is-drop-target');
+    });
+    chips.addEventListener('dragleave', event => {
+        if (!chips.contains(event.relatedTarget)) chips.classList.remove('is-drop-target');
     });
     chips.addEventListener('drop', event => {
-        if (dragIndex < 0) return;
-        event.preventDefault();
-        let target = chipIndexOf(event.target);
-        if (target < 0) target = capsules.length - 1;
-        if (target !== dragIndex) {
-            commitCapsules(moveCapsule(capsules, dragIndex, target));
-            focusChip(target);
+        chips.classList.remove('is-drop-target');
+        if (dragIndex >= 0) {
+            event.preventDefault();
+            let target = chipIndexOf(event.target);
+            if (target < 0) target = capsules.length - 1;
+            if (target !== dragIndex) {
+                commitCapsules(moveCapsule(capsules, dragIndex, target));
+                focusChip(target);
+            }
+            dragIndex = -1;
+            return;
         }
-        dragIndex = -1;
+        if (!isExternalDrag(event)) return;
+        event.preventDefault();
+        let payload = null;
+        try { payload = JSON.parse(event.dataTransfer.getData(CAPSULE_MIME) || 'null'); } catch { payload = null; }
+        if (!payload?.field || !payload?.id || payload.field === key) return;
+        const over = chipIndexOf(event.target);
+        const at = over < 0 ? capsules.length : over;
+        onExternalDrop?.(payload, at, { copy: event.ctrlKey || event.altKey });
     });
 
     // ---------------------------------------------------------------- toggle events
@@ -548,6 +704,22 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             omitDisabled: true,
         }),
         setAllDisabled: disabled => { commitCapsules(setAllCapsulesDisabled(capsules, disabled)); },
+        getLabel: fieldLabel,
+        // cross-field transfer + context menu entry points
+        replaceCapsules: next => { commitCapsules(Array.isArray(next) ? next : capsules); },
+        findCapsule: id => capsules.find(capsule => capsule.id === id) ?? null,
+        insertTags: (values, at = capsules.length) => {
+            const next = insertCapsules(capsules, values, at);
+            if (next !== capsules) commitCapsules(next);
+        },
+        focusCapsule: id => {
+            const index = capsules.findIndex(capsule => capsule.id === id);
+            if (index >= 0) focusChip(index);
+        },
+        showRelated: id => {
+            const index = capsules.findIndex(capsule => capsule.id === id);
+            if (index >= 0) showSuggestions(index, { force: true });
+        },
     };
     if (initialMode === 'capsule') setMode('capsule');
     return api;
@@ -564,6 +736,7 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         applyExclude = null,
         finalPromptContainer = null,
         showRight = () => Boolean(globalThis.globalSettings?.regional_condition),
+        fetchRelated = null,     // async (tagValue) => related-tag groups (null disables the strip)
     } = options;
 
     const fields = new Map();
@@ -625,6 +798,8 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
             getGenerationSeed,
             initialMode: sharedMode,
             onModeChange: propagateMode,
+            fetchRelated,
+            onExternalDrop: (payload, at, { copy }) => set.transfer(payload.field, payload.id, key, { at, copy }),
             getExcludeText: () => fields.get('exclude')?.textbox?.value ?? globalThis.prompt?.exclude?.getValue?.() ?? '',
             initialPlans: stored[`${key}_weight_plans`] ?? [],
             initialBatch: stored[`${key}_batch`] ?? DEFAULT_BATCH,
@@ -680,6 +855,27 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         },
         getMode: () => sharedMode,
         setMode: mode => propagateMode(mode === 'capsule' ? 'capsule' : 'string'),
+        // Moves (copy: duplicates) one capsule into another field, weight plan and
+        // disabled state included. Returns the inserted capsule or null.
+        transfer: (sourceKey, capsuleId, targetKey, { at, copy = false } = {}) => {
+            const source = fields.get(sourceKey);
+            const target = fields.get(targetKey);
+            if (!source || !target || sourceKey === targetKey) return null;
+            const result = transferCapsule(source.getCapsules(), target.getCapsules(), capsuleId, { at, copy });
+            if (!result.moved) return null;
+            batchUpdateDepth += 1;
+            try {
+                if (!copy) source.replaceCapsules(result.source);
+                target.replaceCapsules(result.target);
+            } finally {
+                batchUpdateDepth = Math.max(0, batchUpdateDepth - 1);
+            }
+            requestFinalPromptRefresh();
+            target.focusCapsule(result.moved.id);
+            return result.moved;
+        },
+        fieldKeyOf: element => element?.closest?.('[data-field-key]')?.dataset.fieldKey ?? null,
+        hasRelated: typeof fetchRelated === 'function',
         beginBatchUpdate: () => { batchUpdateDepth += 1; },
         endBatchUpdate: () => {
             batchUpdateDepth = Math.max(0, batchUpdateDepth - 1);

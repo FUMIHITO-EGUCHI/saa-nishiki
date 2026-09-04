@@ -17,6 +17,7 @@ import { registerBackendStatus } from './scripts/main/backendStatus.js';
 import { setupDownloadFiles } from './scripts/main/downloadFiles.js';
 import { setupModelList } from './scripts/main/modelList.js';
 import { setupTagAutoCompleteBackend } from './scripts/main/tagAutoComplete_backend.js';
+import { setupTagRelatedBackend } from './scripts/main/tagRelated_backend.js';
 import { setupModelApi } from './scripts/main/remoteAI_backend.js';
 import { setupGenerateBackendComfyUI, sendToRenderer } from './scripts/main/generate_backend_comfyui.js';
 import { stopPodSshSession } from './scripts/main/podSshTransport.js';
@@ -101,6 +102,7 @@ async function initializeApp() {
   setupWildcardsHandlers();
 
   const tacSuccess = await setupTagAutoCompleteBackend(SETTINGS.language);
+  setupTagRelatedBackend();
   setupModelApi();
   setupGenerateBackendComfyUI();
   setupGenerateBackendWebUI();  
