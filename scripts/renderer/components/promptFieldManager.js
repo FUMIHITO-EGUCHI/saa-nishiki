@@ -74,15 +74,12 @@ export function setupPromptFieldManager() {
         for (const container of fieldsHost.querySelectorAll('.prompt-custom-field')) {
             const id = container.dataset.fieldId;
             if (!wanted.has(id)) {
+                // A field can vanish because a prompt preset without it was loaded;
+                // its per-field presets stay so the field returns intact with the
+                // preset that has it (the editor's delete drops them explicitly).
                 container.remove();
                 delete globalThis.prompt[id];
                 globalThis.prompt.tagCapsuleFields?.remove?.(id);
-                // presets are keyed by field id; drop the orphaned bucket
-                if (SETTINGS.prompt_field_presets && typeof SETTINGS.prompt_field_presets === 'object' && id in SETTINGS.prompt_field_presets) {
-                    const store = { ...SETTINGS.prompt_field_presets };
-                    delete store[id];
-                    SETTINGS.prompt_field_presets = store;
-                }
             }
         }
         for (const field of fields) {
@@ -535,6 +532,12 @@ export function setupPromptFieldManager() {
                         remove.addEventListener('click', () => {
                             fields = fields.filter(field => field.id !== custom.id);
                             SETTINGS[orderKey] = SETTINGS[orderKey].filter(unitId => unitId !== custom.id);
+                            // explicit delete: the field's preset bucket goes with it
+                            if (SETTINGS.prompt_field_presets && typeof SETTINGS.prompt_field_presets === 'object' && custom.id in SETTINGS.prompt_field_presets) {
+                                const store = { ...SETTINGS.prompt_field_presets };
+                                delete store[custom.id];
+                                SETTINGS.prompt_field_presets = store;
+                            }
                             persistFields();
                             renderCustomFields();
                             applyDomOrder();

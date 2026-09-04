@@ -108,9 +108,10 @@ export function collectSection(section) {
 
 /**
  * Atomically write multiple editable sections, then refresh derived UI once.
- * `mergeLayout` (default): a prompt section keeps the current custom prompt
- * fields / chain order and only takes the preset's texts — loading an older
- * preset must not delete fields. Undo / redo restore exact snapshots instead.
+ * `mergeLayout` (default): a prompt section's custom fields / chain order come
+ * from the preset when it carries them (fields appear and disappear with the
+ * preset), stay as they are for presets from before custom fields existed, and
+ * per-field presets are unioned. Undo / redo restore exact snapshots instead.
  */
 export function applySectionsData(sectionData = {}, { mergeLayout = true } = {}) {
     if (!raw || !sectionData || typeof sectionData !== 'object') return false;

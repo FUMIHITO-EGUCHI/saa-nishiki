@@ -18,46 +18,46 @@ const current = {
     prompt_field_presets: { cf_body0001: [{ name: 'fox', text: 'fox ears' }], style: [{ name: 's', text: 'anime' }] },
 };
 
-test('a preset saved without custom fields keeps every field, only empties their text', () => {
-    const merged = mergePromptFieldLayout(current, { prompt_custom_fields: [], prompt_positive_order: ['positive', 'common'], prompt_negative_order: ['negative'] });
-    assert.deepEqual(merged.prompt_custom_fields.map(f => [f.id, f.name, f.text]), [
-        ['cf_body0001', 'Body', ''], ['cf_gear0001', 'Equipment', ''], ['cf_bad00001', 'Bad', ''],
-    ]);
-    // layout order is the current one, not the preset's
+test('a preset that carries fields is the authority: fewer fields → fields go, more → fields come', () => {
+    const fewer = mergePromptFieldLayout(current, { prompt_custom_fields: [{ ...body, text: 'cat ears' }], prompt_positive_order: ['cf_body0001', 'positive'] });
+    assert.deepEqual(fewer.prompt_custom_fields, [{ ...body, text: 'cat ears' }]);
+    assert.deepEqual(fewer.prompt_positive_order, ['cf_body0001', 'positive', 'common', 'views', 'background', 'style', 'ai', 'characters']);
+    assert.deepEqual(fewer.prompt_negative_order, ['negative']);
+
+    const extra = { id: 'cf_extra001', name: 'Extra', polarity: 'positive', text: 'sword' };
+    const more = mergePromptFieldLayout(current, { prompt_custom_fields: [body, gear, bad, extra] });
+    assert.deepEqual(more.prompt_custom_fields.map(f => f.id), ['cf_body0001', 'cf_gear0001', 'cf_bad00001', 'cf_extra001']);
+    assert.ok(more.prompt_positive_order.includes('cf_extra001'));
+
+    const none = mergePromptFieldLayout(current, { prompt_custom_fields: [] });
+    assert.deepEqual(none.prompt_custom_fields, []);
+    assert.deepEqual(none.prompt_positive_order, ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive']);
+});
+
+test('a preset that predates custom fields (no key) leaves fields and order alone', () => {
+    const merged = mergePromptFieldLayout(current, { api_prompt: '1girl', prompt_positive_order: ['positive'] });
+    assert.deepEqual(merged.prompt_custom_fields, [body, gear, bad]);
     assert.deepEqual(merged.prompt_positive_order, current.prompt_positive_order);
     assert.deepEqual(merged.prompt_negative_order, current.prompt_negative_order);
-    assert.deepEqual(merged.prompt_field_presets, current.prompt_field_presets);
 });
 
-test('a preset that predates custom fields (no key) leaves texts alone', () => {
-    const merged = mergePromptFieldLayout(current, { api_prompt: '1girl' });
-    assert.deepEqual(merged.prompt_custom_fields, [body, gear, bad]);
-});
-
-test('a preset carrying fields supplies their text and adds unknown fields at the end', () => {
-    const extra = { id: 'cf_extra001', name: 'Extra', polarity: 'positive', text: 'sword' };
+test('per-field presets are a library: unioned, current wins, never dropped by a preset switch', () => {
     const merged = mergePromptFieldLayout(current, {
-        prompt_custom_fields: [{ ...body, name: 'Renamed', text: 'cat ears' }, extra],
-        prompt_positive_order: ['cf_extra001', 'positive', 'cf_body0001'],
-        prompt_field_presets: { cf_extra001: [{ name: 'x', text: 'sword' }], style: [{ name: 'old', text: 'old' }] },
+        prompt_custom_fields: [gear],
+        prompt_field_presets: { cf_gear0001: [{ name: 'g', text: 'armor' }], style: [{ name: 'old', text: 'old' }] },
     });
-    const byId = Object.fromEntries(merged.prompt_custom_fields.map(f => [f.id, f]));
-    assert.equal(byId.cf_body0001.text, 'cat ears');
-    assert.equal(byId.cf_body0001.name, 'Body', 'the current name (layout) wins over the preset name');
-    assert.equal(byId.cf_gear0001.text, '', 'fields the preset does not know are emptied');
-    assert.equal(byId.cf_extra001.text, 'sword');
-    assert.deepEqual(merged.prompt_positive_order, [...current.prompt_positive_order, 'cf_extra001']);
-    assert.deepEqual(merged.prompt_field_presets.style, current.prompt_field_presets.style, 'current per-field presets win');
-    assert.deepEqual(merged.prompt_field_presets.cf_extra001, [{ name: 'x', text: 'sword' }], 'new buckets are adopted');
+    assert.deepEqual(merged.prompt_field_presets, {
+        cf_gear0001: [{ name: 'g', text: 'armor' }],
+        cf_body0001: [{ name: 'fox', text: 'fox ears' }],
+        style: [{ name: 's', text: 'anime' }],
+    });
+    const manager = read('scripts/renderer/components/promptFieldManager.js');
+    // the container sweep does not delete preset buckets; only the editor's delete button does
+    assert.match(manager, /container\.remove\(\);\s*delete globalThis\.prompt\[id\];\s*globalThis\.prompt\.tagCapsuleFields\?\.remove\?\.\(id\);\s*\}/);
+    assert.match(manager, /\/\/ explicit delete: the field's preset bucket goes with it/);
 });
 
-test('empty layout adopts the preset fields wholesale', () => {
-    const merged = mergePromptFieldLayout({}, { prompt_custom_fields: [body], prompt_positive_order: ['positive'] });
-    assert.deepEqual(merged.prompt_custom_fields, [body]);
-    assert.deepEqual(merged.prompt_positive_order, ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive', 'cf_body0001']);
-});
-
-test('preset apply merges the layout, undo restores snapshots exactly, and the field manager re-syncs', () => {
+test('preset apply goes through the layout merge, undo restores snapshots exactly, and the field manager re-syncs', () => {
     const persistence = read('scripts/renderer/settingsPersistence.js');
     assert.match(persistence, /export function applySectionsData\(sectionData = \{\}, \{ mergeLayout = true \} = \{\}\)/);
     assert.match(persistence, /if \(section === 'prompt' && mergeLayout && data && typeof data === 'object'\) \{\s*data = \{ \.\.\.data, \.\.\.mergePromptFieldLayout\(raw, data\) \};/);
