@@ -148,6 +148,20 @@ function setFastSetting(key, value) {
     globalThis.settingsPersistence?.flush?.();
 }
 
+// A batch with a fixed seed repeats (or only increments) the same image; ask first.
+async function confirmBatchSeed() {
+    const loops = Number(globalThis.generate?.batch?.getValue?.() ?? 1);
+    const seed = Number(globalThis.generate?.seed?.getValue?.() ?? -1);
+    if (loops <= 1 || seed < 0) return true;
+    const LANG = globalThis.cachedFiles.language[globalThis.globalSettings.language];
+    return showDialog('confirm', {
+        message: (LANG.batch_seed_confirm ?? 'Seed is fixed ({0}). Run the batch of {1} anyway?')
+            .replace('{0}', String(seed)).replace('{1}', String(loops)),
+        yesText: LANG.batch_seed_confirm_yes ?? 'Run',
+        noText: LANG.batch_seed_confirm_no ?? 'Cancel',
+    });
+}
+
 export async function createGenerate(SETTINGS, FILES, LANG) {
     console.log('Creating globalThis.generate');
     const regionalConditionControl = setupCheckbox('regional-condition-trigger-dummy', LANG.regional_condition, SETTINGS.regional_condition, true,
@@ -204,6 +218,7 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 hidden: false,
                 clickable: true              
             }, async () =>{
+                if (!(await confirmBatchSeed())) return;
                 await callback_generate_start('normal', {loops:globalThis.generate.batch.getValue(), runSame:false});
             }),
         generate_same: setupButtons('generate-button-same', LANG.run_same_button, {
@@ -215,8 +230,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 hidden: false,
                 clickable: true              
             }, async () =>{
+                if (!(await confirmBatchSeed())) return;
                 await callback_generate_start('normal', {loops:globalThis.generate.batch.getValue(), runSame:true});
-            }),            
+            }),
         generate_skip: setupButtons('generate-button-skip', LANG.run_skip_button, {
                 defaultColor: 'rgb(82,82,91)',
                 hoverColor: 'rgb(63,63,70)',

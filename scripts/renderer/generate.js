@@ -18,6 +18,7 @@ import { resolveQueuedAiPrompt } from './tools/refineGenerationResult.js';
 import { applyRefineEditorPatch } from './tools/refineEditorApplication.js';
 import { completeRefineRunItem, createRefineRunController, recordRefineRunCandidate } from './tools/refineRunState.js';
 import { asFragment, joinOrderedUnits, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
+import { stripDisabledTags } from './components/tagCapsuleLogic.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
 
@@ -203,8 +204,8 @@ export function getViewTags(seed, includeFields = true) {
 // Custom prompt fields: live component value when the UI has one, stored text otherwise.
 function readCustomFieldValue(field) {
     const component = globalThis.prompt?.[field.id];
-    if (component?.getValue) return String(component.getValue() ?? '');
-    return field.text || '';
+    const raw = component?.getValue ? String(component.getValue() ?? '') : (field.text || '');
+    return stripDisabledTags(raw); // "~tag" = toggled off on its capsule
 }
 
 export function getCustomFieldTexts(polarity) {

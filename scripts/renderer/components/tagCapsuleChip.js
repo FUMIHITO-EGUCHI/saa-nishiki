@@ -91,7 +91,7 @@ export function modeIconName(mode) {
 export function chipSignature(capsule, options = {}) {
     const plan = normalizeWeightPlan(capsule.weightPlan);
     return [capsule.id, capsule.value, plan.mode, plan.min, plan.max, plan.step, plan.seed,
-        options.excluded ? 1 : 0, options.favorite ? 1 : 0].join('|');
+        options.excluded ? 1 : 0, options.favorite ? 1 : 0, capsule.disabled ? 1 : 0].join('|');
 }
 
 export function createChip(capsule, options = {}) {
@@ -101,6 +101,12 @@ export function createChip(capsule, options = {}) {
     chip.className = 'tag-capsule-chip';
     chip.tabIndex = -1;
     chip.draggable = true;
+
+    // one-touch enable/disable dot; the field toggles `disabled` when it is clicked
+    const toggle = document.createElement('span');
+    toggle.className = 'tag-capsule-chip-toggle';
+    toggle.setAttribute('aria-hidden', 'true');
+    chip.appendChild(toggle);
 
     const fav = document.createElement('span');
     fav.className = 'tag-capsule-chip-fav';
@@ -141,6 +147,10 @@ export function updateChip(chip, capsule, options = {}) {
     chip.classList.toggle('is-warn', weightWarning(plan));
     chip.classList.toggle('is-excluded', excluded);
     chip.classList.toggle('is-fav', favorite);
+    chip.classList.toggle('is-disabled', capsule.disabled === true);
+    chip.setAttribute('aria-pressed', capsule.disabled === true ? 'false' : 'true');
+    const toggleMark = chip.querySelector('.tag-capsule-chip-toggle');
+    if (toggleMark && typeof text === 'function') toggleMark.title = text(capsule.disabled ? 'tag_ui_enable_tag' : 'tag_ui_disable_tag');
     const favMark = chip.querySelector('.tag-capsule-chip-fav');
     if (favMark) favMark.hidden = !favorite;
 
@@ -163,6 +173,7 @@ export function updateChip(chip, capsule, options = {}) {
         labelParts.push(`weight ${formatTagWeight(plan.min)}`);
     }
     if (excluded && typeof text === 'function') labelParts.push(text('tag_ui_excluded'));
+    if (capsule.disabled && typeof text === 'function') labelParts.push(text('tag_ui_disabled'));
     chip.setAttribute('aria-label', labelParts.join(', '));
     chip.title = excluded && typeof text === 'function' ? `${capsule.value} — ${text('tag_ui_excluded')}` : capsule.value;
     return chip;

@@ -6,6 +6,7 @@
 // prompt_positive_order / prompt_negative_order (unit id arrays; see
 // scripts/shared/promptFieldOrder.js), prompt_field_presets {key: [{name, text}]}.
 import { setupTextbox } from './myTextbox.js';
+import { setupTagSelectionModal } from '../tagSelectionModal.js';
 import {
     STRUCTURAL_UNITS,
     makeCustomFieldId,
@@ -66,6 +67,13 @@ export function setupPromptFieldManager() {
             if (!wanted.has(id)) {
                 container.remove();
                 delete globalThis.prompt[id];
+                globalThis.prompt.tagCapsuleFields?.remove?.(id);
+                // presets are keyed by field id; drop the orphaned bucket
+                if (SETTINGS.prompt_field_presets && typeof SETTINGS.prompt_field_presets === 'object' && id in SETTINGS.prompt_field_presets) {
+                    const store = { ...SETTINGS.prompt_field_presets };
+                    delete store[id];
+                    SETTINGS.prompt_field_presets = store;
+                }
             }
         }
         for (const field of fields) {
@@ -86,6 +94,11 @@ export function setupPromptFieldManager() {
                     field.text = value;
                     persistFields();
                 });
+                // Same tag picker + capsule view as the built-in fields (the picker's
+                // trigger must exist before the capsule header adopts it).
+                const control = globalThis.prompt[field.id];
+                setupTagSelectionModal([control], [field.id]);
+                globalThis.prompt.tagCapsuleFields?.add?.(control, field.id);
                 attachPresetButton(container, field.id, () => globalThis.prompt[field.id],
                     (text) => { field.text = text; persistFields(); });
             } else {

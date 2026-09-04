@@ -161,40 +161,74 @@ export function assignCapsuleIds(capsules = []) {
     });
 }
 
+// A disabled tag stays in the field text with a leading marker ("~long hair") so
+// it survives text-mode editing and presets, and is dropped when the prompt is built.
+export const DISABLED_TAG_MARKER = '~';
+
 export function parsePromptToCapsules(text = '') {
     const parsed = String(text ?? '')
         .split(/[,\n]/)
         .map(token => token.trim())
         .filter(Boolean)
         .map(token => {
-            const weighted = /^\((.*):\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\)$/.exec(token);
-            const value = (weighted ? weighted[1] : token).trim();
+            const disabled = token.startsWith(DISABLED_TAG_MARKER);
+            const body = disabled ? token.slice(DISABLED_TAG_MARKER.length).trim() : token;
+            const weighted = /^\((.*):\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\)$/.exec(body);
+            const value = (weighted ? weighted[1] : body).trim();
             const weight = weighted ? Number(weighted[2]) : DEFAULT_WEIGHT;
-            return { value, weightPlan: createFixedWeightPlan(weight) };
+            return { value, weightPlan: createFixedWeightPlan(weight), disabled };
         })
         .filter(capsule => capsule.value);
     return assignCapsuleIds(parsed);
 }
 
+// `omitDisabled` builds prompt text (disabled tags dropped); the default keeps them
+// with the marker so the textarea round-trips.
 export function serializeCapsules(capsules = [], options = {}) {
     const generationSeed = finiteNumber(options.generationSeed, 0);
     const imageIndex = Math.max(0, Math.floor(finiteNumber(options.imageIndex, 0)));
     const tokenPrefix = options.tokenPrefix ? `${options.tokenPrefix}/` : '';
+    const omitDisabled = options.omitDisabled === true;
     return capsules
         .map(capsule => {
             const value = String(capsule?.value ?? '').trim();
             if (!value) return '';
+            if (capsule.disabled && omitDisabled) return '';
             const weight = resolveWeight(capsule.weightPlan, {
                 generationSeed,
                 imageIndex,
                 tokenId: `${tokenPrefix}${capsule.id}`,
             });
-            return Math.abs(weight - DEFAULT_WEIGHT) <= EPSILON
+            const token = Math.abs(weight - DEFAULT_WEIGHT) <= EPSILON
                 ? value
                 : `(${value}:${formatTagWeight(weight)})`;
+            return capsule.disabled ? `${DISABLED_TAG_MARKER}${token}` : token;
         })
         .filter(Boolean)
         .join(', ');
+}
+
+export function toggleCapsuleDisabled(capsules = [], index) {
+    const capsule = capsules[index];
+    if (!capsule) return capsules;
+    return capsules.map((item, position) => (position === index ? { ...item, disabled: !item.disabled } : item));
+}
+
+export function setAllCapsulesDisabled(capsules = [], disabled) {
+    return capsules.map(item => ({ ...item, disabled: disabled === true }));
+}
+
+// Prompt-side filter for plain field text: drops "~tag" tokens, keeps everything else verbatim.
+export function stripDisabledTags(text = '') {
+    const source = String(text ?? '');
+    if (!source.includes(DISABLED_TAG_MARKER)) return source;
+    return source
+        .split('\n')
+        .map(line => line
+            .split(',')
+            .filter(token => !token.trim().startsWith(DISABLED_TAG_MARKER))
+            .join(','))
+        .join('\n');
 }
 
 export function previewBatch(capsules = [], count = 1, generationSeed = 0, tokenPrefix = '') {
@@ -408,8 +442,9 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
     const expandField = (key, imageIndex) => {
         const field = byKey.get(key);
         if (!field) return '';
-        return serializeCapsules(field.capsules ?? [], { generationSeed: baseSeed, imageIndex, tokenPrefix: key });
+        return serializeCapsules(field.capsules ?? [], { generationSeed: baseSeed, imageIndex, tokenPrefix: key, omitDisabled: true });
     };
+    const BUILTIN_KEYS = new Set(['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'exclude']);
 
     return Array.from({ length: total }, (_, imageIndex) => {
         const weights = {};
@@ -436,21 +471,26 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
             positive = applyExclude(positive, exclude);
             positiveRight = applyExclude(positiveRight, exclude);
         }
+        const expandedFields = {
+            common,
+            background,
+            style,
+            positive: positiveTail,
+            positive_right: positiveRightTail,
+            negative,
+            exclude,
+        };
+        // custom prompt fields (cf_*) expand under their own key
+        for (const field of fields) {
+            if (!BUILTIN_KEYS.has(field.key)) expandedFields[field.key] = expandField(field.key, imageIndex);
+        }
         return {
             imageIndex,
             seed: baseSeed + imageIndex,
             positive,
             positiveRight,
             negative,
-            fields: {
-                common,
-                background,
-                style,
-                positive: positiveTail,
-                positive_right: positiveRightTail,
-                negative,
-                exclude,
-            },
+            fields: expandedFields,
             weights,
             terminal,
         };

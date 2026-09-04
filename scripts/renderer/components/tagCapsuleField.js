@@ -19,7 +19,9 @@ import {
     resolveBatchPlan,
     serializeCapsules,
     serializePlans,
+    setAllCapsulesDisabled,
     setCapsulePlan,
+    toggleCapsuleDisabled,
 } from './tagCapsuleLogic.js';
 import { createIcon, renderChips } from './tagCapsuleChip.js';
 import { FAVORITE_TAGS_CHANGED_EVENT, favGroupForKey, isFavoriteTag } from './favoriteTags.js';
@@ -60,6 +62,8 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         initialBatch = DEFAULT_BATCH,
         expandForBatch = null,   // (count, seed) => rows (field-scoped expansion for the dialog)
         onSeedChange = null,
+        onModeChange = null,     // (mode) — the field set mirrors the Text/Capsules choice to every field
+        initialMode = 'string',
     } = options;
 
     const textbox = textboxControl?.getElement?.();
@@ -299,6 +303,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             if (focus) textbox.focus();
         }
         onChange?.(api);
+        onModeChange?.(mode);
     }
 
     // ---------------------------------------------------------------- add tag → selection modal
@@ -351,6 +356,11 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         if (index < 0) return;
         if (event.target.closest('.tag-capsule-chip-remove')) {
             deleteAt(index);
+            return;
+        }
+        if (event.target.closest('.tag-capsule-chip-toggle')) {
+            commitCapsules(toggleCapsuleDisabled(capsules, index));
+            focusChip(index);
             return;
         }
         focusIndex = index;
@@ -535,8 +545,11 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             generationSeed: Math.max(0, seed),
             imageIndex,
             tokenPrefix: tokenPrefix(),
+            omitDisabled: true,
         }),
+        setAllDisabled: disabled => { commitCapsules(setAllCapsulesDisabled(capsules, disabled)); },
     };
+    if (initialMode === 'capsule') setMode('capsule');
     return api;
 }
 
@@ -585,13 +598,32 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         refreshFinalPrompt();
     }
 
-    textboxControls.forEach((control, index) => {
-        const key = keys[index] ?? `field_${index}`;
+    // One Text/Capsules choice for the whole prompt card: flipping it on any field
+    // flips every field (custom ones included) and is remembered per machine.
+    const MODE_STORAGE_KEY = 'saa.capsuleMode';
+    let sharedMode = 'string';
+    try { sharedMode = localStorage.getItem(MODE_STORAGE_KEY) === 'capsule' ? 'capsule' : 'string'; } catch { /* storage blocked */ }
+    let propagatingMode = false;
+    function propagateMode(mode) {
+        if (propagatingMode || mode === sharedMode) return;
+        sharedMode = mode;
+        try { localStorage.setItem(MODE_STORAGE_KEY, mode); } catch { /* storage blocked */ }
+        propagatingMode = true;
+        try {
+            for (const field of fields.values()) if (field.getMode() !== mode) field.setMode(mode);
+        } finally {
+            propagatingMode = false;
+        }
+    }
+
+    function addField(control, key) {
         const stored = settings();
         const field = setupTagCapsuleField(control, {
             key,
             text,
             getGenerationSeed,
+            initialMode: sharedMode,
+            onModeChange: propagateMode,
             getExcludeText: () => fields.get('exclude')?.textbox?.value ?? globalThis.prompt?.exclude?.getValue?.() ?? '',
             initialPlans: stored[`${key}_weight_plans`] ?? [],
             initialBatch: stored[`${key}_batch`] ?? DEFAULT_BATCH,
@@ -614,7 +646,10 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
             },
         });
         if (field) fields.set(key, field);
-    });
+        return field ?? null;
+    }
+
+    textboxControls.forEach((control, index) => addField(control, keys[index] ?? `field_${index}`));
 
     if (finalPromptContainer) {
         disclosure = setupFinalPromptDisclosure({
@@ -632,6 +667,18 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
     const set = {
         fields,
         get: key => fields.get(key) ?? null,
+        // custom prompt fields are created after boot (promptFieldManager) and can go away again
+        add: (control, key) => {
+            const field = addField(control, key);
+            if (field) requestFinalPromptRefresh();
+            return field;
+        },
+        remove: key => {
+            if (!fields.delete(key)) return;
+            requestFinalPromptRefresh();
+        },
+        getMode: () => sharedMode,
+        setMode: mode => propagateMode(mode === 'capsule' ? 'capsule' : 'string'),
         beginBatchUpdate: () => { batchUpdateDepth += 1; },
         endBatchUpdate: () => {
             batchUpdateDepth = Math.max(0, batchUpdateDepth - 1);

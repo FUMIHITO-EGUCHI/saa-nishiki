@@ -3,6 +3,8 @@
 // `count` queue entries, each with batch_size=1, expanded prompts, and seed + n − 1.
 // Nothing here touches ComfyUI; it only decides what text and seed each loop reads.
 
+import { stripDisabledTags } from '../components/tagCapsuleLogic.js';
+
 let activeOverride = null;
 
 function fieldSet() {
@@ -10,11 +12,12 @@ function fieldSet() {
 }
 
 // Reads a prompt field, honouring the per-image override while one is active.
+// Disabled tags ("~tag", toggled off on a capsule) never reach the prompt.
 export function readPromptValue(key) {
     if (activeOverride?.fields && typeof activeOverride.fields[key] === 'string') {
         return activeOverride.fields[key];
     }
-    return globalThis.prompt?.[key]?.getValue?.() ?? '';
+    return stripDisabledTags(globalThis.prompt?.[key]?.getValue?.() ?? '');
 }
 
 // Seed for the current image while an override is active (falls back to the slider value).

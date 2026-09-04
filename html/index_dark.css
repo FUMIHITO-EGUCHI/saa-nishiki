@@ -1079,8 +1079,11 @@ body {
 .tag-capsule-chip.is-warn .tag-capsule-chip-weight { color: #ffb454; }
 .tag-capsule-chip.is-excluded .tag-capsule-chip-name { text-decoration: line-through; color: #aaa; }
 
+/* The × keeps its width at all times (visibility, not display), so hovering or
+   focusing a chip never widens it and re-wraps the row. */
 .tag-capsule-chip-remove {
-    display: none;
+    display: inline-flex;
+    visibility: hidden;
     align-items: center;
     justify-content: center;
     width: 16px;
@@ -1091,13 +1094,28 @@ body {
 
 .tag-capsule-chip:hover .tag-capsule-chip-remove,
 .tag-capsule-chip:focus-visible .tag-capsule-chip-remove {
-    display: inline-flex;
+    visibility: visible;
 }
 
 .tag-capsule-chip-remove:hover {
     background: #555;
     color: #eee;
 }
+
+/* one-touch enable/disable dot at the chip's left edge */
+.tag-capsule-chip-toggle {
+    flex: 0 0 auto;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #4da3ff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35) inset;
+    cursor: pointer;
+}
+.tag-capsule-chip-toggle:hover { transform: scale(1.25); }
+.tag-capsule-chip.is-disabled { opacity: 0.5; }
+.tag-capsule-chip.is-disabled .tag-capsule-chip-toggle { background: #666; }
+.tag-capsule-chip.is-disabled .tag-capsule-chip-name { text-decoration: line-through; }
 
 .tag-capsule-add-slot {
     display: inline-flex;
