@@ -14,6 +14,7 @@ export const TAG_FILTERS = Object.freeze([
     { value: 'clothing', label: 'Clothing', options: { category: 'clothing' } },
     { value: 'appearance', label: 'Appearance', options: { category: 'appearance' } },
     { value: 'object', label: 'Object', options: { category: 'object' } },
+    { value: 'scenery', label: 'Scenery / Background', options: { category: 'scenery' } },
     { value: 'composition_quality', label: 'Composition / Quality', options: { category: 'composition_quality' } },
 ]);
 

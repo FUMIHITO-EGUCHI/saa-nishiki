@@ -128,12 +128,14 @@ Categories:
 - clothing: clothing, footwear, headwear, and worn accessories (school_uniform, thighhighs, hat, jewelry, glasses).
 - appearance: hair and eye color or style, skin tone, and intrinsic character appearance features that are not plain anatomy (blue_hair, twintails, red_eyes, halo, dark_skin).
 - object: props, items, weapons, furniture, food, vehicles, animals, and other scene objects that are not worn (sword, cup, car, cat).
-- composition_quality: framing, viewpoint, subject count, background, lighting, image quality, and rendering or meta terms (1girl, solo, from_above, simple_background, blurry, highres, monochrome).
+- scenery: where and when the picture is set: locations, environments, landscape and architecture, weather, sky, time of day, season, water, plants as scenery, and background descriptors (outdoors, beach, classroom, night, cherry_blossoms, cityscape, simple_background, sky, snow).
+- composition_quality: framing, viewpoint, subject count, lighting, image quality, and rendering or meta terms (1girl, solo, from_above, blurry, highres, monochrome, depth_of_field).
 - unknown: the tag fits none of the above, mixes several, or you are unsure what it means.
 
 Rules:
 - Judge the tag's established booru meaning, not a literal reading. The Japanese alias, when present, is a hint to the meaning.
 - holding_x and other interaction tags are pose_action even when x is an object.
+- Backgrounds, places, weather and time-of-day tags are scenery, not composition_quality; lighting and framing stay composition_quality.
 - Use confidence high only when the category is obvious; otherwise medium or low.
 - Prefer unknown over guessing for obscure or ambiguous tags.
 - Return exactly one row for every input row, preserving each input i. Do not omit, merge, or reorder rows.`;
@@ -144,7 +146,8 @@ Return ONLY valid JSON in this shape: {"rows":[{"i":1,"accept":true,"confidence"
 The category definitions:
 body = anatomy and physique; pose_action = poses, actions, expressions, gaze; clothing = worn items;
 appearance = hair/eye/skin colors, styles and intrinsic character features; object = scene props not worn;
-composition_quality = framing, viewpoint, subject count, background, lighting, quality and meta terms.
+scenery = locations, environments, backgrounds, weather, sky, time of day, season;
+composition_quality = framing, viewpoint, subject count, lighting, quality and meta terms.
 
 - Accept only when the proposed category clearly matches the tag's established booru meaning.
 - Reject when a different category fits better or the meaning is uncertain.
@@ -157,7 +160,7 @@ function parseArgs(argv) {
     report: '', output: '', model: DEFAULT_MODEL, codexModel: DEFAULT_CODEX_MODEL, backend: 'auto',
     podModel: DEFAULT_POD_MODEL, podSettings: DEFAULT_POD_SETTINGS, fallback: '', nsfwDirect: false,
     batchSize: 40, codexBatchSize: 100, offset: 0, limit: 0,
-    minHeat: 10000, groups: DEFAULT_GROUPS,
+    minHeat: 10000, groups: DEFAULT_GROUPS, recheck: '',
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -180,6 +183,7 @@ function parseArgs(argv) {
     else if (arg === '--limit') args.limit = Number.parseInt(argv[++index], 10);
     else if (arg === '--min-heat') args.minHeat = Number.parseInt(argv[++index], 10);
     else if (arg === '--groups') args.groups = argv[++index].split(',').map(value => Number.parseInt(value, 10));
+    else if (arg === '--recheck') args.recheck = argv[++index];
     else if (arg === '--help') args.help = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
@@ -204,6 +208,7 @@ function parseArgs(argv) {
   if (!Number.isInteger(args.offset) || args.offset < 0) throw new Error('--offset must be a non-negative integer');
   if (!Number.isInteger(args.limit) || args.limit < 0) throw new Error('--limit must be a non-negative integer');
   if (!Number.isInteger(args.minHeat) || args.minHeat < 0) throw new Error('--min-heat must be a non-negative integer');
+  if (args.recheck && !CATEGORIES.includes(args.recheck)) throw new Error(`--recheck must be one of ${CATEGORIES.join(', ')}`);
   if (!args.groups.length || args.groups.some(group => !Number.isInteger(group) || group < 0)) {
     throw new Error('--groups must be a comma-separated list of non-negative integers');
   }
@@ -231,10 +236,16 @@ export function selectCandidates(rows, { groups, minHeat, known }) {
     .map((row, index) => ({ i: index + 1, ...row }));
 }
 
-export function loadKnownTags(categoriesPath) {
+// Tags already in the dictionary. With `exceptCategory`, tags filed under that
+// category (LLM-sourced only; wiki entries stay known) are left out so a run
+// can re-judge them, e.g. after a new category was introduced.
+export function loadKnownTags(categoriesPath, { exceptCategory = '' } = {}) {
   try {
     const data = JSON.parse(fs.readFileSync(categoriesPath, 'utf8'));
-    return new Set(Object.keys(data?.tags ?? {}));
+    const entries = Object.entries(data?.tags ?? {});
+    return new Set(entries
+      .filter(([, record]) => !(exceptCategory && record?.category === exceptCategory && record?.source === 'LLM'))
+      .map(([tag]) => tag));
   } catch {
     return new Set();
   }
@@ -283,18 +294,27 @@ export function collectApplicable(reviews) {
     && review.verification.confidence === 'high');
 }
 
-export function mergeCategories(existing, reviews, model) {
+// `recheck`: an LLM-sourced entry filed under that category may be moved to the
+// newly verified category; hand-checked (wiki) entries are never overwritten.
+export function mergeCategories(existing, reviews, model, { recheck = '' } = {}) {
   const data = existing && existing.schemaVersion === 1 && existing.tags && typeof existing.tags === 'object'
     ? { schemaVersion: 1, tags: { ...existing.tags } }
     : { schemaVersion: 1, tags: {} };
   let added = 0;
+  let updated = 0;
   for (const review of collectApplicable(reviews)) {
-    if (data.tags[review.tag]) continue; // never overwrite hand-checked entries
+    const current = data.tags[review.tag];
+    if (current) {
+      const movable = recheck && current.source === 'LLM' && current.category === recheck && review.category !== recheck;
+      if (!movable) continue;
+      updated += 1;
+    } else {
+      added += 1;
+    }
     // rows carry their own model when a Codex batch fell back to the local model
     data.tags[review.tag] = { category: review.category, status: 'verified', source: 'LLM', model: review.model || model };
-    added += 1;
   }
-  return { data, added };
+  return { data, added, updated };
 }
 
 async function callOllamaJson(model, systemPrompt, userContent, schema, { via = 'ollama', args = null } = {}) {
@@ -423,6 +443,8 @@ function printHelp() {
 
 Assignment mode (writes a JSONL report):
   node scripts/categorizeTags.mjs --report <report.jsonl> [--min-heat 10000] [--groups 0,7,5,14] [--limit N]
+  --recheck <category> also re-judges the LLM-sourced tags filed under that
+  category (pass the same flag to --apply so they may move).
 
 Backends (--backend auto|codex|ollama|pod, default auto):
   auto sends everything to Codex first (--codex-model, default ${DEFAULT_CODEX_MODEL});
@@ -441,7 +463,7 @@ async function runAssign(args) {
   if (!args.report) throw new Error('Assignment mode requires --report');
   const rows = parseMergedRows(fs.readFileSync(args.input, 'utf8'));
   const aliasMap = new Map(parseTagRows(fs.readFileSync(args.aliases, 'utf8')).map(row => [row.tag, row.alias]));
-  const known = loadKnownTags(args.categories);
+  const known = loadKnownTags(args.categories, { exceptCategory: args.recheck });
   const candidates = selectCandidates(rows, { groups: args.groups, minHeat: args.minHeat, known })
     .map(row => ({ ...row, alias: aliasMap.get(row.tag) || '' }));
   const selected = candidates.slice(args.offset, args.limit ? args.offset + args.limit : undefined);
@@ -500,9 +522,9 @@ function runApply(args) {
   const { reviews, model } = readReport(args.report);
   let existing = null;
   try { existing = JSON.parse(fs.readFileSync(args.categories, 'utf8')); } catch { /* start fresh */ }
-  const { data, added } = mergeCategories(existing, reviews, model);
+  const { data, added, updated } = mergeCategories(existing, reviews, model, { recheck: args.recheck });
   fs.writeFileSync(output, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
-  console.log(JSON.stringify({ reportRows: reviews.length, applicable: collectApplicable(reviews).length, added, total: Object.keys(data.tags).length, output }, null, 2));
+  console.log(JSON.stringify({ reportRows: reviews.length, applicable: collectApplicable(reviews).length, added, updated, total: Object.keys(data.tags).length, output }, null, 2));
 }
 
 export async function main(argv = process.argv.slice(2)) {

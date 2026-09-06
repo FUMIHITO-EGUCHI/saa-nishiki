@@ -151,7 +151,7 @@ test('loads the bundled category dictionary without reading Japanese translation
   assert.equal(index.get('halo'), 'appearance');
   assert.equal(index.get('holding_rocket_launcher'), 'pose_action');
   assert.equal(index.get('rocket_launcher'), 'object');
-  for (const category of ['body', 'pose_action', 'clothing', 'appearance', 'object', 'composition_quality']) {
+  for (const category of ['body', 'pose_action', 'clothing', 'appearance', 'object', 'scenery', 'composition_quality']) {
     assert.ok(
       [...index.values()].filter(value => value === category).length > 0,
       `expected at least one bundled ${category} record`,

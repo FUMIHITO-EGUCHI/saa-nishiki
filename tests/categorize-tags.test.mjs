@@ -22,7 +22,7 @@ test('explicit tags route to the local model, ordinary tags do not', () => {
 });
 
 test('category list mirrors the taxonomy without unknown', () => {
-  assert.deepEqual(CATEGORIES, ['body', 'pose_action', 'clothing', 'appearance', 'object', 'composition_quality']);
+  assert.deepEqual(CATEGORIES, ['body', 'pose_action', 'clothing', 'appearance', 'object', 'scenery', 'composition_quality']);
 });
 
 test('merged CSV rows parse and candidates are selected by group, heat, and novelty', () => {
@@ -84,4 +84,32 @@ test('only high-confidence verified assignments are applied, never overwriting e
   assert.equal(data.tags.breasts.category, 'body');
   assert.deepEqual(data.tags.sword, { category: 'object', status: 'verified', source: 'LLM', model: 'test-model' });
   assert.equal(data.tags.dress, undefined);
+});
+
+test('recheck: known tags under the rechecked category become candidates again and may move, wiki entries never', () => {
+  const existing = {
+    schemaVersion: 1,
+    tags: {
+      simple_background: { category: 'composition_quality', status: 'verified', source: 'LLM', model: 'm' },
+      blurry: { category: 'composition_quality', status: 'verified', source: 'LLM', model: 'm' },
+      from_above: { category: 'composition_quality', status: 'verified', source: 'Danbooru Wiki', sourceUrl: 'https://danbooru.donmai.us/wiki_pages/from_above.html' },
+    },
+  };
+  const high = category => ({ category, confidence: 'high', verification: { accepted: true, confidence: 'high' } });
+  const reviews = [
+    { tag: 'simple_background', ...high('scenery') },
+    { tag: 'blurry', ...high('composition_quality') },
+    { tag: 'from_above', ...high('scenery') },
+    { tag: 'beach', ...high('scenery') },
+  ];
+  const plain = mergeCategories(existing, reviews, 'm2');
+  assert.deepEqual([plain.added, plain.updated], [1, 0]);
+  assert.equal(plain.data.tags.simple_background.category, 'composition_quality', 'without --recheck nothing moves');
+  const moved = mergeCategories(existing, reviews, 'm2', { recheck: 'composition_quality' });
+  assert.deepEqual([moved.added, moved.updated], [1, 1]);
+  assert.equal(moved.data.tags.simple_background.category, 'scenery');
+  assert.equal(moved.data.tags.simple_background.model, 'm2');
+  assert.equal(moved.data.tags.blurry.category, 'composition_quality');
+  assert.equal(moved.data.tags.from_above.category, 'composition_quality', 'wiki entries are never overwritten');
+  assert.equal(moved.data.tags.beach.category, 'scenery');
 });

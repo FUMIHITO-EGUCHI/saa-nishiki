@@ -9,6 +9,7 @@ export const TAG_CATEGORY_LABELS = Object.freeze({
     clothing: 'Clothing',
     appearance: 'Appearance',
     object: 'Object',
+    scenery: 'Scenery / Background',
     composition_quality: 'Composition / Quality',
     unknown: 'Unknown',
 });

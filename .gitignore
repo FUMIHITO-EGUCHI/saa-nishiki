@@ -42,3 +42,6 @@ models/tagger/*.onnx
 models/tagger/*_selected_tags.csv
 models/tagger/*_tag_mapping.json
 settings/presets/
+
+# LLM batch reports (categorizeTags.mjs --report)
+reports/

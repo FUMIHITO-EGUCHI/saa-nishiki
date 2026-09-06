@@ -236,10 +236,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "white_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "brown_hair": {
       "category": "appearance",
@@ -644,10 +644,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "outdoors": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "hair_bow": {
       "category": "clothing",
@@ -836,10 +836,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "sky": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "one_eye_closed": {
       "category": "pose_action",
@@ -968,10 +968,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "indoors": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "solo_focus": {
       "category": "composition_quality",
@@ -1040,10 +1040,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "day": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "hairclip": {
       "category": "clothing",
@@ -1058,10 +1058,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "official_alternate_costume": {
-      "category": "composition_quality",
+      "category": "clothing",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "furniture": {
       "category": "object",
@@ -1154,10 +1154,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "outside": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "black_skirt": {
       "category": "clothing",
@@ -1280,10 +1280,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "grey_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "holding_weapon": {
       "category": "pose_action",
@@ -1376,10 +1376,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "chibi": {
-      "category": "composition_quality",
+      "category": "appearance",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "off_shoulder": {
       "category": "clothing",
@@ -1628,10 +1628,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "detailed_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "handwear": {
       "category": "clothing",
@@ -1706,10 +1706,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "blue_sky": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "crop_top": {
       "category": "clothing",
@@ -2108,10 +2108,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "loli": {
-      "category": "composition_quality",
+      "category": "appearance",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "maid": {
       "category": "clothing",
@@ -2204,10 +2204,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "gradient_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "ascot": {
       "category": "clothing",
@@ -2510,10 +2510,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "blue_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "pubes": {
       "category": "body",
@@ -2624,10 +2624,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "night": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "leaning_forward": {
       "category": "pose_action",
@@ -2864,10 +2864,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "faceless_character": {
-      "category": "composition_quality",
+      "category": "appearance",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "holding_hands": {
       "category": "pose_action",
@@ -3086,10 +3086,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "pink_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "holding_food": {
       "category": "pose_action",
@@ -3134,10 +3134,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "beach": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "frilled_dress": {
       "category": "clothing",
@@ -3470,10 +3470,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "black_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "cat": {
       "category": "object",
@@ -3680,10 +3680,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "cloudy_sky": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "x_hair_ornament": {
       "category": "clothing",
@@ -4328,10 +4328,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "yellow_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "messy_hair": {
       "category": "appearance",
@@ -4454,10 +4454,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "red_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "clenched_hand": {
       "category": "pose_action",
@@ -4760,10 +4760,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "night_sky": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "knees_up": {
       "category": "pose_action",
@@ -4778,10 +4778,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "child": {
-      "category": "composition_quality",
+      "category": "appearance",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "armband": {
       "category": "clothing",
@@ -4934,10 +4934,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "scenery": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "musical_note": {
       "category": "object",
@@ -5168,10 +5168,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "nature": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "between_breasts": {
       "category": "body",
@@ -5552,10 +5552,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "two-tone_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "jingle_bell": {
       "category": "object",
@@ -5792,10 +5792,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "green_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "pink_shirt": {
       "category": "clothing",
@@ -5876,10 +5876,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "brown_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "breast_grab": {
       "category": "pose_action",
@@ -5894,10 +5894,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "purple_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "rifle": {
       "category": "object",
@@ -6248,10 +6248,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "starry_sky": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "walking": {
       "category": "pose_action",
@@ -7262,10 +7262,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "forest": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "male_anthro": {
       "category": "appearance",
@@ -7388,10 +7388,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "rain": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "white_shorts": {
       "category": "clothing",
@@ -7544,10 +7544,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "thought_bubble": {
-      "category": "composition_quality",
+      "category": "object",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "cuffs": {
       "category": "clothing",
@@ -8294,10 +8294,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "sunset": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "mustache": {
       "category": "appearance",
@@ -8498,10 +8498,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "orange_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "3:2": {
       "category": "composition_quality",
@@ -8996,10 +8996,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "snowing": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "handbag": {
       "category": "object",
@@ -9092,10 +9092,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "city": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "backless_outfit": {
       "category": "clothing",
@@ -9752,10 +9752,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "falling_petals": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "v_sign": {
       "category": "pose_action",
@@ -9854,10 +9854,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "underwater": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "black_pawpads": {
       "category": "body",
@@ -9926,10 +9926,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "floral_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "kneepits": {
       "category": "body",
@@ -10052,10 +10052,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "horizon": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "eye_patch": {
       "category": "clothing",
@@ -10784,10 +10784,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "on_couch": {
-      "category": "composition_quality",
+      "category": "pose_action",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "purple_jacket": {
       "category": "clothing",
@@ -11438,10 +11438,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "cityscape": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "bare_back": {
       "category": "body",
@@ -11804,10 +11804,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "polka_dot_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "fish_tail": {
       "category": "body",
@@ -12380,10 +12380,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "multicolored_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "gyaru": {
       "category": "appearance",
@@ -12884,10 +12884,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "bedroom": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "weibo_watermark": {
       "category": "composition_quality",
@@ -13796,10 +13796,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "striped_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "pink_rose": {
       "category": "object",
@@ -14168,10 +14168,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "pattern_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "biting": {
       "category": "pose_action",
@@ -14378,10 +14378,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "winter": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "mushroom": {
       "category": "object",
@@ -14516,10 +14516,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "summer": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "green_vest": {
       "category": "clothing",
@@ -14534,10 +14534,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "dark_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "torn_bottomwear": {
       "category": "clothing",
@@ -14564,10 +14564,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "brick_wall": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "chest_hair": {
       "category": "body",
@@ -14702,10 +14702,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "ruins": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "striped_necktie": {
       "category": "clothing",
@@ -14804,10 +14804,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "aqua_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "seductive_smile": {
       "category": "pose_action",
@@ -15164,10 +15164,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "checkered_floor": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "cross-shaped_pupils": {
       "category": "appearance",
@@ -15302,10 +15302,10 @@
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
     },
     "nature_background": {
-      "category": "composition_quality",
+      "category": "scenery",
       "status": "verified",
       "source": "LLM",
-      "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+      "model": "gpt-5.6-luna"
     },
     "zouri": {
       "category": "clothing",
@@ -17238,6 +17238,780 @@
       "status": "verified",
       "source": "LLM",
       "model": "hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M"
+    },
+    "inside": {
+      "category": "scenery",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "tail_markings": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "shiny_skin": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "makeup": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "bright_pupils": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "copyright_request": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "yaoi": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "pantyshot": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "skeb_commission": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "skimpy": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "hair_bobbles": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "wind": {
+      "category": "scenery",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "spotted_body": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "sheath": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "countershade_torso": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "casual": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "christmas": {
+      "category": "scenery",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "light": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "submissive_female": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "intersex_penetrating": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "countershade_face": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "bubble": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "futanari": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "animal_hands": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "star_hair_ornament": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "gynomorph_penetrating": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "human_penetrating_anthro": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "red-framed_eyewear": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "hat_ornament": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "fins": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "younger_male": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "ghost": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "gold_(metal)": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "heart_hair_ornament": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "new_year": {
+      "category": "scenery",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "older_male": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "animal_focus": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "mouse_ears": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "fake_horns": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "nipple_stimulation": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "balls_deep": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "vaginal_fingering": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "oral_vore": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "vision_(genshin_impact)": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "anal_masturbation": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "tail_ornament": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "clothed_female": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "shota": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "penis_in_mouth": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "alternate_hair_length": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "food_on_face": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "inviting": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "rope_bondage": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "feral_penetrating_feral": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "tail_accessory": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "card_(medium)": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "antlers": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "ear_covers": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "yokozuwari": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "food-themed_hair_ornament": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "zipper_pull_tab": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "mtf_crossgender": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "mask_on_head": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "male_penetrating_anthro": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "elbow_tuft": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "ear_tuft": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "toying_self": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "gangbang": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "cow_print": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "witch": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "ugoira": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "erection_under_clothing": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "lowleg": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "raised_clothing": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "panties_down": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "tatami": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "blue_rose": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "fist": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "adolescent": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "femdom": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "hitodama": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "cybernetics": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "fairy": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "throbbing": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "ninja": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "patreon_logo": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "happy_sex": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "tile_floor": {
+      "category": "scenery",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "chestnut_mouth": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "ear_ornament": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "mechanical_arms": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "fur_tuft": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "curled_horns": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "architecture": {
+      "category": "scenery",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "thrusting": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "field": {
+      "category": "scenery",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "ball_tuft": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "athletic_female": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "source_smaller": {
+      "category": "composition_quality",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "imminent_penetration": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "alternate_hair_color": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "vampire": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "hot_dogging": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    ">:)": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "bottomless_male": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "deep_skin": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    ":/": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "asymmetrical_wings": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "text_on_topwear": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "blue_ears": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "arm_cannon": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "necktie_between_breasts": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "chest_jewel": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "headwear_only": {
+      "category": "clothing",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "double_penetration": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "white_inner_ear": {
+      "category": "appearance",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "humanoid_penetrating": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "filled_condom": {
+      "category": "object",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "voyeur": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "implied_sex": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "trigger_discipline": {
+      "category": "pose_action",
+      "status": "verified",
+      "source": "LLM",
+      "model": "gpt-5.6-luna"
+    },
+    "white_body": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "huihui_ai/qwen3-abliterated:8b"
+    },
+    "brown_body": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "huihui_ai/qwen3-abliterated:8b"
+    },
+    "yellow_body": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "huihui_ai/qwen3-abliterated:8b"
+    },
+    "orange_body": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "huihui_ai/qwen3-abliterated:8b"
+    },
+    "red_body": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "huihui_ai/qwen3-abliterated:8b"
+    },
+    "purple_body": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "huihui_ai/qwen3-abliterated:8b"
+    },
+    "green_body": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "huihui_ai/qwen3-abliterated:8b"
+    },
+    "pink_body": {
+      "category": "body",
+      "status": "verified",
+      "source": "LLM",
+      "model": "huihui_ai/qwen3-abliterated:8b"
     }
   }
 }

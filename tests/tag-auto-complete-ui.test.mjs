@@ -26,6 +26,7 @@ test('exposes the English coarse filter labels and their backend options', () =>
     'Clothing',
     'Appearance',
     'Object',
+    'Scenery / Background',
     'Composition / Quality',
   ]);
   assert.deepEqual(getTagFilterOptions('all'), undefined);
@@ -33,6 +34,7 @@ test('exposes the English coarse filter labels and their backend options', () =>
   assert.deepEqual(getTagFilterOptions('species'), { groupIds: [12] });
   assert.deepEqual(getTagFilterOptions('pose_action'), { category: 'pose_action' });
   assert.deepEqual(getTagFilterOptions('appearance'), { category: 'appearance' });
+  assert.deepEqual(getTagFilterOptions('scenery'), { category: 'scenery' });
 });
 
 test('extracts the English prompt key from unchanged suggestion markup', () => {
