@@ -224,23 +224,34 @@ export function setupRightClickMenu() {
         }
     });
 
+    // Every contextmenu event consumes the press state captured by mousedown /
+    // mousemove; leaving it behind (e.g. when the menu is already open) makes the
+    // next right-click look like a long press or a drag and get suppressed.
+    function resetPressState() {
+        rightClickStartX = undefined;
+        rightClickStartY = undefined;
+        rightClickStartTime = undefined;
+        allowMenu = false;
+        isMoved = false;
+    }
+
     document.addEventListener('contextmenu', async (e) => {
         // If menu is already visible, prevent opening a new one
         if (menuBox.style.display !== 'none') {
             e.preventDefault();
+            resetPressState();
             return;
         }
 
         //e.preventDefault(); // Keep commented to allow main process context-menu
-        if (!menuConfig.length) return;
+        if (!menuConfig.length) {
+            resetPressState();
+            return;
+        }
 
         const duration = Date.now() - rightClickStartTime;
         if (allowMenu && duration > 300 || isMoved) {
-            rightClickStartX = undefined;
-            rightClickStartY = undefined;
-            rightClickStartTime = undefined;
-            allowMenu = false;
-            isMoved = false;
+            resetPressState();
             return; // Suppress entire menu
         }
 
@@ -251,11 +262,7 @@ export function setupRightClickMenu() {
         } else {
             await renderMenu(e.clientX, e.clientY, targetElement);
         }
-        rightClickStartX = undefined;
-        rightClickStartY = undefined;
-        rightClickStartTime = undefined;
-        allowMenu = false;
-        isMoved = false;
+        resetPressState();
     });
 
     document.addEventListener('click', (e) => {

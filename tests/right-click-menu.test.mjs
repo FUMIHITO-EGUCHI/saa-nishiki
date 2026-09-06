@@ -71,3 +71,13 @@ test('menu labels exist in every language table', () => {
         assert.match(menu, new RegExp(key), `${key} used by the menu`);
     }
 });
+
+test('every early exit of the contextmenu handler resets the press state (#1)', () => {
+    const handler = menu.slice(menu.indexOf("document.addEventListener('contextmenu'"), menu.indexOf("document.addEventListener('click'"));
+    assert.match(handler, /menuBox\.style\.display !== 'none'\) \{\s*e\.preventDefault\(\);\s*resetPressState\(\);\s*return;/, 'menu-already-open path resets');
+    assert.match(handler, /if \(!menuConfig\.length\) \{\s*resetPressState\(\);\s*return;/, 'no-config path resets');
+    assert.match(handler, /isMoved\) \{\s*resetPressState\(\);\s*return;/, 'suppressed path resets');
+    assert.equal((handler.match(/return;/g) ?? []).length, 3, 'no other early exits');
+    assert.doesNotMatch(handler, /allowMenu = false;/, 'no inline resets remain');
+    assert.match(menu, /function resetPressState\(\) \{\s*rightClickStartX = undefined;\s*rightClickStartY = undefined;\s*rightClickStartTime = undefined;\s*allowMenu = false;\s*isMoved = false;/);
+});
