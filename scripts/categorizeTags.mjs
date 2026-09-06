@@ -501,6 +501,8 @@ async function runAssign(args) {
     }
   }
   console.log(`Wrote assignment report: ${args.report}`);
+  // the pod lane keeps an ssh child alive; close it so the process can exit
+  podTransport?.stopPodSshSession?.();
 }
 
 function readReport(reportPath) {
