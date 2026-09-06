@@ -551,6 +551,10 @@ export async function createAI(SETTINGS, FILES, LANG) {
             value: SETTINGS.ai_local_addr,
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.ai_local_addr = value;}),
+        pod_model: setupTextbox('system-settings-ai-pod-model', LANG.ai_pod_model, {
+            value: SETTINGS.ai_pod_model,
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.ai_pod_model = value;}),
         pod_address: setupTextbox('system-settings-ai-pod-address', LANG.ai_pod_addr, {
             value: SETTINGS.ai_pod_addr,
             maxLines: 1

@@ -487,6 +487,7 @@ export const sharedBodyHTML = `
                 <div class="settings-group" data-when-ai="Pod">
                   <div class="settings-group-title">Runpod pod (Ollama)</div>
                   <div class="settings-grid">
+                    <div class="system-settings-ai-pod-model"></div>
                     <div class="system-settings-ai-pod-address"></div>
                     <div class="system-settings-ai-pod-share ui-switch"></div>
                     <div class="system-settings-ai-pod-auth"></div>

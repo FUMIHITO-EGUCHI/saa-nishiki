@@ -66,6 +66,7 @@ Measured on a RTX 4070 SUPER (600×1024, Hires 1.5x, ADetailer): 30 steps ≈ 29
 
 ## Runpod pod target
 Register a Runpod pod (SSH target and key) in Settings and switch image generation between **GPU: Local** and **GPU: Pod** with the status pill in the toolbar. Generated images stream back over SSH and are saved locally only; nothing is written to the pod's disks. The pod can also serve the LLM features (AI prompt / refine). `https` / `wss` backends with authentication are supported for pod endpoints.
+The AI prompt / Refine requests go to an Ollama on the pod through the same SSH relay. Setup, the restore script for pod restarts and troubleshooting: [README_POD.md](README_POD.md).
 
 ## Gallery and Info panel
 - The Info panel follows the image selected in the gallery, including the embedded PNG parameters.

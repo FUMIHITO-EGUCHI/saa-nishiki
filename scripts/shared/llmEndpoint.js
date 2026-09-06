@@ -7,6 +7,19 @@ import { httpApiUrl } from './backendAddress.js';
 
 export const OLLAMA_POD_PORT = 11434;
 
+// The LLM lives on the pod's loopback and is reached through the SSH relay
+// (scripts/main/podSshTransport.js), never through a public URL. This marker
+// is what the renderer hands the main process as `apiUrl` in that case.
+export const POD_SSH_CHAT_URL = 'pod-ssh://ollama/api/chat';
+
+export function isPodSshChatUrl(apiUrl) {
+    return String(apiUrl ?? '').trim() === POD_SSH_CHAT_URL;
+}
+
+export function isPodSshLlm(settings = {}) {
+    return settings.api_pod_ssh_enable === true && String(settings.api_pod_ssh_target ?? '').trim() !== '';
+}
+
 // Runpod's HTTP proxy encodes the pod port in the first host label:
 // https://{podId}-{port}.proxy.runpod.net
 const RUNPOD_PROXY_HOST = /^https:\/\/([a-z0-9]+)-(\d+)(\.proxy\.runpod\.net)$/i;
@@ -40,6 +53,9 @@ export function resolvePodOrigin(settings = {}) {
  */
 export function resolveLlmEndpoint(settings = {}) {
     if (String(settings.ai_interface ?? '') === 'Pod') {
+        // SSH relay first (the default pod setup); the HTTPS proxy stays as a
+        // fallback for pods without SSH configured.
+        if (isPodSshLlm(settings)) return { apiUrl: POD_SSH_CHAT_URL, apiAuth: '' };
         const origin = resolvePodOrigin(settings);
         return {
             apiUrl: origin ? httpApiUrl(origin, 'api/chat') : '',

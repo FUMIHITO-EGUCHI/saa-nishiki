@@ -293,6 +293,23 @@ export async function runPodWorkflow({ settings, workflow, saveNodes, onProgress
     return result;
 }
 
+// One Ollama call on the pod through the relay: { ok, status, json } or
+// { ok: false, message }. Opens the SSH session when needed (like a generation);
+// the relay talks to 127.0.0.1:11434 only.
+export async function podOllamaRequest({ settings, method = 'POST', path = '/api/chat', body = null, timeoutMs = 300_000 }) {
+    const config = podSshConfig(settings);
+    if (!config.enabled || !config.target) return { ok: false, message: 'pod SSH transport is not configured' };
+    try {
+        await session.ensureStarted(config);
+    } catch (error) {
+        session.stop();
+        return { ok: false, message: `pod SSH connect failed: ${error.message}` };
+    }
+    const reply = await session.request({ cmd: 'ollama', method, path, body, timeout: Math.ceil(timeoutMs / 1000) }, timeoutMs + 5000);
+    if (!reply.ok) return { ok: false, status: reply.status, message: reply.message ?? 'pod ollama request failed' };
+    return { ok: true, status: reply.status, json: reply.json };
+}
+
 export async function interruptPodWorkflow() {
     if (!session.child) return;
     await session.request({ cmd: 'interrupt' });

@@ -139,6 +139,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     ai_pod_addr: '',
     ai_pod_share_host: false,
     ai_pod_auth: '',
+    // the Ollama model on the pod (SSH relay route); the local Small / Large mapping does not apply there
+    ai_pod_model: 'huihui_ai/qwen3-abliterated:8b',
     ai_local_model_mode: 'Auto',
     ai_local_prompt_mode: 'Expand',
     ai_local_timeout: 120,
@@ -214,7 +216,7 @@ export const SECTION_KEYS = Object.freeze({
         'api_vae_sdxl_model', 'api_vae_sdxl_override', 'api_vae_unet_model', 'api_model_file_diffusion_weight_dtype',
         'api_model_file_text_encoder', 'api_model_file_text_encoder_type', 'api_model_file_text_encoder_device',
         'ai_local_addr', 'ai_local_model_mode', 'ai_local_timeout', 'ai_local_temp', 'ai_local_n_predict', 'ai_refine_system_prompt',
-        'ai_pod_addr', 'ai_pod_share_host', 'ai_pod_auth',
+        'ai_pod_addr', 'ai_pod_share_host', 'ai_pod_auth', 'ai_pod_model',
         'remote_ai_base_url', 'remote_ai_model', 'remote_ai_api_key', 'remote_ai_timeout',
         'tag_assist', 'wildcard_random',
         'keep_gallery', 'scroll_to_last', 'generate_auto_start',

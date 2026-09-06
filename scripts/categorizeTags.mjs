@@ -23,6 +23,35 @@ const DEFAULT_CATEGORIES = path.join(projectDir, 'data', 'tag_categories.json');
 const DEFAULT_MODEL = 'hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M';
 const DEFAULT_CODEX_MODEL = 'gpt-5.6-luna';
 const OLLAMA_URL = process.env.OLLAMA_TAG_REVIEW_URL || 'http://127.0.0.1:11434/api/chat';
+// Pod lane: the same Ollama API on the Runpod pod, reached through the SSH relay
+// (scripts/main/podSshTransport.js) with the pod settings from settings/app.json.
+const DEFAULT_POD_SETTINGS = path.join(projectDir, 'settings', 'app.json');
+const DEFAULT_POD_MODEL = 'huihui_ai/qwen3-abliterated:8b';
+let podTransport = null;
+async function podSettings(args) {
+  const file = JSON.parse(fs.readFileSync(args.podSettings, 'utf8'));
+  const raw = file && typeof file.data === 'object' ? file.data : file; // sectioned app.json or a flat object
+  if (raw.api_pod_ssh_enable !== true || !String(raw.api_pod_ssh_target ?? '').trim()) {
+    throw new Error(`pod SSH is not configured in ${args.podSettings} (api_pod_ssh_enable / api_pod_ssh_target)`);
+  }
+  return raw;
+}
+// --pod-model wins; otherwise the app's ai_pod_model setting; otherwise the default
+async function podModelFor(args) {
+  if (args.podModelExplicit) return args.podModel;
+  try {
+    const raw = JSON.parse(fs.readFileSync(args.podSettings, 'utf8'));
+    const configured = String(raw?.data?.ai_pod_model ?? raw?.ai_pod_model ?? '').trim();
+    if (configured) return configured;
+  } catch { /* no settings file */ }
+  return args.podModel;
+}
+async function podChat(args, payload) {
+  podTransport ??= await import('./main/podSshTransport.js');
+  const reply = await podTransport.podOllamaRequest({ settings: await podSettings(args), method: 'POST', path: '/api/chat', body: payload, timeoutMs: 600_000 });
+  if (!reply.ok) throw new Error(`pod ollama: ${reply.message}`);
+  return reply.json;
+}
 
 // Routing policy: explicit tags go to the local uncensored model (a cloud model
 // may refuse or skew on them); everything else goes to Codex, which is far
@@ -126,6 +155,7 @@ function parseArgs(argv) {
   const args = {
     mode: 'assign', input: DEFAULT_INPUT, aliases: DEFAULT_ALIASES, categories: DEFAULT_CATEGORIES,
     report: '', output: '', model: DEFAULT_MODEL, codexModel: DEFAULT_CODEX_MODEL, backend: 'auto',
+    podModel: DEFAULT_POD_MODEL, podSettings: DEFAULT_POD_SETTINGS, fallback: '', nsfwDirect: false,
     batchSize: 40, codexBatchSize: 100, offset: 0, limit: 0,
     minHeat: 10000, groups: DEFAULT_GROUPS,
   };
@@ -140,6 +170,10 @@ function parseArgs(argv) {
     else if (arg === '--model') args.model = argv[++index];
     else if (arg === '--codex-model') args.codexModel = argv[++index];
     else if (arg === '--backend') args.backend = argv[++index];
+    else if (arg === '--pod-model') { args.podModel = argv[++index]; args.podModelExplicit = true; }
+    else if (arg === '--pod-settings') args.podSettings = argv[++index];
+    else if (arg === '--fallback') args.fallback = argv[++index];
+    else if (arg === '--nsfw-direct') args.nsfwDirect = true;
     else if (arg === '--batch-size') args.batchSize = Number.parseInt(argv[++index], 10);
     else if (arg === '--codex-batch-size') args.codexBatchSize = Number.parseInt(argv[++index], 10);
     else if (arg === '--offset') args.offset = Number.parseInt(argv[++index], 10);
@@ -155,8 +189,17 @@ function parseArgs(argv) {
   if (!Number.isInteger(args.codexBatchSize) || args.codexBatchSize < 1 || args.codexBatchSize > 200) {
     throw new Error('--codex-batch-size must be an integer from 1 to 200');
   }
-  if (!['auto', 'ollama', 'codex'].includes(args.backend)) {
-    throw new Error('--backend must be auto, ollama, or codex');
+  if (!['auto', 'ollama', 'codex', 'pod'].includes(args.backend)) {
+    throw new Error('--backend must be auto, ollama, codex, or pod');
+  }
+  // where a batch Codex refuses or garbles goes: the pod when its SSH is configured, else the local model
+  if (!args.fallback) {
+    let podConfigured = false;
+    try { const file = JSON.parse(fs.readFileSync(args.podSettings, 'utf8')); const raw = file?.data ?? file; podConfigured = raw.api_pod_ssh_enable === true && Boolean(String(raw.api_pod_ssh_target ?? '').trim()); } catch { /* no settings file */ }
+    args.fallback = podConfigured ? 'pod' : 'ollama';
+  }
+  if (!['ollama', 'pod'].includes(args.fallback)) {
+    throw new Error('--fallback must be ollama or pod');
   }
   if (!Number.isInteger(args.offset) || args.offset < 0) throw new Error('--offset must be a non-negative integer');
   if (!Number.isInteger(args.limit) || args.limit < 0) throw new Error('--limit must be a non-negative integer');
@@ -254,7 +297,22 @@ export function mergeCategories(existing, reviews, model) {
   return { data, added };
 }
 
-async function callOllamaJson(model, systemPrompt, userContent, schema) {
+async function callOllamaJson(model, systemPrompt, userContent, schema, { via = 'ollama', args = null } = {}) {
+  const chatPayload = {
+      model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent },
+      ],
+      stream: false,
+      think: false,
+      format: schema,
+      temperature: 0.1,
+      options: { num_predict: 4096 },
+      // the pod keeps the model warm between batches; locally VRAM goes back to ComfyUI
+      keep_alive: via === 'pod' ? '5m' : 0,
+  };
+  if (via === 'pod') return parseReviewResponse(String((await podChat(args, chatPayload))?.message?.content ?? ''));
   const response = await fetch(OLLAMA_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -324,9 +382,9 @@ function buildVerifyPrompt(rows) {
 }
 
 async function callBackend(backend, args, systemPrompt, userContent, schema) {
-  return backend === 'codex'
-    ? callCodexJson(args.codexModel, systemPrompt, userContent, schema)
-    : callOllamaJson(args.model, systemPrompt, userContent, schema);
+  if (backend === 'codex') return callCodexJson(args.codexModel, systemPrompt, userContent, schema);
+  if (backend === 'pod') return callOllamaJson(await podModelFor(args), systemPrompt, userContent, schema, { via: 'pod', args });
+  return callOllamaJson(args.model, systemPrompt, userContent, schema);
 }
 
 async function assignAndValidate(backend, args, rows) {
@@ -335,8 +393,8 @@ async function assignAndValidate(backend, args, rows) {
   } catch (error) {
     if (backend === 'codex') {
       // Refusal or malformed output: reroute the whole batch to the local model.
-      process.stdout.write(`Codex assignment failed (${error.message.slice(0, 160)}); falling back to local model...\n`);
-      return (await assignAndValidate('ollama', args, rows)).map(row => ({ ...row, model: args.model }));
+      process.stdout.write(`Codex assignment failed (${error.message.slice(0, 160)}); falling back to ${args.fallback}...\n`);
+      return (await assignAndValidate(args.fallback, args, rows)).map(row => ({ ...row, model: args.fallback === 'pod' ? args.podModel : args.model }));
     }
     const parts = splitReviewRows(rows);
     if (parts.length === 1) throw error;
@@ -350,8 +408,8 @@ async function verifyAndValidate(backend, args, rows) {
     return validateVerificationRows(rows, await callBackend(backend, args, VERIFY_SYSTEM_PROMPT, buildVerifyPrompt(rows), VERIFY_RESPONSE_SCHEMA));
   } catch (error) {
     if (backend === 'codex') {
-      process.stdout.write(`Codex verification failed (${error.message.slice(0, 160)}); falling back to local model...\n`);
-      return verifyAndValidate('ollama', args, rows);
+      process.stdout.write(`Codex verification failed (${error.message.slice(0, 160)}); falling back to ${args.fallback}...\n`);
+      return verifyAndValidate(args.fallback, args, rows);
     }
     const parts = splitReviewRows(rows);
     if (parts.length === 1) throw error;
@@ -366,10 +424,13 @@ function printHelp() {
 Assignment mode (writes a JSONL report):
   node scripts/categorizeTags.mjs --report <report.jsonl> [--min-heat 10000] [--groups 0,7,5,14] [--limit N]
 
-Backends (--backend auto|codex|ollama, default auto):
-  auto routes explicit tags to the local uncensored Ollama model and the rest
-  to Codex (--codex-model, default ${DEFAULT_CODEX_MODEL}); a batch Codex
-  refuses or garbles falls back to the local model automatically.
+Backends (--backend auto|codex|ollama|pod, default auto):
+  auto sends everything to Codex first (--codex-model, default ${DEFAULT_CODEX_MODEL});
+  a batch Codex refuses or garbles falls back to --fallback (pod when the SSH
+  pod is configured in --pod-settings, default settings/app.json; else ollama).
+  --nsfw-direct sends explicit tags straight to the fallback model instead.
+  pod = the Ollama model on the Runpod pod over the SSH relay (--pod-model,
+  default ${DEFAULT_POD_MODEL}); ollama = OLLAMA_TAG_REVIEW_URL / 127.0.0.1:11434.
 
 Apply verified high-confidence assignments into data/tag_categories.json:
   node scripts/categorizeTags.mjs --apply --report <report.jsonl> [--output data/tag_categories.json]
@@ -386,18 +447,22 @@ async function runAssign(args) {
   const selected = candidates.slice(args.offset, args.limit ? args.offset + args.limit : undefined);
   if (!selected.length) throw new Error('No rows selected');
 
-  // auto: explicit tags stay on the local uncensored model, the bulk goes to
-  // Codex (much faster than the partially CPU-offloaded local 35B).
+  // auto: everything goes to Codex first; a batch it refuses or garbles falls
+  // back to the uncensored model (--fallback: the pod over SSH when configured,
+  // else local Ollama). --nsfw-direct sends explicit tags straight to the
+  // fallback model instead, saving Codex round-trips.
   const lanes = args.backend === 'auto'
-    ? [
-      { backend: 'codex', rows: selected.filter(row => !isNsfwTag(row.tag)) },
-      { backend: 'ollama', rows: selected.filter(row => isNsfwTag(row.tag)) },
-    ]
+    ? (args.nsfwDirect
+      ? [
+        { backend: 'codex', rows: selected.filter(row => !isNsfwTag(row.tag)) },
+        { backend: args.fallback, rows: selected.filter(row => isNsfwTag(row.tag)) },
+      ]
+      : [{ backend: 'codex', rows: selected }])
     : [{ backend: args.backend, rows: selected }];
   process.stdout.write(`Categorizing ${selected.length} of ${candidates.length} candidate tags (min heat ${args.minHeat}, groups ${args.groups.join(',')}): ${lanes.map(lane => `${lane.rows.length} via ${lane.backend}`).join(', ')}...\n`);
   fs.writeFileSync(args.report, '', 'utf8');
   for (const lane of lanes) {
-    const laneModel = lane.backend === 'codex' ? args.codexModel : args.model;
+    const laneModel = lane.backend === 'codex' ? args.codexModel : lane.backend === 'pod' ? args.podModel : args.model;
     const laneBatchSize = lane.backend === 'codex' ? args.codexBatchSize : args.batchSize;
     for (let start = 0; start < lane.rows.length; start += laneBatchSize) {
       const batch = lane.rows.slice(start, start + laneBatchSize);

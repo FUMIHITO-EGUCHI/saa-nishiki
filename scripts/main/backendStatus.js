@@ -4,8 +4,8 @@
 // plain HTTP, remote hosts (e.g. Runpod pod proxies) only over HTTPS.
 import { net } from 'electron';
 import { backendAuthHeaders } from '../shared/backendAddress.js';
-import { resolvePodOrigin } from '../shared/llmEndpoint.js';
-import { isPodSshEnabled, podSessionState, podSessionStats } from './podSshTransport.js';
+import { isPodSshLlm, resolvePodOrigin } from '../shared/llmEndpoint.js';
+import { isPodSshEnabled, podOllamaRequest, podSessionState, podSessionStats } from './podSshTransport.js';
 
 const CAT = '[BackendStatus]';
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
@@ -132,7 +132,21 @@ export async function probeBackends(settings, options = {}) {
         }
     }
 
-    if (settings?.ai_interface === 'Local' || settings?.ai_interface === 'Pod') {
+    if (settings?.ai_interface === 'Pod' && isPodSshLlm(settings)) {
+        // Ollama behind the SSH relay: only asked through an already-open relay
+        // (a status poll never opens the SSH session).
+        result.ollama.configured = true;
+        result.ollama.remote = true;
+        result.ollama.mode = settings.ai_local_model_mode ?? null;
+        if (podSessionState() === 'connected') {
+            const tags = await podOllamaRequest({ settings, method: 'GET', path: '/api/tags', timeoutMs: 5000 });
+            result.ollama.ok = tags.ok;
+            if (!tags.ok) result.ollama.error = tags.message;
+        } else {
+            result.ollama.ok = false;
+            result.ollama.error = 'pod relay not connected';
+        }
+    } else if (settings?.ai_interface === 'Local' || settings?.ai_interface === 'Pod') {
         const isPod = settings.ai_interface === 'Pod';
         const origin = isPod
             ? probeOrigin(resolvePodOrigin(settings))

@@ -40,6 +40,8 @@ for i, arg in enumerate(sys.argv):
 
 CLIENT_ID = str(uuid.uuid4())
 BASE = f'http://127.0.0.1:{COMFY_PORT}'
+# Ollama on the pod, loopback only (never exposed through the Runpod proxy)
+OLLAMA_BASE = 'http://127.0.0.1:11434'
 write_lock = threading.Lock()
 
 
@@ -156,6 +158,44 @@ def handle(request):
             emit({'id': rid, 'ok': True})
         except Exception as error:  # noqa: BLE001
             emit({'id': rid, 'ok': False, 'message': str(error)})
+    elif cmd == 'ollama':
+        # One Ollama HTTP call over the relay (chat, tags, ...): the LLM never
+        # leaves the pod's loopback and nothing is proxied. Runs on a thread so
+        # a long generation does not block ping / stats.
+        path = str(request.get('path') or '/api/chat')
+        method = str(request.get('method') or 'POST').upper()
+        body = request.get('body')
+        timeout = float(request.get('timeout') or 300)
+
+        def call():
+            if not path.startswith('/api/'):
+                emit({'id': rid, 'ok': False, 'message': f'refused path: {path}'})
+                return
+            try:
+                data = json.dumps(body).encode('utf-8') if body is not None and method != 'GET' else None
+                req = urllib.request.Request(OLLAMA_BASE + path, data=data, method=method,
+                                             headers={'Content-Type': 'application/json'} if data else {})
+                with urllib.request.urlopen(req, timeout=timeout) as response:
+                    raw = response.read().decode('utf-8')
+                    try:
+                        payload = json.loads(raw)
+                    except ValueError:
+                        payload = raw
+                    emit({'id': rid, 'ok': True, 'status': response.status, 'json': payload})
+            except urllib.error.HTTPError as error:
+                detail = ''
+                try:
+                    detail = error.read().decode('utf-8', 'replace')[:1500]
+                except Exception:  # noqa: BLE001
+                    pass
+                emit({'id': rid, 'ok': False, 'status': error.code, 'message': f'ollama {path} HTTP {error.code}: {detail}'})
+            except Exception as error:  # noqa: BLE001
+                message = str(error)
+                if 'refused' in message.lower():
+                    message = f'Ollama is not running on the pod (port 11434 refused): {message}'
+                emit({'id': rid, 'ok': False, 'message': message})
+
+        threading.Thread(target=call, daemon=True).start()
     elif cmd == 'exit':
         emit({'id': rid, 'ok': True})
         sys.exit(0)

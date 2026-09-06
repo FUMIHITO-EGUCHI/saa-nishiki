@@ -66,6 +66,7 @@ AI 结果显示在 **Info 面板的 AI 标签页** 中，不再每次生成后�
 
 ## Runpod Pod 目标
 在设置中注册一个 Runpod Pod（SSH 目标与密钥），然后通过工具栏中的状态胶囊在 **GPU: Local** 与 **GPU: Pod** 之间切换图像生成目标。生成的图像通过 SSH 流式传回并仅保存在本地；不会写入 Pod 的磁盘。Pod 也可以承载 LLM 功能（AI 提示词 / 重写）。Pod 端点支持带认证的 `https` / `wss` 后端。
+AI 提示词 / 重写请求同样通过这条 SSH 中继发送到 Pod 上的 Ollama。安装、Pod 重启后的恢复脚本和故障排查见 [README_POD.md](README_POD.md)。
 
 ## 画廊与 Info 面板
 - Info 面板跟随画廊中选中的图像，包括其内嵌的 PNG 参数。

@@ -5,6 +5,9 @@ import {
     normalizeOllamaChatResponse,
 } from './ollamaSaaAdapter.js';
 import { backendAuthHeaders } from '../shared/backendAddress.js';
+import { isPodSshChatUrl } from '../shared/llmEndpoint.js';
+import { podOllamaRequest } from './podSshTransport.js';
+import { getGlobalSettings } from './globalSettings.js';
 
 const CAT = '[ModelAPI]';
 
@@ -118,6 +121,28 @@ function requestLocal(options) {
                     { role: 'user', content: `${userPrompt};Response in English` }
                 ],
             };
+        if (isPodSshChatUrl(apiUrl)) {
+            // Pod Ollama over the SSH relay: same request body, the reply comes back
+            // as JSON from the relay instead of an HTTP response.
+            const settings = getGlobalSettings();
+            const podModel = String(settings?.ai_pod_model ?? '').trim();
+            const podBody = podModel ? { ...requestBody, model: podModel } : requestBody;
+            podOllamaRequest({ settings, method: 'POST', path: '/api/chat', body: podBody, timeoutMs: timeout })
+                .then(reply => {
+                    if (!reply.ok) {
+                        console.error(`${CAT} pod ollama: ${reply.message}`);
+                        return resolve(`Error: ${reply.message}`);
+                    }
+                    try {
+                        return resolve(JSON.stringify(normalizeOllamaChatResponse(JSON.stringify(reply.json))));
+                    } catch (error) {
+                        console.error(`${CAT} Invalid Ollama response: ${error.message}`);
+                        return resolve('Error: Invalid Ollama response');
+                    }
+                })
+                .catch(error => resolve(`Error: ${error.message}`));
+            return;
+        }
         const body = JSON.stringify(requestBody);
 
         let request = net.request({
