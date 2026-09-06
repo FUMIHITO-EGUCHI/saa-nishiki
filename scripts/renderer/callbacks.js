@@ -118,6 +118,11 @@ export async function callback_api_interface(index, selectedValue){
     globalThis.generate.api_fast_lora?.updateDefaults(fastLoras.includes(SETTINGS.api_fast_lora) ? SETTINGS.api_fast_lora : 'None');
 }
 
+// The Prompts card swaps the regional characters as data; refresh the thumbs then.
+if (typeof document !== 'undefined') {
+    document.addEventListener('saa:regional-characters-changed', () => { callback_myCharacterList_updateThumb(); });
+}
+
 export async function callback_myCharacterList_updateThumb(){
     if(globalThis.globalSettings.regional_condition) {
         const L = globalThis.characterListRegional.getKey()[0];
@@ -134,6 +139,8 @@ export async function callback_myCharacterList_updateThumb(){
 
         globalThis.globalSettings.character_left = L;
         globalThis.globalSettings.character_right = R;
+        // the Prompts card lists each side's character
+        globalThis.prompt?.fieldManager?.renderList?.();
     } else {
         const keys = globalThis.characterList.getKey();
         const slots = globalThis.characterList.getSlots?.() ??
@@ -276,12 +283,14 @@ export function callback_regional_condition(trigger, dummy = false) {
 
     const dropdown1 = document.querySelector('.dropdown-character');
     const dropdown2 = document.querySelector('.dropdown-character-regional');
-    const text1 = document.querySelector('.prompt-positive-right');
+    // fields that only exist while Regional is on
+    const sideFields = ['.prompt-positive-right', '.prompt-negative-left', '.prompt-negative-right']
+        .map(selector => document.querySelector(selector)).filter(Boolean);
 
     if (trigger) {
         dropdown1.style.display = 'none';
         dropdown2.style.display = 'flex';
-        text1.style.display = 'block';       
+        for (const field of sideFields) field.style.display = 'block';
 
         globalThis.prompt.common.setTitle(LANG.regional_custom_prompt);
         globalThis.prompt.positive.setTitle(LANG.regional_api_prompt);
@@ -290,7 +299,7 @@ export function callback_regional_condition(trigger, dummy = false) {
     } else {
         dropdown1.style.display = 'flex';
         dropdown2.style.display = 'none';
-        text1.style.display = 'none';
+        for (const field of sideFields) field.style.display = 'none';
 
         globalThis.prompt.common.setTitle(LANG.custom_prompt);
         globalThis.prompt.positive.setTitle(LANG.api_prompt);

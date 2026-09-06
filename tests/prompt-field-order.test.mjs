@@ -77,7 +77,7 @@ test('generate.js drives the positive chain and negative merge from the stored o
   assert.match(generate, /getCustomFieldTexts\('negative'\)/);
   // the regional path keeps the legacy view combo
   const regional = read('scripts/renderer/generate_regional.js');
-  assert.match(regional, /getViewTags\(seed\)/);
+  assert.match(regional, /getViewTags\(seed, false\)/); // regional orders background / style as chain units too
 });
 
 test('settings carry the new prompt-field keys in the prompt section', () => {

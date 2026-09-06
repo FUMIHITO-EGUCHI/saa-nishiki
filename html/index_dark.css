@@ -2318,6 +2318,38 @@ body {
 .prompt-field-list-row.is-selected .prompt-field-list-count { color: #cfe6ff; }
 .prompt-field-list-add { margin: 8px 4px 2px; height: 26px; border: 1px dashed var(--saa-border-ctl); border-radius: 5px; background: transparent; color: var(--saa-muted); font-size: 11px; cursor: pointer; }
 .prompt-field-list-add:hover { background: var(--saa-bg-hover); }
+
+/* Regional sides in the Prompts field list */
+.prompt-side-swap-row { display: flex; align-items: center; gap: 6px; padding: 10px 8px 2px; }
+.prompt-side-swap-row .prompt-field-list-section { padding: 0; }
+.prompt-side-swap { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; margin-left: auto; border: 1px solid var(--saa-border-ctl); border-radius: 11px; background: var(--saa-bg-control); color: var(--saa-muted2); font: inherit; font-size: 10.5px; cursor: pointer; }
+.prompt-side-swap:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
+.prompt-side-block { display: flex; flex-direction: column; gap: 2px; padding: 4px 0 4px 6px; border-left: 2px solid var(--saa-border-strong); border-radius: 0 6px 6px 0; }
+.prompt-side-block.is-left { border-left-color: var(--saa-stripe-positive); }
+.prompt-side-block.is-right { border-left-color: var(--saa-accent); }
+.prompt-side-block + .prompt-side-block { margin-top: 6px; }
+.prompt-side-head { display: flex; align-items: center; gap: 5px; min-height: 20px; padding: 2px 8px 0; border: none; background: transparent; font: inherit; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; cursor: pointer; text-align: left; }
+.prompt-side-head.is-left { color: var(--saa-stripe-positive); }
+.prompt-side-head.is-right { color: var(--saa-accent); }
+.prompt-side-head svg { flex: none; }
+.prompt-side-head-summary { margin-left: auto; font-weight: 500; letter-spacing: 0; color: var(--saa-placeholder); }
+.prompt-side-character { display: flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 8px; border: none; border-radius: 5px; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 11px; cursor: pointer; text-align: left; }
+.prompt-side-character:hover { background: var(--saa-bg-hover); }
+.prompt-side-character svg { flex: none; color: var(--saa-accent); }
+.prompt-side-character svg:last-child { color: var(--saa-placeholder); }
+.prompt-side-character-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prompt-side-character.is-empty .prompt-side-character-name { color: var(--saa-placeholder); font-style: italic; }
+.prompt-side-badge { display: inline-flex; align-items: center; max-width: 200px; height: 18px; padding: 0 7px; margin-left: 6px; border-radius: 9px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prompt-side-badge.is-left { background: color-mix(in srgb, var(--saa-stripe-positive) 18%, transparent); color: var(--saa-stripe-positive); }
+.prompt-side-badge.is-right { background: color-mix(in srgb, var(--saa-accent) 18%, transparent); color: var(--saa-accent); }
+.prompt-field-editor-side { display: inline-flex; border: 1px solid var(--saa-border-ctl); border-radius: 5px; overflow: hidden; }
+.prompt-field-editor-row .prompt-field-editor-side button { min-width: 0; height: 20px; padding: 0 7px; border: none; border-radius: 0; border-left: 1px solid var(--saa-border-ctl); background: var(--saa-bg-control); color: var(--saa-muted); font-size: 10px; }
+.prompt-field-editor-row .prompt-field-editor-side button:first-child { border-left: none; }
+.prompt-field-editor-row .prompt-field-editor-side button.is-selected { background: var(--saa-bg-selected); color: #ffffff; font-weight: 600; }
+.prompt-field-editor-side-fixed { font-size: 10px; color: var(--saa-placeholder); white-space: nowrap; }
+.prompt-field-editor-side-note { margin-top: 8px; font-size: 10.5px; line-height: 1.5; color: var(--saa-placeholder); }
+/* "Swap Character" is retired: the Prompts card swaps the sides as data */
+.regional-condition-swap { display: none !important; }
 .prompt-editor-host { min-height: 280px; }
 .prompt-editor-host .prompt-field.is-off-screen { display: none !important; }
 .prompt-editor-host [class^="myTextbox-"][class*="-textarea"] { min-height: 200px; }

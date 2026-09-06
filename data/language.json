@@ -47,6 +47,8 @@
         "prompt_background": "Background Prompt (type `random` alone for a random one)",
         "prompt_style": "Style Prompt (type `random` alone for a random one)",
         "api_neg_prompt": "Negative Prompt",
+        "api_neg_prompt_left": "Negative (left)",
+        "api_neg_prompt_right": "Negative (right)",
         "ptompt_textbox_autoresize": "Auto line height",
         "ptompt_textbox_fontsize": "Prompt font size",
 
@@ -637,6 +639,8 @@
         "prompt_background": "背景提示词（只填 `random` 时随机抽取）",
         "prompt_style": "风格提示词（只填 `random` 时随机抽取）",
         "api_neg_prompt": "负面提示词",
+        "api_neg_prompt_left": "负面提示词（左侧）",
+        "api_neg_prompt_right": "负面提示词（右侧）",
         "ptompt_textbox_autoresize": "自动调整行数",
         "ptompt_textbox_fontsize": "提示词字体尺寸",
 

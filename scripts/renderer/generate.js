@@ -168,7 +168,7 @@ function createViewTag(view_list, in_tag, seed, weight) {
 // Background / Style are prompt fields since the view-dropdown split. Free text is used
 // as-is; a field whose whole content is `random` keeps the old dropdown behaviour of
 // picking one tag from the view-tag list per seed.
-function readViewPromptField(view_list, key, seed) {
+export function readViewPromptField(view_list, key, seed) {
     const text = readPromptValue(key).trim();
     if (text === '') return '';
     if (text.toLowerCase() === 'random') return createViewTag(view_list, 'Random', seed, 1);

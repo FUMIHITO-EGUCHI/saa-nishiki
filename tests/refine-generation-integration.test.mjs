@@ -30,7 +30,7 @@ test('normal and regional fixed context stays separate for V2 prompt recompositi
 
   const regional = read('scripts/renderer/generate_regional.js');
   assert.match(regional, /refineContext: \{[\s\S]*?left: \{[\s\S]*?characters: character_left,[\s\S]*?right: \{[\s\S]*?characters: character_right/);
-  assert.match(regional, /leftSeed: randomSeed,[\s\S]*?rightSeed: randomSeedr,[\s\S]*?characterNegative: negative_tags,/);
+  assert.match(regional, /leftSeed: randomSeed,[\s\S]*?rightSeed: randomSeedr,[\s\S]*?characterNegative: \[negative_tags_left, negative_tags_right\]/);
 });
 
 test('main process forwards structured editor and generation context only to the Ollama adapter', () => {

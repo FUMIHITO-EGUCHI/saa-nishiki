@@ -14,6 +14,7 @@ import {
     normalizeOrder,
     setCustomFieldExtras,
 } from '../../shared/promptFieldOrder.js';
+import { normalizeSide, sideOf, sideOrder, swapSidesPatch } from '../../shared/regionalSides.js';
 
 const BUILTIN_LABELS = {
     common: 'Common',
@@ -23,8 +24,14 @@ const BUILTIN_LABELS = {
     ai: 'AI prompt',
     characters: 'Characters',
     positive: 'Positive',
+    positive_right: 'Positive (right)',
     negative: 'Negative',
+    negative_left: 'Negative (left)',
+    negative_right: 'Negative (right)',
 };
+// While Regional is on the side is the section, so the side fields shorten
+const REGIONAL_LABELS = { positive: 'Positive', positive_right: 'Positive', negative_left: 'Negative', negative_right: 'Negative' };
+const SIDE_LABELS = { both: 'Both', left: 'Left', right: 'Right' };
 
 // Units with a text container inside .prompt-fields (structural units live elsewhere).
 const BUILTIN_CONTAINERS = {
@@ -34,6 +41,8 @@ const BUILTIN_CONTAINERS = {
     positive: '.prompt-positive',
     positive_right: '.prompt-positive-right',
     negative: '.prompt-negative',
+    negative_left: '.prompt-negative-left',
+    negative_right: '.prompt-negative-right',
     exclude: '.prompt-exclude',
 };
 
@@ -134,7 +143,7 @@ export function setupPromptFieldManager() {
 
     const BUILTIN_STRIPES = {
         common: 'common', background: 'view', style: 'view', positive: 'positive',
-        positive_right: 'positive', negative: 'negative', exclude: 'exclude',
+        positive_right: 'positive', negative: 'negative', negative_left: 'negative', negative_right: 'negative', exclude: 'exclude',
     };
 
     let selectedField = '';
@@ -164,7 +173,60 @@ export function setupPromptFieldManager() {
         return fieldValue(id).split(/[,\n]/).map(part => part.trim()).filter(Boolean).length;
     }
 
-    function listEntries() {
+    const isRegional = () => Boolean(SETTINGS.regional_condition);
+
+    // ------------------------------------------------------------- regional sides
+    // Collapsed state of the LEFT / RIGHT blocks is a per-machine preference.
+    const SIDE_COLLAPSE_KEY = 'saa.sideCollapsed';
+    let sideCollapsed = { left: false, right: false };
+    try { sideCollapsed = { ...sideCollapsed, ...JSON.parse(localStorage.getItem(SIDE_COLLAPSE_KEY) || '{}') }; } catch { /* storage blocked */ }
+    function toggleSide(side) {
+        sideCollapsed[side] = !sideCollapsed[side];
+        try { localStorage.setItem(SIDE_COLLAPSE_KEY, JSON.stringify(sideCollapsed)); } catch { /* storage blocked */ }
+        renderFieldList();
+    }
+
+    // The side's characters come from the regional character control in the
+    // Characters card: its slot triggers carry the display name and open the picker.
+    function sideCharacterTriggers(side) {
+        const indexes = side === 'left' ? [0, 2] : [1, 3];
+        return indexes
+            .map(index => document.querySelector(`.dropdown-character-regional .character-selection-field[data-index="${index}"] .character-selection-trigger`))
+            .filter(Boolean);
+    }
+    function sideCharacterName(side) {
+        return sideCharacterTriggers(side)
+            .map(trigger => trigger.textContent.trim())
+            .filter(name => name !== '' && name.toLowerCase() !== 'none')
+            .join(' · ');
+    }
+
+    // Chain units of one side in order, structural units (views / ai / characters) left out.
+    function sideChain(side) {
+        const chain = order => sideOrder(order, side, fields).filter(id => !STRUCTURAL_UNITS.has(id));
+        return [...chain(SETTINGS.prompt_positive_order), ...chain(SETTINGS.prompt_negative_order)];
+    }
+
+    function regionalEntries({ includeCollapsed = false } = {}) {
+        const entries = [];
+        const both = sideChain('both');
+        entries.push({ section: 'BOTH SIDES', stripe: 'common' });
+        for (const id of both) entries.push({ id });
+        entries.push({ swapRow: true });
+        for (const side of ['left', 'right']) {
+            const own = sideChain(side).filter(id => !both.includes(id));
+            entries.push({ sideHead: side, fields: own });
+            entries.push({ character: side });
+            if (sideCollapsed[side] && !includeCollapsed) continue;
+            for (const id of own) entries.push({ id, side });
+        }
+        entries.push({ section: 'ALL', stripe: 'exclude' });
+        entries.push({ id: 'exclude' });
+        return entries;
+    }
+
+    function listEntries(options = {}) {
+        if (isRegional()) return regionalEntries(options);
         const entries = [];
         entries.push({ section: 'POSITIVE', stripe: 'positive' });
         for (const id of SETTINGS.prompt_positive_order) {
@@ -179,14 +241,91 @@ export function setupPromptFieldManager() {
         return entries;
     }
 
+    // Swap left and right: prompts, negatives, weight plans, characters, strengths
+    // and the side of every custom field - one undo step. The controls are pushed
+    // the new values; the settings were already patched, so nothing fires twice.
+    function swapSides() {
+        const patch = swapSidesPatch(SETTINGS);
+        const mutate = () => {
+            for (const [key, value] of Object.entries(patch)) SETTINGS[key] = value;
+            globalThis.prompt?.positive?.setValue?.(SETTINGS.api_prompt);
+            globalThis.prompt?.positive_right?.setValue?.(SETTINGS.api_prompt_right);
+            globalThis.prompt?.negative_left?.setValue?.(SETTINGS.api_neg_prompt_left);
+            globalThis.prompt?.negative_right?.setValue?.(SETTINGS.api_neg_prompt_right);
+            globalThis.regional?.str_left?.setValue?.(SETTINGS.regional_str_left);
+            globalThis.regional?.str_right?.setValue?.(SETTINGS.regional_str_right);
+            globalThis.regional?.option_left?.updateDefaults?.(SETTINGS.regional_option_left);
+            globalThis.regional?.option_right?.updateDefaults?.(SETTINGS.regional_option_right);
+            const list = globalThis.characterListRegional;
+            if (list?.getKey) {
+                const keys = list.getKey();
+                const weights = [0, 1, 2, 3].map(index => list.getTextValue(index));
+                list.updateDefaults(keys[1], keys[0], keys[3], keys[2]);
+                [1, 0, 3, 2].forEach((from, to) => list.setTextValue(to, weights[from]));
+                document.dispatchEvent(new CustomEvent('saa:regional-characters-changed'));
+            }
+            fields = normalizeCustomFields(SETTINGS.prompt_custom_fields);
+            persistFields();
+            renderCustomFields();
+            globalThis.prompt?.tagCapsuleFields?.loadFromSettings?.(SETTINGS);
+            applyDomOrder();
+        };
+        const persistence = globalThis.settingsPersistence;
+        if (persistence?.runEditTransaction) return persistence.runEditTransaction({ source: 'regional-swap', sections: ['prompt', 'generation'] }, mutate);
+        return mutate();
+    }
+
+    // "LEFT · Hatsune Miku" on the focused editor's header (regional side fields only)
+    function updateSideBadge(container, id) {
+        const label = container?.querySelector?.('.tag-field-label');
+        if (!label) return;
+        const side = isRegional() && id !== 'exclude' ? sideOf(id, fields) : 'both';
+        let badge = label.querySelector('.prompt-side-badge');
+        if (side === 'both') { badge?.remove(); return; }
+        if (!badge) {
+            badge = document.createElement('span');
+            label.appendChild(badge);
+        }
+        badge.className = `prompt-side-badge is-${side}`;
+        const name = sideCharacterName(side);
+        badge.textContent = name ? `${side.toUpperCase()} · ${name}` : side.toUpperCase();
+        badge.title = badge.textContent;
+    }
+
+    function svgIcon(path, size = 10) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', String(size));
+        svg.setAttribute('height', String(size));
+        svg.setAttribute('viewBox', '0 0 16 16');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '1.7');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        svg.setAttribute('aria-hidden', 'true');
+        for (const d of [].concat(path)) {
+            const element = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            element.setAttribute('d', d);
+            svg.appendChild(element);
+        }
+        return svg;
+    }
+    const ICON_CHEVRON_DOWN = 'M4 6l4 4 4-4';
+    const ICON_CHEVRON_RIGHT = 'M6 4l4 4-4 4';
+    const ICON_SWAP = ['M2 5.5h10M9.5 3l2.5 2.5L9.5 8', 'M14 10.5H4M6.5 8L4 10.5 6.5 13'];
+    const ICON_PERSON = ['M8 8.3a2.8 2.8 0 1 0 0-5.6 2.8 2.8 0 0 0 0 5.6z', 'M2.8 13.5c.7-2.6 2.6-4 5.2-4s4.5 1.4 5.2 4'];
+
     function fieldLabel(id) {
         const custom = fields.find(field => field.id === id);
         if (custom) return custom.name;
+        if (isRegional() && REGIONAL_LABELS[id]) return REGIONAL_LABELS[id];
         const container = unitContainer(id);
-        const label = container?.querySelector('.tag-field-label')?.textContent
+        const capsuleLabel = container?.querySelector('.tag-field-label');
+        // text nodes only: the side badge is a child of the same label
+        const label = (capsuleLabel ? [...capsuleLabel.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent).join('') : '')
             || container?.querySelector('div[class^="myTextbox-"][class*="-header"]')?.firstChild?.textContent;
         if (label && label.trim() !== '') return label.trim();
-        return { common: 'Common', background: 'Background', style: 'Style', positive: 'Positive', positive_right: 'Positive (right)', negative: 'Negative', exclude: 'Exclude' }[id] || id;
+        return { ...BUILTIN_LABELS, exclude: 'Exclude' }[id] || id;
     }
 
     // positive_right toggles via inline display (regional mode); a class with
@@ -204,42 +343,117 @@ export function setupPromptFieldManager() {
         for (const container of editor.querySelectorAll('.prompt-field')) {
             container.classList.toggle('is-off-screen', container !== target);
         }
+        updateSideBadge(target, id);
         renderFieldList();
+    }
+
+    function fieldRow(entry) {
+        const container = unitContainer(entry.id);
+        // mirror app-side visibility (e.g. positive_right only in regional mode)
+        if (!isAvailable(container)) return null;
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'prompt-field-list-row';
+        row.classList.toggle('is-selected', entry.id === selectedField);
+        row.dataset.fieldId = entry.id;
+        if (entry.side) row.dataset.side = entry.side;
+        const dot = document.createElement('span');
+        dot.className = 'prompt-field-list-dot';
+        dot.dataset.stripe = container.dataset.stripe || BUILTIN_STRIPES[entry.id] || 'view';
+        const name = document.createElement('span');
+        name.className = 'prompt-field-list-name';
+        name.textContent = fieldLabel(entry.id);
+        const count = document.createElement('span');
+        count.className = 'prompt-field-list-count';
+        const n = tagCount(entry.id);
+        count.textContent = n > 0 ? String(n) : '';
+        row.append(dot, name, count);
+        row.addEventListener('click', () => selectField(entry.id));
+        return row;
+    }
+
+    function sideHeadRow(entry) {
+        const side = entry.sideHead;
+        const head = document.createElement('button');
+        head.type = 'button';
+        head.className = `prompt-side-head is-${side}`;
+        const collapsed = Boolean(sideCollapsed[side]);
+        head.title = collapsed ? `Expand ${side.toUpperCase()}` : `Collapse ${side.toUpperCase()}`;
+        head.setAttribute('aria-expanded', String(!collapsed));
+        head.appendChild(svgIcon(collapsed ? ICON_CHEVRON_RIGHT : ICON_CHEVRON_DOWN));
+        head.appendChild(document.createTextNode(side.toUpperCase()));
+        if (collapsed) {
+            const summary = document.createElement('span');
+            summary.className = 'prompt-side-head-summary';
+            const available = entry.fields.filter(id => isAvailable(unitContainer(id)));
+            const tags = available.reduce((sum, id) => sum + tagCount(id), 0);
+            summary.textContent = `${available.length} fields · ${tags} tags`;
+            head.appendChild(summary);
+        }
+        head.addEventListener('click', () => toggleSide(side));
+        return head;
+    }
+
+    function characterRow(entry) {
+        const side = entry.character;
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = `prompt-side-character is-${side}`;
+        const name = sideCharacterName(side);
+        row.classList.toggle('is-empty', name === '');
+        row.title = `Change the ${side} character`;
+        row.appendChild(svgIcon(ICON_PERSON, 12));
+        const text = document.createElement('span');
+        text.className = 'prompt-side-character-name';
+        text.textContent = name || 'Choose character…';
+        row.appendChild(text);
+        row.appendChild(svgIcon(ICON_CHEVRON_RIGHT));
+        row.addEventListener('click', () => sideCharacterTriggers(side)[0]?.click());
+        return row;
+    }
+
+    function swapRow() {
+        const row = document.createElement('div');
+        row.className = 'prompt-side-swap-row';
+        const heading = document.createElement('span');
+        heading.className = 'prompt-field-list-section';
+        heading.textContent = 'SIDES';
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'prompt-side-swap';
+        button.title = 'Swap left and right: prompts, negatives, characters, strengths';
+        button.appendChild(svgIcon(ICON_SWAP, 12));
+        button.appendChild(document.createTextNode('Swap'));
+        button.addEventListener('click', () => swapSides());
+        row.append(heading, button);
+        return row;
     }
 
     function renderFieldList() {
         const layout = ensureLayout();
         const list = layout.querySelector('.prompt-field-list');
         list.innerHTML = '';
+        let block = null; // the LEFT / RIGHT block the following rows belong to
         for (const entry of listEntries()) {
             if (entry.section) {
+                block = null;
                 const heading = document.createElement('div');
                 heading.className = `prompt-field-list-section is-${entry.stripe}`;
                 heading.textContent = entry.section;
                 list.appendChild(heading);
                 continue;
             }
-            const container = unitContainer(entry.id);
-            // mirror app-side visibility (e.g. positive_right only in regional mode)
-            if (!isAvailable(container)) continue;
-            const row = document.createElement('button');
-            row.type = 'button';
-            row.className = 'prompt-field-list-row';
-            row.classList.toggle('is-selected', entry.id === selectedField);
-            row.dataset.fieldId = entry.id;
-            const dot = document.createElement('span');
-            dot.className = 'prompt-field-list-dot';
-            dot.dataset.stripe = container.dataset.stripe || BUILTIN_STRIPES[entry.id] || 'view';
-            const name = document.createElement('span');
-            name.className = 'prompt-field-list-name';
-            name.textContent = fieldLabel(entry.id);
-            const count = document.createElement('span');
-            count.className = 'prompt-field-list-count';
-            const n = tagCount(entry.id);
-            count.textContent = n > 0 ? String(n) : '';
-            row.append(dot, name, count);
-            row.addEventListener('click', () => selectField(entry.id));
-            list.appendChild(row);
+            if (entry.swapRow) { block = null; list.appendChild(swapRow()); continue; }
+            if (entry.sideHead) {
+                block = document.createElement('div');
+                block.className = `prompt-side-block is-${entry.sideHead}`;
+                block.appendChild(sideHeadRow(entry));
+                list.appendChild(block);
+                continue;
+            }
+            if (entry.character) { (block ?? list).appendChild(characterRow(entry)); continue; }
+            const row = fieldRow(entry);
+            if (row) (entry.side ? block ?? list : list).appendChild(row);
         }
         const add = document.createElement('button');
         add.type = 'button';
@@ -247,6 +461,7 @@ export function setupPromptFieldManager() {
         add.textContent = '+ Add field';
         add.addEventListener('click', openEditor);
         list.appendChild(add);
+        updateSideBadge(unitContainer(selectedField), selectedField);
     }
 
     let countTimer = 0;
@@ -455,8 +670,14 @@ export function setupPromptFieldManager() {
                     <option value="positive">Positive</option>
                     <option value="negative">Negative</option>
                 </select>
+                <select class="prompt-field-editor-side-select" title="Regional side">
+                    <option value="both">Both sides</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                </select>
                 <button type="button" class="prompt-field-editor-add-button">+ Add field</button>
-            </div>`;
+            </div>
+            <div class="prompt-field-editor-side-note">Side only matters while Regional is on: Both goes into the left and the right prompt, Left / Right into one of them. With Regional off every field joins the single chain.</div>`;
         editor.appendChild(panel);
         document.body.appendChild(editor);
 
@@ -466,7 +687,8 @@ export function setupPromptFieldManager() {
             const name = nameInput.value.trim();
             if (name === '') return;
             const polarity = panel.querySelector('.prompt-field-editor-polarity').value;
-            fields.push({ id: makeCustomFieldId(), name, polarity, text: '' });
+            const side = normalizeSide(panel.querySelector('.prompt-field-editor-side-select')?.value);
+            fields.push({ id: makeCustomFieldId(), name, polarity, text: '', ...(side === 'both' ? {} : { side }) });
             nameInput.value = '';
             persistFields();
             renderCustomFields();
@@ -489,6 +711,12 @@ export function setupPromptFieldManager() {
                     label.textContent = custom ? custom.name : (BUILTIN_LABELS[id] || id);
                     if (STRUCTURAL_UNITS.has(id)) label.classList.add('is-structural');
                     row.appendChild(label);
+                    if (!custom && !STRUCTURAL_UNITS.has(id)) {
+                        const fixed = document.createElement('span');
+                        fixed.className = 'prompt-field-editor-side-fixed';
+                        fixed.textContent = id === 'positive' || id === 'negative' ? 'both · left · right' : sideOf(id, fields);
+                        row.appendChild(fixed);
+                    }
 
                     const up = document.createElement('button');
                     up.type = 'button';
@@ -501,6 +729,24 @@ export function setupPromptFieldManager() {
                     row.append(up, down);
 
                     if (custom) {
+                        // Both / Left / Right for the regional chain (see regionalSides.js)
+                        const sideControl = document.createElement('div');
+                        sideControl.className = 'prompt-field-editor-side';
+                        const currentSide = normalizeSide(custom.side);
+                        for (const side of ['both', 'left', 'right']) {
+                            const option = document.createElement('button');
+                            option.type = 'button';
+                            option.textContent = SIDE_LABELS[side];
+                            option.classList.toggle('is-selected', side === currentSide);
+                            option.addEventListener('click', () => {
+                                if (side === 'both') delete custom.side; else custom.side = side;
+                                persistFields();
+                                applyDomOrder();
+                                renderEditorLists();
+                            });
+                            sideControl.appendChild(option);
+                        }
+                        row.appendChild(sideControl);
                         const rename = document.createElement('button');
                         rename.type = 'button';
                         rename.textContent = '✎';
@@ -583,6 +829,10 @@ export function setupPromptFieldManager() {
             applyDomOrder();
         },
         openEditor,
+        // re-render the field list only (character names, counts)
+        renderList: () => renderFieldList(),
+        swapSides,
+        toggleSide,
         // Weight plans / batch of a custom field live in its entry (tagCapsuleField
         // writes them through here so a later rename / reorder cannot clobber them).
         setFieldExtras: (id, extras) => {
@@ -591,7 +841,7 @@ export function setupPromptFieldManager() {
             persistFields();
         },
         // visible prompt fields in chain order (right-click "Move to" targets)
-        listFields: () => listEntries()
+        listFields: () => listEntries({ includeCollapsed: true })
             .filter(entry => entry.id && isAvailable(unitContainer(entry.id)))
             .map(entry => ({ id: entry.id, label: fieldLabel(entry.id) })),
     };

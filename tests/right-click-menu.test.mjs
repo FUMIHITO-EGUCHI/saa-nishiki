@@ -38,7 +38,7 @@ test('prompt field entries work for every field through data-field-key (custom f
     assert.match(field, /textbox\.dataset\.fieldKey = key/);
     assert.match(field, /chips\.dataset\.fieldKey = key/);
     assert.match(menu, /PROMPT_TEXTAREA = \/\(\^\|\\s\)myTextbox-prompt-\[\\w-\]\+-textarea/, 'spellcheck word lookup covers custom prompt textareas');
-    assert.match(manager, /listFields: \(\) => listEntries\(\)/, 'move targets follow the chain order');
+    assert.match(manager, /listFields: \(\) => listEntries\(\{ includeCollapsed: true \}\)/, 'move targets follow the chain order');
 });
 
 test('submenus render as an in-place accordion (the menu box clips flyouts)', () => {

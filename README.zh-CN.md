@@ -431,6 +431,8 @@ __YourWildCardName__
 *Forge Neo*
 `Regional Condition` 需要 [SD Forge Attention Couple](https://github.com/Haoming02/sd-forge-couple) [latest](https://github.com/Haoming02/sd-forge-couple/commits/main/)
 
+**左右两侧（Nishiki）。** 开启 Regional 后，Prompts 卡片把字段分为 **BOTH SIDES**（Common、Background、Style、共享 Negative 以及标记为 *Both* 的自定义字段）、**LEFT** / **RIGHT**（各侧的角色、Positive、各自的 Negative 和仅属于该侧的自定义字段）和 **ALL**（Exclude）。自定义字段的侧别在 Fields 编辑器中设置。**Swap** 一键交换左右（提示词、Negative、权重计划、角色、强度），可撤销；它取代了原来的“Swap Character”开关。点击角色行可打开角色选择器，每一侧都可从标题折叠。ComfyUI 上左右 Negative 与 Positive 使用同样的区域蒙版；Forge Neo 则合并为一个 Negative。
+
 <img src="examples/nishiki_regional.png" width=35%>
 
 ## 半自动标签补全

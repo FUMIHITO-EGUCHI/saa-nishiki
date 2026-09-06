@@ -139,7 +139,6 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     globalThis.generate.regionalCondition.setTitle(LANG.regional_condition);
     globalThis.generate.regionalCondition_dummy.setTitle(LANG.regional_condition);
-    globalThis.regional.swap.setTitle(LANG.regional_swap);
     globalThis.regional.overlap_ratio.setTitle(LANG.regional_overlap_ratio);
     globalThis.regional.image_ratio.setTitle(LANG.regional_image_ratio);
     globalThis.regional.str_left.setTitle(LANG.regional_str_left);
@@ -209,6 +208,8 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.prompt.positive.setTitle(LANG.api_prompt);
     globalThis.prompt.positive_right.setTitle(LANG.regional_api_prompt_right);
     globalThis.prompt.negative.setTitle(LANG.api_neg_prompt);
+    globalThis.prompt.negative_left?.setTitle(LANG.api_neg_prompt_left);
+    globalThis.prompt.negative_right?.setTitle(LANG.api_neg_prompt_right);
     globalThis.prompt.background.setTitle(LANG.prompt_background);
     globalThis.prompt.style.setTitle(LANG.prompt_style);
     globalThis.prompt.ai.setTitle(LANG.ai_prompt);
@@ -287,7 +288,6 @@ export function updateSettings() {
 
     globalThis.generate.regionalCondition.setValue(SETTINGS.regional_condition);
     globalThis.generate.regionalCondition_dummy.setValue(SETTINGS.regional_condition);
-    globalThis.regional.swap.setValue(SETTINGS.regional_swap);
     globalThis.regional.overlap_ratio.setValue(SETTINGS.regional_overlap_ratio);
     globalThis.regional.image_ratio.setValue(SETTINGS.regional_image_ratio);
     globalThis.regional.str_left.setValue(SETTINGS.regional_str_left);
@@ -379,6 +379,8 @@ export function updateSettings() {
     globalThis.prompt.positive.setValue(SETTINGS.api_prompt);
     globalThis.prompt.positive_right.setValue(SETTINGS.api_prompt_right);
     globalThis.prompt.negative.setValue(SETTINGS.api_neg_prompt);
+    globalThis.prompt.negative_left?.setValue(SETTINGS.api_neg_prompt_left);
+    globalThis.prompt.negative_right?.setValue(SETTINGS.api_neg_prompt_right);
     globalThis.prompt.background.setValue(SETTINGS.prompt_background);
     globalThis.prompt.style.setValue(SETTINGS.prompt_style);
     globalThis.prompt.ai.setValue(SETTINGS.ai_prompt);

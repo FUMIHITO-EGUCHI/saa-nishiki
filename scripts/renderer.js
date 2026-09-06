@@ -1,4 +1,5 @@
 import { updateLanguage, updateSettings, SAMPLER_COMFYUI, SCHEDULER_COMFYUI, SAMPLER_WEBUI, SCHEDULER_WEBUI } from './renderer/language.js';
+import { migrateRegionalSwap } from './shared/regionalSides.js';
 import { setupGallery } from './renderer/customGallery.js';
 import { setupThumbOverlay, setupThumb } from './renderer/customThumbGallery.js';
 import { setupSuggestionSystem } from './renderer/tagAutoComplete.js';
@@ -413,6 +414,16 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
             defaultTextColor: 'Crimson',
             maxLines: 10
             }, false, (value) => { globalThis.globalSettings.api_neg_prompt = value; }),
+        negative_left: setupTextbox('prompt-negative-left', LANG.api_neg_prompt_left, {   //Regional Condition
+            value: SETTINGS.api_neg_prompt_left,
+            defaultTextColor: 'Crimson',
+            maxLines: 10
+            }, false, (value) => { globalThis.globalSettings.api_neg_prompt_left = value; }),
+        negative_right: setupTextbox('prompt-negative-right', LANG.api_neg_prompt_right, { //Regional Condition
+            value: SETTINGS.api_neg_prompt_right,
+            defaultTextColor: 'Crimson',
+            maxLines: 10
+            }, false, (value) => { globalThis.globalSettings.api_neg_prompt_right = value; }),
         ai: setupTextbox('prompt-ai', LANG.ai_prompt, {
             value: SETTINGS.ai_prompt,
             defaultTextColor: 'hotpink',
@@ -439,8 +450,10 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
         globalThis.prompt.positive,
         globalThis.prompt.positive_right,
         globalThis.prompt.negative,
+        globalThis.prompt.negative_left,
+        globalThis.prompt.negative_right,
         globalThis.prompt.exclude,
-    ], ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'exclude']);
+    ], ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
     globalThis.prompt.tagCapsuleFields = setupTagCapsuleFields([
         globalThis.prompt.common,
         globalThis.prompt.background,
@@ -448,9 +461,11 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
         globalThis.prompt.positive,
         globalThis.prompt.positive_right,
         globalThis.prompt.negative,
+        globalThis.prompt.negative_left,
+        globalThis.prompt.negative_right,
         globalThis.prompt.exclude,
     ], {
-        keys: ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'exclude'],
+        keys: ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude'],
         applyExclude: (prompt, exclude) => filterPrompts(prompt, prompt, exclude).positivePrompt,
         fetchRelated: value => fetchRelatedTags(value),
         finalPromptContainer: document.querySelector('#prompt-text-container .prompt-fields') ?? document.querySelector('#prompt-text-container'),
@@ -491,8 +506,6 @@ export async function createHifixRefiner(SETTINGS, FILES, LANG) {
 export async function createRegional(SETTINGS, FILES, LANG) {
     console.log('Creating globalThis.regional');
     globalThis.regional = {
-        swap: setupCheckbox('regional-condition-swap', LANG.regional_swap, SETTINGS.regional_swap, true,
-            (value) => { globalThis.globalSettings.regional_swap = value; }),
         overlap_ratio: setupSlider('regional-condition-overlap-ratio', LANG.regional_overlap_ratio, {min:0, max:200, step:10, defaultValue:SETTINGS.regional_overlap_ratio},
             (value) => { globalThis.globalSettings.regional_overlap_ratio = value; }),
         image_ratio: setupSlider('regional-condition-image-ratio', LANG.regional_image_ratio, {min:10, max:90, step:5, defaultValue:SETTINGS.regional_image_ratio},
@@ -588,6 +601,8 @@ async function init(){
     try {
         // Init Global Settings (proxied: every write marks its section dirty for the autosave)
         installSettingsProxy(await globalThis.api.getGlobalSettings());
+        // a stored "Swap Character" flag becomes a one-time data swap (Swap button now)
+        if (migrateRegionalSwap(globalThis.globalSettings)) console.log('[Regional] applied the retired regional_swap flag as a data swap');
 
         // Setup main func
         globalThis.mainGallery = {};

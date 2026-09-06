@@ -2620,3 +2620,69 @@ export const VAE_LOADER = {
     "title": "Load VAE"
   }
 };
+
+// ---------------------------------------------------------------- Regional: per-side negatives
+// The stock regional graphs mask only the positives; the negative (TextBoxMira 33)
+// feeds every sampler unmasked. Nishiki gives each side its own negative: node 70
+// carries the right text, 33 keeps the left, and each is masked with the same
+// rectangles the positives use (48 = left, 49 = right) before being combined.
+// Node ids 70-79 are reserved for this; ControlNet / ADetailer append from 80.
+export const REGIONAL_NEGATIVE_RIGHT_NODE = "70";
+export const REGIONAL_NEGATIVE_FIRST_PASS_NODE = "74";
+export const REGIONAL_NEGATIVE_REFINER_NODE = "78";
+export const REGIONAL_APPEND_INDEX = 80;
+
+function negativeMaskNode(conditioning, mask) {
+  return {
+    "inputs": { "strength": 1, "set_cond_area": "default", "conditioning": [conditioning, 0], "mask": [mask, 0] },
+    "class_type": "ConditioningSetMask",
+    "_meta": { "title": "Negative mask" }
+  };
+}
+
+function addRegionalNegatives(workflow, { firstClip, firstEncode, firstSamplers, refinerClip = null, refinerEncode = null, refinerSamplers = [] }) {
+  workflow[REGIONAL_NEGATIVE_RIGHT_NODE] = {
+    "inputs": { "text": "" },
+    "class_type": "TextBoxMira",
+    "_meta": { "title": "Negative (right)" }
+  };
+  workflow["71"] = {
+    "inputs": { "text": [REGIONAL_NEGATIVE_RIGHT_NODE, 0], "clip": firstClip },
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "Negative (right) encode" }
+  };
+  workflow["72"] = negativeMaskNode(firstEncode, "48");
+  workflow["73"] = negativeMaskNode("71", "49");
+  workflow[REGIONAL_NEGATIVE_FIRST_PASS_NODE] = {
+    "inputs": { "conditioning_1": ["72", 0], "conditioning_2": ["73", 0] },
+    "class_type": "ConditioningCombine",
+    "_meta": { "title": "Negative combine" }
+  };
+  for (const id of firstSamplers) workflow[id].inputs.negative = [REGIONAL_NEGATIVE_FIRST_PASS_NODE, 0];
+  if (refinerClip) {
+    workflow["75"] = {
+      "inputs": { "text": [REGIONAL_NEGATIVE_RIGHT_NODE, 0], "clip": refinerClip },
+      "class_type": "CLIPTextEncode",
+      "_meta": { "title": "Negative (right) refiner encode" }
+    };
+    workflow["76"] = negativeMaskNode(refinerEncode, "48");
+    workflow["77"] = negativeMaskNode("75", "49");
+    workflow[REGIONAL_NEGATIVE_REFINER_NODE] = {
+      "inputs": { "conditioning_1": ["76", 0], "conditioning_2": ["77", 0] },
+      "class_type": "ConditioningCombine",
+      "_meta": { "title": "Negative combine (refiner)" }
+    };
+    for (const id of refinerSamplers) workflow[id].inputs.negative = [REGIONAL_NEGATIVE_REFINER_NODE, 0];
+  }
+  return workflow;
+}
+
+// checkpoint graph: first pass encodes with the base clip (34), refiner / hires with 39
+addRegionalNegatives(WORKFLOW_REGIONAL, {
+  firstClip: ["34", 1], firstEncode: "3", firstSamplers: ["36"],
+  refinerClip: ["39", 1], refinerEncode: "40", refinerSamplers: ["37", "20"],
+});
+// UNET graph: one clip (39) for every pass
+addRegionalNegatives(WORKFLOW_REIONAL_UNET, {
+  firstClip: ["39", 1], firstEncode: "40", firstSamplers: ["36", "20"],
+});

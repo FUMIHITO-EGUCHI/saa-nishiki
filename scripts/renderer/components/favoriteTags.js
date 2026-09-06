@@ -6,7 +6,7 @@ import { normalizePromptToken } from './selectionModalLogic.js';
 export const FAVORITE_TAGS_CHANGED_EVENT = 'saa-favorite-tags-changed';
 
 export function favGroupForKey(fieldKey) {
-    return fieldKey === 'negative' || fieldKey === 'exclude' ? 'negative' : 'positive';
+    return fieldKey === 'negative' || fieldKey === 'negative_left' || fieldKey === 'negative_right' || fieldKey === 'exclude' ? 'negative' : 'positive';
 }
 
 export function favTagList(group) {

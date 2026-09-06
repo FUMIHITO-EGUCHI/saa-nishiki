@@ -6,7 +6,8 @@ import * as wsService from '../webserver/back/wsService.js';
 import { getMutexBackendBusy, setMutexBackendBusy } from '../../main-common.js';
 import { WORKFLOW, WORKFLOW_REGIONAL, WORKFLOW_CONTROLNET,
   WORKFLOW_MIRA_ITU, WORKFLOW_UNET, WORKFLOW_REIONAL_UNET,
-  WORKFLOW_MIRA_ITU_UNET, WORKFLOW_MIRA_ITU_UNET_PREBAKE, VAE_LOADER} from './comfyui_workflow.js';
+  WORKFLOW_MIRA_ITU_UNET, WORKFLOW_MIRA_ITU_UNET_PREBAKE, VAE_LOADER,
+  REGIONAL_NEGATIVE_RIGHT_NODE, REGIONAL_NEGATIVE_FIRST_PASS_NODE, REGIONAL_NEGATIVE_REFINER_NODE, REGIONAL_APPEND_INDEX} from './comfyui_workflow.js';
 import { backendAuthHeaders, httpApiUrl, wsApiUrl } from '../shared/backendAddress.js';
 import { buildParametersText, embedPngParameters, findDiskWriterNodes, toWebsocketOutputWorkflow } from '../shared/podWorkflow.js';
 import { interruptPodWorkflow, isPodSshEnabled, runPodWorkflow } from './podSshTransport.js';
@@ -1417,6 +1418,9 @@ class ComfyUI {
     const {addr, auth, uuid, model, vpred, positive_left, positive_right, negative, 
       width, height, cfg, step, seed, sampler, scheduler, refresh, 
       hifix, refiner, regional, controlnet, adetailer, vae, img_prefix} = generateData;
+    // per-side negatives (Nishiki); older callers send one `negative` for both sides
+    const negative_left = generateData.negative_left ?? negative;
+    const negative_right = generateData.negative_right ?? negative;
 
     this.addr = addr;
     this.refresh = refresh;
@@ -1514,7 +1518,9 @@ class ComfyUI {
     workflow["29"].inputs.positive = `${positive_left}\n${positive_right}`;
     
     // Set Negative prompt
-    workflow["33"].inputs.text = negative;
+    workflow["33"].inputs.text = negative_left; // 33 = left, masked with 48
+    workflow[REGIONAL_NEGATIVE_RIGHT_NODE].inputs.text = negative_right; // 70 = right, masked with 49
+    workflow["29"].inputs.negative = `${negative_left}\n${negative_right}`;
     
     // Set width and height
     workflow["17"].inputs.Width = width;
@@ -1589,12 +1595,12 @@ class ComfyUI {
 
     // default pos and neg to ksampler
     let workflowInfo = {
-      startIndex: (vae.vae_override && vae.vae !== 'None')?59:58,
+      startIndex: REGIONAL_APPEND_INDEX,
       now_pos:    53,
-      now_neg:    3,
+      now_neg:    Number(REGIONAL_NEGATIVE_FIRST_PASS_NODE),
       refiner:    refiner.enable,
       ref_pos:    57,
-      ref_neg:    40,
+      ref_neg:    Number(REGIONAL_NEGATIVE_REFINER_NODE),
       hiresfix:   hifix.enable
     };
     const { workflowCN, indexCN } = applyControlnet(workflow, controlnet, workflowInfo);
@@ -1613,6 +1619,8 @@ class ComfyUI {
     const {addr, auth, uuid, positive_left, positive_right, negative, 
       width, height, cfg, step, seed, sampler, scheduler, refresh, 
       hifix, regional, adetailer, img_prefix, unet} = generateData;
+    const negative_left = generateData.negative_left ?? negative;
+    const negative_right = generateData.negative_right ?? negative;
 
     this.addr = addr;
     this.refresh = refresh;
@@ -1678,7 +1686,7 @@ class ComfyUI {
     workflow["29"].inputs.path = img_prefix;
     // Combine prompt
     workflow["29"].inputs.positive = `${positive_left}\n\n${positive_right}`;
-    workflow["29"].inputs.negative = negative;
+    workflow["29"].inputs.negative = `${negative_left}\n\n${negative_right}`;
 
     // Set Ksampler seed and steps
     workflow["36"].inputs.noise_seed = seed;
@@ -1690,7 +1698,8 @@ class ComfyUI {
     workflow["46"].inputs.text = positive_right;    
     
     // Set Negative prompt
-    workflow["33"].inputs.text = negative;
+    workflow["33"].inputs.text = negative_left;
+    workflow[REGIONAL_NEGATIVE_RIGHT_NODE].inputs.text = negative_right;
     
     // Set width and height
     workflow["17"].inputs.Width = width;
@@ -1757,7 +1766,7 @@ class ComfyUI {
 
     // default pos and neg to ksampler
     let workflowInfo = {
-      startIndex: 63,
+      startIndex: REGIONAL_APPEND_INDEX,
       model:      59,
       clip:       60,
       vae:        61,

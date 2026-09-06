@@ -431,6 +431,8 @@ __YourWildCardName__
 *Forge Neo の場合*
 `Regional Condition` には [SD Forge Attention Couple](https://github.com/Haoming02/sd-forge-couple) [latest](https://github.com/Haoming02/sd-forge-couple/commits/main/) が必要
 
+**左右のサイド（Nishiki）。** Regional を ON にすると、Prompts カードの欄は **BOTH SIDES**（Common、Background、Style、共通 Negative、*Both* に設定したカスタム欄）、**LEFT** / **RIGHT**（各側のキャラクター、Positive、側別 Negative、側限定のカスタム欄）、**ALL**（Exclude）に分かれます。カスタム欄のサイドは Fields エディタで指定します。**Swap** は左右をまとめて入れ替え（プロンプト、Negative、ウェイトプラン、キャラクター、Strength）、Undo できます。旧「Swap Character」スイッチはこれに置き換わりました。キャラクター行をクリックするとキャラクター選択が開き、各側は見出しから折りたためます。ComfyUI では左右の Negative も Positive と同じマスクで領域に適用され、Forge Neo では 1 つの Negative にまとめられます。
+
 <img src="examples/nishiki_regional.png" width=35%>
 
 ## セミオートタグ補完

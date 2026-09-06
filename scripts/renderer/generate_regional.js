@@ -2,10 +2,12 @@ import { decodeThumb } from './customThumbGallery.js';
 import { generateRandomSeed, getTagAssist, getLoRAs, replaceWildcardsAsync, getRandomIndex, formatCharacterInfo, formatOriginalCharacterInfo,
     getViewTags, createHiFix, createRefiner, extractHostPort, checkVpred, extractAPISecure,
     createControlNet, createADetailer, toggleQueueColor, startQueue, REPLACE_AI_MARK,
-    updateADetailerModelList, getImageSavePrefix } from './generate.js';
+    updateADetailerModelList, getImageSavePrefix, getCustomFieldTexts, readViewPromptField } from './generate.js';
 import { processRandomString } from './tools/nestedBraceParsing.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { filterPrompts } from './tools/promptFilter.js';
+import { asFragment, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
+import { sideOrder } from '../shared/regionalSides.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue } from './tools/promptBatchExpansion.js';
 import { removeAiPromptMarker } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
@@ -97,33 +99,65 @@ function getCustomJSON(loop=-1){
     }
 }
 
-function getPrompts(character_left, character_right, views, ai='', apiInterface = 'None', loop = -1){
-    const commonColor = (globalThis.globalSettings.css_style==='dark')?'darkorange':'Sienna';
-    const viewColor = (globalThis.globalSettings.css_style==='dark')?'BurlyWood':'Brown';
-    const aiColor = (globalThis.globalSettings.css_style==='dark')?'hotpink':'Purple';
-    const characterColor = (globalThis.globalSettings.css_style==='dark')?'DeepSkyBlue':'MidnightBlue';
-    const positiveColor = (globalThis.globalSettings.css_style==='dark')?'LawnGreen':'SeaGreen';
-    const positiveRColor = (globalThis.globalSettings.css_style==='dark')?'LightSkyBlue':'Navy';
+function getPrompts(character_left, character_right, views, ai='', apiInterface = 'None', loop=-1, seed=0){
+    const SETTINGS = globalThis.globalSettings;
+    const dark = SETTINGS.css_style === 'dark';
+    const commonColor = dark ? 'darkorange' : 'Sienna';
+    const viewColor = dark ? 'BurlyWood' : 'Brown';
+    const aiColor = dark ? 'hotpink' : 'Purple';
+    const characterColor = dark ? 'DeepSkyBlue' : 'MidnightBlue';
+    const positiveColor = dark ? 'LawnGreen' : 'SeaGreen';
+    const positiveRColor = dark ? 'LightSkyBlue' : 'Navy';
+    const customColor = dark ? 'orchid' : 'DarkMagenta';
 
-    let common = readPromptValue('common');
-    let positive = readPromptValue('positive').trim();
-    let positiveR = readPromptValue('positive_right').trim();
-    let aiPrompt = ai.trim();
+    const customs = normalizeCustomFields(SETTINGS.prompt_custom_fields);
+    const order = normalizeOrder(SETTINGS.prompt_positive_order, 'positive', customs);
+    const customTexts = Object.fromEntries(getCustomFieldTexts('positive').map(field => [field.id, asFragment(field.text)]));
     const exclude = readPromptValue('exclude');
-
-    if (common !== '' && !common.endsWith(',')) {
-        common += ', ';
-    }
-
-    if(aiPrompt !== '' && !aiPrompt.endsWith(','))
-        aiPrompt += ', ';
+    const aiPrompt = asFragment(ai);
 
     const {BOPL, BOCL, EOCL, EOPL, BOPR, BOCR, EOCR, EOPR} = getCustomJSON(loop);
+    const colored = (text, color) => (text ? `[color=${color}]${text}[/color]` : '');
 
-    const tmpPositivePromptLeft = `${BOPL}${common}${views}${aiPrompt}${BOCL}${character_left}${EOCL}${positive}${EOPL}`.replaceAll(/\n+/g, ''); 
-    const tmpPositivePromptRight = `${BOPR}${common}${views}${aiPrompt}${BOCR}${character_right}${EOCR}${positiveR}${EOPR}`.replaceAll(/\n+/g, ''); 
-    const tmpPositivePromptLeftColored = `[color=${commonColor}]${BOPL}${common}[/color][color=${viewColor}]${views}[/color][color=${aiColor}]${aiPrompt}[/color][color=${characterColor}]${BOCL}${character_left}${EOCL}[/color][color=${positiveColor}]${positive}${EOPL}[/color]`.replaceAll(/\n+/g, ''); 
-    const tmpPositivePromptRightColored = `[color=${commonColor}]${BOPR}${common}[/color][color=${viewColor}]${views}[/color][color=${aiColor}]${aiPrompt}[/color][color=${characterColor}]${BOCR}${character_right}${EOCR}[/color][color=${positiveRColor}]${positiveR}${EOPR}[/color]`.replaceAll(/\n+/g, ''); 
+    // Every unit of one side in chain order (scripts/shared/regionalSides.js):
+    // "both" units go to both prompts, side units to theirs; the characters block
+    // is the side's character.
+    const unit = (id, side) => {
+        switch (id) {
+            case 'common': return { text: asFragment(readPromptValue('common')), color: commonColor };
+            case 'views': return { text: views || '', color: viewColor };
+            case 'background': return { text: asFragment(readViewPromptField('background', 'background', seed)), color: viewColor };
+            case 'style': return { text: asFragment(readViewPromptField('style', 'style', seed)), color: viewColor };
+            case 'ai': return { text: aiPrompt, color: aiColor };
+            case 'characters': {
+                const [BOC, EOC, text] = side === 'left' ? [BOCL, EOCL, character_left] : [BOCR, EOCR, character_right];
+                return { text: `${BOC}${text}${EOC}`, colored: `${BOC}${colored(text, characterColor)}${EOC}` };
+            }
+            case 'positive': return { text: asFragment(readPromptValue('positive')), color: positiveColor };
+            case 'positive_right': return { text: asFragment(readPromptValue('positive_right')), color: positiveRColor };
+            default: return { text: customTexts[id] ?? '', color: customColor };
+        }
+    };
+    const assemble = (side) => {
+        let text = '';
+        let coloredText = '';
+        for (const id of sideOrder(order, side, customs)) {
+            const part = unit(id, side);
+            if (!part.text) continue;
+            text += part.text;
+            coloredText += part.colored ?? colored(part.text, part.color);
+        }
+        // the last unit keeps no trailing separator (the old fixed chain ended on Positive)
+        text = text.replace(/,\s*$/, '');
+        coloredText = coloredText.replace(/,\s*(\[\/color\])$/, '$1').replace(/,\s*$/, '');
+        return { text, coloredText };
+    };
+    const left = assemble('left');
+    const right = assemble('right');
+    const tmpPositivePromptLeft = `${BOPL}${left.text}${EOPL}`.replaceAll(/\n+/g, '');
+    const tmpPositivePromptRight = `${BOPR}${right.text}${EOPR}`.replaceAll(/\n+/g, '');
+    const tmpPositivePromptLeftColored = `${BOPL}${left.coloredText}${EOPL}`.replaceAll(/\n+/g, '');
+    const tmpPositivePromptRightColored = `${BOPR}${right.coloredText}${EOPR}`.replaceAll(/\n+/g, '');
 
     const {
         positivePrompt: positivePromptLeft,
@@ -138,8 +172,8 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
 
     const loraPromot = getLoRAs(apiInterface);
     return {
-        posL:positivePromptLeft, posLc:positivePromptLeftColored, 
-        posR:positivePromptRight, posRc:positivePromptRightColored, 
+        posL:positivePromptLeft, posLc:positivePromptLeftColored,
+        posR:positivePromptRight, posRc:positivePromptRightColored,
         lora:loraPromot,
         refineContext: {
             left: {
@@ -161,6 +195,32 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
             slotLora: loraPromot,
         },
     }
+}
+
+// Negative prompts per side: the shared Negative and "both" custom fields go to
+// both sides, Negative (left / right) and side custom fields to theirs, and each
+// side's character negatives last. `merged` is the single negative for backends
+// without regional negatives (Forge Neo) and for the AI refiner.
+export function getNegativePrompts({ negative_tags_left = '', negative_tags_right = '' } = {}) {
+    const SETTINGS = globalThis.globalSettings;
+    const customs = normalizeCustomFields(SETTINGS.prompt_custom_fields);
+    const order = normalizeOrder(SETTINGS.prompt_negative_order, 'negative', customs);
+    const texts = {
+        negative: readPromptValue('negative'),
+        negative_left: readPromptValue('negative_left'),
+        negative_right: readPromptValue('negative_right'),
+    };
+    for (const custom of getCustomFieldTexts('negative')) texts[custom.id] = custom.text;
+    const parts = side => sideOrder(order, side, customs).map(id => String(texts[id] ?? '').trim()).filter(Boolean);
+    const both = parts('both');
+    const leftOnly = parts('left').filter(part => !both.includes(part));
+    const rightOnly = parts('right').filter(part => !both.includes(part));
+    const join = list => list.filter(Boolean).join(', ').trim();
+    return {
+        left: join([...both, ...leftOnly, negative_tags_left]),
+        right: join([...both, ...rightOnly, negative_tags_right]),
+        merged: join([...both, ...leftOnly, ...rightOnly, negative_tags_left, negative_tags_right]),
+    };
 }
 
 async function createCharacters(index, seeds) {
@@ -287,6 +347,8 @@ async function getCharacters(){
     let thumbImages = [];
     let characters = '';
     let negativeTags = '';
+    let negativeTagsLeft = '';
+    let negativeTagsRight = '';
     let character_name_for_image_prefix = '';
 
     for(let index=0; index < 4; index++) {
@@ -315,6 +377,8 @@ async function getCharacters(){
 
         if (neg_tags) {
             negativeTags = (negativeTags === '') ? neg_tags : `${negativeTags}, ${neg_tags}`;
+            if (index === 0 || index === 2) negativeTagsLeft = (negativeTagsLeft === '') ? neg_tags : `${negativeTagsLeft}, ${neg_tags}`;
+            else negativeTagsRight = (negativeTagsRight === '') ? neg_tags : `${negativeTagsRight}, ${neg_tags}`;
         }
 
         information += `${info}`;
@@ -335,6 +399,8 @@ async function getCharacters(){
         seed:random_seed,
         characters:characters,
         negative_tags: negativeTags,
+        negative_tags_left: negativeTagsLeft,
+        negative_tags_right: negativeTagsRight,
         image_prefix: character_name_for_image_prefix.trim()
     }
 }
@@ -348,6 +414,8 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let positivePromptRight = '';
     let positivePromptRightColored = '';
     let negativePrompt = '';
+    let negativePromptLeft = '';
+    let negativePromptRight = '';
     let thumbImage = null;
     let charactersName = '';
     let img_prefix = '';
@@ -363,16 +431,19 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         positivePromptRight = globalThis.generate.lastPosR;
         positivePromptRightColored = globalThis.generate.lastPosRColored;
         negativePrompt = globalThis.generate.lastNeg;
+        negativePromptLeft = globalThis.generate.lastNegL ?? negativePrompt;
+        negativePromptRight = globalThis.generate.lastNegR ?? negativePrompt;
         charactersName = globalThis.generate.lastCharacter;
         img_prefix = globalThis.generate.lastImagePrefix;
     } else {            
-        const {thumb, character_left, character_right, information, seed, characters, negative_tags, image_prefix} = await getCharacters();
+        const {thumb, character_left, character_right, information, seed, characters, negative_tags_left, negative_tags_right, image_prefix} = await getCharacters();
         randomSeed = seed;
         randomSeedr = Math.floor(seed / 3);
         finalInfo = information;
 
-        const views = getViewTags(seed);
-        let {posL, posLc, posR, posRc, lora, refineContext: promptRefineContext} = getPrompts(character_left, character_right, views, aiPromot, apiInterface, loop);
+        // background / style are ordered units of the chain now (like the standard path)
+        const views = getViewTags(seed, false);
+        let {posL, posLc, posR, posRc, lora, refineContext: promptRefineContext} = getPrompts(character_left, character_right, views, aiPromot, apiInterface, loop, seed);
 
         posL = await replaceWildcardsAsync(posL, randomSeed);
         posLc = await replaceWildcardsAsync(posLc, randomSeed);
@@ -398,13 +469,15 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         }
         positivePromptLeftColored = posLc;
         positivePromptRightColored = posRc;
-        const mergedNegativePrompt = [readPromptValue('negative'), negative_tags].filter(Boolean).join(', ').trim();
-        negativePrompt = mergedNegativePrompt;
+        const negatives = getNegativePrompts({ negative_tags_left, negative_tags_right });
+        negativePrompt = negatives.merged;
+        negativePromptLeft = negatives.left;
+        negativePromptRight = negatives.right;
         refineContext = {
             ...promptRefineContext,
             leftSeed: randomSeed,
             rightSeed: randomSeedr,
-            characterNegative: negative_tags,
+            characterNegative: [negative_tags_left, negative_tags_right].filter(Boolean).join(', '),
         };
         thumbImage = thumb;
         charactersName = characters;         
@@ -413,6 +486,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
 
     return {finalInfo, randomSeed, positivePromptLeft, positivePromptRight, 
             positivePromptLeftColored, positivePromptRightColored, negativePrompt,
+            negativePromptLeft, negativePromptRight,
             thumbImage, charactersName, img_prefix, refineContext
     }
 }
@@ -531,7 +605,6 @@ export async function generateRegionalImage(dataPack){
         const landscape = globalThis.generate.landscape.getValue();
         const width = landscape?globalThis.generate.height.getValue():globalThis.generate.width.getValue();
         const height = landscape?globalThis.generate.width.getValue():globalThis.generate.height.getValue();
-        const swap = globalThis.regional.swap.getValue();
 
         const vae = globalThis.dropdownList.vae_sdxl.getValue();
         let vae_override = globalThis.dropdownList.vae_sdxl_override.getValue();
@@ -546,6 +619,8 @@ export async function generateRegionalImage(dataPack){
         globalThis.generate.lastPosR = createPromptResult.positivePromptRight;
         globalThis.generate.lastPosRColored = createPromptResult.positivePromptRightColored;
         globalThis.generate.lastNeg = createPromptResult.negativePrompt;
+        globalThis.generate.lastNegL = createPromptResult.negativePromptLeft;
+        globalThis.generate.lastNegR = createPromptResult.negativePromptRight;
         globalThis.generate.lastCharacter = createPromptResult.charactersName;
         globalThis.generate.lastImagePrefix = createPromptResult.img_prefix;
         if(createPromptResult.thumbImage)
@@ -599,16 +674,18 @@ export async function generateRegionalImage(dataPack){
                 planWeights: imageOverride?.weights ?? null,
                 refineSnapshot,
                 refineContext: createPromptResult.refineContext,
-                regionalSwap: swap,
+                regionalSwap: false, // the sides are swapped in the data (Swap button), never at generation
                 refineRun,
                 structuredRefine,
             },
 
             model: globalThis.dropdownList.model.getValue(),
             vpred: checkVpred(),
-            positive_left: swap?createPromptResult.positivePromptRight:createPromptResult.positivePromptLeft,
-            positive_right: swap?createPromptResult.positivePromptLeft:createPromptResult.positivePromptRight,
+            positive_left: createPromptResult.positivePromptLeft,
+            positive_right: createPromptResult.positivePromptRight,
             negative: createPromptResult.negativePrompt,
+            negative_left: createPromptResult.negativePromptLeft,
+            negative_right: createPromptResult.negativePromptRight,
             width: width,
             height: height,
             cfg: globalThis.generate.cfg.getFloat(),

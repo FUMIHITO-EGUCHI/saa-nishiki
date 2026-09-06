@@ -147,6 +147,8 @@ export const sharedBodyHTML = `
                 <div class="prompt-positive prompt-field" data-stripe="positive">positive</div>
                 <div class="prompt-positive-right prompt-field" data-stripe="positive">positive-right</div>
                 <div class="prompt-negative prompt-field" data-stripe="negative">negative</div>
+                <div class="prompt-negative-left prompt-field" data-stripe="negative">negative-left</div>
+                <div class="prompt-negative-right prompt-field" data-stripe="negative">negative-right</div>
                 <div class="prompt-exclude prompt-field" data-stripe="exclude">exclude</div>
 
                 <div class="ai-card" id="ai-card">

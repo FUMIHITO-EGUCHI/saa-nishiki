@@ -431,6 +431,8 @@ Try Regional Condition in 3 steps:
 *For Forge Neo*
 `Regional Condition` requires [SD Forge Attention Couple](https://github.com/Haoming02/sd-forge-couple) [latest](https://github.com/Haoming02/sd-forge-couple/commits/main/)
 
+**Sides (Nishiki).** With Regional on, the Prompts card groups the fields into **BOTH SIDES** (Common, Background, Style, the shared Negative and custom fields marked *Both*), **LEFT** and **RIGHT** (each side's character, its Positive, its own Negative and its side-only custom fields) and **ALL** (Exclude). Every custom field gets a side in the Fields editor. **Swap** exchanges left and right in one step (prompts, negatives, weight plans, characters, strengths) and can be undone; it replaces the old *Swap Character* switch. The character rows open the character picker, and each side collapses from its header. On ComfyUI the left and right negatives are masked like the positives; Forge Neo folds them into one negative.
+
 <img src="examples/nishiki_regional.png" width=35%>
 
 ## Semi-Auto Tag Complete

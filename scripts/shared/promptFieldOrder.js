@@ -62,6 +62,8 @@ export function normalizeCustomFields(raw) {
             polarity: entry.polarity === 'negative' ? 'negative' : 'positive',
             text: typeof entry.text === 'string' ? entry.text : '',
         };
+        // Regional side (both / left / right); absent = both, see regionalSides.js
+        if (entry.side === 'left' || entry.side === 'right') field.side = entry.side;
         const plans = normalizeFieldPlans(entry.weight_plans);
         if (plans.length) field.weight_plans = plans;
         const batch = normalizeFieldBatch(entry.batch);
