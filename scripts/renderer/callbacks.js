@@ -295,6 +295,9 @@ export function callback_regional_condition(trigger, dummy = false) {
         globalThis.prompt.common.setTitle(LANG.custom_prompt);
         globalThis.prompt.positive.setTitle(LANG.api_prompt);
     }
+    // the field list mirrors the container's visibility: re-render it so
+    // "Positive (right)" appears / disappears with the switch
+    globalThis.prompt.fieldManager?.refresh?.();
 }
 
 export function callback_controlnet(trigger)  {                

@@ -32,7 +32,9 @@ const BUILTIN_CONTAINERS = {
     background: '.prompt-background',
     style: '.prompt-style',
     positive: '.prompt-positive',
+    positive_right: '.prompt-positive-right',
     negative: '.prompt-negative',
+    exclude: '.prompt-exclude',
 };
 
 // Built-in fields whose text a preset can replace, and where the value lives.
