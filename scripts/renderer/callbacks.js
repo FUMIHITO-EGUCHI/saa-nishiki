@@ -144,9 +144,9 @@ export async function callback_myCharacterList_updateThumb(){
     } else {
         const keys = globalThis.characterList.getKey();
         const slots = globalThis.characterList.getSlots?.() ??
-            keys.slice(0, -1).map((key, index) => ({ key, weight: globalThis.characterList.getTextValue(index) }));
+            keys.map((key, index) => ({ key, weight: globalThis.characterList.getTextValue(index) }));
 
-        // standard slots only (the OC slot has no stored thumb), latest slot first
+        // latest slot first (an original character has no stored thumb and is skipped)
         const imgData = [];
         for (let index = slots.length - 1; index >= 0; index--) {
             const image = await decodeThumb(keys[index]);
@@ -445,9 +445,9 @@ async function update_thumb_select(value) {
 
 
     // Regional Condition
-    setDropdownLanguage('dropdown-character-regional', [LANG.regional_character_left, LANG.regional_character_right, LANG.regional_origina_character_left, LANG.regional_origina_character_right]);
+    setDropdownLanguage('dropdown-character-regional', [LANG.regional_character_left, LANG.regional_character_right]);
     globalThis.characterListRegional.setValueOnly(globalThis.globalSettings.language === 'en-US');
-    globalThis.characterListRegional.updateDefaults(SETTINGS.character_left, SETTINGS.character_right, 'None', 'None');
+    globalThis.characterListRegional.updateDefaults(SETTINGS.character_left, SETTINGS.character_right);
     globalThis.characterListRegional.setTextValue(0, SETTINGS.weights4dropdownlist[7]);
     globalThis.characterListRegional.setTextValue(1, SETTINGS.weights4dropdownlist[8]);
 

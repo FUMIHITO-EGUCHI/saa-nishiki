@@ -189,14 +189,17 @@ export function setupPromptFieldManager() {
     // The side's characters come from the regional character control in the
     // Characters card: its slot triggers carry the display name and open the picker.
     function sideCharacterTriggers(side) {
-        const indexes = side === 'left' ? [0, 2] : [1, 3];
-        return indexes
-            .map(index => document.querySelector(`.dropdown-character-regional .character-selection-field[data-index="${index}"] .character-selection-trigger`))
-            .filter(Boolean);
+        // one slot per side (0 = left, 1 = right); the slot may hold an original character
+        const index = side === 'left' ? 0 : 1;
+        const trigger = document.querySelector(`.dropdown-character-regional .character-selection-field[data-index="${index}"] .character-selection-trigger`);
+        return trigger ? [trigger] : [];
     }
     function sideCharacterName(side) {
         return sideCharacterTriggers(side)
-            .map(trigger => trigger.textContent.trim())
+            .map(trigger => {
+                const name = (trigger.querySelector('.character-selection-name')?.textContent ?? trigger.textContent).trim();
+                return trigger.querySelector('.character-selection-oc-badge') ? `${name} (OC)` : name;
+            })
             .filter(name => name !== '' && name.toLowerCase() !== 'none')
             .join(' · ');
     }
@@ -259,9 +262,9 @@ export function setupPromptFieldManager() {
             const list = globalThis.characterListRegional;
             if (list?.getKey) {
                 const keys = list.getKey();
-                const weights = [0, 1, 2, 3].map(index => list.getTextValue(index));
-                list.updateDefaults(keys[1], keys[0], keys[3], keys[2]);
-                [1, 0, 3, 2].forEach((from, to) => list.setTextValue(to, weights[from]));
+                const weights = [0, 1].map(index => list.getTextValue(index));
+                list.updateDefaults(keys[1], keys[0]);
+                [1, 0].forEach((from, to) => list.setTextValue(to, weights[from]));
                 document.dispatchEvent(new CustomEvent('saa:regional-characters-changed'));
             }
             fields = normalizeCustomFields(SETTINGS.prompt_custom_fields);

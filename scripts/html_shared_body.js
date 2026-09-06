@@ -103,7 +103,7 @@ export const sharedBodyHTML = `
             <section class="ui-card characters-card" aria-label="Characters and views">
               <div class="ui-card-head">
                 <span class="ui-card-title" data-ui-text="ui_characters_title">Characters &amp; Views</span>
-                <span class="ui-card-sub" data-ui-text="ui_characters_sub">3 lists + OC · Angle / Camera</span>
+                <span class="ui-card-sub" data-ui-text="ui_characters_sub">Characters (incl. OC) · Angle / Camera</span>
                 <div class="ui-card-tools">
                   <div class="regional-condition-trigger-dummy ui-switch"></div>
                 </div>
@@ -121,10 +121,16 @@ export const sharedBodyHTML = `
                     <div class="regional-condition-settings-1">
                       <div class="regional-condition-image-ratio"></div>
                       <div class="regional-condition-overlap-ratio"></div>
-                      <div class="regional-condition-strength-left"></div>
-                      <div class="regional-condition-strength-right"></div>
-                      <div class="regional-condition-option-left"></div>
-                      <div class="regional-condition-option-right"></div>
+                    </div>
+                    <div class="regional-condition-settings-2">
+                      <div class="regional-condition-side regional-condition-side-left">
+                        <div class="regional-condition-option-left"></div>
+                        <div class="regional-condition-strength-left run-number"></div>
+                      </div>
+                      <div class="regional-condition-side regional-condition-side-right">
+                        <div class="regional-condition-option-right"></div>
+                        <div class="regional-condition-strength-right run-number"></div>
+                      </div>
                       <div class="regional-condition-swap ui-switch"></div>
                     </div>
                   </div>

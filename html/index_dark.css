@@ -1954,7 +1954,18 @@ body {
 .characters-card .regional-condition-container { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--saa-border); background: transparent; border-left: none; border-right: none; border-bottom: none; border-radius: 0; padding-left: 0; padding-right: 0; }
 .characters-card .regional-condition-container[hidden] { display: none; }
 .characters-card .regional-condition-main { background: transparent; border: none; padding: 0; }
-.characters-card .regional-condition-settings-1 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 14px; margin: 0; width: auto; align-items: end; }
+.characters-card .regional-condition-settings-1 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; margin: 0; width: auto; align-items: end; }
+.characters-card .regional-condition-settings-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; margin: 6px 0 0; width: auto; align-items: end; }
+.characters-card .regional-condition-side { display: flex; align-items: flex-end; gap: 6px; min-width: 0; }
+.characters-card .regional-condition-side > [class^="regional-condition-option"] { flex: 1; min-width: 0; }
+/* strength (0-10, usually ~1) is a number box beside the side's area, not a slider */
+.characters-card .regional-condition-side .run-number [class^="mySlider-"][class*="-row"] { display: flex; align-items: center; gap: 4px; }
+.characters-card .regional-condition-side .run-number [class^="mySlider-"][class*="-span"] { display: inline; font-size: 11.5px; color: var(--saa-muted2); white-space: nowrap; }
+.characters-card .regional-condition-side .run-number [class^="mySlider-"][class*="-value"] { width: 44px; }
+/* slot button: name + OC badge for an original character */
+.character-selection-trigger { display: flex; align-items: center; gap: 6px; }
+.character-selection-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.character-selection-oc-badge { flex: none; height: 16px; padding: 0 5px; border: 1px solid var(--saa-stripe-ai, #d66aa8); border-radius: 8px; color: var(--saa-stripe-ai, #d66aa8); font-size: 10px; font-weight: 600; line-height: 14px; letter-spacing: 0.04em; }
 .characters-card .regional-condition-swap { justify-content: flex-end; align-self: center; }
 
 /* ---- prompts ---- */

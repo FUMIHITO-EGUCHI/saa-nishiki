@@ -10,6 +10,7 @@ import { convertToMultipleOfNFloor, checkNumberInRange } from './tools/numbers.j
 import { setQueueAutoStart } from './callbacks.js';
 import { filterPrompts } from './tools/promptFilter.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
+import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
 import { removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { normalizeApiAddress } from '../shared/backendAddress.js';
@@ -216,19 +217,20 @@ export function getCustomFieldTexts(polarity) {
         .map(field => ({ id: field.id, text: readCustomFieldValue(field) }));
 }
 
-async function createCharacters(index, seeds, ocIndex = 3) {
+async function createCharacters(index, seeds) {
     const FILES = globalThis.cachedFiles;
     const character = globalThis.characterList.getKey()[index];
     const isValueOnly = globalThis.characterList.isValueOnly();
     const seed = seeds[index];
 
     if (character.toLowerCase() === 'none') {
-        return { tag: '', tag_assist: '', thumb: null, info: '', neg_tags: '' };
+        return { tag: '', tag_assist: '', thumb: null, info: '', neg_tags: '', isOriginal: false };
     }
 
-    const isOriginalCharacter = index === ocIndex;
+    // an `oc:` key is an original character, whatever slot it sits in
+    const isOriginalCharacter = isOriginalKey(character);
     const { tag, thumb, info, weight, name } = isOriginalCharacter
-        ? handleOriginalCharacter(character, seed, isValueOnly, index, FILES)
+        ? handleOriginalCharacter(originalCharacterName(character), seed, isValueOnly, index, FILES)
         : await handleStandardCharacter(character, seed, isValueOnly, index, FILES);
 
     const { tag: parsedTag, neg_tags } = splitTagNegativePrompt(tag);
@@ -243,7 +245,8 @@ async function createCharacters(index, seeds, ocIndex = 3) {
         info: tagAssist.info,
         weight: weight,
         characterName:name,
-        neg_tags: neg_tags
+        neg_tags: neg_tags,
+        isOriginal: isOriginalCharacter
     };
 }
 
@@ -402,13 +405,10 @@ async function getCharacters() {
     }
     // Per-slot seed derivation: slots 0-2 keep the historical divisors so old seeds
     // reproduce the same characters; extra slots continue the prime sequence.
-    // The OC slot (last) keeps its historical complement seed.
     const slotCount = globalThis.characterList.getSlotCount?.() ?? 3;
     const SEED_DIVISORS = [1, 3, 7, 11, 13, 17];
     const seeds = Array.from({ length: slotCount }, (_, index) =>
         Math.floor(random_seed / (SEED_DIVISORS[index % SEED_DIVISORS.length] * (1 + Math.floor(index / SEED_DIVISORS.length)))));
-    seeds.push(4294967296 - random_seed);
-    const ocIndex = slotCount;
 
     let character = '';
     let information = '';
@@ -417,8 +417,8 @@ async function getCharacters() {
     let negativeTags = '';
     let character_name_for_image_prefix = '';
 
-    for(let index=0; index <= ocIndex; index++) {
-        let {tag, tag_assist, thumb, info, weight, characterName, neg_tags} = await createCharacters(index, seeds, ocIndex);
+    for(let index=0; index < slotCount; index++) {
+        let {tag, tag_assist, thumb, info, weight, characterName, neg_tags, isOriginal} = await createCharacters(index, seeds);
         let seperate = ', ';
         // Should not happen
         if(tag.startsWith('✨ ')) {
@@ -426,7 +426,7 @@ async function getCharacters() {
             console.log('remove fav mark ✨ for', tag);
         }
 
-        if (index === ocIndex) {
+        if (isOriginal) {
             if(tag.endsWith('.')) {
                 seperate = ' ';
             } else if (tag.endsWith('\n')) {

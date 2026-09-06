@@ -3,6 +3,7 @@ import { decodeThumb } from '../customThumbGallery.js';
 import { addFavorites, delFavorites } from './favoriteCharacters.js';
 import { createSelectionModal } from './selectionModal.js';
 import { normalizeSearchText, normalizeSelectionKey } from './selectionModalLogic.js';
+import { originalKey } from '../../shared/characterKeys.js';
 
 function splitLabels(value, count) {
     const labels = Array.isArray(value)
@@ -36,24 +37,53 @@ function specialOption(key, value, category) {
     return { key, value, category, attributes: [], label: key };
 }
 
+// Original characters keep their name as value / label but carry an `oc:` key,
+// so the picker can list both kinds in one list and a slot can hold either.
+function originalOption(name) {
+    return { key: originalKey(name), value: name, category: 'original', attributes: [], label: name };
+}
+
+// One list for every slot: Random / None, the character list, then the
+// original characters (with their own Random). The modal's Category filter
+// narrows it to one kind.
 function makeOptions(characterData, originalData) {
     const characterEntries = Array.isArray(characterData?.[0]) && Array.isArray(characterData?.[1])
         ? characterData[0].map((key, index) => characterOption(key, characterData[1][index], 'character'))
         : [];
-    const originalEntries = Array.isArray(originalData)
-        ? originalData.map(key => characterOption(key, key, 'original'))
-        : [];
-    return {
-        character: [specialOption('Random', 'random', 'character'), specialOption('None', 'none', 'character'), ...characterEntries],
-        original: [specialOption('Random', 'random', 'original'), specialOption('None', 'none', 'original'), ...originalEntries],
-    };
+    const originalEntries = Array.isArray(originalData) ? originalData.map(originalOption) : [];
+    return [
+        specialOption('Random', 'random', 'character'),
+        specialOption('None', 'none', 'character'),
+        ...characterEntries,
+        { ...specialOption('Random', 'random', 'original'), key: originalKey('Random') },
+        ...originalEntries,
+    ];
 }
 
 function findOption(options, value) {
+    const exact = options.find(option => option.key === value);
+    if (exact) return exact;
     const normalizedValue = normalizeSearchText(value);
     return options.find(option => [option.key, option.value, option.label]
         .map(item => typeof item === 'function' ? item() : item)
         .some(item => normalizeSearchText(item) === normalizedValue)) || null;
+}
+
+// The slot button: the name, plus an OC badge for an original character.
+function paintTrigger(trigger, option, valueOnly) {
+    const text = optionDisplay(option, valueOnly);
+    trigger.replaceChildren();
+    const name = document.createElement('span');
+    name.className = 'character-selection-name';
+    name.textContent = text;
+    trigger.appendChild(name);
+    if (option?.category === 'original') {
+        const badge = document.createElement('span');
+        badge.className = 'character-selection-oc-badge';
+        badge.textContent = 'OC';
+        trigger.appendChild(badge);
+    }
+    trigger.title = text;
 }
 
 function uniqueFilterOptions(options, property) {
@@ -156,7 +186,7 @@ function createCharacterThumbPreview() {
     };
 }
 
-function createCharacterControl({ containerId, dropdownCount, labels, getKind, callback }) {
+function createCharacterControl({ containerId, dropdownCount, labels, callback }) {
     const container = document.querySelector(`.${containerId}`);
     if (!container) return null;
     container.__characterSelectionControl?.cleanup?.();
@@ -167,7 +197,7 @@ function createCharacterControl({ containerId, dropdownCount, labels, getKind, c
     container.appendChild(grid);
 
     let valueOnly = globalThis.globalSettings?.language === 'en-US';
-    let optionsByKind = makeOptions([[], []], []);
+    let allOptions = makeOptions([[], []], []);
     let committed = Array(dropdownCount).fill(null);
     let weights = Array(dropdownCount).fill('1.0');
     let activeIndex = 0;
@@ -198,22 +228,19 @@ function createCharacterControl({ containerId, dropdownCount, labels, getKind, c
             const selectedOption = selected[0] || findOption(field.options, 'none');
             if (!selectedOption) return;
             committed[activeIndex] = selectedOption;
-            field.trigger.textContent = optionDisplay(selectedOption, valueOnly);
-            field.trigger.title = optionDisplay(selectedOption, valueOnly);
+            paintTrigger(field.trigger, selectedOption, valueOnly);
             if (typeof callback === 'function') callback(activeIndex, committed.map(option => option?.key || 'None'));
         },
     });
 
     function renderField(index) {
-        const kind = getKind(index);
-        const fieldOptions = optionsByKind[kind] || [];
+        const fieldOptions = allOptions;
         const field = fields[index];
         field.options = fieldOptions;
         const selected = findOption(fieldOptions, committed[index]?.key || committed[index]?.value || 'None')
             || findOption(fieldOptions, 'None');
         committed[index] = selected;
-        field.trigger.textContent = optionDisplay(selected, valueOnly);
-        field.trigger.title = labels[index];
+        paintTrigger(field.trigger, selected, valueOnly);
         field.trigger.setAttribute('aria-label', labels[index]);
         field.weight.value = weights[index];
     }
@@ -277,7 +304,7 @@ function createCharacterControl({ containerId, dropdownCount, labels, getKind, c
 
     const api = {
         setOptions(data, originalData, labelPrefixList) {
-            optionsByKind = makeOptions(data, originalData);
+            allOptions = makeOptions(data, originalData);
             const nextLabels = splitLabels(labelPrefixList, dropdownCount);
             nextLabels.forEach((label, index) => {
                 labels[index] = label;
@@ -340,9 +367,10 @@ function createCharacterControl({ containerId, dropdownCount, labels, getKind, c
 }
 
 /**
- * Variable standard character slots + one fixed OC slot (R4).
- * The fixed-count control is rebuilt whenever the slot count changes; selections and
- * weights survive the rebuild. `labelsFor(count)` supplies labels (count standard + OC).
+ * Variable character slots (R4); any slot may hold a character or an original
+ * character (`oc:` key). The fixed-count control is rebuilt whenever the slot
+ * count changes; selections and weights survive the rebuild. `labelsFor(count)`
+ * supplies the labels.
  */
 export function myVariableCharacterList(containerId, waiCharacters, originalCharacters, callback, options = {}) {
     const { slotCount = 3, minSlots = 1, maxSlots = 6, labelsFor = null, onSlotsChanged = null } = options;
@@ -355,8 +383,8 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
     let control = null;
 
     function labels() {
-        if (typeof labelsFor === 'function') return labelsFor(count);
-        return [...Array.from({ length: count }, (_, index) => `Character list ${index + 1}`), 'Original Character'];
+        if (typeof labelsFor === 'function') return labelsFor(count).slice(0, count);
+        return Array.from({ length: count }, (_, index) => `Character list ${index + 1}`);
     }
 
     function renderSlotButtons() {
@@ -382,16 +410,15 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         const previousValueOnly = valueOnly ?? control?.isValueOnly?.() ?? (globalThis.globalSettings?.language === 'en-US');
         control = createCharacterControl({
             containerId,
-            dropdownCount: count + 1,
+            dropdownCount: count,
             labels: labels(),
-            getKind: index => index === count ? 'original' : 'character',
             callback,
         });
         control.setOptions(charData, ocData, labels());
         control.setValueOnly(previousValueOnly);
-        const defaults = Array.from({ length: count + 1 }, (_, index) => keys[index] ?? 'None');
+        const defaults = Array.from({ length: count }, (_, index) => keys[index] ?? 'None');
         control.updateDefaults(...defaults);
-        for (let index = 0; index <= count; index++) control.setTextValue(index, weights[index] ?? 1);
+        for (let index = 0; index < count; index++) control.setTextValue(index, weights[index] ?? 1);
         renderSlotButtons();
     }
 
@@ -400,21 +427,17 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
     }
 
     function currentWeights() {
-        return control ? Array.from({ length: count + 1 }, (_, index) => control.getTextValue(index)) : [];
+        return control ? Array.from({ length: count }, (_, index) => control.getTextValue(index)) : [];
     }
 
     function setSlotCount(next) {
         const clamped = Math.max(minSlots, Math.min(maxSlots, next));
         if (clamped === count) return;
-        const keys = currentKeys();
-        const weights = currentWeights();
-        const ocKey = keys[count] ?? 'None';
-        const ocWeight = weights[count] ?? 1;
-        const standardKeys = keys.slice(0, Math.min(count, clamped));
-        const standardWeights = weights.slice(0, Math.min(count, clamped));
+        const keys = currentKeys().slice(0, Math.min(count, clamped));
+        const weights = currentWeights().slice(0, Math.min(count, clamped));
         count = clamped;
-        build([...standardKeys, ...Array(Math.max(0, count - standardKeys.length)).fill('None')].slice(0, count).concat([ocKey]),
-            [...standardWeights, ...Array(Math.max(0, count - standardWeights.length)).fill(1)].slice(0, count).concat([ocWeight]));
+        build([...keys, ...Array(Math.max(0, count - keys.length)).fill('None')].slice(0, count),
+            [...weights, ...Array(Math.max(0, count - weights.length)).fill(1)].slice(0, count));
         onSlotsChanged?.();
         if (typeof callback === 'function') callback(0, control.getKey());
     }
@@ -428,10 +451,8 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         })),
         setSlots(slots) {
             const list = Array.isArray(slots) && slots.length ? slots.slice(0, maxSlots) : [{ key: 'None', weight: 1 }];
-            const keys = currentKeys();
-            const ocKey = keys[count] ?? 'None';
             count = Math.max(minSlots, list.length);
-            build([...list.map(slot => slot?.key ?? 'None'), ocKey], [...list.map(slot => slot?.weight ?? 1), 1]);
+            build(list.map(slot => slot?.key ?? 'None'), list.map(slot => slot?.weight ?? 1));
         },
         addSlot: () => setSlotCount(count + 1),
         removeSlot: () => setSlotCount(count - 1),
@@ -465,25 +486,24 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
 }
 
 export function myCharacterSelectionModal(containerId, waiCharacters, originalCharacters, callback, initialLabels = null) {
-    const labels = initialLabels || ['Character list 1', 'Character list 2', 'Character list 3', 'Original Character'];
+    const labels = initialLabels || ['Character list 1', 'Character list 2', 'Character list 3'];
     const control = createCharacterControl({
         containerId,
-        dropdownCount: 4,
+        dropdownCount: labels.length,
         labels,
-        getKind: index => index === 3 ? 'original' : 'character',
         callback,
     });
     if (control) control.setOptions([Object.keys(waiCharacters || {}), Object.values(waiCharacters || {})], Object.keys(originalCharacters || {}), labels);
     return control;
 }
 
+// Regional: one slot per side; each may hold a character or an original character.
 export function myRegionalCharacterSelectionModal(containerId, waiCharacters, originalCharacters, callback, initialLabels = null) {
-    const labels = initialLabels || ['Character Left', 'Character Right', 'Original Character Left', 'Original Character Right'];
+    const labels = initialLabels || ['Character Left', 'Character Right'];
     const control = createCharacterControl({
         containerId,
-        dropdownCount: 4,
+        dropdownCount: 2,
         labels,
-        getKind: index => index < 2 ? 'character' : 'original',
         callback,
     });
     if (control) control.setOptions([Object.keys(waiCharacters || {}), Object.values(waiCharacters || {})], Object.keys(originalCharacters || {}), labels);

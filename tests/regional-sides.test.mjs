@@ -178,7 +178,7 @@ test('the Prompts card lists BOTH SIDES / LEFT / RIGHT with swap, collapse and c
     assert.match(manager, /entries\.push\(\{ section: 'POSITIVE', stripe: 'positive' \}\);/);
     // swap = one undo step through the settings transaction
     assert.match(manager, /runEditTransaction\(\{ source: 'regional-swap', sections: \['prompt', 'generation'\] \}, mutate\)/);
-    assert.match(manager, /list\.updateDefaults\(keys\[1\], keys\[0\], keys\[3\], keys\[2\]\);/);
+    assert.match(manager, /list\.updateDefaults\(keys\[1\], keys\[0\]\);/, 'one slot per side, an OC may sit on either');
     // character rows open the Characters card's picker for that slot
     assert.match(manager, /sideCharacterTriggers\(side\)\[0\]\?\.click\(\)/);
     assert.match(manager, /localStorage\.setItem\(SIDE_COLLAPSE_KEY/);

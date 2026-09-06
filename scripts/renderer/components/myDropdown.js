@@ -70,7 +70,7 @@ function filterOptionsByText(optionList, searchText) {
     });
 }
 
-// count standard labels (character1-3 from the language file, a pattern beyond) + OC.
+// count slot labels (character1-3 from the language file, a pattern beyond).
 export function characterSlotLabels(count) {
     const LANG = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language] ?? {};
     const labels = Array.from({ length: count }, (_, index) => {
@@ -78,7 +78,6 @@ export function characterSlotLabels(count) {
         if (index < 3 && typeof fixed === 'string' && fixed) return fixed;
         return (LANG.ui_character_list_n || 'Character list {0}').replace('{0}', String(index + 1));
     });
-    labels.push(LANG.original_character || 'Original Character');
     return labels;
 }
 

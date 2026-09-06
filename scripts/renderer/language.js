@@ -127,7 +127,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.characterList.setValueOnly(globalThis.globalSettings.language === 'en-US');
 
     // Regional Condition
-    setDropdownLanguage('dropdown-character-regional', [LANG.regional_character_left, LANG.regional_character_right, LANG.regional_origina_character_left, LANG.regional_origina_character_right]);
+    setDropdownLanguage('dropdown-character-regional', [LANG.regional_character_left, LANG.regional_character_right]);
     globalThis.characterListRegional.setValueOnly(globalThis.globalSettings.language === 'en-US');
 
     // View List
@@ -141,8 +141,8 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.generate.regionalCondition_dummy.setTitle(LANG.regional_condition);
     globalThis.regional.overlap_ratio.setTitle(LANG.regional_overlap_ratio);
     globalThis.regional.image_ratio.setTitle(LANG.regional_image_ratio);
-    globalThis.regional.str_left.setTitle(LANG.regional_str_left);
-    globalThis.regional.str_right.setTitle(LANG.regional_str_right);
+    globalThis.regional.str_left.setTitle(LANG.regional_strength || LANG.regional_str_left);
+    globalThis.regional.str_right.setTitle(LANG.regional_strength || LANG.regional_str_right);
     globalThis.regional.option_left.setTitle(LANG.regional_option_left);
     globalThis.regional.option_right.setTitle(LANG.regional_option_right);
 

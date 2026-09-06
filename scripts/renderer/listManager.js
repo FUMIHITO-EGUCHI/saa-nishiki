@@ -85,11 +85,11 @@ async function applyPayload(payload) {
 
     const LANG = lang();
     try {
-        const characterLabels = [LANG.character1, LANG.character2, LANG.character3, LANG.original_character];
+        const characterLabels = [LANG.character1, LANG.character2, LANG.character3];
         globalThis.characterList?.setOptions?.(
             [Object.keys(payload.characters), Object.values(payload.characters)],
             Object.keys(payload.ocCharacters), characterLabels);
-        const regionalLabels = [LANG.regional_character_left, LANG.regional_character_right, LANG.regional_origina_character_left, LANG.regional_origina_character_right];
+        const regionalLabels = [LANG.regional_character_left, LANG.regional_character_right];
         globalThis.characterListRegional?.setOptions?.(
             [Object.keys(payload.characters), Object.values(payload.characters)],
             Object.keys(payload.ocCharacters), regionalLabels);

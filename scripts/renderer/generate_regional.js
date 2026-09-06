@@ -9,6 +9,7 @@ import { filterPrompts } from './tools/promptFilter.js';
 import { asFragment, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
 import { sideOrder } from '../shared/regionalSides.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue } from './tools/promptBatchExpansion.js';
+import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
 import { removeAiPromptMarker } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
@@ -233,9 +234,10 @@ async function createCharacters(index, seeds) {
         return { tag: '', tag_assist: '', thumb: null, info: '', neg_tags: '' };
     }
 
-    const isOriginalCharacter = (index === 3 || index === 2);
+    // an `oc:` key is an original character, on either side
+    const isOriginalCharacter = isOriginalKey(character);
     const { tag, thumb, info, weight, name } = isOriginalCharacter
-        ? handleOriginalCharacter(character, seed, isValueOnly, index, FILES)
+        ? handleOriginalCharacter(originalCharacterName(character), seed, isValueOnly, index, FILES)
         : await handleStandardCharacter(character, seed, isValueOnly, index, FILES);
 
     const { tag: parsedTag, neg_tags } = splitTagNegativePrompt(tag);
@@ -351,7 +353,8 @@ async function getCharacters(){
     let negativeTagsRight = '';
     let character_name_for_image_prefix = '';
 
-    for(let index=0; index < 4; index++) {
+    // one slot per side: 0 = left, 1 = right
+    for(let index=0; index < 2; index++) {
         let {tag, tag_assist, thumb, info, weight, characterName, neg_tags} = await createCharacters(index, seeds);
         // Should not happen
         if(tag.startsWith('✨ ')) {            
@@ -359,7 +362,7 @@ async function getCharacters(){
             console.log('remove fav mark ✨ for', tag);
         }
 
-        if (index === 0 || index === 2){
+        if (index === 0){
             character_left += parseCharacter(weight, tag);
             character_left += tag_assist;
 
@@ -377,7 +380,7 @@ async function getCharacters(){
 
         if (neg_tags) {
             negativeTags = (negativeTags === '') ? neg_tags : `${negativeTags}, ${neg_tags}`;
-            if (index === 0 || index === 2) negativeTagsLeft = (negativeTagsLeft === '') ? neg_tags : `${negativeTagsLeft}, ${neg_tags}`;
+            if (index === 0) negativeTagsLeft = (negativeTagsLeft === '') ? neg_tags : `${negativeTagsLeft}, ${neg_tags}`;
             else negativeTagsRight = (negativeTagsRight === '') ? neg_tags : `${negativeTagsRight}, ${neg_tags}`;
         }
 
