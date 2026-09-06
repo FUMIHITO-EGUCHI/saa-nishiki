@@ -345,6 +345,9 @@ export function setupPromptFieldManager() {
         const target = unitContainer(id);
         for (const container of editor.querySelectorAll('.prompt-field')) {
             container.classList.toggle('is-off-screen', container !== target);
+            // a badge belongs to the focused editor only: a stale "RIGHT · name" must
+            // not survive on a field that is hidden or shown again later
+            if (container !== target) container.querySelector('.prompt-side-badge')?.remove();
         }
         updateSideBadge(target, id);
         renderFieldList();
@@ -503,7 +506,9 @@ export function setupPromptFieldManager() {
         }
         const aiCard = fieldsHost.querySelector('.ai-card');
         if (aiCard) fieldsHost.appendChild(aiCard);
-        if (!unitContainer(selectedField)) selectedField = 'positive';
+        // a side field can stay selected across a Regional off (or a restart):
+        // fall back to Positive rather than showing an empty editor
+        if (!isAvailable(unitContainer(selectedField))) selectedField = 'positive';
         selectField(selectedField);
     }
 
@@ -690,7 +695,8 @@ export function setupPromptFieldManager() {
             const name = nameInput.value.trim();
             if (name === '') return;
             const polarity = panel.querySelector('.prompt-field-editor-polarity').value;
-            const side = normalizeSide(panel.querySelector('.prompt-field-editor-side-select')?.value);
+            // sides are a Regional concept: with Regional off a new field joins the single chain
+            const side = isRegional() ? normalizeSide(panel.querySelector('.prompt-field-editor-side-select')?.value) : 'both';
             fields.push({ id: makeCustomFieldId(), name, polarity, text: '', ...(side === 'both' ? {} : { side }) });
             nameInput.value = '';
             persistFields();
@@ -700,6 +706,12 @@ export function setupPromptFieldManager() {
         });
 
         renderEditorLists = () => {
+            // Both / Left / Right only exist while Regional is on (the stored sides are kept)
+            const regional = isRegional();
+            const sideSelect = panel.querySelector('.prompt-field-editor-side-select');
+            if (sideSelect) { sideSelect.hidden = !regional; if (!regional) sideSelect.value = 'both'; }
+            const sideNote = panel.querySelector('.prompt-field-editor-side-note');
+            if (sideNote) sideNote.hidden = !regional;
             for (const list of panel.querySelectorAll('.prompt-field-editor-list')) {
                 const orderKey = list.dataset.order;
                 list.innerHTML = '';
@@ -714,7 +726,7 @@ export function setupPromptFieldManager() {
                     label.textContent = custom ? custom.name : (BUILTIN_LABELS[id] || id);
                     if (STRUCTURAL_UNITS.has(id)) label.classList.add('is-structural');
                     row.appendChild(label);
-                    if (!custom && !STRUCTURAL_UNITS.has(id)) {
+                    if (regional && !custom && !STRUCTURAL_UNITS.has(id)) {
                         const fixed = document.createElement('span');
                         fixed.className = 'prompt-field-editor-side-fixed';
                         fixed.textContent = id === 'positive' || id === 'negative' ? 'both · left · right' : sideOf(id, fields);
@@ -732,24 +744,26 @@ export function setupPromptFieldManager() {
                     row.append(up, down);
 
                     if (custom) {
-                        // Both / Left / Right for the regional chain (see regionalSides.js)
-                        const sideControl = document.createElement('div');
-                        sideControl.className = 'prompt-field-editor-side';
-                        const currentSide = normalizeSide(custom.side);
-                        for (const side of ['both', 'left', 'right']) {
-                            const option = document.createElement('button');
-                            option.type = 'button';
-                            option.textContent = SIDE_LABELS[side];
-                            option.classList.toggle('is-selected', side === currentSide);
-                            option.addEventListener('click', () => {
-                                if (side === 'both') delete custom.side; else custom.side = side;
-                                persistFields();
-                                applyDomOrder();
-                                renderEditorLists();
-                            });
-                            sideControl.appendChild(option);
+                        if (regional) {
+                            // Both / Left / Right for the regional chain (see regionalSides.js)
+                            const sideControl = document.createElement('div');
+                            sideControl.className = 'prompt-field-editor-side';
+                            const currentSide = normalizeSide(custom.side);
+                            for (const side of ['both', 'left', 'right']) {
+                                const option = document.createElement('button');
+                                option.type = 'button';
+                                option.textContent = SIDE_LABELS[side];
+                                option.classList.toggle('is-selected', side === currentSide);
+                                option.addEventListener('click', () => {
+                                    if (side === 'both') delete custom.side; else custom.side = side;
+                                    persistFields();
+                                    applyDomOrder();
+                                    renderEditorLists();
+                                });
+                                sideControl.appendChild(option);
+                            }
+                            row.appendChild(sideControl);
                         }
-                        row.appendChild(sideControl);
                         const rename = document.createElement('button');
                         rename.type = 'button';
                         rename.textContent = '✎';
@@ -830,6 +844,7 @@ export function setupPromptFieldManager() {
             persistFields();
             renderCustomFields();
             applyDomOrder();
+            renderEditorLists(); // the field editor, when open, follows
         },
         openEditor,
         // re-render the field list only (character names, counts)
@@ -839,8 +854,13 @@ export function setupPromptFieldManager() {
         // Weight plans / batch of a custom field live in its entry (tagCapsuleField
         // writes them through here so a later rename / reorder cannot clobber them).
         setFieldExtras: (id, extras) => {
-            if (!fields.some(field => field.id === id)) return;
-            fields = setCustomFieldExtras(fields, id, extras);
+            // The settings are the source of truth: a preset load / undo rewrites
+            // prompt_custom_fields before this manager re-syncs, and the capsule
+            // fields write their plans back during that reload - persisting the
+            // manager's copy here would put the previous field set back.
+            const current = normalizeCustomFields(SETTINGS.prompt_custom_fields);
+            if (!current.some(field => field.id === id)) return;
+            fields = setCustomFieldExtras(current, id, extras);
             persistFields();
         },
         // visible prompt fields in chain order (right-click "Move to" targets)

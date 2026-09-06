@@ -216,6 +216,11 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.prompt.background.setTitle(LANG.prompt_background);
     globalThis.prompt.style.setTitle(LANG.prompt_style);
     globalThis.prompt.ai.setTitle(LANG.ai_prompt);
+    // Regional keeps its own Common / Positive titles across a language switch
+    if (globalThis.globalSettings.regional_condition) {
+        globalThis.prompt.common.setTitle(LANG.regional_custom_prompt);
+        globalThis.prompt.positive.setTitle(LANG.regional_api_prompt);
+    }
     globalThis.prompt.exclude.setTitle(LANG.prompt_ban);
     globalThis.prompt.tagCapsuleFields?.updateLanguage?.();
     globalThis.prompt.autoResize.setTitle(LANG.ptompt_textbox_autoresize);
@@ -389,10 +394,12 @@ export function updateSettings() {
     globalThis.prompt.style.setValue(SETTINGS.prompt_style);
     globalThis.prompt.ai.setValue(SETTINGS.ai_prompt);
     globalThis.prompt.exclude.setValue(SETTINGS.prompt_ban);
-    globalThis.prompt.tagCapsuleFields?.loadFromSettings?.(SETTINGS);
     // custom prompt fields (definitions, texts, order) follow the settings too — a
-    // preset load or undo must re-sync the containers, not just the built-in textboxes
+    // preset load or undo must re-sync the containers, not just the built-in textboxes.
+    // The field set is synced first: the capsule reload below writes plans back
+    // through the manager, which must already hold the new fields.
     globalThis.prompt.fieldManager?.refresh?.();
+    globalThis.prompt.tagCapsuleFields?.loadFromSettings?.(SETTINGS);
     globalThis.prompt.autoResize.setValue(SETTINGS.ptompt_textbox_autoresize);
     globalThis.prompt.fontSize.setValue(SETTINGS.ptompt_textbox_fontsize);
 

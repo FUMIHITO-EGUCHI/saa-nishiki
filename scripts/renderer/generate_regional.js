@@ -142,8 +142,10 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
     const assemble = (side) => {
         let text = '';
         let coloredText = '';
+        const chain = []; // the side's ordered units as assembled (Refine rebuilds around them)
         for (const id of sideOrder(order, side, customs)) {
             const part = unit(id, side);
+            chain.push({ id, text: part.text || '' });
             if (!part.text) continue;
             text += part.text;
             coloredText += part.colored ?? colored(part.text, part.color);
@@ -151,7 +153,7 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
         // the last unit keeps no trailing separator (the old fixed chain ended on Positive)
         text = text.replace(/,\s*$/, '');
         coloredText = coloredText.replace(/,\s*(\[\/color\])$/, '$1').replace(/,\s*$/, '');
-        return { text, coloredText };
+        return { text, coloredText, chain };
     };
     const left = assemble('left');
     const right = assemble('right');
@@ -183,6 +185,7 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
                 characters: character_left,
                 afterCharacters: EOCL,
                 afterPrompts: EOPL,
+                chain: left.chain,
             },
             right: {
                 beforePrompts: BOPR,
@@ -190,6 +193,7 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
                 characters: character_right,
                 afterCharacters: EOCR,
                 afterPrompts: EOPR,
+                chain: right.chain,
             },
             views,
             exclude,

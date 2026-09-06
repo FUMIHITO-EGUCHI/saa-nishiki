@@ -37,12 +37,34 @@ export function applyRefinePlanWeights(editorFields = {}, weights = {}) {
     };
 }
 
+// A chain is the ordered {id, text} units generation assembled for one prompt
+// (refineContext.chain, .left.chain, .right.chain). The editor's common / positive /
+// positive_right replace their units; every other unit - background, style, custom
+// fields, the characters block with its JSON slots - keeps the text it had. The AI
+// unit is left out: Refine is what replaces it.
+function chainParts(chain, editorFields) {
+    return chain.map(unit => {
+        switch (unit?.id) {
+            case 'common': return editorFields.common;
+            case 'positive': return editorFields.positive;
+            case 'positive_right': return editorFields.positiveRight;
+            case 'ai': return '';
+            default: return unit?.text ?? '';
+        }
+    });
+}
+
 export async function composeNormalRefinePrompt({
     editorFields = {},
     fixedContext = {},
     resolveComponent = identityResolver,
 } = {}) {
-    const parts = await resolveParts([
+    // without a chain (older queue items) the fixed shape common → views → characters → positive is used
+    const parts = await resolveParts(Array.isArray(fixedContext.chain) ? [
+        fixedContext.beforePrompts,
+        ...chainParts(fixedContext.chain, editorFields),
+        fixedContext.afterPrompts,
+    ] : [
         fixedContext.beforePrompts,
         editorFields.common,
         fixedContext.views,
@@ -65,7 +87,11 @@ async function composeRegionalSide(editorFields, fixedContext, sideName, resolve
     const side = fixedContext[sideName] ?? {};
     const seed = sideName === 'left' ? fixedContext.leftSeed : fixedContext.rightSeed;
     const specific = sideName === 'left' ? editorFields.positive : editorFields.positiveRight;
-    const parts = await resolveParts([
+    const parts = await resolveParts(Array.isArray(side.chain) ? [
+        side.beforePrompts,
+        ...chainParts(side.chain, editorFields),
+        side.afterPrompts,
+    ] : [
         side.beforePrompts,
         editorFields.common,
         fixedContext.views,

@@ -32,7 +32,26 @@ import { getWeightPopover } from './weightPopover.js';
 import { getBatchWeightDialog } from './batchWeightDialog.js';
 import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
 import { tagText } from './tagUiText.js';
-import { customFieldExtras, isCustomFieldId, setCustomFieldExtras } from '../../shared/promptFieldOrder.js';
+import { customFieldExtras, isCustomFieldId, normalizeCustomFields, normalizeOrder, setCustomFieldExtras } from '../../shared/promptFieldOrder.js';
+import { sideOrder } from '../../shared/regionalSides.js';
+
+// Unit ids of each prompt in generation order (scripts/shared/regionalSides.js), so
+// the Final prompt preview and the batch dialogs mirror what generate.js assembles.
+// Regional: the left / right positive chains and one merged negative (shared, left,
+// right); otherwise the single chains and no right prompt.
+export function chainFromSettings(stored = {}) {
+    const customs = normalizeCustomFields(stored?.prompt_custom_fields);
+    const positive = normalizeOrder(stored?.prompt_positive_order, 'positive', customs);
+    const negative = normalizeOrder(stored?.prompt_negative_order, 'negative', customs);
+    if (!stored?.regional_condition) return { positive, positiveRight: null, negative };
+    const negativeLeft = sideOrder(negative, 'left', customs);
+    const negativeRight = sideOrder(negative, 'right', customs).filter(id => !negativeLeft.includes(id));
+    return {
+        positive: sideOrder(positive, 'left', customs),
+        positiveRight: sideOrder(positive, 'right', customs),
+        negative: [...negativeLeft, ...negativeRight],
+    };
+}
 
 export const PROMPT_FIELD_KEYS = Object.freeze(['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
 
@@ -738,6 +757,7 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         finalPromptContainer = null,
         showRight = () => Boolean(globalThis.globalSettings?.regional_condition),
         fetchRelated = null,     // async (tagValue) => related-tag groups (null disables the strip)
+        getChain = () => chainFromSettings(settings()),
     } = options;
 
     const fields = new Map();
@@ -754,7 +774,7 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
 
     function expandRows(count, seed) {
         // slider ≥ 0: the seed is pinned for the whole batch, weights are the only variable
-        return expandAll(expansionFields(), seed, count, { applyExclude, fixedSeed: getGenerationSeed() >= 0 });
+        return expandAll(expansionFields(), seed, count, { applyExclude, fixedSeed: getGenerationSeed() >= 0, chain: getChain() });
     }
 
     function getBatchExpansion() {

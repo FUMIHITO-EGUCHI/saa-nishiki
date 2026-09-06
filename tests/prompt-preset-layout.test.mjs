@@ -63,7 +63,7 @@ test('preset apply goes through the layout merge, undo restores snapshots exactl
     assert.match(persistence, /if \(section === 'prompt' && mergeLayout && data && typeof data === 'object'\) \{\s*data = \{ \.\.\.data, \.\.\.mergePromptFieldLayout\(raw, data\) \};/);
     assert.match(persistence, /restore: snapshots => applySectionsData\(snapshots, \{ mergeLayout: false \}\)/);
     const language = read('scripts/renderer/language.js');
-    assert.match(language, /tagCapsuleFields\?\.loadFromSettings\?\.\(SETTINGS\);[\s\S]{0,300}globalThis\.prompt\.fieldManager\?\.refresh\?\.\(\)/);
+    assert.match(language, /globalThis\.prompt\.fieldManager\?\.refresh\?\.\(\);\s*globalThis\.prompt\.tagCapsuleFields\?\.loadFromSettings\?\.\(SETTINGS\);/, 'field set first, then the capsule plans');
     const manager = read('scripts/renderer/components/promptFieldManager.js');
     assert.match(manager, /refresh: \(\) => \{\s*fields = normalizeCustomFields\(SETTINGS\.prompt_custom_fields\);/);
     assert.match(manager, /if \(control\?\.getValue && String\(control\.getValue\(\) \?\? ''\) !== field\.text\) control\.setValue\(field\.text\)/);

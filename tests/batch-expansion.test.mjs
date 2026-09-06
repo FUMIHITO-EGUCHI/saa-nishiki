@@ -244,7 +244,7 @@ test('custom field plans persist inside prompt_custom_fields and generate.js rea
   assert.match(field, /onBatchChange: batch => writeStoredExtras\(key, \{ batch \}\)/);
   assert.match(field, /const extras = readStoredExtras\(stored, key\);\s*field\.setPlans\(extras\.weight_plans\);\s*field\.setBatch\(extras\.batch\);/);
   const manager = read('scripts/renderer/components/promptFieldManager.js');
-  assert.match(manager, /setFieldExtras: \(id, extras\) => \{[\s\S]*?fields = setCustomFieldExtras\(fields, id, extras\);\s*persistFields\(\);/);
+  assert.match(manager, /setFieldExtras: \(id, extras\) => \{[\s\S]*?fields = setCustomFieldExtras\(current, id, extras\);\s*persistFields\(\);/);
   const generate = read('scripts/renderer/generate.js');
   assert.match(generate, /if \(globalThis\.prompt\?\.\[field\.id\]\?\.getValue\) return readPromptValue\(field\.id\);/);
   assert.doesNotMatch(generate, /component\?\.getValue \? String\(component\.getValue\(\)/);

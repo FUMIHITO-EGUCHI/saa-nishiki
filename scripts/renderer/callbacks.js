@@ -307,6 +307,8 @@ export function callback_regional_condition(trigger, dummy = false) {
     // the field list mirrors the container's visibility: re-render it so
     // "Positive (right)" appears / disappears with the switch
     globalThis.prompt.fieldManager?.refresh?.();
+    // the Final prompt preview gains / loses its right side with the switch
+    globalThis.prompt.tagCapsuleFields?.refreshFinalPrompt?.();
 }
 
 export function callback_controlnet(trigger)  {                

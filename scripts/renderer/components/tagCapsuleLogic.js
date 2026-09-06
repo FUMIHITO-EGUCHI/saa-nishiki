@@ -529,7 +529,7 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
         if (!field) return '';
         return serializeCapsules(field.capsules ?? [], { generationSeed: baseSeed, imageIndex, tokenPrefix: key, omitDisabled: true, batchCount: total });
     };
-    const BUILTIN_KEYS = new Set(['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'exclude']);
+    const BUILTIN_KEYS = new Set(['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
 
     return Array.from({ length: total }, (_, imageIndex) => {
         const weights = {};
@@ -542,32 +542,27 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
                 if (isTerminalAt(capsule.weightPlan, imageIndex, total)) terminal.push(tokenId);
             }
         }
-        const common = expandField('common', imageIndex);
-        const background = expandField('background', imageIndex);
-        const style = expandField('style', imageIndex);
-        const positiveTail = expandField('positive', imageIndex);
-        const positiveRightTail = expandField('positive_right', imageIndex);
-        const negative = expandField('negative', imageIndex);
-        const exclude = expandField('exclude', imageIndex);
         const join = (...parts) => parts.filter(Boolean).join(', ');
-        let positive = join(common, positiveTail);
-        let positiveRight = join(common, positiveRightTail);
+        // every field expands under its own key: built-ins and cf_* custom fields
+        const expandedFields = {};
+        for (const field of fields) expandedFields[field.key] = expandField(field.key, imageIndex);
+        for (const key of BUILTIN_KEYS) if (!(key in expandedFields)) expandedFields[key] = '';
+        // options.chain = { positive: [unit ids], positiveRight: [unit ids] | null, negative: [unit ids] }
+        // in generation order (scripts/shared/regionalSides.js): the prompts then mirror
+        // what generate.js assembles - background, style, custom fields and their sides
+        // included; structural units (views / ai / characters) have no field and are
+        // skipped. Without a chain the legacy common + positive shape is used.
+        const chain = options.chain && typeof options.chain === 'object' ? options.chain : null;
+        const chainText = ids => join(...(Array.isArray(ids) ? ids : []).map(id => expandedFields[id] ?? ''));
+        let positive = chain ? chainText(chain.positive) : join(expandedFields.common, expandedFields.positive);
+        let positiveRight = chain
+            ? (chain.positiveRight ? chainText(chain.positiveRight) : '')
+            : join(expandedFields.common, expandedFields.positive_right);
+        const negative = chain ? chainText(chain.negative ?? ['negative']) : expandedFields.negative;
+        const exclude = expandedFields.exclude;
         if (applyExclude && exclude) {
             positive = applyExclude(positive, exclude);
             positiveRight = applyExclude(positiveRight, exclude);
-        }
-        const expandedFields = {
-            common,
-            background,
-            style,
-            positive: positiveTail,
-            positive_right: positiveRightTail,
-            negative,
-            exclude,
-        };
-        // custom prompt fields (cf_*) expand under their own key
-        for (const field of fields) {
-            if (!BUILTIN_KEYS.has(field.key)) expandedFields[field.key] = expandField(field.key, imageIndex);
         }
         return {
             imageIndex,

@@ -521,16 +521,19 @@ function appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP, fieldUnits = n
 
     const order = normalizeOrder(SETTINGS.prompt_positive_order, 'positive', SETTINGS.prompt_custom_fields);
     const { prompt, promptColored } = joinOrderedUnits(order, units);
+    // the ordered units as assembled, for Refine to rebuild the prompt around its edits
+    const chain = order.map(id => ({ id, text: units[id]?.text ?? '' }));
 
     return {
         tmpPositivePrompt: `${BOP || ''}${prompt}${EOP || ''}`,
         tmpPositivePromptColored: `${BOP || ''}${promptColored}${EOP || ''}`,
+        chain,
     };
 }
 
 function getPrompts(characters, views, ai='', apiInterface = 'None', loop=-1, fieldUnits = null) {
     const {BOP, BOC, EOC, EOP} = getCustomJSON(loop);
-    const {tmpPositivePrompt, tmpPositivePromptColored} = appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP, fieldUnits);
+    const {tmpPositivePrompt, tmpPositivePromptColored, chain} = appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP, fieldUnits);
 
     const exclude = readPromptValue('exclude');
     const {positivePrompt, positivePromptColored} = filterPrompts(tmpPositivePrompt, tmpPositivePromptColored, exclude);
@@ -548,6 +551,7 @@ function getPrompts(characters, views, ai='', apiInterface = 'None', loop=-1, fi
             characters,
             exclude,
             slotLora: loraPromot,
+            chain,
         },
     }
 }
