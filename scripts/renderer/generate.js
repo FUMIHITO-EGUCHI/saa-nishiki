@@ -203,9 +203,10 @@ export function getViewTags(seed, includeFields = true) {
 
 // Custom prompt fields: live component value when the UI has one, stored text otherwise.
 function readCustomFieldValue(field) {
-    const component = globalThis.prompt?.[field.id];
-    const raw = component?.getValue ? String(component.getValue() ?? '') : (field.text || '');
-    return stripDisabledTags(raw); // "~tag" = toggled off on its capsule
+    // Through the expansion bridge so a batch weight override on a custom field
+    // reaches the prompt like it does for the built-in fields.
+    if (globalThis.prompt?.[field.id]?.getValue) return readPromptValue(field.id);
+    return stripDisabledTags(field.text || ''); // "~tag" = toggled off on its capsule
 }
 
 export function getCustomFieldTexts(polarity) {

@@ -12,6 +12,7 @@ import {
     makeCustomFieldId,
     normalizeCustomFields,
     normalizeOrder,
+    setCustomFieldExtras,
 } from '../../shared/promptFieldOrder.js';
 
 const BUILTIN_LABELS = {
@@ -580,6 +581,13 @@ export function setupPromptFieldManager() {
             applyDomOrder();
         },
         openEditor,
+        // Weight plans / batch of a custom field live in its entry (tagCapsuleField
+        // writes them through here so a later rename / reorder cannot clobber them).
+        setFieldExtras: (id, extras) => {
+            if (!fields.some(field => field.id === id)) return;
+            fields = setCustomFieldExtras(fields, id, extras);
+            persistFields();
+        },
         // visible prompt fields in chain order (right-click "Move to" targets)
         listFields: () => listEntries()
             .filter(entry => entry.id && isAvailable(unitContainer(entry.id)))

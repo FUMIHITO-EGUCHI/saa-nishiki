@@ -32,6 +32,7 @@ import { getWeightPopover } from './weightPopover.js';
 import { getBatchWeightDialog } from './batchWeightDialog.js';
 import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
 import { tagText } from './tagUiText.js';
+import { customFieldExtras, isCustomFieldId, setCustomFieldExtras } from '../../shared/promptFieldOrder.js';
 
 export const PROMPT_FIELD_KEYS = Object.freeze(['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'exclude']);
 
@@ -790,8 +791,29 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         }
     }
 
+    // Built-in fields keep their plans / batch under `<key>_weight_plans` /
+    // `<key>_batch`; a custom field (cf_*) keeps them inside its
+    // prompt_custom_fields entry, owned by the field manager.
+    function readStoredExtras(stored, key) {
+        if (isCustomFieldId(key)) return customFieldExtras(stored?.prompt_custom_fields, key);
+        return { weight_plans: stored?.[`${key}_weight_plans`] ?? [], batch: stored?.[`${key}_batch`] ?? DEFAULT_BATCH };
+    }
+
+    function writeStoredExtras(key, extras) {
+        const stored = settings();
+        if (isCustomFieldId(key)) {
+            const manager = globalThis.prompt?.fieldManager;
+            if (manager?.setFieldExtras) manager.setFieldExtras(key, extras);
+            else stored.prompt_custom_fields = setCustomFieldExtras(stored.prompt_custom_fields, key, extras);
+            return;
+        }
+        if (extras.weight_plans !== undefined) stored[`${key}_weight_plans`] = extras.weight_plans;
+        if (extras.batch !== undefined) stored[`${key}_batch`] = { ...extras.batch };
+    }
+
     function addField(control, key) {
         const stored = settings();
+        const extras = readStoredExtras(stored, key);
         const field = setupTagCapsuleField(control, {
             key,
             text,
@@ -801,10 +823,10 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
             fetchRelated,
             onExternalDrop: (payload, at, { copy }) => set.transfer(payload.field, payload.id, key, { at, copy }),
             getExcludeText: () => fields.get('exclude')?.textbox?.value ?? globalThis.prompt?.exclude?.getValue?.() ?? '',
-            initialPlans: stored[`${key}_weight_plans`] ?? [],
-            initialBatch: stored[`${key}_batch`] ?? DEFAULT_BATCH,
-            onPlansChange: plans => { settings()[`${key}_weight_plans`] = plans; },
-            onBatchChange: batch => { settings()[`${key}_batch`] = { ...batch }; },
+            initialPlans: extras.weight_plans,
+            initialBatch: extras.batch,
+            onPlansChange: plans => writeStoredExtras(key, { weight_plans: plans }),
+            onBatchChange: batch => writeStoredExtras(key, { batch }),
             onSeedChange: seed => { if (Number.isFinite(seed)) setGenerationSeed(seed); },
             expandForBatch: (count, seed, fieldKey) => expandRows(count, seed).map(row => ({
                 imageIndex: row.imageIndex,
@@ -895,8 +917,9 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         },
         loadFromSettings: (stored = settings()) => {
             for (const [key, field] of fields) {
-                field.setPlans(stored?.[`${key}_weight_plans`] ?? []);
-                field.setBatch(stored?.[`${key}_batch`] ?? DEFAULT_BATCH);
+                const extras = readStoredExtras(stored, key);
+                field.setPlans(extras.weight_plans);
+                field.setBatch(extras.batch);
             }
             refreshFinalPrompt();
         },

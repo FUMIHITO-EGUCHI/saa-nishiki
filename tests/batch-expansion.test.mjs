@@ -210,3 +210,42 @@ test('the prompt section carries per-field weight plan / batch keys with default
   assert.match(language, /tagCapsuleFields\?\.loadFromSettings\?\.\(SETTINGS\)/);
   assert.match(language, /tagCapsuleFields\?\.updateLanguage\?\.\(\)/);
 });
+
+test('a custom field (cf_*) with a variable plan expands per image and reaches readPromptValue (#13)', () => {
+  const gear = setCapsulePlan(parsePromptToCapsules('sword, cape'), 'sword#0', { mode: 'increment', min: 1, max: 1.2, step: 0.1 });
+  const fields = [
+    { key: 'common', capsules: parsePromptToCapsules('masterpiece') },
+    { key: 'positive', capsules: parsePromptToCapsules('1girl') },
+    { key: 'cf_gear0001', capsules: gear, batch: { enabled: true, count: 3 } },
+  ];
+  const set = {
+    getBatchExpansion: () => ({ enabled: true, count: 3, variable: 1 }),
+    getPromptOverrides: (imageIndex, seed, total = imageIndex + 1) => {
+      const row = expandAll(fields, seed, Math.max(total, imageIndex + 1))[imageIndex];
+      return { ...row.fields, weights: row.weights, terminal: row.terminal };
+    },
+  };
+  const expansion = planBatchExpansion({ loops: 1 }, { fieldSet: set, sliderSeed: 7 });
+  const seen = [];
+  for (let loop = 0; loop < expansion.loops; loop += 1) {
+    const override = beginImageOverride(expansion, loop, { fieldSet: set });
+    seen.push({ gear: readPromptValue('cf_gear0001'), weights: Object.keys(override.weights) });
+    endImageOverride();
+  }
+  assert.deepEqual(seen.map(s => s.gear), ['sword, cape', '(sword:1.10), cape', '(sword:1.20), cape']);
+  assert.deepEqual(seen[0].weights, ['cf_gear0001/sword#0']);
+});
+
+test('custom field plans persist inside prompt_custom_fields and generate.js reads them through the bridge (#13)', () => {
+  const field = read('scripts/renderer/components/tagCapsuleField.js');
+  assert.match(field, /if \(isCustomFieldId\(key\)\) return customFieldExtras\(stored\?\.prompt_custom_fields, key\)/);
+  assert.match(field, /if \(manager\?\.setFieldExtras\) manager\.setFieldExtras\(key, extras\);/);
+  assert.match(field, /onPlansChange: plans => writeStoredExtras\(key, \{ weight_plans: plans \}\)/);
+  assert.match(field, /onBatchChange: batch => writeStoredExtras\(key, \{ batch \}\)/);
+  assert.match(field, /const extras = readStoredExtras\(stored, key\);\s*field\.setPlans\(extras\.weight_plans\);\s*field\.setBatch\(extras\.batch\);/);
+  const manager = read('scripts/renderer/components/promptFieldManager.js');
+  assert.match(manager, /setFieldExtras: \(id, extras\) => \{[\s\S]*?fields = setCustomFieldExtras\(fields, id, extras\);\s*persistFields\(\);/);
+  const generate = read('scripts/renderer/generate.js');
+  assert.match(generate, /if \(globalThis\.prompt\?\.\[field\.id\]\?\.getValue\) return readPromptValue\(field\.id\);/);
+  assert.doesNotMatch(generate, /component\?\.getValue \? String\(component\.getValue\(\)/);
+});

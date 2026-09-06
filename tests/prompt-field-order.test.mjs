@@ -85,3 +85,30 @@ test('settings carry the new prompt-field keys in the prompt section', () => {
   assert.match(sections, /prompt_custom_fields: \[\]/);
   assert.match(sections, /'prompt_custom_fields', 'prompt_positive_order', 'prompt_negative_order', 'prompt_field_presets',/);
 });
+
+test('custom field entries carry their weight plans / batch compactly (#13)', async () => {
+  const { customFieldExtras, isCustomFieldId, setCustomFieldExtras } = await import('../scripts/shared/promptFieldOrder.js');
+  const plan = { id: 'sword#0', mode: 'increment', min: 1, max: 1.3, step: 0.1, seed: 0 };
+  const fields = normalizeCustomFields([
+    { id: 'cf_gear', name: 'Gear', polarity: 'positive', text: 'sword', weight_plans: [plan, 'junk', { mode: 'increment' }], batch: { enabled: true, count: '3' } },
+    { id: 'cf_plain', name: 'Plain', text: 'x', weight_plans: [], batch: { enabled: false, count: 4 } },
+  ]);
+  assert.deepEqual(fields[0].weight_plans, [plan]);
+  assert.deepEqual(fields[0].batch, { enabled: true, count: 3 });
+  // nothing stored → keys absent (old presets / tests compare the compact form)
+  assert.equal(Object.hasOwn(fields[1], 'weight_plans'), false);
+  assert.equal(Object.hasOwn(fields[1], 'batch'), false);
+
+  assert.deepEqual(customFieldExtras(fields, 'cf_plain'), { weight_plans: [], batch: { enabled: false, count: 4 } });
+  assert.deepEqual(customFieldExtras(fields, 'cf_gear'), { weight_plans: [plan], batch: { enabled: true, count: 3 } });
+  assert.deepEqual(customFieldExtras(undefined, 'cf_gear'), { weight_plans: [], batch: { enabled: false, count: 4 } });
+
+  const updated = setCustomFieldExtras(fields, 'cf_plain', { weight_plans: [plan] });
+  assert.deepEqual(updated[1].weight_plans, [plan]);
+  assert.equal(Object.hasOwn(updated[1], 'batch'), false, 'untouched extra stays absent');
+  const cleared = setCustomFieldExtras(updated, 'cf_gear', { weight_plans: [], batch: { enabled: false, count: 4 } });
+  assert.equal(Object.hasOwn(cleared[0], 'weight_plans'), false);
+  assert.equal(Object.hasOwn(cleared[0], 'batch'), false);
+  assert.deepEqual(fields[1].weight_plans, undefined, 'input is not mutated');
+  assert.ok(isCustomFieldId('cf_gear') && !isCustomFieldId('positive') && !isCustomFieldId(null));
+});
