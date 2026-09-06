@@ -146,3 +146,13 @@ test('generation hands the assembled chains to the Refine context', () => {
     assert.match(regional, /afterPrompts: EOPL,\s*chain: left\.chain,/);
     assert.match(regional, /afterPrompts: EOPR,\s*chain: right\.chain,/);
 });
+
+test('a queue item without an AI request skips the Refine parse instead of failing it', () => {
+    const generate = read('scripts/renderer/generate.js');
+    assert.match(generate, /const promptMode = aiRequest\.source === 'none' \? 'Expand' : queueManager\.aiOptions\?\.promptMode;/);
+    assert.match(generate, /const queuedRefineOriginals = promptMode === 'Refine'/);
+    assert.match(generate, /mode: promptMode,\s*content: aiPrompt,/);
+    assert.match(generate, /if \(!promptResult\.ok && promptMode === 'Refine'\)/);
+    const remote = read('scripts/renderer/remoteAI.js');
+    assert.match(remote, /if \(currentInterface\.toLowerCase\(\) === 'none'\) \{\s*return \{ content: '', fresh: false, source: 'none' \};/);
+});

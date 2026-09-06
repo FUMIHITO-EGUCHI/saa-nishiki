@@ -1322,7 +1322,11 @@ export async function startQueue(){
                 queueManager.refineRun,
             );
             const aiPrompt = aiRequest.content;
-            const queuedRefineOriginals = queueManager.aiOptions?.promptMode === 'Refine'
+            // No request was made (role None, or an interface of None): there is nothing
+            // to refine, so the assembled prompts go out as they are (marker removed)
+            // instead of a Refine parse of an empty answer failing on every image.
+            const promptMode = aiRequest.source === 'none' ? 'Expand' : queueManager.aiOptions?.promptMode;
+            const queuedRefineOriginals = promptMode === 'Refine'
                 ? {
                     positive: queueManager.aiOptions.existingPositive ?? generateData.positive ?? generateData.positive_left ?? '',
                     positiveRight: queueManager.aiOptions.existingPositiveRight ?? generateData.positive_right ?? '',
@@ -1334,7 +1338,7 @@ export async function startQueue(){
                     negative: generateData.negative ?? '',
                 };
             const promptResult = await resolveQueuedAiPrompt({
-                mode: queueManager.aiOptions?.promptMode,
+                mode: promptMode,
                 content: aiPrompt,
                 marker: REPLACE_AI_MARK,
                 originalPrompts: queuedRefineOriginals,
@@ -1352,7 +1356,7 @@ export async function startQueue(){
                     imageIndex: queueManager.loop,
                 });
             }
-            if (!promptResult.ok && queueManager.aiOptions?.promptMode === 'Refine') {
+            if (!promptResult.ok && promptMode === 'Refine') {
                 console.error('AI Refine failed, preserving original prompts:', promptResult.error);
             }
             if (Number(queueManager.aiRole) !== 0 && String(queueManager.aiInterface).toLowerCase() !== 'none' && globalThis.infoPanel?.showAiResult) {
@@ -1366,7 +1370,7 @@ export async function startQueue(){
 
             const finalInfo = renderAiPromptInfo({
                 info: String(queueManager.finalInfo),
-                mode: queueManager.aiOptions?.promptMode,
+                mode: promptMode,
                 marker: REPLACE_AI_MARK,
                 preview: aiPreview,
                 positive: promptResult.positive,
