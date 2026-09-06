@@ -21,6 +21,8 @@
 import base64
 import gc
 import json
+import os
+import subprocess
 import sys
 import threading
 import urllib.request
@@ -42,6 +44,18 @@ CLIENT_ID = str(uuid.uuid4())
 BASE = f'http://127.0.0.1:{COMFY_PORT}'
 # Ollama on the pod, loopback only (never exposed through the Runpod proxy)
 OLLAMA_BASE = 'http://127.0.0.1:11434'
+# loader nodes whose first widget lists the files ComfyUI can see (issue #8)
+OBJECT_INFO_NODES = ('CheckpointLoaderSimple', 'LoraLoader', 'VAELoader', 'UpscaleModelLoader',
+                     'ControlNetLoader', 'UNETLoader', 'CLIPLoader')
+BOOTSTRAP_SCRIPT = '/workspace/saa/bootstrap.sh'
+BOOTSTRAP_LOG = '/workspace/saa/logs/bootstrap.log'
+
+
+def comfy_down_message(error):
+    message = str(error)
+    if 'refused' in message.lower():
+        return f'ComfyUI is not running on the pod (port {COMFY_PORT} refused): {message}'
+    return message
 write_lock = threading.Lock()
 
 
@@ -133,11 +147,42 @@ def handle(request):
     if cmd == 'ping':
         emit({'id': rid, 'ok': True, 'pong': True, 'clientId': CLIENT_ID})
     elif cmd == 'stats':
-        # health/VRAM for the SAA header pill; GET only, nothing touches disks
+        # health/VRAM for the SAA header pill; GET only, nothing touches disks.
+        # ok:false here means "relay alive, ComfyUI not answering" (issue #9).
         try:
             emit({'id': rid, 'ok': True, 'stats': get_json('/system_stats')})
         except Exception as error:  # noqa: BLE001
-            emit({'id': rid, 'ok': False, 'message': str(error)})
+            emit({'id': rid, 'ok': False, 'message': comfy_down_message(error)})
+    elif cmd == 'object_info':
+        # Model / LoRA / VAE ... names as ComfyUI itself lists them (issue #8):
+        # GET /object_info/<node> for a fixed set of loader nodes, one result per
+        # node (null + message when a node class is missing or ComfyUI is down).
+        nodes = [str(node) for node in (request.get('nodes') or []) if str(node) in OBJECT_INFO_NODES]
+        info = {}
+        errors = {}
+        for node in nodes:
+            try:
+                info[node] = get_json(f'/object_info/{node}')
+            except Exception as error:  # noqa: BLE001
+                info[node] = None
+                errors[node] = comfy_down_message(error)
+        emit({'id': rid, 'ok': True, 'info': info, 'errors': errors})
+    elif cmd == 'bootstrap':
+        # Re-run the durable restore script after a pod START (Ollama, pip deps,
+        # ComfyUI restart). Detached so the relay keeps answering; the log lives
+        # on the workspace volume. Only the fixed path is ever executed.
+        script = BOOTSTRAP_SCRIPT
+        if not os.path.isfile(script):
+            emit({'id': rid, 'ok': False, 'message': f'bootstrap script not found: {script}'})
+        else:
+            try:
+                os.makedirs(os.path.dirname(BOOTSTRAP_LOG), exist_ok=True)
+                with open(BOOTSTRAP_LOG, 'ab') as log:
+                    subprocess.Popen(['bash', script], stdout=log, stderr=subprocess.STDOUT,
+                                     stdin=subprocess.DEVNULL, start_new_session=True)
+                emit({'id': rid, 'ok': True, 'log': BOOTSTRAP_LOG})
+            except Exception as error:  # noqa: BLE001
+                emit({'id': rid, 'ok': False, 'message': str(error)})
     elif cmd == 'submit':
         job = Job(request.get('workflow'), request.get('saveNodes'))
 

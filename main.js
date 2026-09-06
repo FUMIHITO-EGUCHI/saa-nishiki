@@ -14,6 +14,8 @@ import { setupFileHandlers } from './scripts/main/fileHandlers.js';
 import { setupGlobalSettings, getGlobalSettings } from './scripts/main/globalSettings.js';
 import { releaseComfyModels } from './scripts/main/comfyRelease.js';
 import { registerBackendStatus } from './scripts/main/backendStatus.js';
+import { registerRemoteModelList } from './scripts/main/remoteModelList.js';
+import { registerRunpodControl } from './scripts/main/runpodControl.js';
 import { setupDownloadFiles } from './scripts/main/downloadFiles.js';
 import { setupModelList } from './scripts/main/modelList.js';
 import { setupTagAutoCompleteBackend } from './scripts/main/tagAutoComplete_backend.js';
@@ -123,6 +125,8 @@ async function initializeApp() {
   
   // Header status pills (GET probes of ComfyUI / Ollama: loopback, or HTTPS for pods)
   registerBackendStatus(ipcMain, getGlobalSettings);
+  registerRemoteModelList(ipcMain, getGlobalSettings);
+  registerRunpodControl(ipcMain, getGlobalSettings);
 
   // IPC handlers for spellcheck
   ipcMain.handle('replace-misspelling', async (event, word) => {    

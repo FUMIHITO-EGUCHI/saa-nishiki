@@ -13,6 +13,7 @@ import { callback_api_model_select, callback_api_model_type, callback_api_interf
 import { setupSlider } from './renderer/components/mySlider.js';
 import { setupCheckbox, setupRadiobox } from './renderer/components/myCheckbox.js';
 import { setupButtons, toggleButtons, showCancelButtons } from './renderer/components/myButtons.js';
+import { setupPodControls } from './renderer/podControl.js';
 import { setupCollapsed, setupModelReloadToggle, 
     setupFuctionKeys, setupSwapToggle, reloadFiles, doSwap } from './renderer/components/myCollapsed.js';
 import { setupTextbox, setupInfoBox } from './renderer/components/myTextbox.js';
@@ -293,6 +294,14 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
             value: SETTINGS.pod_image_save_dir,
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.pod_image_save_dir = value; }),
+        api_pod_runpod_api_key: setupTextbox('system-settings-api-pod-runpod-key', LANG.api_pod_runpod_api_key, {
+            value: SETTINGS.api_pod_runpod_api_key,
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.api_pod_runpod_api_key = value.trim(); }),
+        api_pod_runpod_pod_id: setupTextbox('system-settings-api-pod-runpod-pod-id', LANG.api_pod_runpod_pod_id, {
+            value: SETTINGS.api_pod_runpod_pod_id,
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.api_pod_runpod_pod_id = value.trim(); }),
 
         api_fast_enable: setupCheckbox('system-settings-api-fast-enable', LANG.api_fast_enable, SETTINGS.api_fast_enable, true,
             (value) => {
@@ -376,6 +385,7 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 await callback_queue_autostart(value, false);
         }),
     };
+    globalThis.podControls = setupPodControls();
 }
 
 export async function createPrompt(SETTINGS, FILES, LANG) {
@@ -633,6 +643,7 @@ async function init(){
         const FILES = globalThis.cachedFiles;
         const LANG = FILES.language[SETTINGS.language];
 
+        await globalThis.api.updateModelListRemote?.({ open: false }); // remote ComfyUI lists (issue #8), no-op for loopback
         globalThis.cachedFiles.modelList = await globalThis.api.getModelList(SETTINGS.api_interface);
         globalThis.cachedFiles.modelListAll = await globalThis.api.getModelListAll(SETTINGS.api_interface);
         globalThis.cachedFiles.vaeList = await globalThis.api.getVAEList(SETTINGS.api_interface);

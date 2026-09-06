@@ -3,6 +3,7 @@ import path from 'node:path';
 import { app, ipcMain } from 'electron';
 import { setMutexBackendBusy } from '../../main-common.js';
 import * as yaml from 'js-yaml';
+import { applyModelFilter } from '../shared/remoteModelInfo.js';
 
 const CAT = '[ModelList]';
 let MODELLIST_COMFYUI = ['Default'];
@@ -920,8 +921,39 @@ function getExtraModels() {
     return EXTRA_MODELS;
 }
 
+const LATENT_UPSCALERS_REMOTE = ['Latent (nearest-exact)', 'Latent (bilinear)', 'Latent (area)', 'Latent (bicubic)', 'Latent (bislerp)'];
+
+// The remote ComfyUI's own lists (issue #8) replace the local scan for the
+// ComfyUI interface; a null entry keeps the local list for that kind.
+// Returns the kinds that were applied.
+function applyRemoteModelLists(lists, { model_filter_keyword = '*', model_filter = false } = {}) {
+    const applied = [];
+    const take = (value, fallback) => (Array.isArray(value) && value.length > 0 ? [...value] : fallback);
+    if (Array.isArray(lists?.checkpoints)) {
+        MODELLIST_ALL_COMFYUI = [...lists.checkpoints];
+        MODELLIST_COMFYUI = applyModelFilter(lists.checkpoints, model_filter_keyword, model_filter);
+        if (MODELLIST_COMFYUI.length === 0) MODELLIST_COMFYUI = ['Default'];
+        applied.push('checkpoints');
+    }
+    if (Array.isArray(lists?.loras)) { LORALIST_COMFYUI = take(lists.loras, ['None']); applied.push('loras'); }
+    if (Array.isArray(lists?.vae)) { VAE_COMFYUI = take(lists.vae, ['None']); applied.push('vae'); }
+    if (Array.isArray(lists?.upscalers)) {
+        UPSCALER_COMFYUI = lists.upscalers.length > 0 ? [...lists.upscalers, ...LATENT_UPSCALERS_REMOTE] : ['None', ...LATENT_UPSCALERS_REMOTE];
+        applied.push('upscalers');
+    }
+    if (Array.isArray(lists?.controlnet)) { CONTROLNET_COMFYUI = ['none', ...lists.controlnet]; applied.push('controlnet'); }
+    if (Array.isArray(lists?.diffusion)) {
+        const filtered = applyModelFilter(lists.diffusion, model_filter_keyword, model_filter);
+        DIFFUSION_MODELS_COMFYUI = filtered.length > 0 ? filtered : ['None'];
+        applied.push('diffusion');
+    }
+    if (Array.isArray(lists?.textEncoders)) { TEXT_ENCODERS_COMFYUI = take(lists.textEncoders, ['None']); applied.push('textEncoders'); }
+    return applied;
+}
+
 export {
     setupModelList,
+    applyRemoteModelLists,
     getModelList,
     getModelListAll,
     getVAEList,

@@ -100,6 +100,11 @@ contextBridge.exposeInMainWorld('api', {
   downloadURL: async () => ipcRenderer.invoke('download-url', url, filePath),
   // modelList
   updateModelList: async (args) => ipcRenderer.invoke('update-model-list', args),
+  // remote ComfyUI (pod relay / HTTPS) model lists via /object_info; { open } dials the pod when true
+  updateModelListRemote: async (args) => ipcRenderer.invoke('update-model-list-remote', args),
+  // Runpod pod lifecycle: 'status' | 'start' | 'stop' (never terminate)
+  runpodPodControl: async (action) => ipcRenderer.invoke('runpod-pod-control', action),
+  podRunBootstrap: async () => ipcRenderer.invoke('pod-run-bootstrap'),
   getModelList: async (args) => ipcRenderer.invoke('get-model-list', args),
   getModelListAll: async (args) => ipcRenderer.invoke('get-model-list-all', args),
   getVAEList: async (args) => ipcRenderer.invoke('get-vae-list', args),

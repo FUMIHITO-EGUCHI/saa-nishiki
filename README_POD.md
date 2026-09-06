@@ -41,11 +41,32 @@ bash /workspace/saa/bootstrap.sh
 
 About a minute: restores pip packages, starts Ollama if it is down, restarts ComfyUI if it was started without the RAM output directories. It is idempotent — run it whenever something on the pod looks off.
 
+## Start / stop from SAA
+
+The pod can be started and stopped without the Runpod console (issue #4):
+
+- **Settings → Backend → Runpod pod over SSH**: paste a Runpod API key (Settings → API Keys in the Runpod console; a key with pod read/write is enough) into *Runpod API key*. The pod id is taken from the SSH target (`<podId>-<hash>@ssh.runpod.io`); *Runpod pod id* overrides it.
+- Buttons: **Pod status** (desired status, GPU, $/h, uptime), **Start pod**, **Stop pod**, **Run bootstrap** (runs `/workspace/saa/bootstrap.sh` on the pod through the SSH relay — do this once ComfyUI answers after a start; the log is `/workspace/saa/logs/bootstrap.log`), **Fetch pod models** (see below).
+- Command line, same key / pod id resolution (`RUNPOD_API_KEY` / `RUNPOD_POD_ID` env overrides):
+
+```
+node scripts/podControl.mjs status
+node scripts/podControl.mjs start
+node scripts/podControl.mjs stop
+```
+
+Only `status`, `start` and `stop` exist. There is no terminate / delete anywhere in SAA — a terminated pod loses `/workspace` (models, Ollama, this setup).
+
+## Model lists from the pod
+
+With Pod SSH on, the checkpoint / LoRA / VAE / upscaler / ControlNet lists in the UI come from the pod's ComfyUI (`/object_info`) instead of the local model folders, so the dropdowns show what the pod can actually load. They are refreshed automatically when the relay connects (first generation or AI request) and on the page refresh button; **Fetch pod models** opens the relay on purpose to refresh them right away. The same applies to an HTTPS ComfyUI address; a loopback address keeps the local folder scan.
+
 ## SAA settings
 
 - **Backend → Pod SSH**: enable, SSH target `<podId>-<hash>@ssh.runpod.io`, the private key path, ComfyUI port `8188`. The status pill in the toolbar switches image generation between **GPU: Local** and **GPU: Pod**.
 - **AI → interface `Pod`**: with Pod SSH configured the AI prompt / Refine requests go to the pod's Ollama through the same SSH relay. The `Pod address` (HTTPS proxy) field is only used when SSH is not configured.
 - The Ollama status in the header is only probed through an already-open relay: it reads *pod relay not connected* until the first generation or AI request opens the session.
+- The ComfyUI pill shows **ComfyUI down** (yellow, then red) when the relay answers but ComfyUI on the pod does not — after a pod start before ComfyUI is up, or when it crashed: run the bootstrap.
 
 ## Tag dictionary batches
 

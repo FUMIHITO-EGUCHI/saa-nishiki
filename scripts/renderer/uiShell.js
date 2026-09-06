@@ -682,6 +682,7 @@ export function setupUiShell() {
             pod: uiText('ui_status_pod', 'Pod'),
             podStandby: uiText('ui_status_pod_standby', 'standby'),
             podConnecting: uiText('ui_status_pod_connecting', 'connecting'),
+            comfyDown: uiText('ui_status_comfy_down', 'ComfyUI down'),
         });
         shell.gpuToggle?.render?.();
         shell.fastToggle?.render?.();
@@ -711,6 +712,8 @@ export function setupUiShell() {
                 globalThis.headerIcon?.settings?.setPage?.(id === 'ollama' ? 'ai' : 'backend');
                 globalThis.headerIcon?.settings?.open?.();
             },
+            // relay just opened: pull the pod's own model lists (issue #8) through the normal refresh
+            onPodConnected: () => { if (!globalThis.inGenerating) globalThis.podControls?.reloadModelLists?.(); },
         });
     }
     shell.gpuToggle = setupGpuToggle(() => shell.pills?.refresh?.());

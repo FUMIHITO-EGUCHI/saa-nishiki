@@ -328,7 +328,51 @@ export function podSessionState() {
 // ComfyUI /system_stats fetched through the already-open relay (or null). An older
 // deployed relay answers unknown cmds with ok:false, which also lands on null.
 export async function podSessionStats() {
-    if (podSessionState() !== 'connected') return null;
+    return (await podComfyHealth()).stats;
+}
+
+// Relay alive vs ComfyUI answering (issue #9): { ok, stats, message } through the
+// already-open relay; ok:false with a message when ComfyUI on the pod is down.
+// Never opens a connection.
+export async function podComfyHealth() {
+    if (podSessionState() !== 'connected') return { ok: false, stats: null, message: 'pod relay not connected' };
     const reply = await session.request({ cmd: 'stats' }, 5000);
-    return reply.ok ? reply.stats ?? null : null;
+    if (!reply.ok) return { ok: false, stats: null, message: reply.message ?? 'ComfyUI on the pod did not answer' };
+    return { ok: true, stats: reply.stats ?? null, message: '' };
+}
+
+async function openSession(settings) {
+    const config = podSshConfig(settings);
+    if (!config.enabled || !config.target) return 'pod SSH transport is not configured';
+    try {
+        await session.ensureStarted(config);
+        return '';
+    } catch (error) {
+        session.stop();
+        return `pod SSH connect failed: ${error.message}`;
+    }
+}
+
+// /object_info for the loader nodes (issue #8): { ok, info: { node: payload|null }, errors }.
+// open:false only asks an already-open relay (a settings refresh must not dial the pod);
+// open:true connects like a generation does (the explicit "fetch pod models" button).
+export async function podObjectInfo({ settings, nodes, open = false, timeoutMs = 20_000 }) {
+    if (open) {
+        const failure = await openSession(settings);
+        if (failure) return { ok: false, message: failure };
+    } else if (podSessionState() !== 'connected') {
+        return { ok: false, message: 'pod relay not connected' };
+    }
+    const reply = await session.request({ cmd: 'object_info', nodes }, timeoutMs);
+    if (!reply.ok) return { ok: false, message: reply.message ?? 'object_info failed' };
+    return { ok: true, info: reply.info ?? {}, errors: reply.errors ?? {} };
+}
+
+// Run /workspace/saa/bootstrap.sh on the pod (after a START): { ok, log | message }.
+export async function podRunBootstrap({ settings }) {
+    const failure = await openSession(settings);
+    if (failure) return { ok: false, message: failure };
+    const reply = await session.request({ cmd: 'bootstrap' }, 15_000);
+    if (!reply.ok) return { ok: false, message: reply.message ?? 'bootstrap failed' };
+    return { ok: true, log: reply.log ?? '' };
 }

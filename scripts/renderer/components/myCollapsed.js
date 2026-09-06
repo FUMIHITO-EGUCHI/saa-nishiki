@@ -60,16 +60,20 @@ export async function setupModelReloadToggle() {
         return null;
     }
 
-    refreshButton.addEventListener('click', async () => {
-        const currentModelSelect = globalThis.dropdownList.model.getValue();
-        await reloadFiles();
-        globalThis.dropdownList.model.updateDefaults(currentModelSelect);
-        globalThis.lora.reload();
-        globalThis.controlnet.reload();
-        globalThis.aDetailer.reload();        
-    });
+    refreshButton.addEventListener('click', () => reloadModelLists());
 
     return refreshButton;
+}
+
+// What the model refresh button does: re-read every model list (remote ComfyUI
+// lists included) and redraw the dropdowns, keeping the current selection.
+export async function reloadModelLists() {
+    const currentModelSelect = globalThis.dropdownList.model.getValue();
+    await reloadFiles();
+    globalThis.dropdownList.model.updateDefaults(currentModelSelect);
+    globalThis.lora.reload();
+    globalThis.controlnet.reload();
+    globalThis.aDetailer.reload();
 }
 
 export async function reloadFiles(){
@@ -103,6 +107,7 @@ export async function reloadFiles(){
             await sendWebSocketMessage({ type: 'API', method: 'resetModelListsWebUI'});
     } else {
         await globalThis.api.updateModelList(args);
+        await globalThis.api.updateModelListRemote?.({ open: false }); // remote ComfyUI lists win over the local scan (issue #8)
         await globalThis.api.updateWildcards();
         await globalThis.api.tagReload();
 

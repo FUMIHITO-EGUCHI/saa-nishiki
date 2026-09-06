@@ -53,10 +53,10 @@ test('main-side probe reports the pod session instead of probing api_addr when p
   const source = read('scripts/main/backendStatus.js');
   assert.match(source, /isPodSshEnabled\(settings\)/);
   assert.match(source, /podSessionState\(\)/);
-  assert.match(source, /podSessionStats\(\)/, 'VRAM comes over the existing SSH relay, never a new connection');
+  assert.match(source, /podComfyHealth\(\)/, 'VRAM comes over the existing SSH relay, never a new connection');
   const transport = read('scripts/main/podSshTransport.js');
   assert.match(transport, /export function podSessionState\(\)/);
-  assert.match(transport, /if \(podSessionState\(\) !== 'connected'\) return null;/, 'stats never open a connection');
+  assert.match(transport, /if \(podSessionState\(\) !== 'connected'\) return \{ ok: false, stats: null, message: 'pod relay not connected' \};/, 'stats never open a connection');
   assert.match(read('scripts/pod/comfy_ws_relay.py'), /elif cmd == 'stats':/);
 });
 

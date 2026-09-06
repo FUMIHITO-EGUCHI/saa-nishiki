@@ -431,7 +431,18 @@ export const sharedBodyHTML = `
                     <div class="system-settings-api-pod-ssh-key"></div>
                     <div class="system-settings-api-pod-ssh-port"></div>
                     <div class="system-settings-api-pod-save-dir"></div>
+                    <div class="system-settings-api-pod-runpod-key"></div>
+                    <div class="system-settings-api-pod-runpod-pod-id"></div>
                   </div>
+                  <div class="settings-button-row pod-control-row">
+                    <div class="system-settings-api-pod-status"></div>
+                    <div class="system-settings-api-pod-start"></div>
+                    <div class="system-settings-api-pod-stop"></div>
+                    <div class="system-settings-api-pod-bootstrap"></div>
+                    <div class="system-settings-api-pod-fetch-models"></div>
+                  </div>
+                  <p class="settings-note system-settings-api-pod-result"></p>
+                  <p class="settings-note" data-ui-text="ui_settings_pod_control_note">Start / Stop use the Runpod REST API (never terminate). After a start, run the bootstrap once ComfyUI answers; Fetch pod models reads the pod's own checkpoint / LoRA lists.</p>
                   <p class="settings-note" data-ui-text="ui_settings_pod_ssh_note">Images stream over SSH and are saved locally only; nothing is written to the pod's disks. The API address above is ignored while this is on.</p>
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">

@@ -5,7 +5,7 @@
 import { net } from 'electron';
 import { backendAuthHeaders } from '../shared/backendAddress.js';
 import { isPodSshLlm, resolvePodOrigin } from '../shared/llmEndpoint.js';
-import { isPodSshEnabled, podOllamaRequest, podSessionState, podSessionStats } from './podSshTransport.js';
+import { isPodSshEnabled, podComfyHealth, podOllamaRequest, podSessionState } from './podSshTransport.js';
 
 const CAT = '[BackendStatus]';
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
@@ -108,8 +108,14 @@ export async function probeBackends(settings, options = {}) {
         result.comfy.address = String(settings.api_pod_ssh_target ?? '').trim();
         result.comfy.ok = true;
         if (result.comfy.podState === 'connected') {
-            const stats = await podSessionStats();
-            if (stats) Object.assign(result.comfy, summarizeSystemStats(stats));
+            // relay alive but ComfyUI down is its own pill state (issue #9)
+            const health = await podComfyHealth();
+            result.comfy.ok = health.ok;
+            if (health.ok) {
+                if (health.stats) Object.assign(result.comfy, summarizeSystemStats(health.stats));
+            } else {
+                result.comfy.error = health.message;
+            }
         }
     } else if (settings?.api_interface === 'ComfyUI') {
         const origin = probeOrigin(settings.api_addr);
@@ -143,7 +149,9 @@ export async function probeBackends(settings, options = {}) {
             result.ollama.ok = tags.ok;
             if (!tags.ok) result.ollama.error = tags.message;
         } else {
+            // idle relay: standby, not a failure (the first generation / AI call opens it)
             result.ollama.ok = false;
+            result.ollama.standby = true;
             result.ollama.error = 'pod relay not connected';
         }
     } else if (settings?.ai_interface === 'Local' || settings?.ai_interface === 'Pod') {
