@@ -1,0 +1,2 @@
+scripts/pod/*.sh text eol=lf
+scripts/pod/*.py text eol=lf
