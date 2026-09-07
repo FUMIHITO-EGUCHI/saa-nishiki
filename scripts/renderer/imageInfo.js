@@ -146,9 +146,16 @@ export function setupImageUploadOverlay() {
     async function handlePastedImageItem(item) {
         const file = item.getAsFile();
         if (!file) return false;
+        await loadImageFile(file, 'pasted_image.png');
+        return true;
+    }
+
+    // An image (dropped, pasted, or handed over from the gallery) becomes the
+    // overlay's current image: preview, parsed metadata, Send / ControlNet / Tagger.
+    async function loadImageFile(file, fallbackName = 'image.png') {
         cachedImage = file;
         const fallbackMetadata = {
-            fileName: file.name || 'pasted_image.png',
+            fileName: file.name || fallbackName,
             fileSize: file.size,
             fileType: file.type,
             lastModified: file.lastModified || Date.now(),
@@ -159,10 +166,23 @@ export function setupImageUploadOverlay() {
             showImagePreview(file);
             displayFormattedMetadata(metadata, fallbackMetadata);
         } catch (err) {
-            console.error('Failed to process pasted image metadata:', err);            
+            console.error('Failed to process image metadata:', err);
             showImagePreview(file);
             displayFormattedMetadata(fallbackMetadata);
         }
+    }
+
+    // Open the overlay on a gallery image (a data: URL) as if it had been dropped.
+    async function openImage(dataUrl, fileName = 'gallery.png') {
+        // decoded by hand: the renderer's CSP does not let fetch() read data: URLs
+        const match = /^data:(image\/[\w.+-]+);base64,(.*)$/s.exec(typeof dataUrl === 'string' ? dataUrl : '');
+        if (!match) return false;
+        const bytes = Uint8Array.from(atob(match[2]), char => char.charCodeAt(0));
+        const file = new File([bytes], fileName, { type: match[1] });
+        clearImageAndMetadata();
+        showOverlay();
+        hintContainer.style.display = 'none';
+        await loadImageFile(file, fileName);
         return true;
     }
 
@@ -295,25 +315,9 @@ export function setupImageUploadOverlay() {
         const file = files[0];
 
         if (isTopHalf) {            
-            if(file.type.startsWith('image/')) {                
-                cachedImage = file;
-                const fallbackMetadata = {
-                    fileName: file.name,
-                    fileSize: file.size,
-                    fileType: file.type,
-                    lastModified: file.lastModified,
-                    error: 'Metadata extraction failed'
-                };
-                try {
-                    const metadata = await extractImageMetadata(file);                    
-                    showImagePreview(file);
-                    displayFormattedMetadata(metadata, fallbackMetadata);
-                } catch (err) {
-                    console.error('Failed to process image metadata:', err);                    
-                    showImagePreview(file);                    
-                    displayFormattedMetadata(fallbackMetadata);
-                }
-            } else if (file.type === `application/json` 
+            if(file.type.startsWith('image/')) {
+                await loadImageFile(file);
+            } else if (file.type === `application/json`
                     || file.type === `text/csv`) {
                 console.log('Dropped JSON file:', file.name);
                 await globalThis.jsonlist.addJsonSlotFromFile(file, file.type);
@@ -628,6 +632,7 @@ export function setupImageUploadOverlay() {
     uploadOverlay.showOverlay = showOverlay;
     uploadOverlay.hideOverlay = hideOverlay;
     uploadOverlay.updateHintText = updateHintText;
+    uploadOverlay.openImage = openImage;
 
     uploadOverlay._cleanup = () => {
         document.removeEventListener('dragenter', showOverlay);

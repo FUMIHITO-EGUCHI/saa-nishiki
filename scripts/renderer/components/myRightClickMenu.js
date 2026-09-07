@@ -464,6 +464,9 @@ const MENU_TITLES = Object.freeze({
     copy_image_metadata_grid: 'right_menu_copy_image_metadata',
     copy_image_full_screen: 'right_menu_copy_image',
     copy_image_metadata_full_screen: 'right_menu_copy_image_metadata',
+    open_image_info: 'right_menu_image_info',
+    open_image_info_grid: 'right_menu_image_info',
+    open_image_info_full_screen: 'right_menu_image_info',
     copy_image_preview: 'right_menu_copy_image',
     copy_image_preview_grid: 'right_menu_copy_image',
     remove_current_image: 'right_menu_remove_current_image',
@@ -685,6 +688,10 @@ function registerDefaultMenuItems() {
         selector: '.cg-main-image-container',
         func: async (element) => await menu_copyImageMetadata(element)
     });
+    rc.append('open_image_info', LANG.right_menu_image_info, {
+        selector: '.cg-main-image-container',
+        func: async (element) => await menu_openImageInfo(element)
+    });
     rc.append('separator_split_mode', null, { selector: '.cg-main-image-container' });
     rc.append('remove_current_image', LANG.right_menu_remove_current_image, {
         selector: '.cg-main-image-container',
@@ -699,6 +706,10 @@ function registerDefaultMenuItems() {
     rc.append('copy_image_metadata_grid', LANG.right_menu_copy_image_metadata, {
         selector: '.cg-gallery-item',
         func: async (element) => await menu_copyImageMetadata(element)
+    });
+    rc.append('open_image_info_grid', LANG.right_menu_image_info, {
+        selector: '.cg-gallery-item',
+        func: async (element) => await menu_openImageInfo(element)
     });
     rc.append('separator_grid_mode', null, { selector: '.cg-gallery-item' });
     rc.append('remove_current_image_grid', LANG.right_menu_remove_current_image, {
@@ -717,6 +728,10 @@ function registerDefaultMenuItems() {
     rc.append('copy_image_metadata_full_screen', LANG.right_menu_copy_image_metadata, {
         selector: '.cg-fullscreen-overlay',
         func: async (element) => await menu_copyImageMetadata(element)
+    });
+    rc.append('open_image_info_full_screen', LANG.right_menu_image_info, {
+        selector: '.cg-fullscreen-overlay',
+        func: async (element) => await menu_openImageInfo(element)
     });
 
     // thumb strip
@@ -746,6 +761,17 @@ function runSendLoraTransaction(mutation) {
         }, mutation);
     }
     return mutation();
+}
+
+// The clicked image into the Image Info overlay (metadata, Send, ControlNet, Tagger).
+async function menu_openImageInfo(element) {
+    const img = element.querySelector('img');
+    if (!img?.src?.startsWith('data:image/')) return;
+    try {
+        await globalThis.imageInfo?.openImage?.(img.src, 'gallery.png');
+    } catch (error) {
+        console.error('[RightClickMenu] Image Info failed:', error?.message ?? error);
+    }
 }
 
 function menu_copyImage(element) {

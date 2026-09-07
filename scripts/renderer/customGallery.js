@@ -750,6 +750,14 @@ export function setupGallery(containerId) {
                 const dataUrl = images?.[currentIndex];
                 if (!dataUrl?.startsWith?.('data:image/')) return;
 
+                // Image Info overlay (metadata, Send, ControlNet, Tagger) on the shown image
+                try {
+                    const seed = seeds?.[currentIndex];
+                    if (await globalThis.imageInfo?.openImage?.(dataUrl, seed ? `gallery_${seed}.png` : 'gallery.png')) return;
+                } catch (error) {
+                    console.warn('[gallery] Image Info failed, showing metadata text instead:', error?.message ?? error);
+                }
+
                 let text = '';
                 try {
                     const result = globalThis.inBrowser
