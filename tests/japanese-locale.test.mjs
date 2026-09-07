@@ -201,7 +201,7 @@ test('bundled character data restores several English work titles', () => {
       language: 'ja-JP',
       characterNames: bundledCharacterNames,
     }),
-    'チャラ（UNDERTALE）',
+    'キャラ（UNDERTALE）',
   );
   assert.equal(
     getLocalizedCharacterName({
@@ -270,7 +270,7 @@ test('bundled Japanese data does not retain known machine-translation errors', (
   assert.equal(names['moze (honkai  star rail)'], 'モゼ（崩壊：スターレイル）');
   assert.equal(names['projekt red (arknights)'], 'レッド（アークナイツ）');
   assert.equal(names['siberian chipmunk (kemono friends)'], 'シマリス（けものフレンズ）');
-  assert.equal(names['sommie (fire emblem)'], 'Sommie（ファイアーエムブレム）');
+  assert.equal(names['sommie (fire emblem)'], 'ソラ（ファイアーエムブレム）');
   assert.equal(names['thresh (league of legends)'], 'スレッシュ（リーグ・オブ・レジェンド）');
 });
 

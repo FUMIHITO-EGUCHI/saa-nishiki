@@ -248,12 +248,22 @@ export function validateCharacterRows(inputRows, outputRows) {
   });
 }
 
+// A reviewed name, cleaned: no zero-width characters, and no （...） parts when
+// the tag carries no qualifier (the work is only shown when the tag names it).
+export function cleanCharacterName(tag, name) {
+  let text = String(name ?? '').replace(/[​-‍﻿]/g, '').trim();
+  if (!String(tag).includes('(')) text = text.replace(/（[^（）]*）/g, '').trim();
+  return text;
+}
+
 export function applyCharacterNames(names, reportRows, { minConfidence = 'high' } = {}) {
   const accepted = CONFIDENCES.slice(0, CONFIDENCES.indexOf(minConfidence) + 1);
   let changed = 0;
   for (const row of reportRows) {
-    if (row.action !== 'change' || !row.name || !accepted.includes(row.confidence) || names[row.tag] === row.name) continue;
-    names[row.tag] = row.name;
+    if (row.action !== 'change' || !accepted.includes(row.confidence)) continue;
+    const name = cleanCharacterName(row.tag, row.name);
+    if (!name || names[row.tag] === name) continue;
+    names[row.tag] = name;
     changed += 1;
   }
   return changed;

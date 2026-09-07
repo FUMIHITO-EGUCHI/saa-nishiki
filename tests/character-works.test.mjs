@@ -144,6 +144,29 @@ test('the picker finds a character by any name of its works and shows the works 
     assert.deepEqual(keys('zelda'), []);
 });
 
+test('reviewed Japanese character names: official spellings, translated qualifiers, work only when the tag names it', () => {
+    const names = JSON.parse(read('data/character_names.json'))['ja-JP'];
+    const expected = {
+        'hatsune miku': '初音ミク',
+        'hakurei reimu': '博麗霊夢',
+        'abe nana': '安部菜々',
+        'fern (sousou no frieren)': 'フェルン（葬送のフリーレン）',
+        'female saniwa (touken ranbu)': '女審神者（刀剣乱舞）',
+        'executor (arknights)': 'イグゼキュター（アークナイツ）',
+        'akebono kai ni (kancolle)': '曙（改二）（艦隊これくしょん）',
+        'todoroki shouto': '轟焦凍',
+        'amami haruka': '天海春香',
+        'last order (toaru majutsu no index)': '打ち止め（とある魔術の禁書目録）',
+        'aglaea (honkai  star rail)': 'アグライア（崩壊：スターレイル）',
+        'sakura chiyo': '佐倉千代',
+    };
+    for (const [tag, name] of Object.entries(expected)) assert.equal(names[tag], name, tag);
+    for (const [tag, name] of Object.entries(names)) {
+        assert.doesNotMatch(name, /[​-‍﻿]/, `${tag}: zero-width character`);
+        assert.doesNotMatch(name, /（([^（）]*)）（\1）/, `${tag}: duplicated work title`);
+    }
+});
+
 test('the official work titles reach the localizer under their own key and the works reach both renderers', () => {
     const cached = read('scripts/main/cachedFiles.js');
     assert.match(cached, /cachedCharacterNames\.officialWorkNames = officialWorkNames;/);
