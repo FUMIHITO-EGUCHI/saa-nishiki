@@ -380,11 +380,11 @@ export function validateReviewRows(inputRows, reviewRows) {
     seen.add(row.i);
     if (!['keep', 'change', 'remove'].includes(row.action)) throw new Error(`Invalid action for tag ${input.tag}: ${row.action}`);
     if (!['high', 'medium', 'low'].includes(row.confidence)) throw new Error(`Invalid confidence for tag ${input.tag}: ${row.confidence}`);
-    if (typeof row.alias !== 'string'
-      || (row.action === 'change' && !row.alias.trim())
-      || (row.action === 'remove' && row.alias.trim())) {
-      throw new Error(`Empty alias for tag ${input.tag}`);
+    if (typeof row.alias !== 'string' || (row.action === 'remove' && row.alias.trim())) {
+      throw new Error(`Invalid alias for tag ${input.tag}`);
     }
+    // "change" without a replacement means the model found no good label: keep, unsure
+    if (row.action === 'change' && !row.alias.trim()) row = { ...row, action: 'keep', confidence: 'low' };
     if (row.alias.includes(',') || /[\r\n]/.test(row.alias)) throw new Error(`Unsupported comma/newline in alias for tag ${input.tag}`);
     // A model sometimes emits a stylistic rewrite while still labelling the
     // row as keep. Keep is always conservative: discard that stray string.

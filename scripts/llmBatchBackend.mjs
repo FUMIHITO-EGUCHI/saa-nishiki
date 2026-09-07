@@ -21,6 +21,8 @@ export const DEFAULT_POD_SETTINGS = path.join(projectDir, 'settings', 'app.json'
 export const OLLAMA_URL = process.env.OLLAMA_TAG_REVIEW_URL || 'http://127.0.0.1:11434/api/chat';
 export const BACKENDS = Object.freeze(['auto', 'codex', 'ollama', 'pod']);
 export const FALLBACKS = Object.freeze(['ollama', 'pod']);
+// Codex batches at or below this size go to the fallback model when they fail.
+export const CODEX_SPLIT_FLOOR = 25;
 
 const NSFW_TAG_PATTERN = new RegExp([
   'sex', 'penis', 'pussy', 'vagina', 'anal', 'anus', '(^|_)cum', 'semen', 'ejaculat', 'erection',
@@ -266,11 +268,21 @@ export function createBatchClient(args, transports = {}) {
       const validated = validate(rows, await callJson(backend, systemPrompt, buildPrompt(rows), schema));
       return validated.map(row => ({ ...row, model: row.model || modelFor(backend) }));
     } catch (error) {
+      const parts = splitRows(rows);
       if (backend === 'codex') {
+        // A malformed answer is far more common than a refusal: retry smaller
+        // Codex batches first and hand only a stubborn small batch to the
+        // (slow, memory-hungry) fallback model.
+        if (rows.length > CODEX_SPLIT_FLOOR) {
+          process.stdout.write(`Codex ${label} failed (${error.message.slice(0, 160)}); retrying as ${parts[0].length}+${parts[1].length} rows...\n`);
+          return [
+            ...await requestRows(backend, parts[0], { systemPrompt, buildPrompt, schema, validate, label }),
+            ...await requestRows(backend, parts[1], { systemPrompt, buildPrompt, schema, validate, label }),
+          ];
+        }
         process.stdout.write(`Codex ${label} failed (${error.message.slice(0, 160)}); falling back to ${args.fallback}...\n`);
         return requestRows(args.fallback, rows, { systemPrompt, buildPrompt, schema, validate, label });
       }
-      const parts = splitRows(rows);
       if (parts.length === 1) throw error;
       process.stdout.write(`Retrying invalid ${label} response as ${parts[0].length}+${parts[1].length} rows...\n`);
       return [

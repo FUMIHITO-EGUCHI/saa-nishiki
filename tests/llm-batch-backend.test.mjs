@@ -74,6 +74,25 @@ test('a failed Codex batch is re-run on the fallback model and tagged with it', 
   assert.deepEqual(result.map(row => row.model), ['local-model', 'local-model']);
 });
 
+test('a large failed Codex batch is split and retried on Codex before any fallback', async () => {
+  const sizes = [];
+  const client = createBatchClient({ ...backendArgDefaults(), fallback: 'ollama' }, {
+    codex: async (system, user) => {
+      const batch = JSON.parse(user);
+      sizes.push(batch.length);
+      if (batch.length > 25) throw new Error('garbled');
+      return batch.map(row => ({ i: row.i }));
+    },
+    ollama: async () => { throw new Error('must not be called'); },
+  });
+  const rows = Array.from({ length: 60 }, (_, index) => ({ i: index + 1 }));
+  const result = await client.requestRows('codex', rows, {
+    systemPrompt: 's', buildPrompt: batch => JSON.stringify(batch), schema: {}, validate: (input, output) => output,
+  });
+  assert.deepEqual(sizes, [60, 30, 15, 15, 30, 15, 15]);
+  assert.equal(result.length, 60);
+});
+
 test('an invalid Ollama response is retried as two halves', async () => {
   let attempts = 0;
   const client = createBatchClient({ ...backendArgDefaults(), fallback: 'ollama' }, {

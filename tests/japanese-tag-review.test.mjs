@@ -234,6 +234,11 @@ test('apply matches repeated rows by tag, appends missing translations and drops
   assert.deepEqual(duplicated.slice(0, 2).map(row => row.alias), ['女の子1人', '女の子1人']);
 });
 
+test('a change without a replacement alias becomes an unsure keep', () => {
+  const review = validateReviewRows([{ i: 1, tag: 'grass_root_youkai_network', alias: '' }], [{ i: 1, action: 'change', confidence: 'high', alias: '' }]);
+  assert.deepEqual([review[0].action, review[0].confidence, review[0].alias], ['keep', 'low', '']);
+});
+
 test('a change to the identical alias is recorded as keep', () => {
   const review = validateReviewRows([{ i: 1, tag: 'hat', alias: '帽子' }], [{ i: 1, action: 'change', confidence: 'high', alias: '帽子' }]);
   assert.equal(review[0].action, 'keep');
