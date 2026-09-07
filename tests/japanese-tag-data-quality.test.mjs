@@ -105,5 +105,6 @@ test('hand-reviewed aliases keep their Danbooru meaning', () => {
   assert.equal(aliases.get('covered_nipples'), '浮き乳首', 'nipple shape showing through clothing, not hidden or inverted');
   assert.equal(aliases.get('unworn_shoes'), '脱いだ靴');
   assert.equal(aliases.get('aged_down'), '若返り');
+  assert.equal(aliases.get('puff_of_air'), '鼻息', 'a small exhaled puff drawn as a cloud, often a proud snort');
 });
 
