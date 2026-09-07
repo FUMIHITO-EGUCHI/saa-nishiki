@@ -13,6 +13,7 @@ import { buildParametersText, embedPngParameters, findDiskWriterNodes, toWebsock
 import { interruptPodWorkflow, isPodSshEnabled, runPodWorkflow } from './podSshTransport.js';
 import { getGlobalSettings } from './globalSettings.js';
 import { applyFastMode } from '../shared/fastMode.js';
+import { resolveUnionControlType } from '../shared/controlNetUnion.js';
 
 const CAT = '[ComfyUI]';
 const TIMEOUT = 5000; // 5 seconds timeout for backend response
@@ -61,6 +62,28 @@ function processImage(imageData) {
         console.error(CAT, 'Error converting image data to Base64:', error);
         return null;
     }
+}
+
+// Union ControlNet models take their control kind from a SetUnionControlNetType
+// node between the loader and Apply ControlNet. Returns the node Apply ControlNet
+// reads its control_net from and the first free index after it.
+function applyUnionControlType(workflow, loaderIndex, slot) {
+  const controlType = resolveUnionControlType(slot);
+  if (!controlType) return { controlNetIndex: loaderIndex, nextIndex: loaderIndex + 1 };
+  workflow[`${loaderIndex + 1}`] = {
+    "inputs": {
+      "type": controlType,
+      "control_net": [
+        `${loaderIndex}`,
+        0
+      ]
+    },
+    "class_type": "SetUnionControlNetType",
+    "_meta": {
+      "title": "Set Union ControlNet Type"
+    }
+  };
+  return { controlNetIndex: loaderIndex + 1, nextIndex: loaderIndex + 2 };
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -187,6 +210,7 @@ function applyControlnet(workflow, controlnet, workflowInfo){
           }
         };
 
+        const preprocessedIndex = index + 1;
         workflow[`${index+2}`] = {
           "inputs": {
             "control_net_name": slot.postModel
@@ -196,8 +220,9 @@ function applyControlnet(workflow, controlnet, workflowInfo){
             "title": "Load ControlNet Model"
           }
         };
+        const { controlNetIndex, nextIndex } = applyUnionControlType(workflow, index + 2, slot);
 
-        workflow[`${index+3}`] = {
+        workflow[`${nextIndex}`] = {
           "inputs": {
             "strength": slot.postStr,
             "start_percent": slot.postStart,
@@ -211,11 +236,11 @@ function applyControlnet(workflow, controlnet, workflowInfo){
               0
             ],
             "control_net": [
-              `${index+2}`,
+              `${controlNetIndex}`,
               0
             ],
             "image": [
-              `${index+1}`,
+              `${preprocessedIndex}`,
               0
             ],
             "vae": [
@@ -230,14 +255,14 @@ function applyControlnet(workflow, controlnet, workflowInfo){
         };
 
         // update condition point
-        now_pos = index+3;
+        now_pos = nextIndex;
         now_neg = now_pos;
 
         workflow["36"]["inputs"]["positive"] = [`${now_pos}`, 0];
         workflow["36"]["inputs"]["negative"] = [`${now_neg}`, 1];
 
         // move to next
-        index = index + 4;
+        index = nextIndex + 1;
 
         if(refiner) {
           workflow[`${index}`] = {
@@ -254,11 +279,11 @@ function applyControlnet(workflow, controlnet, workflowInfo){
                 0
               ],
               "control_net": [
-                `${index-4+1}`,
+                `${controlNetIndex}`,
                 0
               ],
               "image": [
-                `${index-4}`,
+                `${preprocessedIndex}`,
                 0
               ],
               "vae": [
@@ -299,6 +324,7 @@ function applyControlnet(workflow, controlnet, workflowInfo){
           }
         };
 
+        const imageIndex = index;
         workflow[`${index+1}`] = {
           "inputs": {
             "control_net_name": slot.postModel
@@ -308,8 +334,9 @@ function applyControlnet(workflow, controlnet, workflowInfo){
             "title": "Load ControlNet Model"
           }
         };
+        const { controlNetIndex, nextIndex } = applyUnionControlType(workflow, index + 1, slot);
 
-        workflow[`${index+2}`] = {
+        workflow[`${nextIndex}`] = {
           "inputs": {
             "strength": slot.postStr,
             "start_percent": slot.postStart,
@@ -323,11 +350,11 @@ function applyControlnet(workflow, controlnet, workflowInfo){
               0
             ],
             "control_net": [
-              `${index+1}`,
+              `${controlNetIndex}`,
               0
             ],
             "image": [
-              `${index}`,
+              `${imageIndex}`,
               0
             ],
             "vae": [
@@ -342,14 +369,14 @@ function applyControlnet(workflow, controlnet, workflowInfo){
         };
 
         // update condition point
-        now_pos = index+2;
+        now_pos = nextIndex;
         now_neg = now_pos;
 
         workflow["36"]["inputs"]["positive"] = [`${now_pos}`, 0];
         workflow["36"]["inputs"]["negative"] = [`${now_neg}`, 1];
 
         // move to next
-        index = index + 3;
+        index = nextIndex + 1;
 
         if(refiner) {
           workflow[`${index}`] = {
@@ -366,11 +393,11 @@ function applyControlnet(workflow, controlnet, workflowInfo){
                 0
               ],
               "control_net": [
-                `${index-3+1}`,
+                `${controlNetIndex}`,
                 0
               ],
               "image": [
-                `${index-3}`,
+                `${imageIndex}`,
                 0
               ],
               "vae": [

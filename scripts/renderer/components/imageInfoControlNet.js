@@ -2,6 +2,7 @@ import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
 import { generateControlnetImage, fileToBase64 } from '../generate.js';
 import { getControlNetListWithProcessorList } from "../slots/myControlNetSlot.js";
 import { resizeImageToControlNetResolution, arrayBufferToBase64 } from './imageInfoUtils.js';
+import { CONTROL_TYPE_AUTO } from '../../shared/controlNetUnion.js';
 
 function createHtmlOptions(itemList) {
     let options = [];
@@ -76,6 +77,7 @@ export function createControlNetButtons(apiInterface, cachedImage, previewImg) {
                 preImageAfter,                   // pre_image_after
                 preImageBase64,                  // pre_image_base64
                 preImageAfterBase64,             // pre_image_after_base64
+                CONTROL_TYPE_AUTO,               // control_type (union models)
             ]];
             globalThis.controlnet.AddControlNetSlot(slotValues);
 
@@ -133,7 +135,8 @@ export function createControlNetButtons(apiInterface, cachedImage, previewImg) {
             onTrigger ? preImageGzipped : null,        // pre_image
             onTrigger ? null : preImageGzipped,        // pre_image_after
             refImage,                                  // pre_image_base64
-            onTrigger ? aftImageB64 : preImageBase64,  // pre_image_after_base64 
+            onTrigger ? aftImageB64 : preImageBase64,  // pre_image_after_base64
+            CONTROL_TYPE_AUTO,                         // control_type (union models) 
         ]];
         globalThis.controlnet.AddControlNetSlot(slotValues);
 

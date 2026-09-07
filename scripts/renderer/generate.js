@@ -7,6 +7,7 @@ import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { setADetailerModelList } from './slots/myADetailerSlot.js';
 import { processRandomString } from './tools/nestedBraceParsing.js';
 import { convertToMultipleOfNFloor, checkNumberInRange } from './tools/numbers.js';
+import { normalizeControlType } from '../shared/controlNetUnion.js';
 import { setQueueAutoStart } from './callbacks.js';
 import { filterPrompts } from './tools/promptFilter.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
@@ -805,8 +806,9 @@ export function createControlNet() {
     let controlnetToBackend = [];
     let controlNetList = globalThis.controlnet.getValues(true);
 
-    for (const [preProcessModel, preProcessResolution, slot_enable, postProcessModel, 
-                postProcessStrength, postProcessStart, postProcessEnd, pre_image, pre_image_after] 
+    for (const [preProcessModel, preProcessResolution, slot_enable, postProcessModel,
+                postProcessStrength, postProcessStart, postProcessEnd, pre_image, pre_image_after,
+                , , controlType]
                 of controlNetList) {
         if (slot_enable === 'Off')
             continue;
@@ -833,7 +835,8 @@ export function createControlNet() {
             postStart: realPostProcessStart,
             postEnd: realPostProcessEnd,
             image: (slotTrigger === 'On') ? pre_image : null,
-            imageAfter: (slotTrigger === 'Post') ? pre_image_after : null
+            imageAfter: (slotTrigger === 'Post') ? pre_image_after : null,
+            controlType: normalizeControlType(controlType),   // union models (ComfyUI SetUnionControlNetType)
         };
 
         if (preProcessModel.startsWith('ip-adapter')) {

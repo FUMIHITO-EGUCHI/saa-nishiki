@@ -4,6 +4,7 @@ import { generateGUID } from './myLoRASlot.js'
 import { generateControlnetImage } from '../generate.js';
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
 import { resizeImageToControlNetResolution } from '../components/imageInfoUtils.js';
+import { CONTROL_TYPE_AUTO, CONTROL_TYPE_OPTIONS, normalizeControlType } from '../../shared/controlNetUnion.js';
 
 const controlNetValuesComfyUI = [
     "none",
@@ -164,7 +165,8 @@ function createControlNetSlotsFromValues(slotManager, slotValues, options = {}) 
     for (const [
         preProcessModel, preProcessResolution,
         slot_enable, postModel, postProcessStrength, postProcessStart, postProcessEnd,
-        pre_image, pre_image_after, pre_image_base64, pre_image_after_base64
+        pre_image, pre_image_after, pre_image_base64, pre_image_after_base64,
+        control_type = CONTROL_TYPE_AUTO
         ] of slotValues) {
         if (validateControlNet) {
             if (!getControlNetListWithProcessorList().includes(preProcessModel)) {
@@ -212,6 +214,20 @@ function createControlNetSlotsFromValues(slotManager, slotValues, options = {}) 
             );
             slot.items.set(slot.itemClasses.pre_process_resolution, () => preProcessResolutionComponent);
             slotManager.componentInstances.set(`${className}-${slot.itemClasses.pre_process_resolution}`, preProcessResolutionComponent);
+
+            // Union models: which control kind this slot feeds ('auto' = from the pre-processor)
+            const controlTypeComponent = mySimpleList(
+                slot.itemClasses.control_type,
+                LANG.api_controlnet_control_type,
+                [...CONTROL_TYPE_OPTIONS],
+                null,
+                9,
+                false,
+                false
+            );
+            controlTypeComponent.updateDefaults(normalizeControlType(control_type));
+            slot.items.set(slot.itemClasses.control_type, () => controlTypeComponent);
+            slotManager.componentInstances.set(`${className}-${slot.itemClasses.control_type}`, controlTypeComponent);
 
             const postProcessComponent = mySimpleList(
                 slot.itemClasses.slot_enable,
@@ -469,6 +485,7 @@ class ControlNetSlotManager {
             add: this.generateClassName('slot-row-add'),
             pre_process_model: this.generateClassName('slot-row-pre-process-model'),
             pre_process_resolution: this.generateClassName('slot-row-text1-pre-process-resolution'),
+            control_type: this.generateClassName('slot-row-control-type'),
             slot_enable: this.generateClassName('slot-row-enable'),
             post_model: this.generateClassName('slot-row-post-model'),
             post_process_strength: this.generateClassName('slot-row-text1-post-process-strength'),
@@ -542,8 +559,7 @@ class ControlNetSlotManager {
                 </div>                
                 <div class="${slot.itemClasses.pre_process_model}"></div>
                 <div class="${slot.itemClasses.pre_process_resolution}"></div>
-                <div></div>
-                <div></div>
+                <div class="${slot.itemClasses.control_type}" style="grid-column: span 2;"></div>
                 <div class="slot-action slot-action-info" data-action="add" data-slot="${className}">
                     <img class="slot-action-info-toggle" src="scripts/svg/refresh.svg" alt="Refresh">
                 </div>                
@@ -662,6 +678,10 @@ class ControlNetSlotManager {
             } else {
                 rowValues.push(null, null, null, null);
             }
+
+            // index 11: union control type (after the four image entries)
+            const controlTypeComponent = this.componentInstances.get(`${className}-${slot.itemClasses.control_type}`);
+            rowValues.push(normalizeControlType(controlTypeComponent?.getValue ? controlTypeComponent.getValue() : CONTROL_TYPE_AUTO));
         } catch (error) {
             console.error(`Error getting values for slot ${className}:`, error);
         }
@@ -721,7 +741,7 @@ class ControlNetSlotManager {
 
         const slotValues = slots
             .filter(row => Array.isArray(row))
-            .map(row => [...row.slice(0, 7), null, null, null, null]);
+            .map(row => [...row.slice(0, 7), null, null, null, null, normalizeControlType(row[11])]);
         createControlNetSlotsFromValues(this, slotValues, { validateControlNet: true, clearSlots: true });
     }
 

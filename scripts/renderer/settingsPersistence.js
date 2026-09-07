@@ -88,7 +88,8 @@ export function collectSection(section) {
         if (section === 'lora' && globalThis.lora?.getValues) raw.lora_slot = globalThis.lora.getValues();
         if (section === 'adetailer' && globalThis.aDetailer?.getValues) raw.ad_slot = globalThis.aDetailer.getValues();
         if (section === 'controlnet' && globalThis.controlnet?.getValues) {
-            raw.controlnet_slot = globalThis.controlnet.getValues(false).map(row => [...row.slice(0, 7), null]);
+            // parameters + union control type (index 11); the four image entries are never persisted
+            raw.controlnet_slot = globalThis.controlnet.getValues(false).map(row => [...row.slice(0, 7), null, null, null, null, row[11] ?? 'auto']);
         }
         if (section === 'prompt') {
             const weights = weightsFromLists();
