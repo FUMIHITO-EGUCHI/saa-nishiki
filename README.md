@@ -471,6 +471,47 @@ To apply an `Artist` tag in the `Anima Model`, prefix it with `@`, e.g. `mira` â
 | `Wildcards` | 255 | Wildcards | SAA |
 </details>
 
+### Japanese tag alias integration (maintainers)
+
+`scripts/integrateJapaneseTagAliases.mjs` builds a review candidate from a
+four-column Danbooru/e621 base tag file and a two-column Japanese alias file.
+Only tags whose base group is Danbooru General (`0`) are imported. Artist,
+Copyright, Character, and e621 aliases are not added by this tool; the runtime
+also keeps Artist aliases disabled for Japanese autocomplete.
+
+The base file is the same
+[`danbooru_e621_merged.csv`](https://raw.githubusercontent.com/DominikDoom/a1111-sd-webui-tagcomplete/main/tags/danbooru_e621_merged.csv)
+downloaded by SAA. A suitable Japanese candidate source is
+[`PYU224/tagdb-updater`](https://github.com/PYU224/tagdb-updater), using its
+`dist/danbooru-jp.csv` output.
+
+Example:
+
+```text
+node scripts/integrateJapaneseTagAliases.mjs --base data/danbooru_e621_merged.csv --source danbooru-jp.csv --output danbooru_e621_merged_ja.general-candidates.csv --candidates-output danbooru_general_new.csv --kana-output danbooru_general_kana_review.csv --kanji-only-output danbooru_general_manual_review.csv
+```
+
+The output is a candidate file. Run the Japanese review workflow before
+replacing the bundled translation data. The kana output is suitable for the
+automated review pass; the kanji-only output needs manual confirmation because
+Japanese and Chinese can share the same character set.
+
+The review is intentionally staged. First review the kana candidates, then
+apply only rows accepted with high confidence by both review passes:
+
+```text
+node scripts/reviewJapaneseTags.mjs --input danbooru_general_kana_review.csv --report danbooru_general_kana_review.jsonl
+node scripts/reviewJapaneseTags.mjs --apply --input danbooru_general_kana_review.csv --report danbooru_general_kana_review.jsonl --output danbooru_general_kana_reviewed.csv
+```
+
+The apply step also refuses a high-confidence change when a tag containing
+`unworn` or `removed` would lose its removal/wear-state meaning.
+
+Feed the reviewed candidate back into the integration command to create a
+full replacement candidate. Keep the kanji-only output out of this step until
+it has been manually checked; an empty alias means that the candidate is
+removed rather than imported.
+
 ## Image info
 <details>
 <summary>Drag and drop an image into the SAA window; supports Png/Jpeg/Webp.</summary>

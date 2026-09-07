@@ -10,6 +10,16 @@ The upstream project is distributed under the MIT License. The Japanese
 aliases are best-effort data; SAA keeps the original English tag as the prompt
 and falls back to it when no Japanese alias is available.
 
+The Danbooru General aliases added in the 2026-09-02 update also derive from
+the reviewed `dist/danbooru-jp.csv` output of `PYU224/tagdb-updater`:
+https://github.com/PYU224/tagdb-updater
+
+That upstream project is distributed under the MIT License:
+https://github.com/PYU224/tagdb-updater/blob/main/LICENSE.txt
+The imported rows were limited to Danbooru General and passed through SAA's
+Japanese review and manual filtering; the source may contain machine-generated
+or non-Japanese aliases outside those imported rows.
+
 `official_work_names.json` is a small SAA-maintained work-name dictionary. It
 keeps recognizable work/franchise names in their official notation, including
 Japan-standard localized names such as `ロックマン` where that is the more
