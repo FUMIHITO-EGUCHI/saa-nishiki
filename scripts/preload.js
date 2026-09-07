@@ -105,6 +105,8 @@ contextBridge.exposeInMainWorld('api', {
   // Runpod pod lifecycle: 'status' | 'start' | 'stop' (never terminate)
   runpodPodControl: async (action) => ipcRenderer.invoke('runpod-pod-control', action),
   podRunBootstrap: async () => ipcRenderer.invoke('pod-run-bootstrap'),
+  // the pod's Ollama: { action: 'models' | 'pull' | 'unload', model }
+  podOllama: async (args) => ipcRenderer.invoke('pod-ollama', args),
   getModelList: async (args) => ipcRenderer.invoke('get-model-list', args),
   getModelListAll: async (args) => ipcRenderer.invoke('get-model-list-all', args),
   getVAEList: async (args) => ipcRenderer.invoke('get-vae-list', args),

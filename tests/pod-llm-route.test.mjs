@@ -57,7 +57,7 @@ test('batch scripts: Codex first, the pod (or local Ollama) only for refused bat
     assert.match(backend, /if \(!args\.nsfwDirect\) return \[\{ backend: 'codex', rows \}\];/, 'auto = everything to Codex');
     assert.match(backend, /return requestRows\(args\.fallback, rows, \{ systemPrompt, buildPrompt, schema, validate, label \}\);/, 'a refused Codex batch reroutes to the fallback');
     assert.match(backend, /podTransport\.podOllamaRequest\(\{ settings: podSettings\(\), method: 'POST', path: '\/api\/chat', body, timeoutMs: 600_000 \}\)/);
-    assert.match(backend, /ollamaChatPayload\(podModel\(\), systemPrompt, userContent, schema, '5m'\)/, 'the pod keeps the model warm');
+    assert.match(backend, /ollamaChatPayload\(podModel\(\), systemPrompt, userContent, schema, podKeepAlive\(\)\)/, 'the pod keeps the model warm');
     for (const script of ['scripts/categorizeTags.mjs', 'scripts/reviewJapaneseTags.mjs']) {
         const source = read(script);
         assert.match(source, /createBatchClient\(args\)/, `${script} uses the shared client`);
@@ -70,7 +70,7 @@ test('bootstrap.sh restores the volatile pieces and keeps generated files off th
     assert.match(script, /grep -v 'git\+' "\$IMPACT_REQ"/, 'the sam2 git+ line would prompt for GitHub credentials');
     assert.match(script, /OLLAMA_MODELS=\/workspace\/ollama\/models OLLAMA_HOST=127\.0\.0\.1:11434/, 'Ollama stays on loopback with durable models');
     assert.match(script, /--output-directory \/dev\/shm\/comfy_out --temp-directory \/dev\/shm\/comfy_tmp/);
-    assert.match(script, /--pull\) PULL_MODEL="\$2"/);
+    assert.match(script, /--pull\) PULL_MODELS=/);
     assert.doesNotMatch(script, /terminate|delete pod/i);
 });
 
@@ -79,7 +79,7 @@ test('the pod route uses the pod model setting instead of the local Small / Larg
     assert.match(sections, /ai_pod_model: 'huihui_ai\/qwen3-abliterated:8b',/);
     assert.match(sections, /'ai_pod_addr', 'ai_pod_share_host', 'ai_pod_auth', 'ai_pod_model',/);
     const backend = read('scripts/main/remoteAI_backend.js');
-    assert.match(backend, /const podBody = podModel \? \{ \.\.\.requestBody, model: podModel \} : requestBody;/);
+    assert.match(backend, /keep_alive: normalizeKeepAlive\(settings\?\.ai_pod_keep_alive, '10m'\),/);
     const renderer = read('scripts/renderer.js');
     assert.match(renderer, /pod_model: setupTextbox\('system-settings-ai-pod-model', LANG\.ai_pod_model/);
     const html = read('scripts/html_shared_body.js');

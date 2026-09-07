@@ -7,6 +7,7 @@ import {
 import { backendAuthHeaders } from '../shared/backendAddress.js';
 import { isPodSshChatUrl } from '../shared/llmEndpoint.js';
 import { podOllamaRequest } from './podSshTransport.js';
+import { normalizeKeepAlive } from '../shared/ollamaModels.js';
 import { getGlobalSettings } from './globalSettings.js';
 
 const CAT = '[ModelAPI]';
@@ -126,7 +127,13 @@ function requestLocal(options) {
             // as JSON from the relay instead of an HTTP response.
             const settings = getGlobalSettings();
             const podModel = String(settings?.ai_pod_model ?? '').trim();
-            const podBody = podModel ? { ...requestBody, model: podModel } : requestBody;
+            // the pod keeps the model warm between Refine / Expand calls (ai_pod_keep_alive);
+            // runPodWorkflow unloads it before an image generation needs the VRAM
+            const podBody = {
+                ...requestBody,
+                ...(podModel ? { model: podModel } : {}),
+                keep_alive: normalizeKeepAlive(settings?.ai_pod_keep_alive, '10m'),
+            };
             podOllamaRequest({ settings, method: 'POST', path: '/api/chat', body: podBody, timeoutMs: timeout })
                 .then(reply => {
                     if (!reply.ok) {

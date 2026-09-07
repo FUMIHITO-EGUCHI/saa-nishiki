@@ -505,10 +505,18 @@ export const sharedBodyHTML = `
                   <div class="settings-group-title">Runpod pod (Ollama)</div>
                   <div class="settings-grid">
                     <div class="system-settings-ai-pod-model"></div>
+                    <div class="system-settings-ai-pod-keep-alive"></div>
                     <div class="system-settings-ai-pod-address"></div>
                     <div class="system-settings-ai-pod-share ui-switch"></div>
                     <div class="system-settings-ai-pod-auth"></div>
                   </div>
+                  <div class="settings-button-row pod-control-row">
+                    <div class="system-settings-ai-pod-llm-models"></div>
+                    <div class="system-settings-ai-pod-llm-pull"></div>
+                    <div class="system-settings-ai-pod-llm-unload"></div>
+                  </div>
+                  <p class="settings-note system-settings-ai-pod-llm-result"></p>
+                  <p class="settings-note" data-ui-text="ui_settings_pod_llm_note">Pod LLM models lists what Ollama on the pod has pulled and loaded; Pull model downloads the model named above into the pod's workspace (minutes); Unload frees the GPU. Image generation unloads the model by itself.</p>
                 </div>
                 <div class="settings-group" data-when-ai="Local|Pod">
                   <div class="settings-group-title">Model &amp; sampling</div>

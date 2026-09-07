@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { normalizeKeepAlive } from './shared/ollamaModels.js';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const projectDir = path.dirname(scriptDir);
@@ -233,10 +234,19 @@ export function createBatchClient(args, transports = {}) {
     return args.podModel;
   }
 
+  // the pod keeps the model warm between batches (the app's ai_pod_keep_alive setting)
+  function podKeepAlive() {
+    try {
+      const raw = JSON.parse(fs.readFileSync(args.podSettings, 'utf8'));
+      return normalizeKeepAlive(raw?.data?.ai_pod_keep_alive ?? raw?.ai_pod_keep_alive, '10m');
+    } catch {
+      return '10m';
+    }
+  }
+
   async function callPod(systemPrompt, userContent, schema) {
     podTransport ??= await import('./main/podSshTransport.js');
-    // the pod keeps the model warm between batches
-    const body = ollamaChatPayload(podModel(), systemPrompt, userContent, schema, '5m');
+    const body = ollamaChatPayload(podModel(), systemPrompt, userContent, schema, podKeepAlive());
     const reply = await podTransport.podOllamaRequest({ settings: podSettings(), method: 'POST', path: '/api/chat', body, timeoutMs: 600_000 });
     if (!reply.ok) throw new Error(`pod ollama: ${reply.message}`);
     return parseJsonRows(String(reply.json?.message?.content ?? ''));
@@ -292,9 +302,14 @@ export function createBatchClient(args, transports = {}) {
     }
   }
 
-  // the pod lane keeps an ssh child alive; close it so the process can exit
-  function close() {
-    podTransport?.stopPodSshSession?.();
+  // The pod lane keeps an ssh child alive and the model in VRAM: free the GPU
+  // for image generation, then close the relay so the process can exit.
+  async function close() {
+    if (!podTransport) return;
+    try {
+      await podTransport.podOllamaUnload?.({ settings: podSettings() });
+    } catch { /* the pod may already be gone */ }
+    podTransport.stopPodSshSession?.();
   }
 
   return { callJson, requestRows, modelFor, batchSizeFor, close };

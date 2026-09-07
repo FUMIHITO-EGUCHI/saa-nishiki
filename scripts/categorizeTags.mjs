@@ -307,7 +307,7 @@ async function runAssign(args) {
       }
     }
   } finally {
-    client.close();
+    await client.close();
   }
   console.log(`Wrote assignment report: ${args.report}`);
 }

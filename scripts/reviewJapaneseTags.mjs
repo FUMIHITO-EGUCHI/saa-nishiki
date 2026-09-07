@@ -576,7 +576,7 @@ async function runReview(args) {
       }
     }
   } finally {
-    client.close();
+    await client.close();
   }
   console.log(`Wrote review report: ${args.report}`);
 }

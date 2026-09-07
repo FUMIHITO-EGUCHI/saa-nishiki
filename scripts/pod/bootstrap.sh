@@ -4,8 +4,14 @@
 # (pip site-packages, /usr/local) is volatile.
 #
 #   bash /workspace/saa/bootstrap.sh                # restore + start (idempotent)
-#   bash /workspace/saa/bootstrap.sh --pull MODEL   # also pull an Ollama model
+#   bash /workspace/saa/bootstrap.sh --pull MODEL   # also pull an Ollama model (repeatable, or a,b,c)
 #   bash /workspace/saa/bootstrap.sh --no-comfy     # leave ComfyUI as it is
+#
+# LLM on a 12 GB pod (translation batches, Refine / Expand), see README_POD.md:
+#   --pull hf.co/HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M   # ~8 GB, strong Japanese
+#   --pull huihui_ai/qwen3-abliterated:8b                                      # ~5 GB, fast fallback
+# Ollama is started with flash attention, a q8_0 KV cache and one loaded model
+# at a time so a 12B Q4 model fits; SAA unloads it before an image generation.
 #
 # Layout it expects (created on first use):
 #   /workspace/ollama/dist/bin/ollama   Ollama binary (tarball extracted here)
@@ -26,12 +32,12 @@ fi
 OLLAMA_DIST="${OLLAMA_DIST:-/workspace/ollama/dist}"
 OLLAMA_TARBALL_URL="${OLLAMA_TARBALL_URL:-https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst}"
 LOG_DIR=/workspace/saa/logs
-PULL_MODEL=""
+PULL_MODELS=""
 START_COMFY=1
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --pull) PULL_MODEL="$2"; shift 2 ;;
+    --pull) PULL_MODELS="$PULL_MODELS $(printf '%s' "$2" | tr ',' ' ')"; shift 2 ;;
     --no-comfy) START_COMFY=0; shift ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
@@ -78,7 +84,11 @@ fi
 
 if ! curl -s -m 3 http://127.0.0.1:11434/api/version >/dev/null 2>&1; then
   log "starting Ollama (loopback only)"
+  # flash attention + q8_0 KV cache keep a 12B Q4 model inside 12 GB; one model
+  # loaded at a time (SAA unloads it before image generation needs the VRAM)
   OLLAMA_MODELS=/workspace/ollama/models OLLAMA_HOST=127.0.0.1:11434 OLLAMA_KEEP_ALIVE="${OLLAMA_KEEP_ALIVE:-10m}" \
+    OLLAMA_FLASH_ATTENTION="${OLLAMA_FLASH_ATTENTION:-1}" OLLAMA_KV_CACHE_TYPE="${OLLAMA_KV_CACHE_TYPE:-q8_0}" \
+    OLLAMA_MAX_LOADED_MODELS="${OLLAMA_MAX_LOADED_MODELS:-1}" OLLAMA_NUM_PARALLEL="${OLLAMA_NUM_PARALLEL:-1}" \
     nohup "$OLLAMA_DIST/bin/ollama" serve > "$LOG_DIR/ollama.log" 2>&1 &
   for _ in $(seq 1 20); do
     curl -s -m 2 http://127.0.0.1:11434/api/version >/dev/null 2>&1 && break
@@ -92,10 +102,10 @@ else
   log "Ollama did not come up - see $LOG_DIR/ollama.log"
 fi
 
-if [ -n "$PULL_MODEL" ]; then
+for PULL_MODEL in $PULL_MODELS; do
   log "pulling $PULL_MODEL (large download, keep the session open)"
   OLLAMA_MODELS=/workspace/ollama/models "$OLLAMA_DIST/bin/ollama" pull "$PULL_MODEL" 2>&1 | tail -n 2
-fi
+done
 
 # ---------------------------------------------------------------- comfyui
 # Restarted so the custom nodes see the restored packages. Outputs and temp

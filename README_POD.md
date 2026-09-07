@@ -68,9 +68,29 @@ With Pod SSH on, the checkpoint / LoRA / VAE / upscaler / ControlNet lists in th
 - The Ollama status in the header is only probed through an already-open relay: it reads *pod relay not connected* until the first generation or AI request opens the session.
 - The ComfyUI pill shows **ComfyUI down** (yellow, then red) when the relay answers but ComfyUI on the pod does not — after a pod start before ComfyUI is up, or when it crashed: run the bootstrap.
 
-## Tag dictionary batches
+## LLM on the pod (translation batches, Refine / Expand)
 
-`scripts/categorizeTags.mjs` and `scripts/reviewJapaneseTags.mjs` (shared backends in `scripts/llmBatchBackend.mjs`) send every batch to Codex first; a batch Codex refuses or garbles is re-run on the pod's Ollama when Pod SSH is configured in `settings/app.json` (`--fallback ollama` for the local model instead, `--backend pod` to use the pod for everything, `--pod-model` to pick the model).
+The pod's Ollama serves three jobs through the same SSH relay: the app's **Expand** / **Refine** (AI → interface `Pod`), the tag-dictionary batches (`--backend pod`), and the fallback for batches Codex refuses. Nothing is exposed on a public port; the model files live in `/workspace/ollama/models` and survive a STOP.
+
+**Models for a 12 GB pod** (an SDXL checkpoint and the LLM do not fit together; SAA unloads the LLM before every image generation, and `Unload LLM` does it by hand):
+
+| Model | Size | Use |
+| --- | --- | --- |
+| `hf.co/HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M` | ~8 GB | translation review, Refine / Expand (strong Japanese) |
+| `huihui_ai/qwen3-abliterated:8b` | ~5 GB | fast fallback for refused batches |
+
+`bootstrap.sh` starts Ollama with flash attention, a `q8_0` KV cache and one loaded model at a time so the 12B model fits; `--pull` takes several models (`--pull a --pull b` or `--pull a,b`).
+
+**From SAA** (Settings → AI → Runpod pod): *Pod Ollama model* names the model every pod call uses; *Pod LLM keep-alive* (`10m` default, `0` = unload after each answer) keeps it warm between Refine / Expand calls. Buttons: **Pod LLM models** (what is pulled / loaded, and whether the named model is missing), **Pull model** (downloads the named model into the pod's workspace through the relay; minutes), **Unload LLM**.
+
+**Batches on the pod** (the pod model comes from the same setting unless `--pod-model` is given; the run unloads the model and closes the relay when it ends):
+
+```text
+node scripts/reviewJapaneseTags.mjs --backend pod --select suspicious,style,ambiguous,missing --min-heat 542 --report review.jsonl
+node scripts/categorizeTags.mjs --backend pod --min-heat 2469 --report categories.jsonl
+```
+
+With the default `--backend auto`, every batch goes to Codex first and only a batch Codex refuses or garbles (after being split down to 25 rows) is re-run on the pod when Pod SSH is configured in `settings/app.json` (`--fallback ollama` for the local model instead).
 
 ## Troubleshooting
 

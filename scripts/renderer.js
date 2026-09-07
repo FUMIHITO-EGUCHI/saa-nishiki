@@ -565,6 +565,10 @@ export async function createAI(SETTINGS, FILES, LANG) {
             value: SETTINGS.ai_pod_model,
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.ai_pod_model = value;}),
+        pod_keep_alive: setupTextbox('system-settings-ai-pod-keep-alive', LANG.ai_pod_keep_alive, {
+            value: SETTINGS.ai_pod_keep_alive,
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.ai_pod_keep_alive = value.trim();}),
         pod_address: setupTextbox('system-settings-ai-pod-address', LANG.ai_pod_addr, {
             value: SETTINGS.ai_pod_addr,
             maxLines: 1

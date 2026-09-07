@@ -249,6 +249,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.ai.local_address.setTitle(LANG.ai_local_addr);
     globalThis.ai.pod_address.setTitle(LANG.ai_pod_addr);
     globalThis.ai.pod_model?.setTitle(LANG.ai_pod_model);
+    globalThis.ai.pod_keep_alive?.setTitle(LANG.ai_pod_keep_alive);
     globalThis.ai.pod_share_host.setTitle(LANG.ai_pod_share_host);
     globalThis.ai.pod_auth.setTitle(LANG.ai_pod_auth);
     globalThis.ai.local_model_mode.setTitle(LANG.ai_local_model_mode);
@@ -407,6 +408,7 @@ export function updateSettings() {
     globalThis.ai.local_address.setValue(SETTINGS.ai_local_addr);
     globalThis.ai.pod_address.setValue(SETTINGS.ai_pod_addr);
     globalThis.ai.pod_model?.setValue(SETTINGS.ai_pod_model);
+    globalThis.ai.pod_keep_alive?.setValue(SETTINGS.ai_pod_keep_alive);
     globalThis.ai.pod_share_host.setValue(SETTINGS.ai_pod_share_host);
     globalThis.ai.pod_auth.setValue(SETTINGS.ai_pod_auth);
     globalThis.ai.local_model_mode.updateDefaults(SETTINGS.ai_local_model_mode);

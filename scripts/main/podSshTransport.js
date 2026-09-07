@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseOllamaLoaded, parseOllamaTags, pullRequest, unloadRequest } from '../shared/ollamaModels.js';
 
 const CAT = '[PodSSH]';
 const SENTINEL = '@@SAA@@';
@@ -279,6 +280,9 @@ export async function runPodWorkflow({ settings, workflow, saveNodes, onProgress
         return { error: `Error: pod SSH connect failed: ${error.message}${hint}` };
     }
     if (session.job && !session.job.settled) return { error: 'Error: pod SSH transport is busy' };
+    // On a 12 GB pod the LLM and the SDXL checkpoint do not fit together: hand
+    // the VRAM to ComfyUI before the workflow starts (a no-op when nothing is loaded).
+    await unloadLoadedPodModels();
 
     const job = new PodJob({ onProgress, onPreview, timeoutMs });
     session.job = job;
@@ -351,6 +355,69 @@ async function openSession(settings) {
         session.stop();
         return `pod SSH connect failed: ${error.message}`;
     }
+}
+
+// Best effort, through the already-open relay only: unload every model Ollama
+// holds in VRAM. Silent when Ollama is down or nothing is loaded.
+async function unloadLoadedPodModels() {
+    if (podSessionState() !== 'connected') return [];
+    try {
+        const ps = await session.request({ cmd: 'ollama', method: 'GET', path: '/api/ps', body: null, timeout: 5 }, 8000);
+        if (!ps.ok) return [];
+        const loaded = parseOllamaLoaded(ps.json);
+        for (const model of loaded) {
+            const unload = unloadRequest(model);
+            await session.request({ cmd: 'ollama', ...unload, timeout: 20 }, 25_000);
+        }
+        if (loaded.length) console.log(CAT, 'unloaded pod LLM:', loaded.join(', '));
+        return loaded;
+    } catch (error) {
+        console.log(CAT, 'pod LLM unload skipped:', error?.message ?? error);
+        return [];
+    }
+}
+
+// The Ollama models on the pod (/api/tags): { ok, models, loaded } or { ok: false, message }.
+// open:false only asks an already-open relay; open:true dials the pod.
+export async function podOllamaModels({ settings, open = false }) {
+    if (open) {
+        const failure = await openSession(settings);
+        if (failure) return { ok: false, message: failure };
+    } else if (podSessionState() !== 'connected') {
+        return { ok: false, message: 'pod relay not connected' };
+    }
+    const tags = await podOllamaRequest({ settings, method: 'GET', path: '/api/tags', timeoutMs: 10_000 });
+    if (!tags.ok) return { ok: false, message: tags.message };
+    const ps = await podOllamaRequest({ settings, method: 'GET', path: '/api/ps', timeoutMs: 10_000 });
+    return { ok: true, models: parseOllamaTags(tags.json), loaded: ps.ok ? parseOllamaLoaded(ps.json) : [] };
+}
+
+// Pull a model into /workspace/ollama/models on the pod. The relay call stays
+// open for the whole download (stream:false), so the timeout is generous.
+export async function podOllamaPull({ settings, model, timeoutMs = 45 * 60_000 }) {
+    let request;
+    try {
+        request = pullRequest(model);
+    } catch (error) {
+        return { ok: false, message: error.message };
+    }
+    const reply = await podOllamaRequest({ settings, ...request, timeoutMs });
+    if (!reply.ok) return { ok: false, message: reply.message };
+    const status = String(reply.json?.status ?? '');
+    return status && status !== 'success'
+        ? { ok: false, message: `pull ${request.body.model}: ${status}` }
+        : { ok: true, model: request.body.model };
+}
+
+// Unload the pod's LLM so the GPU is free for image generation: { ok, unloaded }.
+export async function podOllamaUnload({ settings, open = false }) {
+    if (open) {
+        const failure = await openSession(settings);
+        if (failure) return { ok: false, message: failure };
+    } else if (podSessionState() !== 'connected') {
+        return { ok: false, message: 'pod relay not connected' };
+    }
+    return { ok: true, unloaded: await unloadLoadedPodModels() };
 }
 
 // /object_info for the loader nodes (issue #8): { ok, info: { node: payload|null }, errors }.

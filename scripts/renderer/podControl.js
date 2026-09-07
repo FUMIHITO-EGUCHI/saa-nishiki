@@ -70,6 +70,44 @@ export function setupPodControls() {
         })),
     };
 
+    // The pod's Ollama (AI settings page): list / pull / unload models through the relay.
+    const llmNote = document.querySelector('.system-settings-ai-pod-llm-result');
+    const showLlm = message => { if (llmNote) llmNote.textContent = message; console.log(CAT, message); };
+    const runLlm = async (label, task) => {
+        if (busy) return;
+        busy = true;
+        showLlm(`${label}…`);
+        try {
+            showLlm(await task());
+        } catch (error) {
+            showLlm(`${label}: ${error?.message ?? error}`);
+        } finally {
+            busy = false;
+            globalThis.uiShell?.pills?.refresh?.();
+        }
+    };
+    const podModelName = () => String(globalThis.ai?.pod_model?.getValue?.() ?? globalThis.globalSettings?.ai_pod_model ?? '').trim();
+    const llmButtons = {
+        llmModels: setupButtons('system-settings-ai-pod-llm-models', text('ui_pod_llm_models', 'Pod LLM models'), BUTTON, () => runLlm('models', async () => {
+            const result = await globalThis.api.podOllama({ action: 'models' });
+            return describePodLlmModels(result, podModelName(), text);
+        })),
+        llmPull: setupButtons('system-settings-ai-pod-llm-pull', text('ui_pod_llm_pull', 'Pull model'), BUTTON, () => runLlm('pull', async () => {
+            const model = podModelName();
+            if (!model) return text('ui_pod_result_llm_no_model', 'set the pod Ollama model first');
+            const result = await globalThis.api.podOllama({ action: 'pull', model });
+            return result?.ok ? `${text('ui_pod_result_llm_pulled', 'pulled:')} ${result.model}` : `pull: ${result?.message ?? 'failed'}`;
+        })),
+        llmUnload: setupButtons('system-settings-ai-pod-llm-unload', text('ui_pod_llm_unload', 'Unload LLM'), BUTTON, () => runLlm('unload', async () => {
+            const result = await globalThis.api.podOllama({ action: 'unload' });
+            if (!result?.ok) return `unload: ${result?.message ?? 'failed'}`;
+            return result.unloaded?.length
+                ? `${text('ui_pod_result_llm_unloaded', 'unloaded:')} ${result.unloaded.join(', ')}`
+                : text('ui_pod_result_llm_nothing_loaded', 'nothing loaded');
+        })),
+    };
+    Object.assign(buttons, llmButtons);
+
     return {
         buttons,
         reloadModelLists,
@@ -80,10 +118,24 @@ export function setupPodControls() {
                 stop: text('ui_pod_stop', 'Stop pod'),
                 bootstrap: text('ui_pod_bootstrap', 'Run bootstrap'),
                 fetchModels: text('ui_pod_fetch_models', 'Fetch pod models'),
+                llmModels: text('ui_pod_llm_models', 'Pod LLM models'),
+                llmPull: text('ui_pod_llm_pull', 'Pull model'),
+                llmUnload: text('ui_pod_llm_unload', 'Unload LLM'),
             };
             for (const [key, button] of Object.entries(buttons)) {
                 button?.setTitle?.(labels[key]);
             }
         },
     };
+}
+
+// "pulled: a, b · loaded: a · current model missing" for the note line.
+export function describePodLlmModels(result, currentModel = '', t = text) {
+    if (!result?.ok) return `models: ${result?.message ?? 'failed'}`;
+    const models = Array.isArray(result.models) ? result.models : [];
+    const loaded = Array.isArray(result.loaded) ? result.loaded : [];
+    const parts = [`${t('ui_pod_result_llm_models', 'pulled:')} ${models.length ? models.join(', ') : '-'}`];
+    if (loaded.length) parts.push(`${t('ui_pod_result_llm_loaded', 'loaded:')} ${loaded.join(', ')}`);
+    if (currentModel && !models.includes(currentModel)) parts.push(`${t('ui_pod_result_llm_missing', 'not on the pod:')} ${currentModel}`);
+    return parts.join(' · ');
 }
