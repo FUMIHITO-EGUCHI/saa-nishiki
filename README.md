@@ -571,7 +571,8 @@ titles, evidence: the Danbooru other names), `--stage characters` reviews
 `data/character_names.json` (official spellings, translated qualifiers such
 as 改二 / 水着, the work title from `character_works.json` appended when the
 tag carries one). `--apply` writes only rows at or above `--min-confidence`
-(default `high`) and, for works, refreshes `data/official_work_names.json`:
+(default `high`). `data/official_work_names.json` (qualifier -> curated title,
+applied at display time) is hand-maintained and not touched:
 
 ```text
 node scripts/reviewCharacterNames.mjs --stage works --report works.jsonl

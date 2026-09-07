@@ -18516,7 +18516,8 @@
    "aliases": [
     ".flow",
     "dotflow"
-   ]
+   ],
+   "ja": ".flow"
   },
   ".live": {
    "en": ".live",
@@ -18524,7 +18525,8 @@
     "ドットライブ",
     "アイドル部",
     ".LIVE"
-   ]
+   ],
+   "ja": ".LIVE"
   },
   "22/7": {
    "en": "22/7",
@@ -18532,7 +18534,8 @@
     "22/7",
     "ナナブンノニジュウニ",
     "ナナニジ"
-   ]
+   ],
+   "ja": "22/7"
   },
   "2channel": {
    "en": "2channel",
@@ -18542,7 +18545,8 @@
     "5ch",
     "PINKちゃんねる",
     "BBSPINK"
-   ]
+   ],
+   "ja": "2ちゃんねる"
   },
   "86 -eightysix-": {
    "en": "86 -eightysix-",
@@ -18554,7 +18558,8 @@
     "86-不存在的战区-",
     "Anime_86",
     "เอทตี้ซิกซ์"
-   ]
+   ],
+   "ja": "86"
   },
   "9-nine-": {
    "en": "9-nine-",
@@ -18571,7 +18576,8 @@
     "9ナイン",
     "9-nine-",
     "アニメナイン"
-   ]
+   ],
+   "ja": "9-nine-"
   },
   "a.i. voice": {
    "en": "a.i. voice",
@@ -18579,19 +18585,22 @@
     "a.i.voice",
     "AIVOICE",
     "アイボス"
-   ]
+   ],
+   "ja": "A.I.VOICE"
   },
   "aa megami-sama": {
    "en": "aa megami-sama",
    "aliases": [
     "ああっ女神さまっ"
-   ]
+   ],
+   "ja": "ああっ女神さまっ"
   },
   "accel world": {
    "en": "accel world",
    "aliases": [
     "アクセル・ワールド"
-   ]
+   ],
+   "ja": "アクセル・ワールド"
   },
   "ace attorney": {
    "en": "ace attorney",
@@ -18603,16 +18612,19 @@
     "aceattorney",
     "逆裁腐向け",
     "gktnプラス"
-   ]
+   ],
+   "ja": "逆転裁判"
   },
   "adachi to shimamura": {
    "en": "adachi to shimamura",
    "aliases": [
     "安達としまむら"
-   ]
+   ],
+   "ja": "安達としまむら"
   },
   "addams family": {
-   "en": "addams family"
+   "en": "addams family",
+   "ja": "アダムス・ファミリー"
   },
   "ado (utaite)": {
    "en": "ado (utaite)",
@@ -18623,7 +18635,8 @@
     "アド",
     "Ado心臓",
     "Ado誕生日"
-   ]
+   ],
+   "ja": "Ado"
   },
   "adventure time": {
    "en": "adventure time",
@@ -18635,21 +18648,24 @@
     "探险活宝",
     "探险时光",
     "冒险时光"
-   ]
+   ],
+   "ja": "アドベンチャー・タイム"
   },
   "agent aika": {
    "en": "agent aika",
    "aliases": [
     "AIKa",
     "アイカ"
-   ]
+   ],
+   "ja": "AIKa"
   },
   "aika (series)": {
    "en": "aika (series)",
    "aliases": [
     "AIKa",
     "アイカ"
-   ]
+   ],
+   "ja": "AIKa"
   },
   "aikatsu!": {
    "en": "aikatsu!",
@@ -18658,7 +18674,8 @@
     "アイカツ!",
     "aikatsu",
     "カツパラ"
-   ]
+   ],
+   "ja": "アイカツ！"
   },
   "aikatsu! (series)": {
    "en": "aikatsu! (series)",
@@ -18670,7 +18687,8 @@
     "aikatsu!",
     "アイカツプリパラ",
     "アイカツ版深夜の真剣お絵描き60分一本勝負"
-   ]
+   ],
+   "ja": "アイカツ！"
   },
   "aikatsu stars!": {
    "en": "aikatsu stars!",
@@ -18679,7 +18697,8 @@
     "アイカツスターズ",
     "aikatsustars",
     "偶像活动stars"
-   ]
+   ],
+   "ja": "アイカツスターズ！"
   },
   "air (visual novel)": {
    "en": "air (visual novel)",
@@ -18687,7 +18706,8 @@
     "AIR(ゲーム)",
     "AIR",
     "air"
-   ]
+   ],
+   "ja": "AIR"
   },
   "akame ga kill!": {
    "en": "akame ga kill!",
@@ -18697,25 +18717,29 @@
     "斩!赤红之瞳",
     "斩赤红之瞳",
     "УбийцаАкаме"
-   ]
+   ],
+   "ja": "アカメが斬る！"
   },
   "aku no meshitsukai (vocaloid)": {
    "en": "aku no meshitsukai (vocaloid)",
    "aliases": [
     "悪ノ召使"
-   ]
+   ],
+   "ja": "悪ノ召使"
   },
   "aku no musume (vocaloid)": {
    "en": "aku no musume (vocaloid)",
    "aliases": [
     "悪ノ娘"
-   ]
+   ],
+   "ja": "悪ノ娘"
   },
   "akuma no riddle": {
    "en": "akuma no riddle",
    "aliases": [
     "悪魔のリドル"
-   ]
+   ],
+   "ja": "悪魔のリドル"
   },
   "aldnoah.zero": {
    "en": "aldnoah.zero",
@@ -18724,23 +18748,27 @@
     "ALDNOAH.ZERO",
     "【腐】A/Z",
     "アルドノア・ゼロ【腐】"
-   ]
+   ],
+   "ja": "ALDNOAH.ZERO"
   },
   "alice: madness returns": {
    "en": "alice: madness returns",
    "aliases": [
     "アリスマッドネスリターンズ",
     "AliceMadnessReturns"
-   ]
+   ],
+   "ja": "アリス マッドネス リターンズ"
   },
   "alice in wonderland": {
-   "en": "alice in wonderland"
+   "en": "alice in wonderland",
+   "ja": "不思議の国のアリス"
   },
   "amagami": {
    "en": "amagami",
    "aliases": [
     "アマガミ"
-   ]
+   ],
+   "ja": "アマガミ"
   },
   "amagi brilliant park": {
    "en": "amagi brilliant park",
@@ -18749,14 +18777,16 @@
     "甘ブリ",
     "甘城光辉游乐园",
     "아마기브릴리언트파크"
-   ]
+   ],
+   "ja": "甘城ブリリアントパーク"
   },
   "american mcgee's alice": {
    "en": "american mcgee's alice",
    "aliases": [
     "アリスインナイトメア",
     "爱丽丝梦游魔境"
-   ]
+   ],
+   "ja": "アリス イン ナイトメア"
   },
   "among us": {
    "en": "among us",
@@ -18769,7 +18799,8 @@
     "オリアモ",
     "AmongUsOC",
     "あもあす"
-   ]
+   ],
+   "ja": "Among Us"
   },
   "angel beats!": {
    "en": "angel beats!",
@@ -18778,7 +18809,8 @@
     "AngelBeats!",
     "エンジェルビーツ!",
     "AngelBeats"
-   ]
+   ],
+   "ja": "Angel Beats!"
   },
   "animal crossing": {
    "en": "animal crossing",
@@ -18801,7 +18833,8 @@
     "集合啦!动物森友会",
     "どうぶつの森64",
     "动森"
-   ]
+   ],
+   "ja": "どうぶつの森"
   },
   "ano hi mita hana no namae wo bokutachi wa mada shiranai.": {
    "en": "ano hi mita hana no namae wo bokutachi wa mada shiranai.",
@@ -18811,7 +18844,8 @@
     "あの花",
     "我们仍未知道那天所看见的花的名字",
     "我们仍未知道那天所看见的花的名字。"
-   ]
+   ],
+   "ja": "あの日見た花の名前を僕達はまだ知らない。"
   },
   "ansatsu kyoushitsu": {
    "en": "ansatsu kyoushitsu",
@@ -18819,7 +18853,8 @@
     "暗殺教室",
     "暗杀教室",
     "암살교실"
-   ]
+   ],
+   "ja": "暗殺教室"
   },
   "ao no kiseki": {
    "en": "ao no kiseki",
@@ -18827,14 +18862,16 @@
     "碧の軌跡",
     "軌跡シリーズ",
     "英雄伝説VII"
-   ]
+   ],
+   "ja": "碧の軌跡"
   },
   "aoki hagane no arpeggio": {
    "en": "aoki hagane no arpeggio",
    "aliases": [
     "蒼き鋼のアルペジオ",
     "Arpeggio_of_Blue_Steel"
-   ]
+   ],
+   "ja": "蒼き鋼のアルペジオ"
   },
   "apex legends": {
    "en": "apex legends",
@@ -18855,25 +18892,29 @@
     "ケモエペ",
     "ApexLegendsファンアート",
     "エイペックスレジェンズ"
-   ]
+   ],
+   "ja": "Apex Legends"
   },
   "apollo justice: ace attorney": {
    "en": "apollo justice: ace attorney",
    "aliases": [
     "逆転裁判4"
-   ]
+   ],
+   "ja": "逆転裁判4"
   },
   "aquarion (series)": {
    "en": "aquarion (series)",
    "aliases": [
     "アクエリオン"
-   ]
+   ],
+   "ja": "アクエリオン"
   },
   "aquarion evol": {
    "en": "aquarion evol",
    "aliases": [
     "アクエリオンEVOL"
-   ]
+   ],
+   "ja": "アクエリオンEVOL"
   },
   "arcane: league of legends": {
    "en": "arcane: league of legends",
@@ -18883,17 +18924,20 @@
     "奧術",
     "双城之战",
     "ArcaneSeason2"
-   ]
+   ],
+   "ja": "アーケイン"
   },
   "aria (manga)": {
    "en": "aria (manga)",
    "aliases": [
     "アリア",
     "ARIA"
-   ]
+   ],
+   "ja": "ARIA"
   },
   "arifureta shokugyou de sekai saikyou": {
-   "en": "arifureta shokugyou de sekai saikyou"
+   "en": "arifureta shokugyou de sekai saikyou",
+   "ja": "ありふれた職業で世界最強"
   },
   "arknights": {
    "en": "arknights",
@@ -18913,17 +18957,20 @@
     "明日方舟乙女向",
     "アークナイツ版深夜の真剣お絵かき60分一本勝負",
     "明日方舟创作者应援计划"
-   ]
+   ],
+   "ja": "アークナイツ"
   },
   "arknights: endfield": {
-   "en": "arknights: endfield"
+   "en": "arknights: endfield",
+   "ja": "アークナイツ：エンドフィールド"
   },
   "arms (game)": {
    "en": "arms (game)",
    "aliases": [
     "ARMS(ゲーム)",
     "ARMS"
-   ]
+   ],
+   "ja": "ARMS"
   },
   "assault lily": {
    "en": "assault lily",
@@ -18933,7 +18980,8 @@
     "アサルトリリィ_FA",
     "アサルトリリィBOUQUET",
     "어설트릴리"
-   ]
+   ],
+   "ja": "アサルトリリィ"
   },
   "atelier (series)": {
    "en": "atelier (series)",
@@ -18942,7 +18990,8 @@
     "アトリエ",
     "アトリエシリーズ",
     "アトリ絵"
-   ]
+   ],
+   "ja": "アトリエ"
   },
   "atelier escha & logy": {
    "en": "atelier escha & logy",
@@ -18952,20 +19001,23 @@
     "エスカとロジーのアトリエ",
     "ロジエス",
     "愛絲卡&羅吉的煉金工房"
-   ]
+   ],
+   "ja": "エスカ＆ロジーのアトリエ"
   },
   "atelier meruru": {
    "en": "atelier meruru",
    "aliases": [
     "メルルのアトリエ",
     "梅露露的炼金工房"
-   ]
+   ],
+   "ja": "メルルのアトリエ"
   },
   "atelier ryza": {
    "en": "atelier ryza",
    "aliases": [
     "ライザのアトリエ"
-   ]
+   ],
+   "ja": "ライザのアトリエ"
   },
   "atelier ryza 1": {
    "en": "atelier ryza 1",
@@ -18975,7 +19027,8 @@
     "ライザのアトリエ常闇の女王と秘密の隠れ家",
     "Atelier_Ryza:_The_Queen_of_Eternal_Darkness_and_the_Secret_Hideout",
     "AtelierRyza"
-   ]
+   ],
+   "ja": "ライザのアトリエ"
   },
   "atelier ryza 2": {
    "en": "atelier ryza 2",
@@ -18984,20 +19037,23 @@
     "ライザのアトリエ2",
     "AtelierRyza2",
     "Ryza2"
-   ]
+   ],
+   "ja": "ライザのアトリエ2"
   },
   "atelier sophie": {
    "en": "atelier sophie",
    "aliases": [
     "ソフィーのアトリエ",
     "ソフィーのアトリエ~不思議な本の錬金術士~"
-   ]
+   ],
+   "ja": "ソフィーのアトリエ"
   },
   "atelier totori": {
    "en": "atelier totori",
    "aliases": [
     "トトリのアトリエ"
-   ]
+   ],
+   "ja": "トトリのアトリエ"
   },
   "atri-my dear moments-": {
    "en": "atri-my dear moments-",
@@ -19005,7 +19061,8 @@
     "ATRI-MyDearMoments-",
     "ATRI",
     "アトリ"
-   ]
+   ],
+   "ja": "ATRI"
   },
   "avatar: the last airbender": {
    "en": "avatar: the last airbender",
@@ -19016,7 +19073,8 @@
     "thelastairbender",
     "avatar",
     "atla"
-   ]
+   ],
+   "ja": "アバター 伝説の少年アン"
   },
   "avatar legends": {
    "en": "avatar legends",
@@ -19024,13 +19082,15 @@
     "降世神通",
     "Avatar",
     "avatarlegends"
-   ]
+   ],
+   "ja": "Avatar Legends"
   },
   "avengers (series)": {
    "en": "avengers (series)",
    "aliases": [
     "アベンジャーズ"
-   ]
+   ],
+   "ja": "アベンジャーズ"
   },
   "axis powers hetalia": {
    "en": "axis powers hetalia",
@@ -19043,14 +19103,16 @@
     "aph",
     "hetalia",
     "hetatwt"
-   ]
+   ],
+   "ja": "ヘタリア"
   },
   "azumanga daioh": {
    "en": "azumanga daioh",
    "aliases": [
     "あずまんが大王",
     "笑園漫畫大王"
-   ]
+   ],
+   "ja": "あずまんが大王"
   },
   "azur lane": {
    "en": "azur lane",
@@ -19072,7 +19134,8 @@
     "アズールレーン七周年記念",
     "META(アズールレーン)",
     "オリジナルMETA"
-   ]
+   ],
+   "ja": "アズールレーン"
   },
   "baka to test to shoukanjuu": {
    "en": "baka to test to shoukanjuu",
@@ -19080,13 +19143,15 @@
     "バカとテストと召喚獣",
     "バカテス",
     "笨蛋测验召唤兽"
-   ]
+   ],
+   "ja": "バカとテストと召喚獣"
   },
   "bakemonogatari": {
    "en": "bakemonogatari",
    "aliases": [
     "化物語"
-   ]
+   ],
+   "ja": "化物語"
   },
   "bang dream!": {
    "en": "bang dream!",
@@ -19102,7 +19167,8 @@
     "bang_dream",
     "元祖バンドリちゃん",
     "邦多利"
-   ]
+   ],
+   "ja": "BanG Dream!"
   },
   "bang dream! it's mygo!!!!!": {
    "en": "bang dream! it's mygo!!!!!",
@@ -19122,14 +19188,16 @@
     "mujica",
     "アヴェ幻",
     "AveMujicaDesuwa"
-   ]
+   ],
+   "ja": "BanG Dream! It's MyGO!!!!!"
   },
   "batman (series)": {
    "en": "batman (series)",
    "aliases": [
     "バットマン",
     "BATMAN"
-   ]
+   ],
+   "ja": "バットマン"
   },
   "battle tendency": {
    "en": "battle tendency",
@@ -19137,7 +19205,8 @@
     "JOJO的奇妙冒险:战斗潮流",
     "戦闘潮流",
     "战斗潮流"
-   ]
+   ],
+   "ja": "戦闘潮流"
   },
   "bayonetta (series)": {
    "en": "bayonetta (series)",
@@ -19146,23 +19215,27 @@
     "BAYONETTAシリーズ",
     "魔兵驚天錄",
     "猎天使魔女"
-   ]
+   ],
+   "ja": "ベヨネッタ"
   },
   "bayonetta 1": {
    "en": "bayonetta 1",
    "aliases": [
     "BAYONETTA",
     "ベヨネッタ"
-   ]
+   ],
+   "ja": "ベヨネッタ"
   },
   "bayonetta 2": {
    "en": "bayonetta 2",
    "aliases": [
     "ベヨネッタ2"
-   ]
+   ],
+   "ja": "ベヨネッタ2"
   },
   "ben 10": {
-   "en": "ben 10"
+   "en": "ben 10",
+   "ja": "ベン10"
   },
   "berserk": {
    "en": "berserk",
@@ -19170,7 +19243,8 @@
     "ベルセルク",
     "剣風伝奇ベルセルク",
     "剑风传奇"
-   ]
+   ],
+   "ja": "ベルセルク"
   },
   "bilibili": {
    "en": "bilibili",
@@ -19180,7 +19254,8 @@
     "ビリビリ動画",
     "B站",
     "Bilibili"
-   ]
+   ],
+   "ja": "bilibili"
   },
   "bishoujo senshi sailor moon": {
    "en": "bishoujo senshi sailor moon",
@@ -19191,31 +19266,36 @@
     "sailor_moon",
     "SailorMoon",
     "美少女战士"
-   ]
+   ],
+   "ja": "美少女戦士セーラームーン"
   },
   "bishoujo senshi sailor moon r": {
    "en": "bishoujo senshi sailor moon r",
    "aliases": [
     "美少女戦士セーラームーンR"
-   ]
+   ],
+   "ja": "美少女戦士セーラームーンR"
   },
   "bishoujo senshi sailor moon s": {
    "en": "bishoujo senshi sailor moon s",
    "aliases": [
     "美少女戦士セーラームーンスーパー"
-   ]
+   ],
+   "ja": "美少女戦士セーラームーンS"
   },
   "bishoujo senshi sailor moon supers": {
    "en": "bishoujo senshi sailor moon supers",
    "aliases": [
     "美少女戦士セーラームーンスーパーズ"
-   ]
+   ],
+   "ja": "美少女戦士セーラームーンSuperS"
   },
   "black bullet": {
    "en": "black bullet",
    "aliases": [
     "ブラック・ブレット"
-   ]
+   ],
+   "ja": "ブラック・ブレット"
   },
   "black clover": {
    "en": "black clover",
@@ -19224,14 +19304,16 @@
     "ブラッククローバー",
     "黑色五葉草",
     "黑色五叶草"
-   ]
+   ],
+   "ja": "ブラッククローバー"
   },
   "black lagoon": {
    "en": "black lagoon",
    "aliases": [
     "ブラックラグーン",
     "BLACKLAGOON"
-   ]
+   ],
+   "ja": "BLACK LAGOON"
   },
   "black rock shooter": {
    "en": "black rock shooter",
@@ -19240,7 +19322,8 @@
     "ブラックロックシューター",
     "黑岩射手",
     "B★RS"
-   ]
+   ],
+   "ja": "ブラック★ロックシューター"
   },
   "blazblue": {
    "en": "blazblue",
@@ -19249,7 +19332,8 @@
     "ブレイブルー",
     "蒼翼默示錄",
     "苍翼默示录"
-   ]
+   ],
+   "ja": "BLAZBLUE"
   },
   "bleach": {
    "en": "bleach",
@@ -19257,14 +19341,16 @@
     "BLEACH",
     "境·界",
     "ブリーチ"
-   ]
+   ],
+   "ja": "BLEACH"
   },
   "bleach: sennen kessen-hen": {
    "en": "bleach: sennen kessen-hen",
    "aliases": [
     "千年血戦篇",
     "BLEACHTYBW"
-   ]
+   ],
+   "ja": "BLEACH"
   },
   "blend s": {
    "en": "blend s",
@@ -19272,7 +19358,8 @@
     "ブレンド・S",
     "调教咖啡厅",
     "ブレンドS"
-   ]
+   ],
+   "ja": "ブレンド・S"
   },
   "bloodborne": {
    "en": "bloodborne",
@@ -19280,7 +19367,8 @@
     "ブラッドボーン",
     "Bloodborne",
     "血源诅咒"
-   ]
+   ],
+   "ja": "Bloodborne"
   },
   "blue archive": {
    "en": "blue archive",
@@ -19313,13 +19401,15 @@
     "LobotomyKivotos",
     "ブルアカグラバチ",
     "키보토스지뢰계주의보"
-   ]
+   ],
+   "ja": "ブルーアーカイブ"
   },
   "blue archive the animation": {
    "en": "blue archive the animation",
    "aliases": [
     "ブルアカTVアニメ"
-   ]
+   ],
+   "ja": "ブルーアーカイブ"
   },
   "bocchi the rock!": {
    "en": "bocchi the rock!",
@@ -19339,7 +19429,8 @@
     "ぼっち·ざ·ろっく",
     "ぼっち・ざ・ろっく!モータリゼーション",
     "今日のぼざろ"
-   ]
+   ],
+   "ja": "ぼっち・ざ・ろっく！"
   },
   "boku dake ga inai machi": {
    "en": "boku dake ga inai machi",
@@ -19351,7 +19442,8 @@
     "僕街・作者メインヒロイン",
     "나만이없는거리",
     "只有我不存在的城市"
-   ]
+   ],
+   "ja": "僕だけがいない街"
   },
   "boku no hero academia": {
    "en": "boku no hero academia",
@@ -19368,7 +19460,8 @@
     "MHA",
     "bnha",
     "bokunoheroacademia"
-   ]
+   ],
+   "ja": "僕のヒーローアカデミア"
   },
   "boku no kokoro no yabai yatsu": {
    "en": "boku no kokoro no yabai yatsu",
@@ -19376,52 +19469,60 @@
     "僕の心のヤバイやつ",
     "僕ヤバ",
     "the_dangers_in_my_heart"
-   ]
+   ],
+   "ja": "僕の心のヤバイやつ"
   },
   "boku wa tomodachi ga sukunai": {
    "en": "boku wa tomodachi ga sukunai",
    "aliases": [
     "僕は友達が少ない",
     "はがない"
-   ]
+   ],
+   "ja": "僕は友達が少ない"
   },
   "bombergirl": {
    "en": "bombergirl",
    "aliases": [
     "ボンバーガール"
-   ]
+   ],
+   "ja": "ボンバーガール"
   },
   "boruto: naruto next generations": {
    "en": "boruto: naruto next generations",
    "aliases": [
     "BORUTO"
-   ]
+   ],
+   "ja": "BORUTO"
   },
   "brave witches": {
    "en": "brave witches",
    "aliases": [
     "ブレイブウィッチーズ"
-   ]
+   ],
+   "ja": "ブレイブウィッチーズ"
   },
   "bravely default: flying fairy": {
    "en": "bravely default: flying fairy",
    "aliases": [
     "ブレイブリーデフォルト",
     "BDFF"
-   ]
+   ],
+   "ja": "ブレイブリーデフォルト"
   },
   "bravely default (series)": {
    "en": "bravely default (series)",
    "aliases": [
     "ブレデフォ"
-   ]
+   ],
+   "ja": "ブレイブリーデフォルト"
   },
   "cafe stella to shinigami no chou": {
    "en": "cafe stella to shinigami no chou",
    "aliases": [
     "喫茶ステラと死神の蝶",
     "喫茶ステラ"
-   ]
+   ],
+   "ja": "喫茶ステラと死神の蝶"
   },
   "call of duty": {
    "en": "call of duty",
@@ -19430,7 +19531,8 @@
     "COD",
     "使命召唤",
     "決勝時刻"
-   ]
+   ],
+   "ja": "コール オブ デューティ"
   },
   "call of duty: modern warfare 2": {
    "en": "call of duty: modern warfare 2",
@@ -19441,13 +19543,15 @@
     "モダンウォーフェア2",
     "CoD:MW2",
     "MW2"
-   ]
+   ],
+   "ja": "コール オブ デューティ モダン・ウォーフェア2"
   },
   "capcom fighting jam": {
    "en": "capcom fighting jam",
    "aliases": [
     "カプコンファイティングジャム"
-   ]
+   ],
+   "ja": "CAPCOM FIGHTING Jam"
   },
   "cardcaptor sakura": {
    "en": "cardcaptor sakura",
@@ -19461,7 +19565,8 @@
     "ccsakura",
     "庫洛魔法使",
     "百变小樱"
-   ]
+   ],
+   "ja": "カードキャプターさくら"
   },
   "castlevania: portrait of ruin": {
    "en": "castlevania: portrait of ruin",
@@ -19471,21 +19576,24 @@
     "ギャラリーオブラブホテル",
     "CastlevaniaPortraitofRuin",
     "PortraitofRuin"
-   ]
+   ],
+   "ja": "悪魔城ドラキュラ ギャラリー オブ ラビリンス"
   },
   "castlevania (series)": {
    "en": "castlevania (series)",
    "aliases": [
     "悪魔城ドラキュラ",
     "キャッスルヴァニア"
-   ]
+   ],
+   "ja": "悪魔城ドラキュラ"
   },
   "cevio": {
    "en": "cevio",
    "aliases": [
     "CeVIO",
     "Cevio"
-   ]
+   ],
+   "ja": "CeVIO"
   },
   "chainsaw man": {
    "en": "chainsaw man",
@@ -19501,7 +19609,8 @@
     "csm",
     "chainsawmanfanart",
     "チェーンソーマン"
-   ]
+   ],
+   "ja": "チェンソーマン"
   },
   "char's counterattack": {
    "en": "char's counterattack",
@@ -19509,7 +19618,8 @@
     "機動戦士ガンダム逆襲のシャア",
     "逆襲のシャア",
     "逆シャア"
-   ]
+   ],
+   "ja": "機動戦士ガンダム 逆襲のシャア"
   },
   "charlotte (anime)": {
    "en": "charlotte (anime)",
@@ -19517,16 +19627,19 @@
     "Charlotte(アニメ)",
     "Charlotte",
     "シャーロット"
-   ]
+   ],
+   "ja": "Charlotte"
   },
   "chobits": {
-   "en": "chobits"
+   "en": "chobits",
+   "ja": "ちょびっツ"
   },
   "choujikuu yousai macross": {
    "en": "choujikuu yousai macross",
    "aliases": [
     "超時空要塞マクロス"
-   ]
+   ],
+   "ja": "超時空要塞マクロス"
   },
   "chrono trigger": {
    "en": "chrono trigger",
@@ -19535,7 +19648,8 @@
     "クロノ・トリガー",
     "クロノ・トリガ",
     "ChronoTrigger"
-   ]
+   ],
+   "ja": "クロノ・トリガー"
   },
   "chuunibyou demo koi ga shitai!": {
    "en": "chuunibyou demo koi ga shitai!",
@@ -19544,7 +19658,8 @@
     "中二病でも恋がしたい",
     "中二病也要谈恋爱",
     "chu2koi"
-   ]
+   ],
+   "ja": "中二病でも恋がしたい！"
   },
   "citrus (saburouta)": {
    "en": "citrus (saburouta)",
@@ -19553,7 +19668,8 @@
     "Citrus",
     "柑橘味香气",
     "橘香"
-   ]
+   ],
+   "ja": "citrus"
   },
   "clannad": {
    "en": "clannad",
@@ -19563,7 +19679,8 @@
     "クラナド",
     "小鎮家族",
     "团子大家族"
-   ]
+   ],
+   "ja": "CLANNAD"
   },
   "code geass": {
    "en": "code geass",
@@ -19575,13 +19692,15 @@
     "コードギアスR2",
     "叛逆的鲁鲁修",
     "反叛的鲁鲁修"
-   ]
+   ],
+   "ja": "コードギアス"
   },
   "comic girls": {
    "en": "comic girls",
    "aliases": [
     "こみっくがーるず"
-   ]
+   ],
+   "ja": "こみっくがーるず"
   },
   "cookie (touhou)": {
    "en": "cookie (touhou)",
@@ -19592,20 +19711,24 @@
     "魔理沙とアリスのクッキーKiss",
     "真夏の夜のクッキー迫真お絵描き",
     "cookie☆"
-   ]
+   ],
+   "ja": "クッキー☆"
   },
   "crisis core final fantasy vii": {
-   "en": "crisis core final fantasy vii"
+   "en": "crisis core final fantasy vii",
+   "ja": "クライシス コア -ファイナルファンタジーVII-"
   },
   "cyberpunk (series)": {
    "en": "cyberpunk (series)",
    "aliases": [
     "cyberpunk",
     "赛博朋克(系列)"
-   ]
+   ],
+   "ja": "サイバーパンク"
   },
   "cyberpunk edgerunners": {
-   "en": "cyberpunk edgerunners"
+   "en": "cyberpunk edgerunners",
+   "ja": "サイバーパンク エッジランナーズ"
   },
   "d.gray-man": {
    "en": "d.gray-man",
@@ -19615,20 +19738,23 @@
     "驅魔少年",
     "驱魔少年",
     "Dグレ"
-   ]
+   ],
+   "ja": "D.Gray-man"
   },
   "dagashi kashi": {
    "en": "dagashi kashi",
    "aliases": [
     "だがしかし"
-   ]
+   ],
+   "ja": "だがしかし"
   },
   "danganronpa: trigger happy havoc": {
    "en": "danganronpa: trigger happy havoc",
    "aliases": [
     "ダンガンロンパ_希望の学園と絶望の高校生",
     "danganronpa_trigger_happy_havoc"
-   ]
+   ],
+   "ja": "ダンガンロンパ 希望の学園と絶望の高校生"
   },
   "danganronpa (series)": {
    "en": "danganronpa (series)",
@@ -19640,7 +19766,8 @@
     "槍彈辯駁",
     "danganronpa",
     "danganronpafanart"
-   ]
+   ],
+   "ja": "ダンガンロンパ"
   },
   "danganronpa 2: goodbye despair": {
    "en": "danganronpa 2: goodbye despair",
@@ -19654,7 +19781,8 @@
     "dr2",
     "sdr2",
     "danganronpa2"
-   ]
+   ],
+   "ja": "スーパーダンガンロンパ2 さよなら絶望学園"
   },
   "danganronpa another episode: ultra despair girls": {
    "en": "danganronpa another episode: ultra despair girls",
@@ -19664,7 +19792,8 @@
     "drudg",
     "drae",
     "ultra_despair_girls"
-   ]
+   ],
+   "ja": "絶対絶望少女 ダンガンロンパ Another Episode"
   },
   "danganronpa v3: killing harmony": {
    "en": "danganronpa v3: killing harmony",
@@ -19676,13 +19805,15 @@
     "ダンガンロンパV3",
     "弹丸论破v3",
     "danganronpaV3"
-   ]
+   ],
+   "ja": "ニューダンガンロンパV3 みんなのコロシアイ新学期"
   },
   "dango daikazoku": {
    "en": "dango daikazoku",
    "aliases": [
     "だんご大家族"
-   ]
+   ],
+   "ja": "だんご大家族"
   },
   "dark souls (series)": {
    "en": "dark souls (series)",
@@ -19693,17 +19824,20 @@
     "黑暗靈魂",
     "黑暗之魂",
     "黑魂"
-   ]
+   ],
+   "ja": "DARK SOULS"
   },
   "dark souls i": {
-   "en": "dark souls i"
+   "en": "dark souls i",
+   "ja": "DARK SOULS"
   },
   "dark souls iii": {
    "en": "dark souls iii",
    "aliases": [
     "ダークソウル3",
     "DARKSOULS3"
-   ]
+   ],
+   "ja": "DARK SOULS III"
   },
   "darker than black": {
    "en": "darker than black",
@@ -19714,7 +19848,8 @@
     "dtb",
     "黑之契约者",
     "流星の双子"
-   ]
+   ],
+   "ja": "DARKER THAN BLACK"
   },
   "darkstalkers": {
    "en": "darkstalkers",
@@ -19726,7 +19861,8 @@
     "ダークストーカーズ",
     "魔域幽靈",
     "恶魔战士"
-   ]
+   ],
+   "ja": "ヴァンパイア"
   },
   "darling in the franxx": {
    "en": "darling in the franxx",
@@ -19736,7 +19872,8 @@
     "ダリフラ",
     "ダーリンインザフランキス",
     "DARLI_FRA"
-   ]
+   ],
+   "ja": "ダーリン・イン・ザ・フランキス"
   },
   "date a live": {
    "en": "date a live",
@@ -19746,7 +19883,8 @@
     "DATEALIVE",
     "デート·ア·ライブ",
     "DATE・A・LIVE"
-   ]
+   ],
+   "ja": "デート・ア・ライブ"
   },
   "dc comics": {
    "en": "dc comics",
@@ -19760,7 +19898,8 @@
     "DCエクステンデッド・ユニバース",
     "DCユニバース(実写映画)",
     "DCユニバース"
-   ]
+   ],
+   "ja": "DCコミックス"
   },
   "dead or alive": {
    "en": "dead or alive",
@@ -19768,20 +19907,23 @@
     "デッドオアアライブ",
     "死或生",
     "DOA"
-   ]
+   ],
+   "ja": "DEAD OR ALIVE"
   },
   "dead or alive 5": {
    "en": "dead or alive 5",
    "aliases": [
     "デッドオアアライブ5",
     "DOA5"
-   ]
+   ],
+   "ja": "DEAD OR ALIVE 5"
   },
   "deadpool (series)": {
    "en": "deadpool (series)",
    "aliases": [
     "Deadpool"
-   ]
+   ],
+   "ja": "デッドプール"
   },
   "death note": {
    "en": "death note",
@@ -19793,14 +19935,16 @@
     "デスノプラス",
     "デスノ夢",
     "死帳夢"
-   ]
+   ],
+   "ja": "デスノート"
   },
   "delicious party precure": {
    "en": "delicious party precure",
    "aliases": [
     "デリシャスパーティ♡プリキュア",
     "デパプリ"
-   ]
+   ],
+   "ja": "デリシャスパーティ♡プリキュア"
   },
   "deltarune": {
    "en": "deltarune",
@@ -19811,19 +19955,22 @@
     "deltarunespoilers",
     "deltaruined",
     "deltarunefanart"
-   ]
+   ],
+   "ja": "DELTARUNE"
   },
   "dennou coil": {
    "en": "dennou coil",
    "aliases": [
     "電脳コイル"
-   ]
+   ],
+   "ja": "電脳コイル"
   },
   "denpa onna to seishun otoko": {
    "en": "denpa onna to seishun otoko",
    "aliases": [
     "電波女と青春男"
-   ]
+   ],
+   "ja": "電波女と青春男"
   },
   "devil may cry (series)": {
    "en": "devil may cry (series)",
@@ -19832,26 +19979,30 @@
     "デビルメイクライシリーズ",
     "DmC",
     "DevilMayCry"
-   ]
+   ],
+   "ja": "デビル メイ クライ"
   },
   "devil may cry 3": {
    "en": "devil may cry 3",
    "aliases": [
     "DMC3"
-   ]
+   ],
+   "ja": "デビル メイ クライ 3"
   },
   "devil may cry 4": {
    "en": "devil may cry 4",
    "aliases": [
     "デビルメイクライ4"
-   ]
+   ],
+   "ja": "デビル メイ クライ 4"
   },
   "devil may cry 5": {
    "en": "devil may cry 5",
    "aliases": [
     "DMC5",
     "DevilMayCry5"
-   ]
+   ],
+   "ja": "デビル メイ クライ 5"
   },
   "di gi charat": {
    "en": "di gi charat",
@@ -19860,7 +20011,8 @@
     "でじきゃらあーと",
     "デジキャラット",
     "铃铛猫娘"
-   ]
+   ],
+   "ja": "デ・ジ・キャラット"
   },
   "diamond wa kudakenai": {
    "en": "diamond wa kudakenai",
@@ -19868,7 +20020,8 @@
     "不灭钻石",
     "JOJO的奇妙冒险:不灭钻石",
     "ダイヤモンドは砕けない"
-   ]
+   ],
+   "ja": "ダイヤモンドは砕けない"
   },
   "digimon": {
    "en": "digimon",
@@ -19877,32 +20030,37 @@
     "デジタルモンスター",
     "数码宝贝",
     "digimon"
-   ]
+   ],
+   "ja": "デジモン"
   },
   "digimon adventure": {
    "en": "digimon adventure",
    "aliases": [
     "デジモンアドベンチャー",
     "デジアド"
-   ]
+   ],
+   "ja": "デジモンアドベンチャー"
   },
   "dirty pair": {
    "en": "dirty pair",
    "aliases": [
     "ダーティペア"
-   ]
+   ],
+   "ja": "ダーティペア"
   },
   "disgaea": {
    "en": "disgaea",
    "aliases": [
     "ディスガイア"
-   ]
+   ],
+   "ja": "魔界戦記ディスガイア"
   },
   "disgaea d2": {
    "en": "disgaea d2",
    "aliases": [
     "ディスガイアD2"
-   ]
+   ],
+   "ja": "魔界戦記ディスガイア D2"
   },
   "disney": {
    "en": "disney",
@@ -19912,7 +20070,8 @@
     "迪士尼",
     "ディズニー・チャンネル",
     "The_Walt_Disney_Company"
-   ]
+   ],
+   "ja": "ディズニー"
   },
   "dissidia final fantasy": {
    "en": "dissidia final fantasy",
@@ -19923,7 +20082,8 @@
     "DDFF",
     "DFFNT",
     "DFFOO"
-   ]
+   ],
+   "ja": "ディシディア ファイナルファンタジー"
   },
   "do it yourself!!": {
    "en": "do it yourself!!",
@@ -19934,7 +20094,8 @@
     "Do_It_Yourself!!",
     "どぅーいっとゆあせるふ",
     "どぅー・いっと・ゆあせるふ!!"
-   ]
+   ],
+   "ja": "Do It Yourself!!"
   },
   "dog days": {
    "en": "dog days",
@@ -19942,7 +20103,8 @@
     "DOGDAYS",
     "ドッグデイズ",
     "dogdays"
-   ]
+   ],
+   "ja": "DOG DAYS"
   },
   "doki doki literature club": {
    "en": "doki doki literature club",
@@ -19957,7 +20119,8 @@
     "두근두근문예부",
     "doki_doki_literature",
     "DDLCfanart"
-   ]
+   ],
+   "ja": "ドキドキ文芸部！"
   },
   "dokidoki! precure": {
    "en": "dokidoki! precure",
@@ -19966,14 +20129,16 @@
     "ドキドキプリキュア",
     "ドキプリ",
     "怒鬼怒鬼プリキュア"
-   ]
+   ],
+   "ja": "ドキドキ!プリキュア"
   },
   "dolls in pseudo paradise": {
    "en": "dolls in pseudo paradise",
    "aliases": [
     "蓬莱人形",
     "DollsinPseudoParadise"
-   ]
+   ],
+   "ja": "蓬莱人形"
   },
   "dolphin wave": {
    "en": "dolphin wave",
@@ -19981,7 +20146,8 @@
     "ドルフィンウェーブ",
     "ドルウェブ",
     "ズリフィンウェーブ"
-   ]
+   ],
+   "ja": "ドルフィンウェーブ"
   },
   "donkey kong (series)": {
    "en": "donkey kong (series)",
@@ -19991,26 +20157,32 @@
     "ドンキーコング初代シリーズ",
     "スーパードンキーコングシリーズ",
     "DonkeyKong"
-   ]
+   ],
+   "ja": "ドンキーコング"
   },
   "donkey kong country": {
-   "en": "donkey kong country"
+   "en": "donkey kong country",
+   "ja": "スーパードンキーコング"
   },
   "doom (series)": {
-   "en": "doom (series)"
+   "en": "doom (series)",
+   "ja": "DOOM"
   },
   "doom eternal": {
-   "en": "doom eternal"
+   "en": "doom eternal",
+   "ja": "DOOM Eternal"
   },
   "dorei to no seikatsu ~teaching feeling~": {
    "en": "dorei to no seikatsu ~teaching feeling~",
    "aliases": [
     "奴隷との生活",
     "TeachingFeeling"
-   ]
+   ],
+   "ja": "奴隷との生活"
   },
   "doukutsu monogatari": {
-   "en": "doukutsu monogatari"
+   "en": "doukutsu monogatari",
+   "ja": "洞窟物語"
   },
   "douluo dalu": {
    "en": "douluo dalu",
@@ -20029,7 +20201,8 @@
     "Drスランプアラレちゃん",
     "Dr.Slump",
     "DrSlump"
-   ]
+   ],
+   "ja": "Dr.スランプ"
   },
   "dracu-riot!": {
    "en": "dracu-riot!",
@@ -20037,14 +20210,16 @@
     "DRACU-RIOT!",
     "ドラクリオット",
     "ドラクリ"
-   ]
+   ],
+   "ja": "DRACU-RIOT!"
   },
   "drag-on dragoon": {
    "en": "drag-on dragoon",
    "aliases": [
     "ドラッグオンドラグーン",
     "DOD"
-   ]
+   ],
+   "ja": "ドラッグ オン ドラグーン"
   },
   "drag-on dragoon 3": {
    "en": "drag-on dragoon 3",
@@ -20053,13 +20228,15 @@
     "ドラッグオンドラグーン3",
     "ドラグーン3",
     "Drakengard3"
-   ]
+   ],
+   "ja": "ドラッグ オン ドラグーン3"
   },
   "dragon's crown": {
    "en": "dragon's crown",
    "aliases": [
     "ドラゴンズクラウン"
-   ]
+   ],
+   "ja": "ドラゴンズクラウン"
   },
   "dragon ball": {
    "en": "dragon ball",
@@ -20075,7 +20252,8 @@
     "dragonballfanart",
     "DB腐",
     "龙珠"
-   ]
+   ],
+   "ja": "ドラゴンボール"
   },
   "dragon ball (classic)": {
    "en": "dragon ball (classic)",
@@ -20088,7 +20266,8 @@
     "魔神城のねむり姫",
     "摩訶不思議大冒険",
     "最強への道"
-   ]
+   ],
+   "ja": "ドラゴンボール"
   },
   "dragon ball fighterz": {
    "en": "dragon ball fighterz",
@@ -20096,7 +20275,8 @@
     "ドラゴンボールファイターズ",
     "dragonballfighterz",
     "dbfz"
-   ]
+   ],
+   "ja": "ドラゴンボール ファイターズ"
   },
   "dragon ball gt": {
    "en": "dragon ball gt",
@@ -20104,13 +20284,16 @@
     "ドラゴンボールGT",
     "dbgt",
     "dragonballgt"
-   ]
+   ],
+   "ja": "ドラゴンボールGT"
   },
   "dragon ball heroes": {
-   "en": "dragon ball heroes"
+   "en": "dragon ball heroes",
+   "ja": "ドラゴンボールヒーローズ"
   },
   "dragon ball minus": {
-   "en": "dragon ball minus"
+   "en": "dragon ball minus",
+   "ja": "ドラゴンボール"
   },
   "dragon ball super": {
    "en": "dragon ball super",
@@ -20119,10 +20302,12 @@
     "dragonballsuper",
     "DBS",
     "龍珠超"
-   ]
+   ],
+   "ja": "ドラゴンボール超"
   },
   "dragon ball super broly": {
-   "en": "dragon ball super broly"
+   "en": "dragon ball super broly",
+   "ja": "ドラゴンボール超 ブロリー"
   },
   "dragon ball super super hero": {
    "en": "dragon ball super super hero",
@@ -20134,7 +20319,8 @@
     "どらさばスパヒロ祭り",
     "dragonballsupersuperhero",
     "dbssuperhero"
-   ]
+   ],
+   "ja": "ドラゴンボール超 スーパーヒーロー"
   },
   "dragon ball z": {
    "en": "dragon ball z",
@@ -20156,7 +20342,8 @@
     "復活のフュージョン!!悟空とベジータ",
     "龍拳爆発!!悟空がやらねば誰がやる",
     "龙珠Z"
-   ]
+   ],
+   "ja": "ドラゴンボールZ"
   },
   "dragon quest": {
    "en": "dragon quest",
@@ -20167,7 +20354,8 @@
     "DRAGONQUEST",
     "勇者鬥惡龍",
     "勇者斗恶龙"
-   ]
+   ],
+   "ja": "ドラゴンクエスト"
   },
   "dragon quest ii": {
    "en": "dragon quest ii",
@@ -20175,7 +20363,8 @@
     "ドラゴンクエスト2",
     "ドラクエ2",
     "DQ2"
-   ]
+   ],
+   "ja": "ドラゴンクエストII 悪霊の神々"
   },
   "dragon quest iii": {
    "en": "dragon quest iii",
@@ -20184,7 +20373,8 @@
     "ドラクエ3",
     "DQ3",
     "ドラゴンクエストIII"
-   ]
+   ],
+   "ja": "ドラゴンクエストIII そして伝説へ…"
   },
   "dragon quest iv": {
    "en": "dragon quest iv",
@@ -20192,7 +20382,8 @@
     "ドラゴンクエスト4",
     "ドラクエ4",
     "DQ4"
-   ]
+   ],
+   "ja": "ドラゴンクエストIV 導かれし者たち"
   },
   "dragon quest v": {
    "en": "dragon quest v",
@@ -20200,7 +20391,8 @@
     "ドラゴンクエスト5",
     "ドラクエ5",
     "DQ5"
-   ]
+   ],
+   "ja": "ドラゴンクエストV 天空の花嫁"
   },
   "dragon quest viii": {
    "en": "dragon quest viii",
@@ -20208,14 +20400,16 @@
     "ドラゴンクエスト8",
     "ドラクエ8",
     "DQ8"
-   ]
+   ],
+   "ja": "ドラゴンクエストVIII 空と海と大地と呪われし姫君"
   },
   "dragon quest xi": {
    "en": "dragon quest xi",
    "aliases": [
     "ドラクエ11",
     "DQ11"
-   ]
+   ],
+   "ja": "ドラゴンクエストXI 過ぎ去りし時を求めて"
   },
   "dungeon and fighter": {
    "en": "dungeon and fighter",
@@ -20226,7 +20420,8 @@
     "던전앤파이터",
     "던파",
     "地下城与勇士"
-   ]
+   ],
+   "ja": "アラド戦記"
   },
   "dungeon meshi": {
    "en": "dungeon meshi",
@@ -20238,7 +20433,8 @@
     "DeliciousinDungeon",
     "dunmeshi",
     "ダン飯【腐】"
-   ]
+   ],
+   "ja": "ダンジョン飯"
   },
   "dungeon ni deai wo motomeru no wa machigatteiru darou ka": {
    "en": "dungeon ni deai wo motomeru no wa machigatteiru darou ka",
@@ -20250,7 +20446,8 @@
     "期待在地下城邂逅有错吗",
     "在地下城寻求邂逅是否搞错了什么",
     "dungeonnideaiwomotomerunowamachigatteirudarouka"
-   ]
+   ],
+   "ja": "ダンジョンに出会いを求めるのは間違っているだろうか"
   },
   "durarara!!": {
    "en": "durarara!!",
@@ -20258,7 +20455,8 @@
     "デュラララ!!",
     "DRRR!!",
     "无头骑士异闻录"
-   ]
+   ],
+   "ja": "デュラララ!!"
   },
   "eiyuu densetsu": {
    "en": "eiyuu densetsu",
@@ -20267,7 +20465,8 @@
     "英雄傳說",
     "英雄传说",
     "영웅전설"
-   ]
+   ],
+   "ja": "英雄伝説"
   },
   "eizouken ni wa te wo dasu na!": {
    "en": "eizouken ni wa te wo dasu na!",
@@ -20276,7 +20475,8 @@
     "映像研には手を出すな",
     "keep_your_hands_off_eizouken",
     "映像研"
-   ]
+   ],
+   "ja": "映像研には手を出すな！"
   },
   "elden ring": {
    "en": "elden ring",
@@ -20288,13 +20488,15 @@
     "ELDENRING",
     "EldenRingFanart",
     "老头环"
-   ]
+   ],
+   "ja": "Elden Ring"
   },
   "elden ring: shadow of the erdtree": {
    "en": "elden ring: shadow of the erdtree",
    "aliases": [
     "黄金樹の影"
-   ]
+   ],
+   "ja": "Elden Ring"
   },
   "elsword": {
    "en": "elsword",
@@ -20307,7 +20509,8 @@
     "艾尔之光",
     "elsword_FA",
     "엘소드_오케스트라합작"
-   ]
+   ],
+   "ja": "エルソード"
   },
   "en'en no shouboutai": {
    "en": "en'en no shouboutai",
@@ -20316,7 +20519,8 @@
     "炎炎の消防隊",
     "炎炎消防队",
     "fireforce"
-   ]
+   ],
+   "ja": "炎炎ノ消防隊"
   },
   "ensemble stars!": {
    "en": "ensemble stars!",
@@ -20345,7 +20549,8 @@
     "앙상블스타즈",
     "es2",
     "ES"
-   ]
+   ],
+   "ja": "あんさんぶるスターズ！"
   },
   "eromanga sensei": {
    "en": "eromanga sensei",
@@ -20353,27 +20558,31 @@
     "エロマンガ先生",
     "エロマンガ先生妹と開かずの間",
     "埃罗芒阿老师"
-   ]
+   ],
+   "ja": "エロマンガ先生"
   },
   "eureka seven": {
    "en": "eureka seven",
    "aliases": [
     "交響詩篇エウレカセブン",
     "エウレカセブン"
-   ]
+   ],
+   "ja": "交響詩篇エウレカセブン"
   },
   "eureka seven (series)": {
    "en": "eureka seven (series)",
    "aliases": [
     "エウレカセブン"
-   ]
+   ],
+   "ja": "エウレカセブン"
   },
   "evangelion: 2.0 you can (not) advance": {
    "en": "evangelion: 2.0 you can (not) advance",
    "aliases": [
     "ヱヴァンゲリヲン新劇場版:破",
     "evangelion_shin_gekijouban:_ha"
-   ]
+   ],
+   "ja": "ヱヴァンゲリヲン新劇場版：破"
   },
   "evillious nendaiki": {
    "en": "evillious nendaiki",
@@ -20386,14 +20595,16 @@
     "悪ノ創作",
     "悪ノシリーズ",
     "七つの大罪シリーズ"
-   ]
+   ],
+   "ja": "エヴィリオス"
   },
   "f-zero": {
    "en": "f-zero",
    "aliases": [
     "F-ZERO",
     "エフゼロ"
-   ]
+   ],
+   "ja": "F-ZERO"
   },
   "fairy tail": {
    "en": "fairy tail",
@@ -20403,7 +20614,8 @@
     "FairyTail",
     "妖精的尾巴",
     "魔導少年"
-   ]
+   ],
+   "ja": "FAIRY TAIL"
   },
   "fatal fury": {
    "en": "fatal fury",
@@ -20411,7 +20623,8 @@
     "饿狼传说",
     "餓狼伝説",
     "FatalFury"
-   ]
+   ],
+   "ja": "餓狼伝説"
   },
   "fate/apocrypha": {
    "en": "fate/apocrypha",
@@ -20420,27 +20633,31 @@
     "FateApocrypha",
     "アポクリファ",
     "FateAPO"
-   ]
+   ],
+   "ja": "Fate/Apocrypha"
   },
   "fate/extella": {
    "en": "fate/extella",
    "aliases": [
     "Fate/EXTELLA",
     "フェイト/エクステラ"
-   ]
+   ],
+   "ja": "Fate/EXTELLA"
   },
   "fate/extra": {
    "en": "fate/extra",
    "aliases": [
     "Fate/EXTRA",
     "セイバー(Fate/EXTRA)"
-   ]
+   ],
+   "ja": "Fate/EXTRA"
   },
   "fate/extra ccc": {
    "en": "fate/extra ccc",
    "aliases": [
     "Fate/EXTRA-CCC"
-   ]
+   ],
+   "ja": "Fate/EXTRA CCC"
   },
   "fate/grand order": {
    "en": "fate/grand order",
@@ -20458,14 +20675,16 @@
     "Fateグランドオーダー",
     "フェイト/グランドオーダー",
     "命运/冠位指定"
-   ]
+   ],
+   "ja": "Fate/Grand Order"
   },
   "fate/grand order arcade": {
    "en": "fate/grand order arcade",
    "aliases": [
     "FGOAC",
     "Fate/GrandOrderArcade"
-   ]
+   ],
+   "ja": "Fate/Grand Order Arcade"
   },
   "fate/hollow ataraxia": {
    "en": "fate/hollow ataraxia",
@@ -20474,7 +20693,8 @@
     "Fate/HollowAtaraxia",
     "フェイト/ホロウアタラクシア",
     "hollow_ataraxia"
-   ]
+   ],
+   "ja": "Fate/hollow ataraxia"
   },
   "fate/kaleid liner prisma illya": {
    "en": "fate/kaleid liner prisma illya",
@@ -20483,25 +20703,29 @@
     "Fate/kaleidlinerプリズマ☆イリヤ",
     "PrismaIllya",
     "イリヤスフィール(プリズマ☆イリヤ)"
-   ]
+   ],
+   "ja": "Fate/kaleid liner プリズマ☆イリヤ"
   },
   "fate/prototype": {
    "en": "fate/prototype",
    "aliases": [
     "Fate/Prototype"
-   ]
+   ],
+   "ja": "Fate/Prototype"
   },
   "fate/prototype: fragments of blue and silver": {
    "en": "fate/prototype: fragments of blue and silver",
    "aliases": [
     "Fate/Prototype蒼銀のフラグメンツ"
-   ]
+   ],
+   "ja": "Fate/Prototype 蒼銀のフラグメンツ"
   },
   "fate/requiem": {
    "en": "fate/requiem",
    "aliases": [
     "Fate/Requiem"
-   ]
+   ],
+   "ja": "Fate/Requiem"
   },
   "fate/samurai remnant": {
    "en": "fate/samurai remnant",
@@ -20512,7 +20736,8 @@
     "サムレム",
     "FSR",
     "FateSR_Art"
-   ]
+   ],
+   "ja": "Fate/Samurai Remnant"
   },
   "fate/stay night": {
    "en": "fate/stay night",
@@ -20520,7 +20745,8 @@
     "Fate/staynight",
     "フェイト/ステイナイト",
     "FateStayNight"
-   ]
+   ],
+   "ja": "Fate/stay night"
   },
   "fate/strange fake": {
    "en": "fate/strange fake",
@@ -20530,19 +20756,22 @@
     "ストレンジフェイク",
     "strangefake",
     "FSF"
-   ]
+   ],
+   "ja": "Fate/strange Fake"
   },
   "fate/unlimited codes": {
    "en": "fate/unlimited codes",
    "aliases": [
     "Fate/unlimitedcodes"
-   ]
+   ],
+   "ja": "Fate/unlimited codes"
   },
   "fate/zero": {
    "en": "fate/zero",
    "aliases": [
     "Fate/Zero"
-   ]
+   ],
+   "ja": "Fate/Zero"
   },
   "fate (series)": {
    "en": "fate (series)",
@@ -20550,14 +20779,16 @@
     "Fate",
     "Fateシリーズ",
     "フェイト"
-   ]
+   ],
+   "ja": "Fate"
   },
   "fear & hunger 2: termina": {
    "en": "fear & hunger 2: termina",
    "aliases": [
     "fearandhunger2",
     "fearandhungertermina"
-   ]
+   ],
+   "ja": "Fear & Hunger 2: Termina"
   },
   "final fantasy": {
    "en": "final fantasy",
@@ -20566,7 +20797,8 @@
     "FF",
     "最终幻想",
     "파이널판타지"
-   ]
+   ],
+   "ja": "ファイナルファンタジー"
   },
   "final fantasy ii": {
    "en": "final fantasy ii",
@@ -20574,7 +20806,8 @@
     "ファイナルファンタジーII",
     "ファイナルファンタジー2",
     "ff2"
-   ]
+   ],
+   "ja": "ファイナルファンタジーII"
   },
   "final fantasy iv": {
    "en": "final fantasy iv",
@@ -20583,7 +20816,8 @@
     "ファイナルファンタジー4",
     "FFIV",
     "FF4"
-   ]
+   ],
+   "ja": "ファイナルファンタジーIV"
   },
   "final fantasy ix": {
    "en": "final fantasy ix",
@@ -20592,7 +20826,8 @@
     "ファイナルファンタジー9",
     "FFIX",
     "FF9"
-   ]
+   ],
+   "ja": "ファイナルファンタジーIX"
   },
   "final fantasy tactics": {
    "en": "final fantasy tactics",
@@ -20600,7 +20835,8 @@
     "FFT",
     "ファイナルファンタジータクティクス",
     "fft"
-   ]
+   ],
+   "ja": "ファイナルファンタジータクティクス"
   },
   "final fantasy v": {
    "en": "final fantasy v",
@@ -20609,7 +20845,8 @@
     "ファイナルファンタジー5",
     "FF5",
     "ff5"
-   ]
+   ],
+   "ja": "ファイナルファンタジーV"
   },
   "final fantasy vi": {
    "en": "final fantasy vi",
@@ -20617,7 +20854,8 @@
     "ファイナルファンタジーvi",
     "ファイナルファンタジー6",
     "ff6"
-   ]
+   ],
+   "ja": "ファイナルファンタジーVI"
   },
   "final fantasy vii": {
    "en": "final fantasy vii",
@@ -20628,7 +20866,8 @@
     "ファイナルファンタジーVII",
     "finalfantasy7",
     "finalfantasyvii"
-   ]
+   ],
+   "ja": "ファイナルファンタジーVII"
   },
   "final fantasy vii rebirth": {
    "en": "final fantasy vii rebirth",
@@ -20641,7 +20880,8 @@
     "finalfantasyviirebirth",
     "ファイナルファンタジー7リバース",
     "ファイナルファンタジーVIIリバース"
-   ]
+   ],
+   "ja": "ファイナルファンタジーVII"
   },
   "final fantasy vii remake": {
    "en": "final fantasy vii remake",
@@ -20656,7 +20896,8 @@
     "ファイナルファンタジーVIIリメイク",
     "FF7リメイク",
     "FFVIIリメイク"
-   ]
+   ],
+   "ja": "ファイナルファンタジーVII"
   },
   "final fantasy viii": {
    "en": "final fantasy viii",
@@ -20664,7 +20905,8 @@
     "ファイナルファンタジーVIII",
     "ファイナルファンタジー8",
     "FF8"
-   ]
+   ],
+   "ja": "ファイナルファンタジーVIII"
   },
   "final fantasy x": {
    "en": "final fantasy x",
@@ -20673,7 +20915,8 @@
     "ファイナルファンタジー10",
     "FFX",
     "FF10"
-   ]
+   ],
+   "ja": "ファイナルファンタジーX"
   },
   "final fantasy x-2": {
    "en": "final fantasy x-2",
@@ -20683,7 +20926,8 @@
     "ファイナルファンタジー10-2",
     "FF10-2",
     "FFX-2"
-   ]
+   ],
+   "ja": "ファイナルファンタジーX"
   },
   "final fantasy xi": {
    "en": "final fantasy xi",
@@ -20692,7 +20936,8 @@
     "ファイナルファンタジー11",
     "ff11",
     "FFXI"
-   ]
+   ],
+   "ja": "ファイナルファンタジーXI"
   },
   "final fantasy xii": {
    "en": "final fantasy xii",
@@ -20700,7 +20945,8 @@
     "ファイナルファンタジーxii",
     "ファイナルファンタジー12",
     "ff12"
-   ]
+   ],
+   "ja": "ファイナルファンタジーXII"
   },
   "final fantasy xiv": {
    "en": "final fantasy xiv",
@@ -20714,7 +20960,8 @@
     "FF14art",
     "FF14イラスト",
     "FinalFantasy14"
-   ]
+   ],
+   "ja": "ファイナルファンタジー"
   },
   "final fantasy xvi": {
    "en": "final fantasy xvi",
@@ -20725,13 +20972,15 @@
     "ファイナルファンタジーXVI",
     "finalfantasyxvi",
     "finalfantasy16"
-   ]
+   ],
+   "ja": "ファイナルファンタジーXVI"
   },
   "final fight": {
    "en": "final fight",
    "aliases": [
     "ファイナルファイト"
-   ]
+   ],
+   "ja": "ファイナルファイト"
   },
   "fire emblem": {
    "en": "fire emblem",
@@ -20746,20 +20995,23 @@
     "火焰纹章",
     "火焰之纹章",
     "파이어엠블렘"
-   ]
+   ],
+   "ja": "ファイアーエムブレム"
   },
   "fire emblem: genealogy of the holy war": {
    "en": "fire emblem: genealogy of the holy war",
    "aliases": [
     "聖戦の系譜"
-   ]
+   ],
+   "ja": "ファイアーエムブレム 聖戦の系譜"
   },
   "fire emblem: mystery of the emblem": {
    "en": "fire emblem: mystery of the emblem",
    "aliases": [
     "紋章の謎",
     "ファイアーエムブレム紋章の謎"
-   ]
+   ],
+   "ja": "ファイアーエムブレム 紋章の謎"
   },
   "fire emblem: path of radiance": {
    "en": "fire emblem: path of radiance",
@@ -20767,33 +21019,38 @@
     "蒼炎の軌跡",
     "FE9",
     "PoR"
-   ]
+   ],
+   "ja": "ファイアーエムブレム 蒼炎の軌跡"
   },
   "fire emblem: radiant dawn": {
    "en": "fire emblem: radiant dawn",
    "aliases": [
     "暁の女神",
     "FE10"
-   ]
+   ],
+   "ja": "ファイアーエムブレム 暁の女神"
   },
   "fire emblem: the binding blade": {
    "en": "fire emblem: the binding blade",
    "aliases": [
     "封印の剣"
-   ]
+   ],
+   "ja": "ファイアーエムブレム 封印の剣"
   },
   "fire emblem: the blazing blade": {
    "en": "fire emblem: the blazing blade",
    "aliases": [
     "ファイアーエムブレム烈火の剣",
     "烈火の剣"
-   ]
+   ],
+   "ja": "ファイアーエムブレム 烈火の剣"
   },
   "fire emblem: the sacred stones": {
    "en": "fire emblem: the sacred stones",
    "aliases": [
     "聖魔の光石"
-   ]
+   ],
+   "ja": "ファイアーエムブレム 聖魔の光石"
   },
   "fire emblem: three houses": {
    "en": "fire emblem: three houses",
@@ -20805,7 +21062,8 @@
     "fireemblemthreehouses",
     "火焰纹章风花雪月",
     "fe风花雪月"
-   ]
+   ],
+   "ja": "ファイアーエムブレム 風花雪月"
   },
   "fire emblem awakening": {
    "en": "fire emblem awakening",
@@ -20813,7 +21071,8 @@
     "FireEmblemAwakening",
     "ファイアーエムブレム覚醒",
     "FE覚醒"
-   ]
+   ],
+   "ja": "ファイアーエムブレム 覚醒"
   },
   "fire emblem echoes: shadows of valentia": {
    "en": "fire emblem echoes: shadows of valentia",
@@ -20821,7 +21080,8 @@
     "ファイアーエムブレムEchoesもうひとりの英雄王",
     "ファイアーエムブレムEchoes",
     "FEechoes"
-   ]
+   ],
+   "ja": "ファイアーエムブレム Echoes もうひとりの英雄王"
   },
   "fire emblem engage": {
    "en": "fire emblem engage",
@@ -20831,14 +21091,16 @@
     "FireEmblemEngage",
     "火焰纹章engage",
     "エンゲージ"
-   ]
+   ],
+   "ja": "ファイアーエムブレム"
   },
   "fire emblem fates": {
    "en": "fire emblem fates",
    "aliases": [
     "ファイアーエムブレムif",
     "FEif"
-   ]
+   ],
+   "ja": "ファイアーエムブレムif"
   },
   "fire emblem heroes": {
    "en": "fire emblem heroes",
@@ -20850,13 +21112,15 @@
     "FireEmblemHeroes",
     "描けば出るFEH",
     "神装英雄"
-   ]
+   ],
+   "ja": "ファイアーエムブレム"
   },
   "flcl": {
    "en": "flcl",
    "aliases": [
     "フリクリ"
-   ]
+   ],
+   "ja": "フリクリ"
   },
   "flip flappers": {
    "en": "flip flappers",
@@ -20864,14 +21128,16 @@
     "フリップフラッパーズ",
     "轻拍翻转小魔女",
     "輕拍翻轉小魔女"
-   ]
+   ],
+   "ja": "フリップフラッパーズ"
   },
   "forbidden scrollery": {
    "en": "forbidden scrollery",
    "aliases": [
     "東方鈴奈庵",
     "鈴奈庵"
-   ]
+   ],
+   "ja": "東方鈴奈庵"
   },
   "foster's home for imaginary friends": {
    "en": "foster's home for imaginary friends",
@@ -20881,7 +21147,8 @@
     "FHFIF",
     "fhfif",
     "fostershomeforimaginaryfriends"
-   ]
+   ],
+   "ja": "フォスターズ・ホーム"
   },
   "free!": {
    "en": "free!",
@@ -20889,7 +21156,8 @@
     "Free!",
     "腐ree!",
     "Free!プラス"
-   ]
+   ],
+   "ja": "Free!"
   },
   "fresh precure!": {
    "en": "fresh precure!",
@@ -20897,10 +21165,12 @@
     "フレッシュプリキュア",
     "フレッシュプリキュア!",
     "フレプリ"
-   ]
+   ],
+   "ja": "フレッシュプリキュア！"
   },
   "friday the 13th": {
-   "en": "friday the 13th"
+   "en": "friday the 13th",
+   "ja": "13日の金曜日"
   },
   "frozen (disney)": {
    "en": "frozen (disney)",
@@ -20909,7 +21179,8 @@
     "frozen",
     "冰雪奇缘",
     "冰雪奇緣"
-   ]
+   ],
+   "ja": "アナと雪の女王"
   },
   "full metal panic!": {
    "en": "full metal panic!",
@@ -20922,7 +21193,8 @@
     "FMP!IV",
     "フルメタル・パニック?ふもっふ",
     "ふもっふ"
-   ]
+   ],
+   "ja": "フルメタル・パニック！"
   },
   "fullmetal alchemist": {
    "en": "fullmetal alchemist",
@@ -20931,19 +21203,22 @@
     "钢之炼金术师",
     "FA腐",
     "ハガレン"
-   ]
+   ],
+   "ja": "鋼の錬金術師"
   },
   "fushigi no umi no nadia": {
    "en": "fushigi no umi no nadia",
    "aliases": [
     "ふしぎの海のナディア"
-   ]
+   ],
+   "ja": "ふしぎの海のナディア"
   },
   "futari wa precure": {
    "en": "futari wa precure",
    "aliases": [
     "ふたりはプリキュア"
-   ]
+   ],
+   "ja": "ふたりはプリキュア"
   },
   "futari wa precure max heart": {
    "en": "futari wa precure max heart",
@@ -20951,7 +21226,8 @@
     "ふたりはプリキュアMaxHeart",
     "ふたりはプリキュアmaxheart",
     "ふたりはプリキュアMH"
-   ]
+   ],
+   "ja": "ふたりはプリキュア Max Heart"
   },
   "futari wa precure splash star": {
    "en": "futari wa precure splash star",
@@ -20962,7 +21238,8 @@
     "ふたりはプリキュアS☆S",
     "ふたりはプリキュアスプラッシュスター",
     "スプラッシュスター"
-   ]
+   ],
+   "ja": "ふたりはプリキュア Splash☆Star"
   },
   "fuwa fuwa cinnamoroll": {
    "en": "fuwa fuwa cinnamoroll",
@@ -20977,19 +21254,22 @@
     "肉桂狗",
     "玉桂狗",
     "大耳狗"
-   ]
+   ],
+   "ja": "ふわふわ♥シナモン"
   },
   "ga-rei": {
    "en": "ga-rei",
    "aliases": [
     "喰霊"
-   ]
+   ],
+   "ja": "喰霊"
   },
   "ga-rei zero": {
    "en": "ga-rei zero",
    "aliases": [
     "喰霊-零-"
-   ]
+   ],
+   "ja": "喰霊-零-"
   },
   "gabriel dropout": {
    "en": "gabriel dropout",
@@ -21000,7 +21280,8 @@
     "ガヴリールドロップアート",
     "珈百璃的堕落",
     "廢天使加百列"
-   ]
+   ],
+   "ja": "ガヴリールドロップアウト"
   },
   "gakkou gurashi!": {
    "en": "gakkou gurashi!",
@@ -21010,7 +21291,8 @@
     "学园孤岛",
     "School-Live!",
     "がっこうぐらし"
-   ]
+   ],
+   "ja": "がっこうぐらし！"
   },
   "gakuen idolmaster": {
    "en": "gakuen idolmaster",
@@ -21020,26 +21302,30 @@
     "学园偶像大师",
     "学マスFA",
     "gakumas"
-   ]
+   ],
+   "ja": "学園アイドルマスター"
   },
   "galaga": {
    "en": "galaga",
    "aliases": [
     "ギャラガ"
-   ]
+   ],
+   "ja": "ギャラガ"
   },
   "galaxy angel": {
    "en": "galaxy angel",
    "aliases": [
     "ギャラクシーエンジェル",
     "ga"
-   ]
+   ],
+   "ja": "ギャラクシーエンジェル"
   },
   "ganbare douki-chan": {
    "en": "ganbare douki-chan",
    "aliases": [
     "がんばれ同期ちゃん"
-   ]
+   ],
+   "ja": "がんばれ同期ちゃん"
   },
   "garou: mark of the wolves": {
    "en": "garou: mark of the wolves",
@@ -21048,14 +21334,16 @@
     "餓狼mow",
     "餓狼MARK_OF_THE_WOLVES",
     "mow"
-   ]
+   ],
+   "ja": "餓狼 MARK OF THE WOLVES"
   },
   "gate - jieitai ka no chi nite kaku tatakaeri": {
    "en": "gate - jieitai ka no chi nite kaku tatakaeri",
    "aliases": [
     "自衛隊彼の地にて、斯く戦えり",
     "GATE"
-   ]
+   ],
+   "ja": "GATE 自衛隊 彼の地にて、斯く戦えり"
   },
   "gegege no kitarou": {
    "en": "gegege no kitarou",
@@ -21068,20 +21356,24 @@
     "ゲ謎夢",
     "ggg夢",
     "ゲゲゲの夢"
-   ]
+   ],
+   "ja": "ゲゲゲの鬼太郎"
   },
   "gekijouban hibike! euphonium": {
-   "en": "gekijouban hibike! euphonium"
+   "en": "gekijouban hibike! euphonium",
+   "ja": "劇場版 響け！ユーフォニアム"
   },
   "gekitotsu! joshikousei oiroke sensha gundan": {
-   "en": "gekitotsu! joshikousei oiroke sensha gundan"
+   "en": "gekitotsu! joshikousei oiroke sensha gundan",
+   "ja": "激突！女子高生お色気戦車軍団"
   },
   "gekkan shoujo nozaki-kun": {
    "en": "gekkan shoujo nozaki-kun",
    "aliases": [
     "月刊少女野崎くん",
     "노자키군"
-   ]
+   ],
+   "ja": "月刊少女野崎くん"
   },
   "genshin impact": {
    "en": "genshin impact",
@@ -21105,7 +21397,8 @@
     "原神BL",
     "NodKrai",
     "原神oc"
-   ]
+   ],
+   "ja": "原神"
   },
   "ghost in the shell": {
    "en": "ghost in the shell",
@@ -21114,10 +21407,12 @@
     "攻殼機動隊",
     "GHOST_IN_THE_SHELL/攻殻機動隊",
     "GhostintheShell"
-   ]
+   ],
+   "ja": "攻殻機動隊"
   },
   "ghost in the shell stand alone complex": {
-   "en": "ghost in the shell stand alone complex"
+   "en": "ghost in the shell stand alone complex",
+   "ja": "攻殻機動隊 STAND ALONE COMPLEX"
   },
   "gintama": {
    "en": "gintama",
@@ -21131,7 +21426,8 @@
     "gntmプラス",
     "gntmマイナス",
     "gntm夢"
-   ]
+   ],
+   "ja": "銀魂"
   },
   "girls' frontline": {
    "en": "girls' frontline",
@@ -21151,7 +21447,8 @@
     "DollsFrontline",
     "銃を持った戦術人形",
     "戦術人形"
-   ]
+   ],
+   "ja": "ドールズフロントライン"
   },
   "girls' frontline 2: exilium": {
    "en": "girls' frontline 2: exilium",
@@ -21209,7 +21506,8 @@
     "ドルフロ21周年",
     "ドルフロ2_2周年",
     "ドルフロ22周年"
-   ]
+   ],
+   "ja": "ドールズフロントライン2：エクシリウム"
   },
   "girls' frontline neural cloud": {
    "en": "girls' frontline neural cloud",
@@ -21222,7 +21520,8 @@
     "NeuralCloud",
     "NeuralCloudArt",
     "GFLNC"
-   ]
+   ],
+   "ja": "ドールズフロントライン:ニューラルクラウド"
   },
   "girls band cry": {
    "en": "girls band cry",
@@ -21234,7 +21533,8 @@
     "哭泣少女乐队",
     "gbc",
     "ガルクラお絵描き60分一本勝負"
-   ]
+   ],
+   "ja": "ガールズバンドクライ"
   },
   "girls und panzer": {
    "en": "girls und panzer",
@@ -21258,13 +21558,15 @@
     "ガールズ&パンツ",
     "ガールズ&モーター",
     "バニーさんチーム"
-   ]
+   ],
+   "ja": "ガールズ＆パンツァー"
   },
   "gj-bu": {
    "en": "gj-bu",
    "aliases": [
     "GJ部"
-   ]
+   ],
+   "ja": "GJ部"
   },
   "go! princess precure": {
    "en": "go! princess precure",
@@ -21277,7 +21579,8 @@
     "ゴープリ",
     "公主光之美少女",
     "Goprincess光之美少女"
-   ]
+   ],
+   "ja": "Go!プリンセスプリキュア"
   },
   "go-toubun no hanayome": {
    "en": "go-toubun no hanayome",
@@ -21289,7 +21592,8 @@
     "the_quintessential_quintuplets",
     "五等分的新娘",
     "5Toubun"
-   ]
+   ],
+   "ja": "五等分の花嫁"
   },
   "goblin slayer!": {
    "en": "goblin slayer!",
@@ -21297,7 +21601,8 @@
     "ゴブリンスレイヤー",
     "ゴブスレ",
     "哥布林杀手(漫画)"
-   ]
+   ],
+   "ja": "ゴブリンスレイヤー！"
   },
   "gochuumon wa usagi desu ka?": {
    "en": "gochuumon wa usagi desu ka?",
@@ -21309,30 +21614,35 @@
     "ご注文はうさぎですか",
     "ごちうさ",
     "gochiusa"
-   ]
+   ],
+   "ja": "ご注文はうさぎですか？"
   },
   "god eater": {
    "en": "god eater",
    "aliases": [
     "ゴッドイーター",
     "噬神者"
-   ]
+   ],
+   "ja": "GOD EATER"
   },
   "god eater 2: rage burst": {
    "en": "god eater 2: rage burst",
    "aliases": [
     "ゴッドイーター2",
     "GE2RB"
-   ]
+   ],
+   "ja": "GOD EATER 2 RAGE BURST"
   },
   "god eater burst": {
    "en": "god eater burst",
    "aliases": [
     "ゴッドイーターバースト"
-   ]
+   ],
+   "ja": "GOD EATER BURST"
   },
   "god of war": {
-   "en": "god of war"
+   "en": "god of war",
+   "ja": "ゴッド・オブ・ウォー"
   },
   "goddess of victory: nikke": {
    "en": "goddess of victory: nikke",
@@ -21355,14 +21665,16 @@
     "니케스텔라블레이드콜라보",
     "NIKKExStellarBlade",
     "胜利女神新的希望"
-   ]
+   ],
+   "ja": "勝利の女神：NIKKE"
   },
   "godzilla (series)": {
    "en": "godzilla (series)",
    "aliases": [
     "ゴジラ怪獣",
     "ゴジラ"
-   ]
+   ],
+   "ja": "ゴジラ"
   },
   "golden kamuy": {
    "en": "golden kamuy",
@@ -21373,20 +21685,23 @@
     "金カ夢",
     "黄金神威",
     "골든카무이"
-   ]
+   ],
+   "ja": "ゴールデンカムイ"
   },
   "goodsmile company": {
    "en": "goodsmile company",
    "aliases": [
     "グッドスマイルカンパニー"
-   ]
+   ],
+   "ja": "グッドスマイルカンパニー"
   },
   "goodsmile racing": {
    "en": "goodsmile racing",
    "aliases": [
     "グッドスマイルレーシング",
     "fightgsr"
-   ]
+   ],
+   "ja": "グッドスマイルレーシング"
   },
   "gosick": {
    "en": "gosick",
@@ -21395,7 +21710,8 @@
     "gosick",
     "Gosick",
     "ゴシック"
-   ]
+   ],
+   "ja": "GOSICK"
   },
   "granblue fantasy": {
    "en": "granblue fantasy",
@@ -21405,32 +21721,38 @@
     "グラ腐ル",
     "GranblueFantasy",
     "碧蓝幻想"
-   ]
+   ],
+   "ja": "グランブルーファンタジー"
   },
   "grandia": {
    "en": "grandia",
    "aliases": [
     "グランディア"
-   ]
+   ],
+   "ja": "グランディア"
   },
   "grandia i": {
    "en": "grandia i",
    "aliases": [
     "グランディア"
-   ]
+   ],
+   "ja": "グランディア"
   },
   "gridman universe": {
    "en": "gridman universe",
    "aliases": [
     "GRIDMAN_UNIVERSE",
     "古立特宇宙"
-   ]
+   ],
+   "ja": "グリッドマン ユニバース"
   },
   "gridman universe (film)": {
-   "en": "gridman universe (film)"
+   "en": "gridman universe (film)",
+   "ja": "グリッドマン ユニバース"
   },
   "grimm's fairy tales": {
-   "en": "grimm's fairy tales"
+   "en": "grimm's fairy tales",
+   "ja": "グリム童話"
   },
   "guilty crown": {
    "en": "guilty crown",
@@ -21440,7 +21762,8 @@
     "罪恶王冠",
     "GuiltyCrown",
     "guiltycrown"
-   ]
+   ],
+   "ja": "ギルティクラウン"
   },
   "guilty gear": {
    "en": "guilty gear",
@@ -21450,7 +21773,8 @@
     "罪恶装备",
     "길티기어",
     "GuiltyGear"
-   ]
+   ],
+   "ja": "GUILTY GEAR"
   },
   "guilty gear strive": {
    "en": "guilty gear strive",
@@ -21460,14 +21784,16 @@
     "GGST",
     "罪恶装备st",
     "ギルティギアストライヴ"
-   ]
+   ],
+   "ja": "GUILTY GEAR -STRIVE-"
   },
   "guilty gear xrd": {
    "en": "guilty gear xrd",
    "aliases": [
     "GGXrd",
     "ギルティギアXrd"
-   ]
+   ],
+   "ja": "GUILTY GEAR Xrd"
   },
   "guilty gear xx": {
    "en": "guilty gear xx",
@@ -21477,7 +21803,8 @@
     "GGXX2",
     "GGXXR",
     "GGXXAC"
-   ]
+   ],
+   "ja": "GUILTY GEAR XX"
   },
   "gundam": {
    "en": "gundam",
@@ -21490,7 +21817,8 @@
     "一年戦争",
     "宇宙戦国時代",
     "ウマ娘ガンダムダービー"
-   ]
+   ],
+   "ja": "ガンダム"
   },
   "gundam 00": {
    "en": "gundam 00",
@@ -21498,33 +21826,39 @@
     "ガンダム00",
     "機動戦士ガンダム00",
     "ガンダムOO"
-   ]
+   ],
+   "ja": "機動戦士ガンダム00"
   },
   "gundam build divers": {
-   "en": "gundam build divers"
+   "en": "gundam build divers",
+   "ja": "ガンダムビルドダイバーズ"
   },
   "gundam build divers re:rise": {
-   "en": "gundam build divers re:rise"
+   "en": "gundam build divers re:rise",
+   "ja": "ガンダムビルドダイバーズRe:RISE"
   },
   "gundam build fighters": {
    "en": "gundam build fighters",
    "aliases": [
     "ガンダムビルドファイターズ",
     "ビルドファイターズ"
-   ]
+   ],
+   "ja": "ガンダムビルドファイターズ"
   },
   "gundam build fighters try": {
    "en": "gundam build fighters try",
    "aliases": [
     "ガンダムビルドファイターズトライ"
-   ]
+   ],
+   "ja": "ガンダムビルドファイターズトライ"
   },
   "gundam seed": {
    "en": "gundam seed",
    "aliases": [
     "ガンダムSEED",
     "機動戦士ガンダムSEED"
-   ]
+   ],
+   "ja": "機動戦士ガンダムSEED"
   },
   "gundam seed destiny": {
    "en": "gundam seed destiny",
@@ -21532,7 +21866,8 @@
     "機動戦士ガンダムSEEDDESTINY",
     "ガンダムSEEDDESTINY",
     "コーディネイター(ガンダムSEED)"
-   ]
+   ],
+   "ja": "機動戦士ガンダムSEED DESTINY"
   },
   "gundam seed freedom": {
    "en": "gundam seed freedom",
@@ -21541,7 +21876,8 @@
     "ガンダムSEEDFREEDOM",
     "SEEDFREEDOM",
     "劇場版SEED"
-   ]
+   ],
+   "ja": "機動戦士ガンダムSEED FREEDOM"
   },
   "gundam suisei no majo": {
    "en": "gundam suisei no majo",
@@ -21556,27 +21892,31 @@
     "水星の魔女最終回",
     "水星の腐女",
     "水星的魔女"
-   ]
+   ],
+   "ja": "機動戦士ガンダム 水星の魔女"
   },
   "gundam unicorn": {
    "en": "gundam unicorn",
    "aliases": [
     "ガンダムUC",
     "機動戦士ガンダムUC"
-   ]
+   ],
+   "ja": "機動戦士ガンダムUC"
   },
   "gundam wing": {
    "en": "gundam wing",
    "aliases": [
     "ガンダムW",
     "新機動戦記ガンダムW"
-   ]
+   ],
+   "ja": "新機動戦記ガンダムW"
   },
   "hacka doll": {
    "en": "hacka doll",
    "aliases": [
     "ハッカドール"
-   ]
+   ],
+   "ja": "ハッカドール"
   },
   "haikyuu!!": {
    "en": "haikyuu!!",
@@ -21592,30 +21932,35 @@
     "HQ",
     "819プラス",
     "HQプラス"
-   ]
+   ],
+   "ja": "ハイキュー!!"
   },
   "haiyore! nyaruko-san": {
    "en": "haiyore! nyaruko-san",
    "aliases": [
     "這いよれ!ニャル子さん"
-   ]
+   ],
+   "ja": "這いよれ！ニャル子さん"
   },
   "halo (series)": {
-   "en": "halo (series)"
+   "en": "halo (series)",
+   "ja": "Halo"
   },
   "hanasaku iroha": {
    "en": "hanasaku iroha",
    "aliases": [
     "花咲くいろは",
     "花开伊吕波"
-   ]
+   ],
+   "ja": "花咲くいろは"
   },
   "happiness!": {
    "en": "happiness!",
    "aliases": [
     "はぴねす!",
     "はぴねす!(ういんどみる)"
-   ]
+   ],
+   "ja": "はぴねす！"
   },
   "happinesscharge precure!": {
    "en": "happinesscharge precure!",
@@ -21628,7 +21973,8 @@
     "ハピプリ100users入り",
     "ハピプリ1000users入り",
     "HappinessCharge光之美少女"
-   ]
+   ],
+   "ja": "ハピネスチャージプリキュア！"
   },
   "harry potter (series)": {
    "en": "harry potter (series)",
@@ -21639,7 +21985,8 @@
     "ハリー・ポッター",
     "harry_potter",
     "hp"
-   ]
+   ],
+   "ja": "ハリー・ポッター"
   },
   "hataraku maou-sama!": {
    "en": "hataraku maou-sama!",
@@ -21647,7 +21994,8 @@
     "はたらく魔王さま!",
     "打工吧!魔王大人",
     "maousama"
-   ]
+   ],
+   "ja": "はたらく魔王さま！"
   },
   "hataraku saibou": {
    "en": "hataraku saibou",
@@ -21657,14 +22005,16 @@
     "工作细胞",
     "働く細胞",
     "破瓜らく細胞"
-   ]
+   ],
+   "ja": "はたらく細胞"
   },
   "hayate no gotoku!": {
    "en": "hayate no gotoku!",
    "aliases": [
     "ハヤテのごとく!",
     "ハヤテのごとく"
-   ]
+   ],
+   "ja": "ハヤテのごとく！"
   },
   "healin' good precure": {
    "en": "healin' good precure",
@@ -21673,7 +22023,8 @@
     "ヒーリングっど♡プリキュア",
     "ヒーリングっどプリキュア",
     "ヒープリ"
-   ]
+   ],
+   "ja": "ヒーリングっど♥プリキュア"
   },
   "heartcatch precure!": {
    "en": "heartcatch precure!",
@@ -21684,14 +22035,16 @@
     "ハートキャッチ",
     "抓心光之美少女",
     "heartcatch光之美少女"
-   ]
+   ],
+   "ja": "ハートキャッチプリキュア！"
   },
   "heaven's feel": {
    "en": "heaven's feel",
    "aliases": [
     "Heaven's_Feel",
     "FateHF"
-   ]
+   ],
+   "ja": "Fate/stay night [Heaven's Feel]"
   },
   "heaven burns red": {
    "en": "heaven burns red",
@@ -21706,14 +22059,16 @@
     "hvbnFA",
     "炽焰天穹",
     "红烧天堂"
-   ]
+   ],
+   "ja": "ヘブンバーンズレッド"
   },
   "hello kitty": {
    "en": "hello kitty",
    "aliases": [
     "ハローキティ",
     "hellokitty"
-   ]
+   ],
+   "ja": "ハローキティ"
   },
   "helltaker": {
    "en": "helltaker",
@@ -21723,7 +22078,8 @@
     "헬테이커",
     "地狱把妹王",
     "Helltakerfanart"
-   ]
+   ],
+   "ja": "Helltaker"
   },
   "helluva boss": {
    "en": "helluva boss",
@@ -21734,14 +22090,16 @@
     "極惡老大",
     "极恶老大",
     "HelluvaBossFanart"
-   ]
+   ],
+   "ja": "Helluva Boss"
   },
   "hentai ouji to warawanai neko.": {
    "en": "hentai ouji to warawanai neko.",
    "aliases": [
     "変態王子と笑わない猫。",
     "変態王子と笑わない猫"
-   ]
+   ],
+   "ja": "変態王子と笑わない猫。"
   },
   "hibike! euphonium": {
    "en": "hibike! euphonium",
@@ -21750,33 +22108,38 @@
     "響け!ユーフォニアム",
     "響けユーフォニアム",
     "吹响吧!上低音号"
-   ]
+   ],
+   "ja": "響け！ユーフォニアム"
   },
   "hidamari sketch": {
    "en": "hidamari sketch",
    "aliases": [
     "ひだまりスケッチ"
-   ]
+   ],
+   "ja": "ひだまりスケッチ"
   },
   "hidden star in four seasons": {
    "en": "hidden star in four seasons",
    "aliases": [
     "東方天空璋",
     "天空璋"
-   ]
+   ],
+   "ja": "東方天空璋"
   },
   "high school dxd": {
    "en": "high school dxd",
    "aliases": [
     "ハイスクールD×D"
-   ]
+   ],
+   "ja": "ハイスクールD×D"
   },
   "high school dxd born": {
    "en": "high school dxd born",
    "aliases": [
     "ハイスクールD×DBorN",
     "ハイスクールディーディーボーン"
-   ]
+   ],
+   "ja": "ハイスクールD×D BorN"
   },
   "high school fleet": {
    "en": "high school fleet",
@@ -21785,7 +22148,8 @@
     "ハイスクール・フリート",
     "高校艦隊",
     "青春波纹"
-   ]
+   ],
+   "ja": "ハイスクール・フリート"
   },
   "highschool of the dead": {
    "en": "highschool of the dead",
@@ -21796,7 +22160,8 @@
     "HOTD",
     "H.O.T.D.",
     "スクデッド"
-   ]
+   ],
+   "ja": "学園黙示録 HIGHSCHOOL OF THE DEAD"
   },
   "higurashi no naku koro ni": {
    "en": "higurashi no naku koro ni",
@@ -21806,7 +22171,8 @@
     "쓰르라미울적에",
     "ひぐらし",
     "ひぐらしFA"
-   ]
+   ],
+   "ja": "ひぐらしのなく頃に"
   },
   "himouto! umaru-chan": {
    "en": "himouto! umaru-chan",
@@ -21815,7 +22181,8 @@
     "干物妹!うまるちゃんR",
     "ひもうと!_うまるちゃん",
     "うまるちゃん"
-   ]
+   ],
+   "ja": "干物妹！うまるちゃん"
   },
   "hinata channel": {
    "en": "hinata channel",
@@ -21824,20 +22191,23 @@
     "猫宫日向",
     "HinataCat",
     "ひなたチャンネル"
-   ]
+   ],
+   "ja": "ひなたチャンネル"
   },
   "hirogaru sky! precure": {
    "en": "hirogaru sky! precure",
    "aliases": [
     "ひろがるスカイ!プリキュア",
     "ひろプリ"
-   ]
+   ],
+   "ja": "ひろがるスカイ！プリキュア"
   },
   "hitsugi no chaika": {
    "en": "hitsugi no chaika",
    "aliases": [
     "棺姫のチャイカ"
-   ]
+   ],
+   "ja": "棺姫のチャイカ"
   },
   "hololive": {
    "en": "hololive",
@@ -21851,14 +22221,16 @@
     "hololive",
     "hololewd",
     "ホロ百合"
-   ]
+   ],
+   "ja": "ホロライブ"
   },
   "hololive dev is": {
    "en": "hololive dev is",
    "aliases": [
     "hololiveDEV_IS",
     "ホロライブDEV_IS"
-   ]
+   ],
+   "ja": "ホロライブDEV_IS"
   },
   "hololive english": {
    "en": "hololive english",
@@ -21870,7 +22242,8 @@
     "holocouncil",
     "holoEN",
     "ホロライブEnglish"
-   ]
+   ],
+   "ja": "ホロライブEnglish"
   },
   "hololive indonesia": {
    "en": "hololive indonesia",
@@ -21880,7 +22253,8 @@
     "ホロライブID",
     "HololiveID",
     "hololiveIDArt"
-   ]
+   ],
+   "ja": "ホロライブID"
   },
   "holostars": {
    "en": "holostars",
@@ -21888,17 +22262,20 @@
     "ホロスターズ",
     "HOLOSTARS",
     "HolostArt"
-   ]
+   ],
+   "ja": "ホロスターズ"
   },
   "holostars english": {
    "en": "holostars english",
    "aliases": [
     "ホロスターズEnglish",
     "holostarsEN"
-   ]
+   ],
+   "ja": "ホロスターズEnglish"
   },
   "honey strap": {
-   "en": "honey strap"
+   "en": "honey strap",
+   "ja": "ハニーストラップ"
   },
   "honkai: star rail": {
    "en": "honkai: star rail",
@@ -21921,7 +22298,8 @@
     "hsrfanart",
     "腐向けHSR",
     "honkai_starrail"
-   ]
+   ],
+   "ja": "崩壊：スターレイル"
   },
   "honkai (series)": {
    "en": "honkai (series)",
@@ -21932,7 +22310,8 @@
     "逆熵",
     "崩壞",
     "붕괴"
-   ]
+   ],
+   "ja": "崩壊"
   },
   "honkai impact 3rd": {
    "en": "honkai impact 3rd",
@@ -21948,14 +22327,16 @@
     "붕괴3rd",
     "hi3",
     "hi3rd"
-   ]
+   ],
+   "ja": "崩壊3rd"
   },
   "houkago teibou nisshi": {
    "en": "houkago teibou nisshi",
    "aliases": [
     "放課後ていぼう日誌",
     "ていぼう"
-   ]
+   ],
+   "ja": "放課後ていぼう日誌"
   },
   "houseki no kuni": {
    "en": "houseki no kuni",
@@ -21966,14 +22347,16 @@
     "寶石之國",
     "宝石之国",
     "보석의나라"
-   ]
+   ],
+   "ja": "宝石の国"
   },
   "howl no ugoku shiro": {
    "en": "howl no ugoku shiro",
    "aliases": [
     "ハウルの動く城",
     "HowlsMovingCastle"
-   ]
+   ],
+   "ja": "ハウルの動く城"
   },
   "hugtto! precure": {
    "en": "hugtto! precure",
@@ -21984,7 +22367,8 @@
     "はぐっと!",
     "ハグプリ",
     "はぐっとプリキュア"
-   ]
+   ],
+   "ja": "HUGっと！プリキュア"
   },
   "hunter x hunter": {
    "en": "hunter x hunter",
@@ -22002,14 +22386,16 @@
     "夜のハンタープラス",
     "H×H【腐】",
     "H×H【BL】1000users入り"
-   ]
+   ],
+   "ja": "HUNTER×HUNTER"
   },
   "hyouka": {
    "en": "hyouka",
    "aliases": [
     "氷菓",
     "冰菓"
-   ]
+   ],
+   "ja": "氷菓"
   },
   "hyrule warriors: age of calamity": {
    "en": "hyrule warriors: age of calamity",
@@ -22017,7 +22403,8 @@
     "厄災の黙示録",
     "災厄啟示錄",
     "灾厄启示录"
-   ]
+   ],
+   "ja": "ゼルダ無双 厄災の黙示録"
   },
   "ib (kouri)": {
    "en": "ib (kouri)",
@@ -22026,13 +22413,15 @@
     "イヴ",
     "恐怖美术馆",
     "ib恐怖美术馆"
-   ]
+   ],
+   "ja": "Ib"
   },
   "ichigo mashimaro": {
    "en": "ichigo mashimaro",
    "aliases": [
     "苺ましまろ"
-   ]
+   ],
+   "ja": "苺ましまろ"
   },
   "idolmaster": {
    "en": "idolmaster",
@@ -22045,7 +22434,8 @@
     "アイドルマスタ",
     "偶像大师",
     "INM@S"
-   ]
+   ],
+   "ja": "アイドルマスター"
   },
   "idolmaster (classic)": {
    "en": "idolmaster (classic)",
@@ -22053,7 +22443,8 @@
     "765プロ",
     "765PRO_ALLSTARS",
     "アニマス"
-   ]
+   ],
+   "ja": "アイドルマスター"
   },
   "idolmaster cinderella girls": {
    "en": "idolmaster cinderella girls",
@@ -22064,14 +22455,16 @@
     "モバマス",
     "imas_cg",
     "偶像大师灰姑娘女孩"
-   ]
+   ],
+   "ja": "アイドルマスター シンデレラガールズ"
   },
   "idolmaster cinderella girls starlight stage": {
    "en": "idolmaster cinderella girls starlight stage",
    "aliases": [
     "スターライトステージ",
     "デレステ"
-   ]
+   ],
+   "ja": "アイドルマスター シンデレラガールズ スターライトステージ"
   },
   "idolmaster cinderella girls u149": {
    "en": "idolmaster cinderella girls u149",
@@ -22079,14 +22472,16 @@
     "アイドルマスターシンデレラガールズU149",
     "U149",
     "The_iDOLM@STER:_Cinderella_Girls_U149"
-   ]
+   ],
+   "ja": "アイドルマスター シンデレラガールズ U149"
   },
   "idolmaster dearly stars": {
    "en": "idolmaster dearly stars",
    "aliases": [
     "アイドルマスターディアリースターズ",
     "アイドルマスターDS"
-   ]
+   ],
+   "ja": "アイドルマスター ディアリースターズ"
   },
   "idolmaster million live!": {
    "en": "idolmaster million live!",
@@ -22098,7 +22493,8 @@
     "グリマス",
     "ミリオンライブ",
     "偶像大师百万现场"
-   ]
+   ],
+   "ja": "アイドルマスター ミリオンライブ！"
   },
   "idolmaster million live! theater days": {
    "en": "idolmaster million live! theater days",
@@ -22106,7 +22502,8 @@
     "アイドルマスターミリオンライブ!シアターデイズ",
     "ミリシタ",
     "シアターデイズ"
-   ]
+   ],
+   "ja": "アイドルマスター ミリオンライブ！ シアターデイズ"
   },
   "idolmaster shiny colors": {
    "en": "idolmaster shiny colors",
@@ -22118,7 +22515,8 @@
     "im@s_shiny",
     "imas_shine",
     "偶像大师闪耀色彩"
-   ]
+   ],
+   "ja": "アイドルマスター シャイニーカラーズ"
   },
   "ijiranaide nagatoro-san": {
    "en": "ijiranaide nagatoro-san",
@@ -22127,14 +22525,16 @@
     "長瀞さん",
     "不要欺負我,長瀞同學",
     "不要欺负我,长瀞同学"
-   ]
+   ],
+   "ja": "イジらないで、長瀞さん"
   },
   "ikkitousen": {
    "en": "ikkitousen",
    "aliases": [
     "一騎当千",
     "一骑当千"
-   ]
+   ],
+   "ja": "一騎当千"
   },
   "inazuma eleven": {
    "en": "inazuma eleven",
@@ -22144,7 +22544,8 @@
     "イナイレ[腐]",
     "イナイレ百合",
     "闪电十一人"
-   ]
+   ],
+   "ja": "イナズマイレブン"
   },
   "inazuma eleven (series)": {
    "en": "inazuma eleven (series)",
@@ -22155,7 +22556,8 @@
     "イナイレ百合",
     "イナイレ【腐】",
     "闪电十一人系列"
-   ]
+   ],
+   "ja": "イナズマイレブン"
   },
   "inazuma eleven go": {
    "en": "inazuma eleven go",
@@ -22168,7 +22570,8 @@
     "イナゴ百合",
     "イナゴ女子",
     "イナゴ男女カプ"
-   ]
+   ],
+   "ja": "イナズマイレブンGO"
   },
   "indie virtual youtuber": {
    "en": "indie virtual youtuber",
@@ -22180,25 +22583,29 @@
     "完全個人Vtuber",
     "个人势",
     "個人V"
-   ]
+   ],
+   "ja": "VTuber"
   },
   "infinite stratos": {
    "en": "infinite stratos",
    "aliases": [
     "インフィニット・ストラトス"
-   ]
+   ],
+   "ja": "IS 〈インフィニット・ストラトス〉"
   },
   "inu x boku ss": {
    "en": "inu x boku ss",
    "aliases": [
     "妖狐×僕SS"
-   ]
+   ],
+   "ja": "妖狐×僕SS"
   },
   "inuyasha": {
    "en": "inuyasha",
    "aliases": [
     "犬夜叉"
-   ]
+   ],
+   "ja": "犬夜叉"
   },
   "ishuzoku reviewers": {
    "en": "ishuzoku reviewers",
@@ -22207,14 +22614,16 @@
     "isyuzoku",
     "サキュ嬢",
     "异种族风俗娘评鉴指南"
-   ]
+   ],
+   "ja": "異種族レビュアーズ"
   },
   "jahy-sama wa kujikenai!": {
    "en": "jahy-sama wa kujikenai!",
    "aliases": [
     "ジャヒー様はくじけない!",
     "ジャヒー様はくじけない"
-   ]
+   ],
+   "ja": "ジャヒー様はくじけない！"
   },
   "jashin-chan dropkick": {
    "en": "jashin-chan dropkick",
@@ -22223,14 +22632,16 @@
     "Dropkick_on_My_Devil!",
     "jcdk",
     "邪神ちゃんドロップキックねばねばウォーズ"
-   ]
+   ],
+   "ja": "邪神ちゃんドロップキック"
   },
   "jigoku shoujo": {
    "en": "jigoku shoujo",
    "aliases": [
     "地獄少女",
     "地狱少女"
-   ]
+   ],
+   "ja": "地獄少女"
   },
   "jojo no kimyou na bouken": {
    "en": "jojo no kimyou na bouken",
@@ -22248,14 +22659,16 @@
     "JOJO【夢】",
     "jjbafanart",
     "JJBA"
-   ]
+   ],
+   "ja": "ジョジョの奇妙な冒険"
   },
   "jojolion": {
    "en": "jojolion",
    "aliases": [
     "ジョジョリオン",
     "乔乔福音"
-   ]
+   ],
+   "ja": "ジョジョリオン"
   },
   "jujutsu kaisen": {
    "en": "jujutsu kaisen",
@@ -22271,7 +22684,8 @@
     "じゅじゅマイナス",
     "呪術廻戦ファンアート",
     "ブルア廻戦"
-   ]
+   ],
+   "ja": "呪術廻戦"
   },
   "k-on!": {
    "en": "k-on!",
@@ -22283,7 +22697,8 @@
     "ぼっち・ざ・けいおん!",
     "keion",
     "K_ON"
-   ]
+   ],
+   "ja": "けいおん！"
   },
   "kagerou project": {
    "en": "kagerou project",
@@ -22298,7 +22713,8 @@
     "阳炎project",
     "阳炎",
     "カゲ腐ロ"
-   ]
+   ],
+   "ja": "カゲロウプロジェクト"
   },
   "kagura gumi": {
    "en": "kagura gumi",
@@ -22306,7 +22722,8 @@
     "神楽組",
     "神楽めあ",
     "めあArt"
-   ]
+   ],
+   "ja": "神楽組"
   },
   "kaguya-sama wa kokurasetai ~tensai-tachi no renai zunousen~": {
    "en": "kaguya-sama wa kokurasetai ~tensai-tachi no renai zunousen~",
@@ -22316,7 +22733,8 @@
     "かぐや様",
     "Kaguya-sama:_Love_Is_War",
     "辉夜大小姐想让我告白~天才们的恋爱头脑战~"
-   ]
+   ],
+   "ja": "かぐや様は告らせたい"
   },
   "kakegurui": {
    "en": "kakegurui",
@@ -22324,13 +22742,15 @@
     "賭ケグルイ",
     "狂赌之渊",
     "赌ケグルイ"
-   ]
+   ],
+   "ja": "賭ケグルイ"
   },
   "kami jigen game neptune v": {
    "en": "kami jigen game neptune v",
    "aliases": [
     "神次元ゲイムネプテューヌV"
-   ]
+   ],
+   "ja": "神次元ゲイム ネプテューヌV"
   },
   "kamitsubaki studio": {
    "en": "kamitsubaki studio",
@@ -22340,21 +22760,24 @@
     "神椿市復興美術部",
     "協奏中応援イラスト",
     "音楽的同位体"
-   ]
+   ],
+   "ja": "神椿スタジオ"
   },
   "kannagi": {
    "en": "kannagi",
    "aliases": [
     "かんなぎ",
     "神薙"
-   ]
+   ],
+   "ja": "かんなぎ"
   },
   "kannazuki no miko": {
    "en": "kannazuki no miko",
    "aliases": [
     "神無月の巫女",
     "神无月的巫女"
-   ]
+   ],
+   "ja": "神無月の巫女"
   },
   "kanojo okarishimasu": {
    "en": "kanojo okarishimasu",
@@ -22363,13 +22786,15 @@
     "かのかり",
     "彼女お借りします",
     "租借女友"
-   ]
+   ],
+   "ja": "彼女、お借りします"
   },
   "kanon": {
    "en": "kanon",
    "aliases": [
     "Kanon"
-   ]
+   ],
+   "ja": "Kanon"
   },
   "kantai collection": {
    "en": "kantai collection",
@@ -22403,14 +22828,16 @@
     "ハロウィン艦娘",
     "乳風",
     "艦これかわいい"
-   ]
+   ],
+   "ja": "艦隊これくしょん"
   },
   "kara no kyoukai": {
    "en": "kara no kyoukai",
    "aliases": [
     "空の境界",
     "空之境界"
-   ]
+   ],
+   "ja": "空の境界"
   },
   "karakai jouzu no takagi-san": {
    "en": "karakai jouzu no takagi-san",
@@ -22419,14 +22846,16 @@
     "장난을잘치는타카기양",
     "擅長捉弄人的高木同學",
     "擅长捉弄的高木同学"
-   ]
+   ],
+   "ja": "からかい上手の高木さん"
   },
   "katawa shoujo": {
    "en": "katawa shoujo",
    "aliases": [
     "かたわ少女",
     "片轮少女"
-   ]
+   ],
+   "ja": "かたわ少女"
   },
   "katekyo hitman reborn!": {
    "en": "katekyo hitman reborn!",
@@ -22438,7 +22867,8 @@
     "家教",
     "リボーン",
     "家庭教师"
-   ]
+   ],
+   "ja": "家庭教師ヒットマンREBORN!"
   },
   "kemomimi oukoku kokuei housou": {
    "en": "kemomimi oukoku kokuei housou",
@@ -22450,7 +22880,8 @@
     "バーチャルのじゃロリ狐娘Youtuberおじさん",
     "バーチャルのじゃロリ狐娘元youtuberおじさん",
     "バーチャルのじゃろり狐娘Youtuberおじさん"
-   ]
+   ],
+   "ja": "けもみみおーこく国営放送"
   },
   "kemono friends": {
    "en": "kemono friends",
@@ -22471,7 +22902,8 @@
     "kemonofriends",
     "アライさん美術部",
     "オリフレ(けものフレンズ)"
-   ]
+   ],
+   "ja": "けものフレンズ"
   },
   "kemono friends 3": {
    "en": "kemono friends 3",
@@ -22479,7 +22911,8 @@
     "けものフレンズ3",
     "けもフレ3",
     "動物朋友3"
-   ]
+   ],
+   "ja": "けものフレンズ3"
   },
   "kemono friends v project": {
    "en": "kemono friends v project",
@@ -22487,34 +22920,39 @@
     "けものフレンズVぷろじぇくと",
     "けもV",
     "KemoV"
-   ]
+   ],
+   "ja": "けものフレンズVぷろじぇくと"
   },
   "keroro gunsou": {
    "en": "keroro gunsou",
    "aliases": [
     "ケロロ軍曹",
     "ケロロ"
-   ]
+   ],
+   "ja": "ケロロ軍曹"
   },
   "kid icarus": {
    "en": "kid icarus",
    "aliases": [
     "パルテナの鏡",
     "光神話・パルテナの鏡"
-   ]
+   ],
+   "ja": "パルテナの鏡"
   },
   "kid icarus uprising": {
    "en": "kid icarus uprising",
    "aliases": [
     "新・光神話パルテナの鏡",
     "kidicarusuprising"
-   ]
+   ],
+   "ja": "新・光神話 パルテナの鏡"
   },
   "kidou senkan nadesico": {
    "en": "kidou senkan nadesico",
    "aliases": [
     "機動戦艦ナデシコ"
-   ]
+   ],
+   "ja": "機動戦艦ナデシコ"
   },
   "kill la kill": {
    "en": "kill la kill",
@@ -22523,16 +22961,19 @@
     "klk",
     "killlakill",
     "斩服少女"
-   ]
+   ],
+   "ja": "キルラキル"
   },
   "kill me baby": {
    "en": "kill me baby",
    "aliases": [
     "キルミーベイベー"
-   ]
+   ],
+   "ja": "キルミーベイベー"
   },
   "kim possible (series)": {
-   "en": "kim possible (series)"
+   "en": "kim possible (series)",
+   "ja": "キム・ポッシブル"
   },
   "kimetsu no yaiba": {
    "en": "kimetsu no yaiba",
@@ -22548,13 +22989,15 @@
     "腐滅の刃",
     "Demon_Slayer_Fanart",
     "kmtプラス"
-   ]
+   ],
+   "ja": "鬼滅の刃"
   },
   "kimi kiss": {
    "en": "kimi kiss",
    "aliases": [
     "キミキス"
-   ]
+   ],
+   "ja": "キミキス"
   },
   "kimi no na wa.": {
    "en": "kimi no na wa.",
@@ -22563,7 +23006,8 @@
     "君の名は",
     "你的名字",
     "your_name"
-   ]
+   ],
+   "ja": "君の名は。"
   },
   "kin-iro mosaic": {
    "en": "kin-iro mosaic",
@@ -22576,7 +23020,8 @@
     "きんいろモザイクThankyou!!",
     "黃金拼圖",
     "黄金拼图"
-   ]
+   ],
+   "ja": "きんいろモザイク"
   },
   "kingdom hearts": {
    "en": "kingdom hearts",
@@ -22585,20 +23030,23 @@
     "キングダムハーツ",
     "KingdomHearts",
     "KH"
-   ]
+   ],
+   "ja": "キングダム ハーツ"
   },
   "kingdom hearts 358/2 days": {
    "en": "kingdom hearts 358/2 days",
    "aliases": [
     "358/2",
     "358"
-   ]
+   ],
+   "ja": "キングダム ハーツ 358/2 Days"
   },
   "kingdom hearts birth by sleep": {
    "en": "kingdom hearts birth by sleep",
    "aliases": [
     "バースバイスリープ"
-   ]
+   ],
+   "ja": "キングダム ハーツ バース バイ スリープ"
   },
   "kingdom hearts ii": {
    "en": "kingdom hearts ii",
@@ -22608,14 +23056,16 @@
     "キングダムハーツII",
     "kingdomheartsii",
     "kingdomhearts2"
-   ]
+   ],
+   "ja": "キングダム ハーツ II"
   },
   "kingdom hearts iii": {
    "en": "kingdom hearts iii",
    "aliases": [
     "kh3",
     "キングダムハーツ3"
-   ]
+   ],
+   "ja": "キングダム ハーツ III"
   },
   "kininatteru hito ga otoko ja nakatta": {
    "en": "kininatteru hito ga otoko ja nakatta",
@@ -22628,14 +23078,16 @@
     "kinioto",
     "theguyshewasinterestedinwasntaguyatall",
     "greenyuri"
-   ]
+   ],
+   "ja": "気になってる人が男じゃなかった"
   },
   "kino no tabi": {
    "en": "kino no tabi",
    "aliases": [
     "キノの旅",
     "奇诺之旅"
-   ]
+   ],
+   "ja": "キノの旅"
   },
   "kirakira precure a la mode": {
    "en": "kirakira precure a la mode",
@@ -22643,7 +23095,8 @@
     "キラキラ☆プリキュアアラモード",
     "キラキラプリキュアアラモード",
     "プリアラ"
-   ]
+   ],
+   "ja": "キラキラ☆プリキュアアラモード"
   },
   "kirby (series)": {
    "en": "kirby (series)",
@@ -22653,13 +23106,15 @@
     "星之卡比",
     "擬カビ",
     "Kirby30thFest"
-   ]
+   ],
+   "ja": "星のカービィ"
   },
   "kizumonogatari": {
    "en": "kizumonogatari",
    "aliases": [
     "傷物語"
-   ]
+   ],
+   "ja": "傷物語"
   },
   "kizuna ai inc.": {
    "en": "kizuna ai inc.",
@@ -22668,7 +23123,8 @@
     "A.I.Channel",
     "Kizuna_LIVE",
     "キズナアイ"
-   ]
+   ],
+   "ja": "KizunaAI株式会社"
   },
   "kobayashi-san chi no maidragon": {
    "en": "kobayashi-san chi no maidragon",
@@ -22679,13 +23135,15 @@
     "kobayashi-san_chi_no_maid_dragon",
     "小林さんちのメイドラゴンS",
     "메이드래곤"
-   ]
+   ],
+   "ja": "小林さんちのメイドラゴン"
   },
   "kodomo no jikan": {
    "en": "kodomo no jikan",
    "aliases": [
     "こどものじかん"
-   ]
+   ],
+   "ja": "こどものじかん"
   },
   "koe no katachi": {
    "en": "koe no katachi",
@@ -22696,13 +23154,15 @@
     "The_Shape_Of_Voice",
     "Shape_Of_Voice",
     "A_Silent_Voice"
-   ]
+   ],
+   "ja": "聲の形"
   },
   "koha-ace": {
    "en": "koha-ace",
    "aliases": [
     "コハエース"
-   ]
+   ],
+   "ja": "コハエース"
   },
   "komi-san wa komyushou desu": {
    "en": "komi-san wa komyushou desu",
@@ -22714,7 +23174,8 @@
     "komisan",
     "KomiCantCommunicate",
     "komi-san"
-   ]
+   ],
+   "ja": "古見さんは、コミュ症です。"
   },
   "kono subarashii sekai ni shukufuku wo!": {
    "en": "kono subarashii sekai ni shukufuku wo!",
@@ -22723,17 +23184,20 @@
     "この素晴らしい世界に祝福を!",
     "このすば",
     "この素晴らしい世界に祝福を"
-   ]
+   ],
+   "ja": "この素晴らしい世界に祝福を！"
   },
   "koutetsujou no kabaneri": {
    "en": "koutetsujou no kabaneri",
    "aliases": [
     "甲鉄城のカバネリ",
     "甲铁城的卡巴内瑞"
-   ]
+   ],
+   "ja": "甲鉄城のカバネリ"
   },
   "kuro no kiseki (series)": {
-   "en": "kuro no kiseki (series)"
+   "en": "kuro no kiseki (series)",
+   "ja": "英雄伝説"
   },
   "kuro no kiseki i": {
    "en": "kuro no kiseki i",
@@ -22741,7 +23205,8 @@
     "黎の軌跡",
     "軌跡シリーズ",
     "黎之轨迹"
-   ]
+   ],
+   "ja": "英雄伝説 黎の軌跡"
   },
   "kusuriya no hitorigoto": {
    "en": "kusuriya no hitorigoto",
@@ -22751,13 +23216,15 @@
     "Kusuriyanohitorigoto",
     "药师少女的独语",
     "药屋少女的呢喃"
-   ]
+   ],
+   "ja": "薬屋のひとりごと"
   },
   "kyoukai no kanata": {
    "en": "kyoukai no kanata",
    "aliases": [
     "境界の彼方"
-   ]
+   ],
+   "ja": "境界の彼方"
   },
   "last origin": {
    "en": "last origin",
@@ -22766,14 +23233,16 @@
     "ラストオリジン",
     "ラスオリ",
     "LastOrigin"
-   ]
+   ],
+   "ja": "ラストオリジン"
   },
   "lawson": {
    "en": "lawson",
    "aliases": [
     "ローソン",
     "罗森"
-   ]
+   ],
+   "ja": "ローソン"
   },
   "league of legends": {
    "en": "league of legends",
@@ -22790,7 +23259,8 @@
     "リーグオブレジェンド",
     "英雄联盟同人",
     "리그오브레전"
-   ]
+   ],
+   "ja": "リーグ・オブ・レジェンド"
   },
   "len'en": {
    "en": "len'en",
@@ -22807,7 +23277,8 @@
     "lenen_10th",
     "連緣project",
     "連緣"
-   ]
+   ],
+   "ja": "連縁Project"
   },
   "library of ruina": {
    "en": "library of ruina",
@@ -22823,7 +23294,8 @@
     "ラオル",
     "ローラン(Library_of_Ruina)",
     "LOR"
-   ]
+   ],
+   "ja": "Library of Ruina"
   },
   "limbus company": {
    "en": "limbus company",
@@ -22846,10 +23318,12 @@
     "Limbus_Company(腐)",
     "Limbus-Company",
     "ลิมบัสFA"
-   ]
+   ],
+   "ja": "Limbus Company"
   },
   "link! like! love live!": {
-   "en": "link! like! love live!"
+   "en": "link! like! love live!",
+   "ja": "Link! Like! ラブライブ！"
   },
   "little busters!": {
    "en": "little busters!",
@@ -22859,16 +23333,19 @@
     "LittleBusters!",
     "リトルバスターズ",
     "リトバス"
-   ]
+   ],
+   "ja": "リトルバスターズ！"
   },
   "little nuns (diva)": {
    "en": "little nuns (diva)",
    "aliases": [
     "littlenuns"
-   ]
+   ],
+   "ja": "Little Nuns"
   },
   "little red riding hood": {
-   "en": "little red riding hood"
+   "en": "little red riding hood",
+   "ja": "赤ずきん"
   },
   "little witch academia": {
    "en": "little witch academia",
@@ -22879,7 +23356,8 @@
     "littlewitchacademia",
     "LWA_jp",
     "小魔女学院"
-   ]
+   ],
+   "ja": "リトルウィッチアカデミア"
   },
   "little witch nobeta": {
    "en": "little witch nobeta",
@@ -22889,7 +23367,8 @@
     "ロリダークソウル",
     "小魔女諾貝塔",
     "小魔女诺贝塔"
-   ]
+   ],
+   "ja": "リトルウィッチノベタ"
   },
   "live a hero": {
    "en": "live a hero",
@@ -22900,14 +23379,16 @@
     "ライブアヒーロー",
     "ライブ・ア・ヒーロー",
     "ラブヒロファンアート"
-   ]
+   ],
+   "ja": "LIVE A HERO"
   },
   "liz to aoi tori": {
    "en": "liz to aoi tori",
    "aliases": [
     "リズと青い鳥",
     "利兹与青鸟"
-   ]
+   ],
+   "ja": "リズと青い鳥"
   },
   "lobotomy corporation": {
    "en": "lobotomy corporation",
@@ -22922,7 +23403,8 @@
     "Lobotomy_Corp",
     "LobCorp",
     "LobotomyKivotos"
-   ]
+   ],
+   "ja": "Lobotomy Corporation"
   },
   "lord el-melloi ii case files": {
    "en": "lord el-melloi ii case files",
@@ -22930,7 +23412,8 @@
     "ロード・エルメロイII世の事件簿",
     "ロードエルメロイII世の事件簿",
     "事件簿アニメ"
-   ]
+   ],
+   "ja": "ロード・エルメロイII世の事件簿"
   },
   "love and deepspace": {
    "en": "love and deepspace",
@@ -22942,7 +23425,8 @@
     "러브앤딥스페이스",
     "럽딥",
     "恋と深空二次創作"
-   ]
+   ],
+   "ja": "恋と深空"
   },
   "love live!": {
    "en": "love live!",
@@ -22952,7 +23436,8 @@
     "LOVELIVEFEST",
     "lovelive",
     "ラブライブシリーズ"
-   ]
+   ],
+   "ja": "ラブライブ！"
   },
   "love live! nijigasaki high school idol club": {
    "en": "love live! nijigasaki high school idol club",
@@ -22966,7 +23451,8 @@
     "虹ヶ咲",
     "アニガサキ",
     "虹咲学园偶像同好会"
-   ]
+   ],
+   "ja": "ラブライブ！虹ヶ咲学園スクールアイドル同好会"
   },
   "love live! school idol project": {
    "en": "love live! school idol project",
@@ -22974,7 +23460,8 @@
     "ラブライブ!SchoolIdolProject",
     "學園偶像計畫",
     "μ's"
-   ]
+   ],
+   "ja": "ラブライブ！ School idol project"
   },
   "love live! sunshine!!": {
    "en": "love live! sunshine!!",
@@ -22983,7 +23470,8 @@
     "ラブライブサンシャイン",
     "Aqours",
     "lovelivesunshine"
-   ]
+   ],
+   "ja": "ラブライブ！サンシャイン!!"
   },
   "love live! superstar!!": {
    "en": "love live! superstar!!",
@@ -22998,13 +23486,15 @@
     "ラブライブスーパースター",
     "スパスタ3期",
     "スパスタ2期"
-   ]
+   ],
+   "ja": "ラブライブ！スーパースター!!"
   },
   "love plus": {
    "en": "love plus",
    "aliases": [
     "ラブプラス"
-   ]
+   ],
+   "ja": "ラブプラス"
   },
   "lucky star": {
    "en": "lucky star",
@@ -23013,16 +23503,19 @@
     "らきすた",
     "luckystar",
     "幸运星"
-   ]
+   ],
+   "ja": "らき☆すた"
   },
   "luigi's mansion": {
    "en": "luigi's mansion",
    "aliases": [
     "ルイージマンション"
-   ]
+   ],
+   "ja": "ルイージマンション"
   },
   "luo xiaohei zhanji": {
-   "en": "luo xiaohei zhanji"
+   "en": "luo xiaohei zhanji",
+   "ja": "羅小黒戦記"
   },
   "lupin iii": {
    "en": "lupin iii",
@@ -23030,10 +23523,12 @@
     "ルパン三世",
     "腐パン",
     "鲁邦三世"
-   ]
+   ],
+   "ja": "ルパン三世"
   },
   "lupinus virtual games": {
-   "en": "lupinus virtual games"
+   "en": "lupinus virtual games",
+   "ja": "Lupinus Virtual Games"
   },
   "lycoris recoil": {
    "en": "lycoris recoil",
@@ -23043,7 +23538,8 @@
     "リコリスリコイル",
     "LycorisRecoil",
     "莉可丽丝"
-   ]
+   ],
+   "ja": "リコリス・リコイル"
   },
   "lyrical nanoha": {
    "en": "lyrical nanoha",
@@ -23052,7 +23548,8 @@
     "リリカルなのは",
     "魔法少女奈葉",
     "なのは"
-   ]
+   ],
+   "ja": "魔法少女リリカルなのは"
   },
   "m.u.g.e.n": {
    "en": "m.u.g.e.n",
@@ -23061,7 +23558,8 @@
     "m.u.g.e.n",
     "mugen",
     "M.U.G.E.N"
-   ]
+   ],
+   "ja": "M.U.G.E.N"
   },
   "mabinogi": {
    "en": "mabinogi",
@@ -23070,14 +23568,16 @@
     "마비노기",
     "mabinogi",
     "マビノギソーシャル"
-   ]
+   ],
+   "ja": "マビノギ"
   },
   "machikado mazoku": {
    "en": "machikado mazoku",
    "aliases": [
     "まちカドまぞく",
     "街角魔族"
-   ]
+   ],
+   "ja": "まちカドまぞく"
   },
   "macross": {
    "en": "macross",
@@ -23085,7 +23585,8 @@
     "マクロス",
     "超時空要塞",
     "超时空要塞"
-   ]
+   ],
+   "ja": "マクロス"
   },
   "macross: do you remember love?": {
    "en": "macross: do you remember love?",
@@ -23093,26 +23594,30 @@
     "超時空要塞マクロス",
     "愛・おぼえていますか",
     "愛おぼえていますか"
-   ]
+   ],
+   "ja": "超時空要塞マクロス"
   },
   "macross 7": {
    "en": "macross 7",
    "aliases": [
     "マクロス7"
-   ]
+   ],
+   "ja": "マクロス7"
   },
   "macross delta": {
    "en": "macross delta",
    "aliases": [
     "マクロスΔ",
     "マクロス⊿"
-   ]
+   ],
+   "ja": "マクロスΔ"
   },
   "macross frontier": {
    "en": "macross frontier",
    "aliases": [
     "マクロスF"
-   ]
+   ],
+   "ja": "マクロスF"
   },
   "made in abyss": {
    "en": "made in abyss",
@@ -23121,13 +23626,15 @@
     "来自深渊",
     "MadeInAbyss",
     "miabyss"
-   ]
+   ],
+   "ja": "メイドインアビス"
   },
   "madou monogatari": {
    "en": "madou monogatari",
    "aliases": [
     "魔導物語"
-   ]
+   ],
+   "ja": "魔導物語"
   },
   "magi the labyrinth of magic": {
    "en": "magi the labyrinth of magic",
@@ -23135,7 +23642,8 @@
     "マギ",
     "魔笛",
     "魔笛MAGI"
-   ]
+   ],
+   "ja": "マギ"
   },
   "magia record: mahou shoujo madoka magica gaiden": {
    "en": "magia record: mahou shoujo madoka magica gaiden",
@@ -23144,19 +23652,22 @@
     "マギレコ",
     "魔法少女まどか☆マギカ外伝",
     "魔法纪录"
-   ]
+   ],
+   "ja": "マギアレコード"
   },
   "magic kaito": {
    "en": "magic kaito",
    "aliases": [
     "まじっく快斗"
-   ]
+   ],
+   "ja": "まじっく快斗"
   },
   "magic knight rayearth": {
    "en": "magic knight rayearth",
    "aliases": [
     "魔法騎士レイアース"
-   ]
+   ],
+   "ja": "魔法騎士レイアース"
   },
   "magical mirai (vocaloid)": {
    "en": "magical mirai (vocaloid)",
@@ -23194,7 +23705,8 @@
     "マジミラ2024",
     "マジミラ2025",
     "マジミラ2026"
-   ]
+   ],
+   "ja": "マジカルミライ"
   },
   "mahou girls precure!": {
    "en": "mahou girls precure!",
@@ -23204,44 +23716,51 @@
     "まほプリ",
     "魔法使!光之美少女",
     "魔法使光之美少女"
-   ]
+   ],
+   "ja": "魔法つかいプリキュア！"
   },
   "mahou sensei negima!": {
    "en": "mahou sensei negima!",
    "aliases": [
     "魔法先生ネギま!",
     "ネギま"
-   ]
+   ],
+   "ja": "魔法先生ネギま!"
   },
   "mahou shoujo lyrical nanoha": {
    "en": "mahou shoujo lyrical nanoha",
    "aliases": [
     "魔法少女リリカルなのは"
-   ]
+   ],
+   "ja": "魔法少女リリカルなのは"
   },
   "mahou shoujo lyrical nanoha a's": {
    "en": "mahou shoujo lyrical nanoha a's",
    "aliases": [
     "魔法少女リリカルなのはA's"
-   ]
+   ],
+   "ja": "魔法少女リリカルなのはA's"
   },
   "mahou shoujo lyrical nanoha strikers": {
    "en": "mahou shoujo lyrical nanoha strikers",
    "aliases": [
     "魔法少女リリカルなのはStrikerS"
-   ]
+   ],
+   "ja": "魔法少女リリカルなのはStrikerS"
   },
   "mahou shoujo lyrical nanoha the movie 1st": {
    "en": "mahou shoujo lyrical nanoha the movie 1st",
    "aliases": [
     "魔法少女リリカルなのはthemovie1st"
-   ]
+   ],
+   "ja": "魔法少女リリカルなのは"
   },
   "mahou shoujo lyrical nanoha vivid": {
    "en": "mahou shoujo lyrical nanoha vivid",
    "aliases": [
     "魔法少女リリカルなのはVivid"
-   ]
+   ],
+   "ja": "魔法少女リリカルなのはViVid"
   },
   "mahou shoujo madoka magica": {
    "en": "mahou shoujo madoka magica",
@@ -23258,7 +23777,8 @@
     "puella_magi_madoka_magica",
     "pmmm",
     "puellamagimadokamagica"
-   ]
+   ],
+   "ja": "魔法少女まどか☆マギカ"
   },
   "mahou shoujo madoka magica: hangyaku no monogatari": {
    "en": "mahou shoujo madoka magica: hangyaku no monogatari",
@@ -23267,7 +23787,8 @@
     "puella_magi_madoka_magica_the_movie:_rebellion",
     "puella_magi_madoka_magica_the_movie_rebellion",
     "pmmm_rebellion"
-   ]
+   ],
+   "ja": "魔法少女まどか☆マギカ"
   },
   "mahou shoujo madoka magica (anime)": {
    "en": "mahou shoujo madoka magica (anime)",
@@ -23280,7 +23801,8 @@
     "魔法少女小圆",
     "마법소녀마도카☆마기카",
     "MadokaMagica"
-   ]
+   ],
+   "ja": "魔法少女まどか☆マギカ"
   },
   "mahou shoujo ni akogarete": {
    "en": "mahou shoujo ni akogarete",
@@ -23290,7 +23812,8 @@
     "憧憬成为魔法少女",
     "MahoAko",
     "GushingoverMagicalGirls"
-   ]
+   ],
+   "ja": "魔法少女にあこがれて"
   },
   "mahou tsukai no yoru": {
    "en": "mahou tsukai no yoru",
@@ -23300,14 +23823,16 @@
     "まほよ",
     "魔法使之夜",
     "魔夜"
-   ]
+   ],
+   "ja": "魔法使いの夜"
   },
   "mahouka koukou no rettousei": {
    "en": "mahouka koukou no rettousei",
    "aliases": [
     "魔法科高校の劣等生",
     "魔法科高校的劣等生"
-   ]
+   ],
+   "ja": "魔法科高校の劣等生"
   },
   "majo no tabitabi": {
    "en": "majo no tabitabi",
@@ -23315,45 +23840,52 @@
     "魔女の旅々",
     "魔女の旅々はいいぞ",
     "魔女之旅"
-   ]
+   ],
+   "ja": "魔女の旅々"
   },
   "majo no takkyuubin": {
    "en": "majo no takkyuubin",
    "aliases": [
     "魔女の宅急便",
     "魔女宅"
-   ]
+   ],
+   "ja": "魔女の宅急便"
   },
   "makai senki disgaea": {
    "en": "makai senki disgaea",
    "aliases": [
     "魔界戦記ディスガイア"
-   ]
+   ],
+   "ja": "魔界戦記ディスガイア"
   },
   "makai senki disgaea 2": {
    "en": "makai senki disgaea 2",
    "aliases": [
     "魔界戦記ディスガイア2"
-   ]
+   ],
+   "ja": "魔界戦記ディスガイア2"
   },
   "makai senki disgaea 3": {
    "en": "makai senki disgaea 3",
    "aliases": [
     "魔界戦記ディスガイア3"
-   ]
+   ],
+   "ja": "魔界戦記ディスガイア3"
   },
   "manaria friends": {
    "en": "manaria friends",
    "aliases": [
     "マナリアフレンズ"
-   ]
+   ],
+   "ja": "マナリアフレンズ"
   },
   "maou-jou de oyasumi": {
    "en": "maou-jou de oyasumi",
    "aliases": [
     "魔王城でおやすみ",
     "Sleepy_Princess_in_the_Demon_Castle"
-   ]
+   ],
+   "ja": "魔王城でおやすみ"
   },
   "maoyuu maou yuusha": {
    "en": "maoyuu maou yuusha",
@@ -23361,7 +23893,8 @@
     "まおゆう",
     "魔王勇者",
     "まおゆう魔王勇者"
-   ]
+   ],
+   "ja": "まおゆう魔王勇者"
   },
   "maria-sama ga miteru": {
    "en": "maria-sama ga miteru",
@@ -23370,7 +23903,8 @@
     "瑪莉亞的凝望",
     "聖母在上",
     "圣母在上"
-   ]
+   ],
+   "ja": "マリア様がみてる"
   },
   "mario (series)": {
    "en": "mario (series)",
@@ -23384,7 +23918,8 @@
     "超级马里奥(系列)",
     "超级玛丽(系列)",
     "mario_bros"
-   ]
+   ],
+   "ja": "マリオ"
   },
   "marvel": {
    "en": "marvel",
@@ -23399,10 +23934,12 @@
     "MCU",
     "マーベル・シネマティック・ユニバース",
     "漫威电影宇宙"
-   ]
+   ],
+   "ja": "マーベル"
   },
   "marvel cinematic universe": {
-   "en": "marvel cinematic universe"
+   "en": "marvel cinematic universe",
+   "ja": "マーベル"
   },
   "marvel rivals": {
    "en": "marvel rivals",
@@ -23411,7 +23948,8 @@
     "MarvelRivals",
     "marvelrivals",
     "マーベルライバルズ"
-   ]
+   ],
+   "ja": "マーベル・ライバルズ"
   },
   "master detective archives: rain code": {
    "en": "master detective archives: rain code",
@@ -23423,7 +23961,8 @@
     "霧雨謎宮",
     "超侦探事件簿",
     "レインコード【腐】"
-   ]
+   ],
+   "ja": "超探偵事件簿 レインコード"
   },
   "mawaru penguindrum": {
    "en": "mawaru penguindrum",
@@ -23432,10 +23971,12 @@
     "ピンドラ",
     "penguindrum",
     "回转企鹅罐"
-   ]
+   ],
+   "ja": "輪るピングドラム"
   },
   "mega man (classic)": {
-   "en": "mega man (classic)"
+   "en": "mega man (classic)",
+   "ja": "ロックマン"
   },
   "mega man (series)": {
    "en": "mega man (series)",
@@ -23445,7 +23986,8 @@
     "Megaman",
     "Rock_Man",
     "Mega_Man"
-   ]
+   ],
+   "ja": "ロックマン"
   },
   "mega man x (series)": {
    "en": "mega man x (series)",
@@ -23453,7 +23995,8 @@
     "ロックマンX",
     "RockmanX",
     "MegamanX"
-   ]
+   ],
+   "ja": "ロックマンX"
   },
   "mega man zero (series)": {
    "en": "mega man zero (series)",
@@ -23464,21 +24007,24 @@
     "MegaManZero",
     "rockmanzero",
     "RockmanZero"
-   ]
+   ],
+   "ja": "ロックマンゼロ"
   },
   "mega man zx": {
    "en": "mega man zx",
    "aliases": [
     "ロックマンゼクス",
     "ロックマンZX"
-   ]
+   ],
+   "ja": "ロックマン ゼクス"
   },
   "mega man zx advent": {
    "en": "mega man zx advent",
    "aliases": [
     "ロックマンZXA",
     "ロックマンゼクスアドベント"
-   ]
+   ],
+   "ja": "ロックマン ゼクス アドベント"
   },
   "meitantei conan": {
    "en": "meitantei conan",
@@ -23490,7 +24036,8 @@
     "detective_conan",
     "case_closed",
     "まじコナ腐"
-   ]
+   ],
+   "ja": "名探偵コナン"
   },
   "melty blood": {
    "en": "melty blood",
@@ -23499,7 +24046,8 @@
     "melty_blood",
     "メルブラ",
     "MELTYBLOOD"
-   ]
+   ],
+   "ja": "MELTY BLOOD"
   },
   "mermaid melody pichi pichi pitch": {
    "en": "mermaid melody pichi pichi pitch",
@@ -23507,7 +24055,8 @@
     "ぴちぴちピッチ",
     "マーメイドメロディーぴちぴちピッチ",
     "피치피치핏치"
-   ]
+   ],
+   "ja": "マーメイドメロディー ぴちぴちピッチ"
   },
   "metal gear (series)": {
    "en": "metal gear (series)",
@@ -23515,17 +24064,20 @@
     "メタルギアシリーズ",
     "メタルギア",
     "合金装备"
-   ]
+   ],
+   "ja": "メタルギア"
   },
   "metal gear rising: revengeance": {
    "en": "metal gear rising: revengeance",
    "aliases": [
     "MGR",
     "メタルギアライジング"
-   ]
+   ],
+   "ja": "メタルギア ライジング"
   },
   "metal gear solid": {
-   "en": "metal gear solid"
+   "en": "metal gear solid",
+   "ja": "メタルギアソリッド"
   },
   "metal slug": {
    "en": "metal slug",
@@ -23533,10 +24085,12 @@
     "メタルスラッグ",
     "メタスラ",
     "METALSLUG"
-   ]
+   ],
+   "ja": "メタルスラッグ"
   },
   "metaphor: refantazio": {
-   "en": "metaphor: refantazio"
+   "en": "metaphor: refantazio",
+   "ja": "メタファー：リファンタジオ"
   },
   "metroid": {
    "en": "metroid",
@@ -23545,19 +24099,22 @@
     "メトロイドシリーズ",
     "密特罗德",
     "密特羅德"
-   ]
+   ],
+   "ja": "メトロイド"
   },
   "mikakunin de shinkoukei": {
    "en": "mikakunin de shinkoukei",
    "aliases": [
     "未確認で進行形"
-   ]
+   ],
+   "ja": "未確認で進行形"
   },
   "minami-ke": {
    "en": "minami-ke",
    "aliases": [
     "みなみけ"
-   ]
+   ],
+   "ja": "みなみけ"
   },
   "miraculous ladybug": {
    "en": "miraculous ladybug",
@@ -23567,20 +24124,23 @@
     "Ladybug",
     "レディーバグ",
     "レディバグ"
-   ]
+   ],
+   "ja": "ミラキュラス・レディバグ"
   },
   "mirai nikki": {
    "en": "mirai nikki",
    "aliases": [
     "未来日記",
     "みらいにっき"
-   ]
+   ],
+   "ja": "未来日記"
   },
   "mitsudomoe (manga)": {
    "en": "mitsudomoe (manga)",
    "aliases": [
     "みつどもえ"
-   ]
+   ],
+   "ja": "みつどもえ"
   },
   "mob psycho 100": {
    "en": "mob psycho 100",
@@ -23591,7 +24151,8 @@
     "mobpsycho100",
     "mp100",
     "灵能百分百"
-   ]
+   ],
+   "ja": "モブサイコ100"
   },
   "mobile suit gundam": {
    "en": "mobile suit gundam",
@@ -23604,7 +24165,8 @@
     "機動戦士ガンダムIII_めぐりあい宇宙編めぐりあい宇宙編",
     "机动战士高达",
     "MobileSuitGundam"
-   ]
+   ],
+   "ja": "機動戦士ガンダム"
   },
   "mon-musu quest!": {
    "en": "mon-musu quest!",
@@ -23612,13 +24174,15 @@
     "もんむす・くえすと!",
     "もんむす・くえすと",
     "勇者大战魔物娘"
-   ]
+   ],
+   "ja": "もんむす・くえすと!"
   },
   "monogatari (series)": {
    "en": "monogatari (series)",
    "aliases": [
     "物語シリーズ"
-   ]
+   ],
+   "ja": "物語シリーズ"
   },
   "monster hunter (series)": {
    "en": "monster hunter (series)",
@@ -23630,7 +24194,8 @@
     "モンハン擬人化",
     "怪物猎人(系列)",
     "怪猎(系列)"
-   ]
+   ],
+   "ja": "モンスターハンター"
   },
   "monster hunter rise": {
    "en": "monster hunter rise",
@@ -23639,27 +24204,31 @@
     "モンスターハンターライズ",
     "MonsterHunterRise",
     "MHRise"
-   ]
+   ],
+   "ja": "モンスターハンターライズ"
   },
   "monster musume no iru nichijou": {
    "en": "monster musume no iru nichijou",
    "aliases": [
     "モンスター娘のいる日常",
     "MonsterMusume"
-   ]
+   ],
+   "ja": "モンスター娘のいる日常"
   },
   "monsterverse": {
    "en": "monsterverse",
    "aliases": [
     "モンスターバースシリーズ"
-   ]
+   ],
+   "ja": "モンスターバースシリーズ"
   },
   "mother (series)": {
    "en": "mother (series)",
    "aliases": [
     "MOTHERシリーズ",
     "MOTHER風"
-   ]
+   ],
+   "ja": "MOTHER"
   },
   "mother 2": {
    "en": "mother 2",
@@ -23669,7 +24238,8 @@
     "マザー2",
     "ギーグの逆襲",
     "EarthBound"
-   ]
+   ],
+   "ja": "MOTHER2"
   },
   "mother 3": {
    "en": "mother 3",
@@ -23678,7 +24248,8 @@
     "MOTHER3_15th",
     "MOTHER3_15周年",
     "マザー3"
-   ]
+   ],
+   "ja": "MOTHER3"
   },
   "mushoku tensei": {
    "en": "mushoku tensei",
@@ -23687,7 +24258,8 @@
     "無職轉生",
     "无职转生",
     "無職転生FA"
-   ]
+   ],
+   "ja": "無職転生"
   },
   "muv-luv": {
    "en": "muv-luv",
@@ -23696,13 +24268,15 @@
     "MuvLuv",
     "Muv-Luv",
     "マブラヴSkeb部"
-   ]
+   ],
+   "ja": "マブラヴ"
   },
   "muv-luv alternative": {
    "en": "muv-luv alternative",
    "aliases": [
     "マブラヴオルタネイティヴ"
-   ]
+   ],
+   "ja": "マブラヴ オルタネイティヴ"
   },
   "muv-luv total eclipse": {
    "en": "muv-luv total eclipse",
@@ -23711,25 +24285,29 @@
     "トータル・イクリプス",
     "TE_anime",
     "帝都燃ゆ"
-   ]
+   ],
+   "ja": "トータル・イクリプス"
   },
   "my-hime": {
    "en": "my-hime",
    "aliases": [
     "舞-HiME"
-   ]
+   ],
+   "ja": "舞-HiME"
   },
   "my-otome": {
    "en": "my-otome",
    "aliases": [
     "舞-乙HiME"
-   ]
+   ],
+   "ja": "舞-乙HiME"
   },
   "my adventures with superman": {
    "en": "my adventures with superman",
    "aliases": [
     "MyAdventuresWithSuperman"
-   ]
+   ],
+   "ja": "My Adventures with Superman"
   },
   "my little pony": {
    "en": "my little pony",
@@ -23751,7 +24329,8 @@
     "ウマ娘×マイリトルポニー",
     "brony",
     "mlptwt"
-   ]
+   ],
+   "ja": "マイリトルポニー"
   },
   "my little pony: equestria girls": {
    "en": "my little pony: equestria girls",
@@ -23764,7 +24343,8 @@
     "MLPEG",
     "MLP_EG",
     "小马国女孩"
-   ]
+   ],
+   "ja": "エクエストリアガールズ"
   },
   "my little pony: friendship is magic": {
    "en": "my little pony: friendship is magic",
@@ -23794,7 +24374,8 @@
     "マイポニ",
     "brony",
     "mlptwt"
-   ]
+   ],
+   "ja": "マイリトルポニー〜トモダチは魔法〜"
   },
   "nagi no asukara": {
    "en": "nagi no asukara",
@@ -23802,7 +24383,8 @@
     "凪のあすから",
     "凪あす",
     "来自风平浪静的明天"
-   ]
+   ],
+   "ja": "凪のあすから"
   },
   "nanashi inc.": {
    "en": "nanashi inc.",
@@ -23810,7 +24392,8 @@
     "ななしいんく",
     "774inc.",
     "ななしふぇすどぅーいっと"
-   ]
+   ],
+   "ja": "ななしいんく"
   },
   "nanatsu no taizai": {
    "en": "nanatsu no taizai",
@@ -23819,10 +24402,12 @@
     "七つの大罪(漫画)",
     "七つの大罪(鈴木央)",
     "七大罪"
-   ]
+   ],
+   "ja": "七つの大罪"
   },
   "naruto": {
-   "en": "naruto"
+   "en": "naruto",
+   "ja": "NARUTO"
   },
   "naruto (series)": {
    "en": "naruto (series)",
@@ -23831,7 +24416,8 @@
     "NARUTO",
     "NARUTOシリーズ",
     "火影忍者(系列)"
-   ]
+   ],
+   "ja": "NARUTO"
   },
   "naruto shippuuden": {
    "en": "naruto shippuuden",
@@ -23843,7 +24429,8 @@
     "火の意志を継ぐ者",
     "ザ・ロストタワー",
     "疾風伝忍者の道へ"
-   ]
+   ],
+   "ja": "NARUTO"
   },
   "needy girl overdose": {
    "en": "needy girl overdose",
@@ -23857,13 +24444,15 @@
     "needy_streamer_overload",
     "needystreameroverload",
     "니디걸오버도즈"
-   ]
+   ],
+   "ja": "NEEDY GIRL OVERDOSE"
   },
   "nekomonogatari": {
    "en": "nekomonogatari",
    "aliases": [
     "猫物語"
-   ]
+   ],
+   "ja": "猫物語"
   },
   "nekopara": {
    "en": "nekopara",
@@ -23871,7 +24460,8 @@
     "貓娘樂園",
     "猫娘乐园",
     "ネコぱら"
-   ]
+   ],
+   "ja": "NEKOPARA"
   },
   "neon genesis evangelion": {
    "en": "neon genesis evangelion",
@@ -23886,7 +24476,8 @@
     "NGE",
     "NeonGenesisEvangelion",
     "Evangelion"
-   ]
+   ],
+   "ja": "新世紀エヴァンゲリオン"
   },
   "neptune (series)": {
    "en": "neptune (series)",
@@ -23894,7 +24485,8 @@
     "超次元ゲイムネプテューヌ",
     "ネプテューヌ",
     "ネプテューヌシリーズ"
-   ]
+   ],
+   "ja": "超次元ゲイム ネプテューヌ"
   },
   "new game!": {
    "en": "new game!",
@@ -23902,25 +24494,29 @@
     "NEWGAME!",
     "ニューゲーム",
     "NEWGAME!!"
-   ]
+   ],
+   "ja": "NEW GAME!"
   },
   "new horizon": {
    "en": "new horizon",
    "aliases": [
     "ニューホライズン"
-   ]
+   ],
+   "ja": "ニューホライズン"
   },
   "new super mario bros. u deluxe": {
    "en": "new super mario bros. u deluxe",
    "aliases": [
     "NewスーパーマリオブラザーズUデラックス"
-   ]
+   ],
+   "ja": "マリオ"
   },
   "nichijou": {
    "en": "nichijou",
    "aliases": [
     "日常(あらゐけいいち)"
-   ]
+   ],
+   "ja": "日常"
   },
   "nier": {
    "en": "nier",
@@ -23928,17 +24524,20 @@
     "ニーアゲシュタルト",
     "ニーアレプリカント",
     "尼尔伪装者"
-   ]
+   ],
+   "ja": "NieR"
   },
   "nier:automata": {
-   "en": "nier:automata"
+   "en": "nier:automata",
+   "ja": "NieR:Automata"
   },
   "nier (series)": {
    "en": "nier (series)",
    "aliases": [
     "ニーア",
     "NieR"
-   ]
+   ],
+   "ja": "NieR"
   },
   "nige jouzu no wakagimi": {
    "en": "nige jouzu no wakagimi",
@@ -23949,7 +24548,8 @@
     "the_elusive_samurai",
     "njwk",
     "擅长逃跑的少主"
-   ]
+   ],
+   "ja": "逃げ上手の若君"
   },
   "nijisanji": {
    "en": "nijisanji",
@@ -23971,7 +24571,8 @@
     "にじさんじWORLDTOUR2025",
     "Nijihub",
     "Nijilewd"
-   ]
+   ],
+   "ja": "にじさんじ"
   },
   "nijisanji en": {
    "en": "nijisanji en",
@@ -23979,26 +24580,30 @@
     "にじさんじEN",
     "NIJISANJI_EN",
     "TAROTSANJIEN"
-   ]
+   ],
+   "ja": "にじさんじEN"
   },
   "nikki (series)": {
    "en": "nikki (series)",
    "aliases": [
     "ニキシリーズ",
     "暖暖(系列)"
-   ]
+   ],
+   "ja": "ニキシリーズ"
   },
   "nisekoi": {
    "en": "nisekoi",
    "aliases": [
     "ニセコイ"
-   ]
+   ],
+   "ja": "ニセコイ"
   },
   "nisemonogatari": {
    "en": "nisemonogatari",
    "aliases": [
     "偽物語"
-   ]
+   ],
+   "ja": "偽物語"
   },
   "nitroplus": {
    "en": "nitroplus",
@@ -24006,7 +24611,8 @@
     "ニトロプラス",
     "Nitroplus+",
     "NITROPLUS"
-   ]
+   ],
+   "ja": "ニトロプラス"
   },
   "no game no life": {
    "en": "no game no life",
@@ -24016,20 +24622,23 @@
     "ノーゲームノーライフ",
     "ノーゲーム・ノーライフゼロ",
     "游戏人生"
-   ]
+   ],
+   "ja": "ノーゲーム・ノーライフ"
   },
   "noble witches": {
    "en": "noble witches",
    "aliases": [
     "ノーブルウィッチーズ"
-   ]
+   ],
+   "ja": "ノーブルウィッチーズ"
   },
   "non non biyori": {
    "en": "non non biyori",
    "aliases": [
     "のんのんびより",
     "悠悠哉哉少女日和"
-   ]
+   ],
+   "ja": "のんのんびより"
   },
   "nu carnival": {
    "en": "nu carnival",
@@ -24043,7 +24652,8 @@
     "nu:carnival",
     "NeonCarnival",
     "新世界狂欢"
-   ]
+   ],
+   "ja": "NU:カーニバル"
   },
   "oboro muramasa": {
    "en": "oboro muramasa",
@@ -24051,7 +24661,8 @@
     "朧村正",
     "胧村正",
     "雷神(朧村正)"
-   ]
+   ],
+   "ja": "朧村正"
   },
   "occultic;nine": {
    "en": "occultic;nine",
@@ -24061,20 +24672,23 @@
     "オカルティック・ナイン",
     "超自然九人组",
     "occultic_nine"
-   ]
+   ],
+   "ja": "Occultic;Nine"
   },
   "odin sphere": {
    "en": "odin sphere",
    "aliases": [
     "オーディンスフィア"
-   ]
+   ],
+   "ja": "オーディンスフィア"
   },
   "omamori himari": {
    "en": "omamori himari",
    "aliases": [
     "おまひま",
     "おまもりひまり"
-   ]
+   ],
+   "ja": "おまもりひまり"
   },
   "omniscient reader's viewpoint": {
    "en": "omniscient reader's viewpoint",
@@ -24084,7 +24698,8 @@
     "orv",
     "全知读者视角",
     "全知的な読者の視点から"
-   ]
+   ],
+   "ja": "全知的な読者の視点から"
   },
   "omori": {
    "en": "omori",
@@ -24097,7 +24712,8 @@
     "OMORIART",
     "OMORI1000users入り",
     "OMORI版週ドロライ"
-   ]
+   ],
+   "ja": "OMORI"
   },
   "one-punch man": {
    "en": "one-punch man",
@@ -24108,7 +24724,8 @@
     "One-punchman",
     "一撃男",
     "一拳超人"
-   ]
+   ],
+   "ja": "ワンパンマン"
   },
   "one piece": {
    "en": "one piece",
@@ -24127,14 +24744,16 @@
     "今週のワンピ",
     "ワンピ",
     "OP夢"
-   ]
+   ],
+   "ja": "ONE PIECE"
   },
   "one piece film: red": {
    "en": "one piece film: red",
    "aliases": [
     "RED(ONEPIECEの映画)",
     "FILMRED"
-   ]
+   ],
+   "ja": "ONE PIECE FILM RED"
   },
   "onegai my melody": {
    "en": "onegai my melody",
@@ -24143,13 +24762,15 @@
     "我愛美樂蒂",
     "奇幻魔法Melody",
     "おねメロ"
-   ]
+   ],
+   "ja": "おねがいマイメロディ"
   },
   "onegai teacher": {
    "en": "onegai teacher",
    "aliases": [
     "おねがい☆ティーチャー"
-   ]
+   ],
+   "ja": "おねがい☆ティーチャー"
   },
   "onii-chan wa oshimai!": {
    "en": "onii-chan wa oshimai!",
@@ -24159,14 +24780,16 @@
     "お兄ちゃんはおしまい!",
     "おにまいお絵描き",
     "别当欧尼酱了!"
-   ]
+   ],
+   "ja": "お兄ちゃんはおしまい！"
   },
   "ookami (game)": {
    "en": "ookami (game)",
    "aliases": [
     "大神",
     "okami"
-   ]
+   ],
+   "ja": "大神"
   },
   "ore no imouto ga konna ni kawaii wake ga nai": {
    "en": "ore no imouto ga konna ni kawaii wake ga nai",
@@ -24175,7 +24798,8 @@
     "俺妹",
     "俺の妹がこんなに可愛いわけがない。",
     "俺の妹"
-   ]
+   ],
+   "ja": "俺の妹がこんなに可愛いわけがない"
   },
   "original": {
    "en": "original",
@@ -24258,7 +24882,8 @@
     "my_ocs_art",
     "オリキャライラスト",
     "originalart"
-   ]
+   ],
+   "ja": "オリジナル"
   },
   "os-tan": {
    "en": "os-tan",
@@ -24269,7 +24894,8 @@
     "OS擬人化",
     "os",
     "ostan"
-   ]
+   ],
+   "ja": "OSたん"
   },
   "oshi no ko": {
    "en": "oshi no ko",
@@ -24278,7 +24904,8 @@
     "【推しの子】",
     "我推的孩子",
     "oshinoko"
-   ]
+   ],
+   "ja": "【推しの子】"
   },
   "oshiro project:re": {
    "en": "oshiro project:re",
@@ -24291,13 +24918,15 @@
     "城コレ",
     "城これ",
     "Castle_Project"
-   ]
+   ],
+   "ja": "御城プロジェクト:RE"
   },
   "osomatsu-kun": {
    "en": "osomatsu-kun",
    "aliases": [
     "おそ松くん"
-   ]
+   ],
+   "ja": "おそ松くん"
   },
   "osomatsu-san": {
    "en": "osomatsu-san",
@@ -24306,13 +24935,15 @@
     "夢松",
     "BL松",
     "松野家次男版深夜の真剣お絵描き60分一本勝負"
-   ]
+   ],
+   "ja": "おそ松さん"
   },
   "osomatsu (series)": {
    "en": "osomatsu (series)",
    "aliases": [
     "おそ松さん/くん"
-   ]
+   ],
+   "ja": "おそ松さん/くん"
   },
   "otome game no hametsu flag shika nai akuyaku reijou ni tensei shite shimatta": {
    "en": "otome game no hametsu flag shika nai akuyaku reijou ni tensei shite shimatta",
@@ -24320,14 +24951,16 @@
     "乙女ゲームの破滅フラグしかない悪役令嬢に転生してしまった",
     "はめふら",
     "转生恶役只好拔除破灭旗帜"
-   ]
+   ],
+   "ja": "乙女ゲームの破滅フラグしかない悪役令嬢に転生してしまった"
   },
   "otonari no tenshi-sama ni itsu no mani ka dame ningen ni sarete ita ken": {
    "en": "otonari no tenshi-sama ni itsu no mani ka dame ningen ni sarete ita ken",
    "aliases": [
     "お隣の天使様にいつの間にか駄目人間にされていた件",
     "お隣の天使様"
-   ]
+   ],
+   "ja": "お隣の天使様にいつの間にか駄目人間にされていた件"
   },
   "overlord (maruyama)": {
    "en": "overlord (maruyama)",
@@ -24336,7 +24969,8 @@
     "オーバーロード(アニメ)",
     "オーバーロード",
     "オーバーロード(小説)"
-   ]
+   ],
+   "ja": "オーバーロード"
   },
   "overwatch": {
    "en": "overwatch",
@@ -24353,10 +24987,12 @@
     "守望先锋2",
     "Overwatch2",
     "Overwatch2fanart"
-   ]
+   ],
+   "ja": "オーバーウォッチ"
   },
   "overwatch 1": {
-   "en": "overwatch 1"
+   "en": "overwatch 1",
+   "ja": "オーバーウォッチ"
   },
   "owari no seraph": {
    "en": "owari no seraph",
@@ -24364,13 +25000,15 @@
     "終わりのセラフ",
     "終わりのセラ腐",
     "终结的炽天使"
-   ]
+   ],
+   "ja": "終わりのセラフ"
   },
   "owarimonogatari": {
    "en": "owarimonogatari",
    "aliases": [
     "終物語"
-   ]
+   ],
+   "ja": "終物語"
   },
   "pangya": {
    "en": "pangya",
@@ -24378,14 +25016,16 @@
     "팡야",
     "パンヤ",
     "スカッとゴルフパンヤ"
-   ]
+   ],
+   "ja": "スカッとゴルフ パンヤ"
   },
   "pani poni dash!": {
    "en": "pani poni dash!",
    "aliases": [
     "ぱにぽに",
     "ぱにぽにだっしゅ!"
-   ]
+   ],
+   "ja": "ぱにぽにだっしゅ！"
   },
   "panty & stocking with garterbelt": {
    "en": "panty & stocking with garterbelt",
@@ -24401,7 +25041,8 @@
     "Newパンスト",
     "pnstプラス",
     "pnst夢"
-   ]
+   ],
+   "ja": "パンティ＆ストッキングwithガーターベルト"
   },
   "path to nowhere": {
    "en": "path to nowhere",
@@ -24412,14 +25053,16 @@
     "辛迪加涂鸦大队",
     "PathToNowhere",
     "PTN"
-   ]
+   ],
+   "ja": "無期迷途"
   },
   "persona": {
    "en": "persona",
    "aliases": [
     "ペルソナ",
     "女神异闻录"
-   ]
+   ],
+   "ja": "ペルソナ"
   },
   "persona 3": {
    "en": "persona 3",
@@ -24428,14 +25071,16 @@
     "persona3",
     "女神异闻录3",
     "P3"
-   ]
+   ],
+   "ja": "ペルソナ3"
   },
   "persona 3 portable": {
    "en": "persona 3 portable",
    "aliases": [
     "P3P",
     "ペルソナ3ポータブル"
-   ]
+   ],
+   "ja": "ペルソナ3ポータブル"
   },
   "persona 3 reload": {
    "en": "persona 3 reload",
@@ -24443,7 +25088,8 @@
     "ペルソナ3リロード",
     "p3r",
     "Persona3Reload"
-   ]
+   ],
+   "ja": "ペルソナ３ リロード"
   },
   "persona 4": {
    "en": "persona 4",
@@ -24452,7 +25098,8 @@
     "P4",
     "persona4",
     "女神异闻录4"
-   ]
+   ],
+   "ja": "ペルソナ4"
   },
   "persona 5": {
    "en": "persona 5",
@@ -24462,7 +25109,8 @@
     "Persona5",
     "女神异闻录5",
     "P5腐"
-   ]
+   ],
+   "ja": "ペルソナ5"
   },
   "persona 5 the royal": {
    "en": "persona 5 the royal",
@@ -24471,20 +25119,23 @@
     "ペルソナ5R",
     "ペルソナ5ザ・ロイヤル",
     "ペルソナ5ロイヤル"
-   ]
+   ],
+   "ja": "ペルソナ５ ザ・ロイヤル"
   },
   "phantasy star": {
    "en": "phantasy star",
    "aliases": [
     "ファンタシースター"
-   ]
+   ],
+   "ja": "ファンタシースター"
   },
   "phantasy star online 2": {
    "en": "phantasy star online 2",
    "aliases": [
     "PSO2",
     "ファンタシースターオンライン2"
-   ]
+   ],
+   "ja": "ファンタシースターオンライン2"
   },
   "phantom blood": {
    "en": "phantom blood",
@@ -24492,16 +25143,19 @@
     "ファントムブラッド",
     "幻影之血",
     "JOJO的奇妙冒险:幻影之血"
-   ]
+   ],
+   "ja": "ジョジョの奇妙な冒険 ファントムブラッド"
   },
   "phoenix wright: ace attorney - dual destinies": {
    "en": "phoenix wright: ace attorney - dual destinies",
    "aliases": [
     "逆転裁判5"
-   ]
+   ],
+   "ja": "逆転裁判5"
   },
   "piapro": {
-   "en": "piapro"
+   "en": "piapro",
+   "ja": "piapro"
   },
   "pikmin (series)": {
    "en": "pikmin (series)",
@@ -24509,17 +25163,20 @@
     "ピクミン",
     "皮克敏",
     "Pikmin"
-   ]
+   ],
+   "ja": "ピクミン"
   },
   "planetarian": {
-   "en": "planetarian"
+   "en": "planetarian",
+   "ja": "planetarian ～ちいさなほしのゆめ～"
   },
   "plastic memories": {
    "en": "plastic memories",
    "aliases": [
     "プラスティック・メモリーズ",
     "プラメモ"
-   ]
+   ],
+   "ja": "プラスティック・メモリーズ"
   },
   "pokemon": {
    "en": "pokemon",
@@ -24569,7 +25226,8 @@
     "pokesona",
     "pokemonnsfw",
     "pokemonart"
-   ]
+   ],
+   "ja": "ポケモン"
   },
   "pokemon (anime)": {
    "en": "pokemon (anime)",
@@ -24590,13 +25248,15 @@
     "劇場版ポケットモンスター",
     "カスミ(アニポケ)",
     "タケシ(アニポケ)"
-   ]
+   ],
+   "ja": "ポケモン"
   },
   "pokemon (classic anime)": {
    "en": "pokemon (classic anime)",
    "aliases": [
     "ポケットモンスター(アニポケ第1シリーズ)"
-   ]
+   ],
+   "ja": "ポケモン"
   },
   "pokemon adventures": {
    "en": "pokemon adventures",
@@ -24612,38 +25272,47 @@
     "クリスタル(ポケスペ)",
     "PKSP",
     "pokespe"
-   ]
+   ],
+   "ja": "ポケットモンスターSPECIAL"
   },
   "pokemon bw": {
-   "en": "pokemon bw"
+   "en": "pokemon bw",
+   "ja": "ポケモン"
   },
   "pokemon bw2": {
-   "en": "pokemon bw2"
+   "en": "pokemon bw2",
+   "ja": "ポケモン"
   },
   "pokemon dppt": {
-   "en": "pokemon dppt"
+   "en": "pokemon dppt",
+   "ja": "ポケモン"
   },
   "pokemon frlg": {
-   "en": "pokemon frlg"
+   "en": "pokemon frlg",
+   "ja": "ポケモン"
   },
   "pokemon go": {
    "en": "pokemon go",
    "aliases": [
     "ポケモンGO",
     "PokemonGO"
-   ]
+   ],
+   "ja": "Pokémon GO"
   },
   "pokemon gsc": {
-   "en": "pokemon gsc"
+   "en": "pokemon gsc",
+   "ja": "ポケモン"
   },
   "pokemon hgss": {
-   "en": "pokemon hgss"
+   "en": "pokemon hgss",
+   "ja": "ポケモン"
   },
   "pokemon journeys": {
    "en": "pokemon journeys",
    "aliases": [
     "ポケットモンスター(アニポケ第7シリーズ)"
-   ]
+   ],
+   "ja": "ポケットモンスター"
   },
   "pokemon legends: arceus": {
    "en": "pokemon legends: arceus",
@@ -24660,41 +25329,52 @@
     "ポケモンLegendsアルセウス",
     "PokémonLEGEND",
     "pla"
-   ]
+   ],
+   "ja": "Pokémon LEGENDS アルセウス"
   },
   "pokemon oras": {
-   "en": "pokemon oras"
+   "en": "pokemon oras",
+   "ja": "ポケモン"
   },
   "pokemon platinum": {
    "en": "pokemon platinum",
    "aliases": [
     "ポケットモンスタープラチナ",
     "ポケモンプラチナ"
-   ]
+   ],
+   "ja": "ポケットモンスター プラチナ"
   },
   "pokemon rgby": {
-   "en": "pokemon rgby"
+   "en": "pokemon rgby",
+   "ja": "ポケモン"
   },
   "pokemon rse": {
-   "en": "pokemon rse"
+   "en": "pokemon rse",
+   "ja": "ポケモン"
   },
   "pokemon sm": {
-   "en": "pokemon sm"
+   "en": "pokemon sm",
+   "ja": "ポケモン"
   },
   "pokemon sm (anime)": {
-   "en": "pokemon sm (anime)"
+   "en": "pokemon sm (anime)",
+   "ja": "ポケモン"
   },
   "pokemon sv": {
-   "en": "pokemon sv"
+   "en": "pokemon sv",
+   "ja": "ポケモン"
   },
   "pokemon swsh": {
-   "en": "pokemon swsh"
+   "en": "pokemon swsh",
+   "ja": "ポケモン"
   },
   "pokemon xy": {
-   "en": "pokemon xy"
+   "en": "pokemon xy",
+   "ja": "ポケモン"
   },
   "pokemon xy (anime)": {
-   "en": "pokemon xy (anime)"
+   "en": "pokemon xy (anime)",
+   "ja": "ポケモン"
   },
   "poptepipic": {
    "en": "poptepipic",
@@ -24709,7 +25389,8 @@
     "ポプテピピック再放送",
     "ポプテピピック2期",
     "ポプテ2期"
-   ]
+   ],
+   "ja": "ポプテピピック"
   },
   "powerpuff girls": {
    "en": "powerpuff girls",
@@ -24720,7 +25401,8 @@
     "PowerpuffGirls",
     "PPG",
     "飞天小女警"
-   ]
+   ],
+   "ja": "パワーパフガールズ"
   },
   "precure": {
    "en": "precure",
@@ -24737,14 +25419,16 @@
     "週刊プリキュア日記",
     "プリキュア1000users入り",
     "プリキュア版深夜の真剣お絵描き60分一本勝負"
-   ]
+   ],
+   "ja": "プリキュア"
   },
   "pretty series": {
    "en": "pretty series",
    "aliases": [
     "プリティーシリーズ",
     "星光系列"
-   ]
+   ],
+   "ja": "プリティーシリーズ"
   },
   "princess connect!": {
    "en": "princess connect!",
@@ -24761,7 +25445,8 @@
     "PrincessConnectReDive",
     "超異域公主連結☆Re:Dive",
     "公主连结"
-   ]
+   ],
+   "ja": "プリンセスコネクト！Re:Dive"
   },
   "princess principal": {
    "en": "princess principal",
@@ -24769,7 +25454,8 @@
     "プリンセス・プリンシパル",
     "プリンセスプリンシパル",
     "pripri"
-   ]
+   ],
+   "ja": "プリンセス・プリンシパル"
   },
   "princess tutu": {
    "en": "princess tutu",
@@ -24777,7 +25463,8 @@
     "プリンセスチュチュ",
     "princesstutu",
     "princess_tutu"
-   ]
+   ],
+   "ja": "プリンセスチュチュ"
   },
   "pripara": {
    "en": "pripara",
@@ -24791,7 +25478,8 @@
     "百合パラ",
     "アイカツプリパラ",
     "カツパラ"
-   ]
+   ],
+   "ja": "プリパラ"
   },
   "project moon": {
    "en": "project moon",
@@ -24803,7 +25491,8 @@
     "프문",
     "プロジェクトムーン",
     "プロムン"
-   ]
+   ],
+   "ja": "Project Moon"
   },
   "project sekai": {
    "en": "project sekai",
@@ -24829,14 +25518,16 @@
     "世界計畫",
     "プロセカFA",
     "프로세카"
-   ]
+   ],
+   "ja": "プロジェクトセカイ カラフルステージ！ feat. 初音ミク"
   },
   "project voltage": {
    "en": "project voltage",
    "aliases": [
     "ポケミク",
     "ProjectVOLTAGE"
-   ]
+   ],
+   "ja": "Project VOLTAGE"
   },
   "promare": {
    "en": "promare",
@@ -24844,10 +25535,12 @@
     "プロメア",
     "腐ロメア",
     "普罗米亚"
-   ]
+   ],
+   "ja": "プロメア"
   },
   "punch-out!!": {
-   "en": "punch-out!!"
+   "en": "punch-out!!",
+   "ja": "パンチアウト!!"
   },
   "puniru wa kawaii slime": {
    "en": "puniru wa kawaii slime",
@@ -24856,7 +25549,8 @@
     "ぷにる",
     "ぷにかわ",
     "ぷにるのかわいいイラスト"
-   ]
+   ],
+   "ja": "ぷにるはかわいいスライム"
   },
   "punishing: gray raven": {
    "en": "punishing: gray raven",
@@ -24870,7 +25564,8 @@
     "punishinggrayraven",
     "PGR",
     "パニグレ意識"
-   ]
+   ],
+   "ja": "パニシング：グレイレイヴン"
   },
   "puyopuyo": {
    "en": "puyopuyo",
@@ -24878,7 +25573,8 @@
     "ぷよぷよ",
     "腐よ腐よ",
     "ぷよぷよ!!"
-   ]
+   ],
+   "ja": "ぷよぷよ"
   },
   "puzzle & dragons": {
    "en": "puzzle & dragons",
@@ -24890,7 +25586,8 @@
     "puzzle&dragons",
     "PAD",
     "パズドラ(アニメ)"
-   ]
+   ],
+   "ja": "パズル＆ドラゴンズ"
   },
   "queen's blade": {
    "en": "queen's blade",
@@ -24898,7 +25595,8 @@
     "クイーンズブレイド",
     "クィーンズブレイド",
     "QB"
-   ]
+   ],
+   "ja": "クイーンズブレイド"
   },
   "quiz magic academy": {
    "en": "quiz magic academy",
@@ -24907,7 +25605,8 @@
     "QMA",
     "クイズマジックアカデミー",
     "マジアカ"
-   ]
+   ],
+   "ja": "クイズマジックアカデミー"
   },
   "quiz magic academy the world evolve": {
    "en": "quiz magic academy the world evolve",
@@ -24915,7 +25614,8 @@
     "クイズマジックアカデミーTHE_WORLD_EVOLVE",
     "THE_WORLD_EVOLVE",
     "クイズマジックアカデミーEVO"
-   ]
+   ],
+   "ja": "クイズマジックアカデミー THE WORLD EVOLVE"
   },
   "ragnarok online": {
    "en": "ragnarok online",
@@ -24931,13 +25631,15 @@
     "Ragnarok",
     "RO20周年",
     "【PURO】"
-   ]
+   ],
+   "ja": "ラグナロクオンライン"
   },
   "rakuen tsuihou": {
    "en": "rakuen tsuihou",
    "aliases": [
     "楽園追放"
-   ]
+   ],
+   "ja": "楽園追放"
   },
   "ranma 1/2": {
    "en": "ranma 1/2",
@@ -24949,7 +25651,8 @@
     "Ranma_1/2",
     "らんま2分の1",
     "乱马"
-   ]
+   ],
+   "ja": "らんま1/2"
   },
   "re:zero kara hajimeru isekai seikatsu": {
    "en": "re:zero kara hajimeru isekai seikatsu",
@@ -24962,27 +25665,31 @@
     "Re:从零开始的异世界生活",
     "Re0",
     "rezero"
-   ]
+   ],
+   "ja": "Re:ゼロから始める異世界生活"
   },
   "read or die": {
    "en": "read or die",
    "aliases": [
     "R.O.D",
     "リード・オア・ダイ"
-   ]
+   ],
+   "ja": "R.O.D"
   },
   "rebuild of evangelion": {
    "en": "rebuild of evangelion",
    "aliases": [
     "ヱヴァンゲリヲン新劇場版"
-   ]
+   ],
+   "ja": "ヱヴァンゲリヲン新劇場版"
   },
   "record of lodoss war": {
    "en": "record of lodoss war",
    "aliases": [
     "ロードス島戦記",
     "罗德岛战记"
-   ]
+   ],
+   "ja": "ロードス島戦記"
   },
   "renkin san-kyuu magical pokaan": {
    "en": "renkin san-kyuu magical pokaan",
@@ -24992,7 +25699,8 @@
     "錬金3級",
     "まじかる?ぽか〜ん",
     "magical_pokaan"
-   ]
+   ],
+   "ja": "錬金3級 まじかる?ぽか〜ん"
   },
   "resident evil": {
    "en": "resident evil",
@@ -25000,7 +25708,8 @@
     "バイオハザード",
     "ResidentEvil",
     "生化危机"
-   ]
+   ],
+   "ja": "バイオハザード"
   },
   "resident evil 2": {
    "en": "resident evil 2",
@@ -25008,7 +25717,8 @@
     "生化危机2",
     "バイオハザード2",
     "バイオハザードRE:2"
-   ]
+   ],
+   "ja": "バイオハザード2"
   },
   "resident evil 3: nemesis": {
    "en": "resident evil 3: nemesis",
@@ -25016,35 +25726,40 @@
     "生化危机3",
     "バイオハザード3",
     "バイオハザードRE:3"
-   ]
+   ],
+   "ja": "バイオハザード3"
   },
   "resident evil 4": {
    "en": "resident evil 4",
    "aliases": [
     "生化危机4",
     "バイオハザード4"
-   ]
+   ],
+   "ja": "バイオハザード4"
   },
   "resident evil 4 (remake)": {
    "en": "resident evil 4 (remake)",
    "aliases": [
     "バイオハザードRE:4",
     "ResidentEvil4Remake"
-   ]
+   ],
+   "ja": "バイオハザード RE:4"
   },
   "resident evil 5": {
    "en": "resident evil 5",
    "aliases": [
     "生化危机5",
     "バイオハザード5"
-   ]
+   ],
+   "ja": "バイオハザード5"
   },
   "resident evil 6": {
    "en": "resident evil 6",
    "aliases": [
     "生化危机6",
     "バイオハザード6"
-   ]
+   ],
+   "ja": "バイオハザード6"
   },
   "resident evil village": {
    "en": "resident evil village",
@@ -25058,7 +25773,8 @@
     "バイオハザード8",
     "バイオ8",
     "resident_evil_8:_village"
-   ]
+   ],
+   "ja": "バイオハザード ヴィレッジ"
   },
   "reverse:1999": {
    "en": "reverse:1999",
@@ -25072,14 +25788,16 @@
     "Reverse1999FanWorkContest",
     "BackToTheFuture1999",
     "リバース1999二次創作CP"
-   ]
+   ],
+   "ja": "リバース：1999"
   },
   "rewrite": {
    "en": "rewrite",
    "aliases": [
     "Rewrite",
     "リライト"
-   ]
+   ],
+   "ja": "Rewrite"
   },
   "riddle joker": {
    "en": "riddle joker",
@@ -25087,32 +25805,37 @@
     "リドルジョーカー",
     "RIDDLE_JOKER",
     "RIDDLEJOKER"
-   ]
+   ],
+   "ja": "RIDDLE JOKER"
   },
   "rinne no lagrange": {
    "en": "rinne no lagrange",
    "aliases": [
     "輪廻のラグランジェ",
     "kamojo"
-   ]
+   ],
+   "ja": "輪廻のラグランジェ"
   },
   "rojiura satsuki: chapter heroine sanctuary": {
    "en": "rojiura satsuki: chapter heroine sanctuary",
    "aliases": [
     "路地裏さつき"
-   ]
+   ],
+   "ja": "路地裏さつき"
   },
   "rosario+vampire": {
    "en": "rosario+vampire",
    "aliases": [
     "ロザリオとバンパイア"
-   ]
+   ],
+   "ja": "ロザリオとバンパイア"
   },
   "rou-kyuu-bu!": {
    "en": "rou-kyuu-bu!",
    "aliases": [
     "ロウきゅーぶ!"
-   ]
+   ],
+   "ja": "ロウきゅーぶ!"
   },
   "rozen maiden": {
    "en": "rozen maiden",
@@ -25123,7 +25846,8 @@
     "rozen_maiden",
     "Rozen_Maiden",
     "ROZEN_MAIDEN"
-   ]
+   ],
+   "ja": "ローゼンメイデン"
   },
   "rurouni kenshin": {
    "en": "rurouni kenshin",
@@ -25135,7 +25859,8 @@
     "RurouniKenshin",
     "SamuraiX",
     "samurai_x"
-   ]
+   ],
+   "ja": "るろうに剣心"
   },
   "rwby": {
    "en": "rwby",
@@ -25143,7 +25868,8 @@
     "RWBY",
     "Rwby",
     "RWBYイラコン"
-   ]
+   ],
+   "ja": "RWBY"
   },
   "ryuuou no oshigoto!": {
    "en": "ryuuou no oshigoto!",
@@ -25154,7 +25880,8 @@
     "龍王的工作",
     "龙王的工作",
     "龙王的工作!"
-   ]
+   ],
+   "ja": "りゅうおうのおしごと!"
   },
   "saenai heroine no sodatekata": {
    "en": "saenai heroine no sodatekata",
@@ -25165,7 +25892,8 @@
     "冴えカノ",
     "路人女主的养成方法",
     "さえないヒロインのそだてかた"
-   ]
+   ],
+   "ja": "冴えない彼女の育てかた"
   },
   "saibou shinkyoku": {
    "en": "saibou shinkyoku",
@@ -25179,32 +25907,37 @@
     "CoE",
     "細胞神曲【腐】",
     "cellofempireo"
-   ]
+   ],
+   "ja": "細胞神曲"
   },
   "saikin yatotta maid ga ayashii": {
    "en": "saikin yatotta maid ga ayashii",
    "aliases": [
     "最近雇ったメイドが怪しい"
-   ]
+   ],
+   "ja": "最近雇ったメイドが怪しい"
   },
   "saki (manga)": {
    "en": "saki (manga)",
    "aliases": [
     "咲-saki-",
     "咲"
-   ]
+   ],
+   "ja": "咲-Saki-"
   },
   "saki achiga-hen": {
    "en": "saki achiga-hen",
    "aliases": [
     "阿知賀編"
-   ]
+   ],
+   "ja": "咲-Saki- 阿知賀編"
   },
   "sakura-sou no pet na kanojo": {
    "en": "sakura-sou no pet na kanojo",
    "aliases": [
     "さくら荘のペットな彼女"
-   ]
+   ],
+   "ja": "さくら荘のペットな彼女"
   },
   "sakura taisen": {
    "en": "sakura taisen",
@@ -25213,13 +25946,15 @@
     "Sakura_Wars",
     "サクラ画廊",
     "サクラ大戦シリーズ"
-   ]
+   ],
+   "ja": "サクラ大戦"
   },
   "sakura trick": {
    "en": "sakura trick",
    "aliases": [
     "桜trick"
-   ]
+   ],
+   "ja": "桜Trick"
   },
   "samurai spirits": {
    "en": "samurai spirits",
@@ -25228,14 +25963,16 @@
     "Samurai_Shodown",
     "サムライスピリッツ",
     "サムスピ"
-   ]
+   ],
+   "ja": "サムライスピリッツ"
   },
   "sana channel": {
    "en": "sana channel",
    "aliases": [
     "名取さな",
     "ヌォンタート"
-   ]
+   ],
+   "ja": "名取さな"
   },
   "sanoba witch": {
    "en": "sanoba witch",
@@ -25244,7 +25981,8 @@
     "魔女的夜宴",
     "サノバウイッチ",
     "SabbatOfTheWitch"
-   ]
+   ],
+   "ja": "サノバウィッチ"
   },
   "sanrio": {
    "en": "sanrio",
@@ -25254,7 +25992,8 @@
     "サンリオコラボ",
     "サンリオキャラクター大賞",
     "サンリオキャラクター"
-   ]
+   ],
+   "ja": "サンリオ"
   },
   "saru getchu": {
    "en": "saru getchu",
@@ -25262,7 +26001,8 @@
     "サルゲッチュ",
     "ape_escape",
     "ApeEscape"
-   ]
+   ],
+   "ja": "サルゲッチュ"
   },
   "satsuriku no tenshi": {
    "en": "satsuriku no tenshi",
@@ -25271,7 +26011,8 @@
     "angels_of_death",
     "杀戮天使",
     "杀戮的天使"
-   ]
+   ],
+   "ja": "殺戮の天使"
   },
   "saya no uta": {
    "en": "saya no uta",
@@ -25282,7 +26023,8 @@
     "songofsaya",
     "沙耶之歌",
     "沙耶の呗"
-   ]
+   ],
+   "ja": "沙耶の唄"
   },
   "sayonara zetsubou sensei": {
    "en": "sayonara zetsubou sensei",
@@ -25290,27 +26032,31 @@
     "さよなら絶望先生",
     "再见绝望先生",
     "绝望先生"
-   ]
+   ],
+   "ja": "さよなら絶望先生"
   },
   "school days": {
    "en": "school days",
    "aliases": [
     "SchoolDays",
     "スクールデイズ"
-   ]
+   ],
+   "ja": "School Days"
   },
   "school rumble": {
    "en": "school rumble",
    "aliases": [
     "スクールランブル"
-   ]
+   ],
+   "ja": "スクールランブル"
   },
   "seiken densetsu": {
    "en": "seiken densetsu",
    "aliases": [
     "聖剣伝説",
     "圣剑传说"
-   ]
+   ],
+   "ja": "聖剣伝説"
   },
   "seiken densetsu 3": {
    "en": "seiken densetsu 3",
@@ -25318,7 +26064,8 @@
     "聖剣伝説3",
     "聖剣3",
     "聖剣伝説3ToM"
-   ]
+   ],
+   "ja": "聖剣伝説3"
   },
   "seishun buta yarou": {
    "en": "seishun buta yarou",
@@ -25330,49 +26077,57 @@
     "青春ブタ野郎シリーズ",
     "aobuta",
     "aobuta_anime"
-   ]
+   ],
+   "ja": "青春ブタ野郎"
   },
   "seitokai yakuindomo": {
    "en": "seitokai yakuindomo",
    "aliases": [
     "生徒会役員共"
-   ]
+   ],
+   "ja": "生徒会役員共"
   },
   "sekai seifuku: bouryaku no zvezda": {
    "en": "sekai seifuku: bouryaku no zvezda",
    "aliases": [
     "謀略のズヴィズダー",
     "世界征服~謀略のズヴィズダー~"
-   ]
+   ],
+   "ja": "謀略のズヴィズダー"
   },
   "sekaiju no meikyuu": {
    "en": "sekaiju no meikyuu",
    "aliases": [
     "世界樹の迷宮"
-   ]
+   ],
+   "ja": "世界樹の迷宮"
   },
   "sekaiju no meikyuu 2": {
    "en": "sekaiju no meikyuu 2",
    "aliases": [
     "世界樹の迷宮2",
     "世界樹の迷宮II"
-   ]
+   ],
+   "ja": "世界樹の迷宮II"
   },
   "sekaiju no meikyuu 5": {
    "en": "sekaiju no meikyuu 5",
    "aliases": [
     "世界樹の迷宮5"
-   ]
+   ],
+   "ja": "世界樹の迷宮V"
   },
   "sen no kiseki (series)": {
-   "en": "sen no kiseki (series)"
+   "en": "sen no kiseki (series)",
+   "ja": "閃の軌跡"
   },
   "sen no kiseki i": {
    "en": "sen no kiseki i",
    "aliases": [
     "閃の軌跡",
     "軌跡シリーズ"
-   ]
+   ],
+   "ja": "閃の軌跡"
   },
   "sen no kiseki iii": {
    "en": "sen no kiseki iii",
@@ -25380,7 +26135,8 @@
     "閃の軌跡III",
     "閃の軌跡3",
     "軌跡シリーズ"
-   ]
+   ],
+   "ja": "閃の軌跡III"
   },
   "sen to chihiro no kamikakushi": {
    "en": "sen to chihiro no kamikakushi",
@@ -25388,7 +26144,8 @@
     "千と千尋の神隠し",
     "千与千寻",
     "SpiritedAway"
-   ]
+   ],
+   "ja": "千と千尋の神隠し"
   },
   "senjou no valkyria (series)": {
    "en": "senjou no valkyria (series)",
@@ -25396,13 +26153,15 @@
     "戦場のヴァルキュリア",
     "Valkyria",
     "戦ヴァル"
-   ]
+   ],
+   "ja": "戦場のヴァルキュリア"
   },
   "senjou no valkyria 1": {
    "en": "senjou no valkyria 1",
    "aliases": [
     "戦場のヴァルキュリア"
-   ]
+   ],
+   "ja": "戦場のヴァルキュリア"
   },
   "senki zesshou symphogear": {
    "en": "senki zesshou symphogear",
@@ -25417,14 +26176,16 @@
     "SymphogearXD",
     "戰姬絕唱SYMPHOGEAR",
     "战姬绝唱SYMPHOGEAR"
-   ]
+   ],
+   "ja": "戦姫絶唱シンフォギア"
   },
   "senpai ga uzai kouhai no hanashi": {
    "en": "senpai ga uzai kouhai no hanashi",
    "aliases": [
     "先輩がうざい後輩の話",
     "선배가짜증나는후배이야기"
-   ]
+   ],
+   "ja": "先輩がうざい後輩の話"
   },
   "senran kagura": {
    "en": "senran kagura",
@@ -25434,35 +26195,40 @@
     "闪乱神乐",
     "섬란카구라",
     "閃乱カグ"
-   ]
+   ],
+   "ja": "閃乱カグラ"
   },
   "senran kagura shinovi versus": {
    "en": "senran kagura shinovi versus",
    "aliases": [
     "少女達の証明",
     "閃乱カグラ少女達の証明"
-   ]
+   ],
+   "ja": "閃乱カグラ"
   },
   "senran kagura shoujo-tachi no shin'ei": {
    "en": "senran kagura shoujo-tachi no shin'ei",
    "aliases": [
     "閃乱カグラ-少女達の真影-",
     "少女達の真影"
-   ]
+   ],
+   "ja": "閃乱カグラ"
   },
   "senren banka": {
    "en": "senren banka",
    "aliases": [
     "千恋*万花",
     "千恋万花"
-   ]
+   ],
+   "ja": "千恋*万花"
   },
   "sewayaki kitsune no senko-san": {
    "en": "sewayaki kitsune no senko-san",
    "aliases": [
     "世話やきキツネの仙狐さん",
     "The_Helpful_Fox_Senko-san"
-   ]
+   ],
+   "ja": "世話やきキツネの仙狐さん"
   },
   "shadows house": {
    "en": "shadows house",
@@ -25472,21 +26238,24 @@
     "影宅",
     "Shadowshouse",
     "ชาโดว์เฮาส์"
-   ]
+   ],
+   "ja": "シャドーハウス"
   },
   "shakugan no shana": {
    "en": "shakugan no shana",
    "aliases": [
     "灼眼のシャナ",
     "灼眼的夏娜"
-   ]
+   ],
+   "ja": "灼眼のシャナ"
   },
   "shantae (series)": {
    "en": "shantae (series)",
    "aliases": [
     "シャンティ",
     "Shantae"
-   ]
+   ],
+   "ja": "シャンティ"
   },
   "shigatsu wa kimi no uso": {
    "en": "shigatsu wa kimi no uso",
@@ -25494,25 +26263,29 @@
     "四月は君の嘘",
     "君嘘",
     "没有你的四月"
-   ]
+   ],
+   "ja": "四月は君の嘘"
   },
   "shin godzilla": {
    "en": "shin godzilla",
    "aliases": [
     "シン・ゴジラ"
-   ]
+   ],
+   "ja": "シン・ゴジラ"
   },
   "shin jigen game neptune vii": {
    "en": "shin jigen game neptune vii",
    "aliases": [
     "新次元ゲイムネプテューヌVII"
-   ]
+   ],
+   "ja": "新次元ゲイム ネプテューヌVII"
   },
   "shingeki no bahamut": {
    "en": "shingeki no bahamut",
    "aliases": [
     "神撃のバハムート"
-   ]
+   ],
+   "ja": "神撃のバハムート"
   },
   "shingeki no kyojin": {
    "en": "shingeki no kyojin",
@@ -25524,26 +26297,30 @@
     "進撃の百合",
     "aot",
     "進撃の巨人イラコン"
-   ]
+   ],
+   "ja": "進撃の巨人"
   },
   "shino to ren": {
    "en": "shino to ren",
    "aliases": [
     "志乃と恋"
-   ]
+   ],
+   "ja": "志乃と恋"
   },
   "shinrabanshou": {
    "en": "shinrabanshou",
    "aliases": [
     "神羅万象",
     "神羅万象チョコ"
-   ]
+   ],
+   "ja": "神羅万象チョコ"
   },
   "shinryaku! ikamusume": {
    "en": "shinryaku! ikamusume",
    "aliases": [
     "侵略!イカ娘"
-   ]
+   ],
+   "ja": "侵略!イカ娘"
   },
   "shiro seijo to kuro bokushi": {
    "en": "shiro seijo to kuro bokushi",
@@ -25552,19 +26329,22 @@
     "白聖女與黑牧師",
     "白圣女与黑牧师",
     "white_saint_and_black_pastor"
-   ]
+   ],
+   "ja": "白聖女と黒牧師"
   },
   "shirobako": {
    "en": "shirobako",
    "aliases": [
     "SHIROBAKO"
-   ]
+   ],
+   "ja": "SHIROBAKO"
   },
   "shirokami project": {
    "en": "shirokami project",
    "aliases": [
     "白髪教団"
-   ]
+   ],
+   "ja": "白髪教団"
   },
   "shokugeki no souma": {
    "en": "shokugeki no souma",
@@ -25573,7 +26353,8 @@
     "Food_Wars!",
     "食戟之靈",
     "食戟之灵"
-   ]
+   ],
+   "ja": "食戟のソーマ"
   },
   "shoujo kageki revue starlight": {
    "en": "shoujo kageki revue starlight",
@@ -25585,7 +26366,8 @@
     "少女歌剧",
     "少女歌劇",
     "RevueStarlight"
-   ]
+   ],
+   "ja": "少女☆歌劇 レヴュースタァライト"
   },
   "shoujo kakumei utena": {
    "en": "shoujo kakumei utena",
@@ -25593,7 +26375,8 @@
     "少女革命ウテナ",
     "少女革命",
     "RevolutionaryGirlUtena"
-   ]
+   ],
+   "ja": "少女革命ウテナ"
   },
   "shoujo shuumatsu ryokou": {
    "en": "shoujo shuumatsu ryokou",
@@ -25602,7 +26385,8 @@
     "少女终末旅行",
     "소녀종말여행",
     "GirlsLastTour"
-   ]
+   ],
+   "ja": "少女終末旅行"
   },
   "show by rock!!": {
    "en": "show by rock!!",
@@ -25612,14 +26396,16 @@
     "BL69",
     "SB69ファン創作",
     "SB69新曲制作応援"
-   ]
+   ],
+   "ja": "SHOW BY ROCK!!"
   },
   "shuffle!": {
    "en": "shuffle!",
    "aliases": [
     "SHUFFLE!",
     "シャッフル!"
-   ]
+   ],
+   "ja": "SHUFFLE!"
   },
   "shukusei!! loli-kami requiem": {
    "en": "shukusei!! loli-kami requiem",
@@ -25629,30 +26415,35 @@
     "ロリ神レクイエム",
     "粛聖!!ロリ神レクイエム☆",
     "粛清ロリ神レクイエム"
-   ]
+   ],
+   "ja": "粛聖!! ロリ神レクイエム☆"
   },
   "silent hill (series)": {
    "en": "silent hill (series)",
    "aliases": [
     "サイレントヒルシリーズ",
     "SILENTHILL"
-   ]
+   ],
+   "ja": "SILENT HILL"
   },
   "silent hill 2": {
-   "en": "silent hill 2"
+   "en": "silent hill 2",
+   "ja": "SILENT HILL 2"
   },
   "silent hill 3": {
    "en": "silent hill 3",
    "aliases": [
     "サイレントヒル3"
-   ]
+   ],
+   "ja": "SILENT HILL 3"
   },
   "sinoalice": {
    "en": "sinoalice",
    "aliases": [
     "SINoALICE",
     "シノアリス"
-   ]
+   ],
+   "ja": "SINoALICE"
   },
   "skullgirls": {
    "en": "skullgirls",
@@ -25662,16 +26453,19 @@
     "skullgirls",
     "Skullgirls",
     "SKULLGIRLS"
-   ]
+   ],
+   "ja": "Skullgirls"
   },
   "slam dunk (series)": {
-   "en": "slam dunk (series)"
+   "en": "slam dunk (series)",
+   "ja": "SLAM DUNK"
   },
   "slayers": {
    "en": "slayers",
    "aliases": [
     "スレイヤーズ"
-   ]
+   ],
+   "ja": "スレイヤーズ"
   },
   "smile precure!": {
    "en": "smile precure!",
@@ -25679,13 +26473,15 @@
     "スマイルプリキュア!",
     "スマイルプリキュア",
     "スマプリ"
-   ]
+   ],
+   "ja": "スマイルプリキュア！"
   },
   "snk": {
    "en": "snk",
    "aliases": [
     "SNK"
-   ]
+   ],
+   "ja": "THE KING OF FIGHTERS"
   },
   "solo leveling": {
    "en": "solo leveling",
@@ -25697,7 +26493,8 @@
     "我独自升级",
     "我獨自升級",
     "OnlyILevelUp"
-   ]
+   ],
+   "ja": "俺だけレベルアップな件"
   },
   "sonic (series)": {
    "en": "sonic (series)",
@@ -25721,7 +26518,8 @@
     "SonicNews",
     "ソニかつ",
     "소닉파란"
-   ]
+   ],
+   "ja": "ソニック・ザ・ヘッジホッグ"
   },
   "sono bisque doll wa koi wo suru": {
    "en": "sono bisque doll wa koi wo suru",
@@ -25733,7 +26531,8 @@
     "MyDressUpDarling",
     "My_Dress-Up_Darling",
     "My_Dress_Up_Darling"
-   ]
+   ],
+   "ja": "その着せ替え人形は恋をする"
   },
   "sora no kiseki": {
    "en": "sora no kiseki",
@@ -25741,14 +26540,16 @@
     "空の軌跡",
     "軌跡シリーズ",
     "空之轨迹"
-   ]
+   ],
+   "ja": "英雄伝説 空の軌跡"
   },
   "sora no method": {
    "en": "sora no method",
    "aliases": [
     "天体のメソッド",
     "sorameso"
-   ]
+   ],
+   "ja": "天体のメソッド"
   },
   "sora no otoshimono": {
    "en": "sora no otoshimono",
@@ -25756,7 +26557,8 @@
     "そらのおとしもの",
     "そらおと",
     "天降之物"
-   ]
+   ],
+   "ja": "そらのおとしもの"
   },
   "soredemo ayumu wa yosetekuru": {
    "en": "soredemo ayumu wa yosetekuru",
@@ -25764,7 +26566,8 @@
     "それでも歩は寄せてくる",
     "将棋のやつ",
     "When_Will_Ayumu_Make_His_Move?"
-   ]
+   ],
+   "ja": "それでも歩は寄せてくる"
   },
   "soukou akki muramasa": {
    "en": "soukou akki muramasa",
@@ -25772,7 +26575,8 @@
     "装甲悪鬼村正",
     "装甲恶鬼村正",
     "fmdm"
-   ]
+   ],
+   "ja": "装甲悪鬼村正"
   },
   "soul eater": {
    "en": "soul eater",
@@ -25780,20 +26584,23 @@
     "ソウルイーター",
     "噬魂师",
     "souleater"
-   ]
+   ],
+   "ja": "ソウルイーター"
   },
   "soulcalibur": {
    "en": "soulcalibur",
    "aliases": [
     "ソウルキャリバー",
     "灵魂能力"
-   ]
+   ],
+   "ja": "ソウルキャリバー"
   },
   "soulcalibur iv": {
    "en": "soulcalibur iv",
    "aliases": [
     "ソウルキャリバーIV"
-   ]
+   ],
+   "ja": "ソウルキャリバーIV"
   },
   "soulworker": {
    "en": "soulworker",
@@ -25802,7 +26609,8 @@
     "Soulworker",
     "ソウルワーカー",
     "灵魂行者"
-   ]
+   ],
+   "ja": "ソウルワーカー"
   },
   "sousou no frieren": {
    "en": "sousou no frieren",
@@ -25817,14 +26625,16 @@
     "送葬のフリーレン",
     "Frieren",
     "SousouNoFrieren"
-   ]
+   ],
+   "ja": "葬送のフリーレン"
   },
   "spice and wolf": {
    "en": "spice and wolf",
    "aliases": [
     "狼と香辛料",
     "狼与香辛料"
-   ]
+   ],
+   "ja": "狼と香辛料"
   },
   "spider-man: across the spider-verse": {
    "en": "spider-man: across the spider-verse",
@@ -25836,7 +26646,8 @@
     "蜘蛛侠纵横宇宙",
     "スパイダーバース",
     "ATSV"
-   ]
+   ],
+   "ja": "スパイダーマン：アクロス・ザ・スパイダーバース"
   },
   "spider-man: into the spider-verse": {
    "en": "spider-man: into the spider-verse",
@@ -25844,7 +26655,8 @@
     "スパイダーマン:スパイダーバース",
     "スパイダーバース",
     "spiderverse"
-   ]
+   ],
+   "ja": "スパイダーマン：スパイダーバース"
   },
   "spider-man (series)": {
    "en": "spider-man (series)",
@@ -25857,13 +26669,15 @@
     "Spider-Man",
     "Spider-man",
     "spiderman"
-   ]
+   ],
+   "ja": "スパイダーマン"
   },
   "spider-verse": {
    "en": "spider-verse",
    "aliases": [
     "蜘蛛宇宙"
-   ]
+   ],
+   "ja": "スパイダーバース"
   },
   "splatoon (series)": {
    "en": "splatoon (series)",
@@ -25876,31 +26690,36 @@
     "喷射战士",
     "斯普拉遁",
     "Splatsona"
-   ]
+   ],
+   "ja": "スプラトゥーン"
   },
   "splatoon 1": {
-   "en": "splatoon 1"
+   "en": "splatoon 1",
+   "ja": "スプラトゥーン"
   },
   "splatoon 2": {
    "en": "splatoon 2",
    "aliases": [
     "splatoon2",
     "スプラトゥーン2"
-   ]
+   ],
+   "ja": "スプラトゥーン2"
   },
   "splatoon 2: octo expansion": {
    "en": "splatoon 2: octo expansion",
    "aliases": [
     "オクト・エキスパンション",
     "オトコ・エキスパンション"
-   ]
+   ],
+   "ja": "オクト・エキスパンション"
   },
   "splatoon 3": {
    "en": "splatoon 3",
    "aliases": [
     "スプラトゥーン3",
     "Splatoon3"
-   ]
+   ],
+   "ja": "スプラトゥーン3"
   },
   "spy x family": {
    "en": "spy x family",
@@ -25912,7 +26731,8 @@
     "SPYFAMILY",
     "スパイファミリーファンアート",
     "间谍过家家"
-   ]
+   ],
+   "ja": "SPY×FAMILY"
   },
   "ssss.dynazenon": {
    "en": "ssss.dynazenon",
@@ -25922,7 +26742,8 @@
     "SSSSDYNAZENON",
     "ダイナゼノン",
     "SSSS.电光机王"
-   ]
+   ],
+   "ja": "SSSS.DYNAZENON"
   },
   "ssss.gridman": {
    "en": "ssss.gridman",
@@ -25932,7 +26753,8 @@
     "グリッドマン",
     "SSSS_GRIDMAN",
     "SSSSGRIDMAN"
-   ]
+   ],
+   "ja": "SSSS.GRIDMAN"
   },
   "star fox": {
    "en": "star fox",
@@ -25940,17 +26762,20 @@
     "スターフォックス",
     "STARFOX",
     "StarFox"
-   ]
+   ],
+   "ja": "スターフォックス"
   },
   "star ocean": {
    "en": "star ocean",
    "aliases": [
     "スターオーシャン",
     "so"
-   ]
+   ],
+   "ja": "スターオーシャン"
   },
   "star ocean the second story": {
-   "en": "star ocean the second story"
+   "en": "star ocean the second story",
+   "ja": "スターオーシャン セカンドストーリー"
   },
   "star twinkle precure": {
    "en": "star twinkle precure",
@@ -25959,7 +26784,8 @@
     "スター☆トゥインクルプリキュア",
     "スタプリ",
     "星奈光"
-   ]
+   ],
+   "ja": "スター☆トゥインクルプリキュア"
   },
   "stardust crusaders": {
    "en": "stardust crusaders",
@@ -25970,7 +26796,8 @@
     "JOJO的奇妙冒险:星尘斗士",
     "JOJO的奇妙冒险:星尘远征军",
     "スターダストクルセイダース"
-   ]
+   ],
+   "ja": "ジョジョの奇妙な冒険 スターダストクルセイダース"
   },
   "steel ball run": {
    "en": "steel ball run",
@@ -25980,7 +26807,8 @@
     "スティールボールラン",
     "steelballrun",
     "STEEL・BALL・RUN"
-   ]
+   ],
+   "ja": "ジョジョの奇妙な冒険 スティール・ボール・ラン"
   },
   "steins;gate": {
    "en": "steins;gate",
@@ -25992,7 +26820,8 @@
     "Steins;Gate",
     "シュタゲ",
     "命运石之门"
-   ]
+   ],
+   "ja": "STEINS;GATE"
   },
   "stellar blade": {
    "en": "stellar blade",
@@ -26005,7 +26834,8 @@
     "ステラーブレイド",
     "니케스텔라블레이드콜라보",
     "NIKKExStellarBlade"
-   ]
+   ],
+   "ja": "ステラーブレイド"
   },
   "stone ocean": {
    "en": "stone ocean",
@@ -26014,13 +26844,15 @@
     "JOJO的奇妙冒险:石之海",
     "ストーンオーシャン",
     "stoneocean"
-   ]
+   ],
+   "ja": "ジョジョの奇妙な冒険 ストーンオーシャン"
   },
   "story of eastern wonderland": {
    "en": "story of eastern wonderland",
    "aliases": [
     "東方封魔録"
-   ]
+   ],
+   "ja": "東方封魔録"
   },
   "street fighter": {
    "en": "street fighter",
@@ -26032,7 +26864,8 @@
     "SF",
     "街頭霸王",
     "街霸"
-   ]
+   ],
+   "ja": "ストリートファイター"
   },
   "street fighter 6": {
    "en": "street fighter 6",
@@ -26045,7 +26878,8 @@
     "SF6",
     "StreetFighterVI",
     "SFVI"
-   ]
+   ],
+   "ja": "ストリートファイター6"
   },
   "street fighter iii (series)": {
    "en": "street fighter iii (series)",
@@ -26057,7 +26891,8 @@
     "StreetFighter3",
     "SFIII",
     "SF3"
-   ]
+   ],
+   "ja": "ストリートファイターIII"
   },
   "street fighter iv (series)": {
    "en": "street fighter iv (series)",
@@ -26080,7 +26915,8 @@
     "SSF4",
     "USFIV",
     "USF4"
-   ]
+   ],
+   "ja": "ストリートファイターIV"
   },
   "street fighter v": {
    "en": "street fighter v",
@@ -26093,21 +26929,24 @@
     "StreetFighter5",
     "SFV",
     "SF5"
-   ]
+   ],
+   "ja": "ストリートファイターV"
   },
   "street fighter zero (series)": {
    "en": "street fighter zero (series)",
    "aliases": [
     "ストリートファイターzero",
     "StreetFighterAlpha"
-   ]
+   ],
+   "ja": "ストリートファイターZERO"
   },
   "strike the blood": {
    "en": "strike the blood",
    "aliases": [
     "ストライク・ザ・ブラッド",
     "ストブラ"
-   ]
+   ],
+   "ja": "ストライク・ザ・ブラッド"
   },
   "strike witches": {
    "en": "strike witches",
@@ -26116,21 +26955,24 @@
     "強襲魔女",
     "偽ストライクウィッチーズ",
     "オリジナルウィッチ"
-   ]
+   ],
+   "ja": "ストライクウィッチーズ"
   },
   "strike witches: suomus misfits squadron": {
    "en": "strike witches: suomus misfits squadron",
    "aliases": [
     "ストライクウィッチーズ",
     "スオムスいらん子中隊"
-   ]
+   ],
+   "ja": "ストライクウィッチーズ スオムスいらん子中隊"
   },
   "studio ghibli": {
    "en": "studio ghibli",
    "aliases": [
     "スタジオジブリ",
     "ジブリ"
-   ]
+   ],
+   "ja": "スタジオジブリ"
   },
   "sugar lyric": {
    "en": "sugar lyric"
@@ -26140,14 +26982,16 @@
    "aliases": [
     "スーサイド・スクワッド",
     "自杀小队"
-   ]
+   ],
+   "ja": "スーサイド・スクワッド"
   },
   "suigetsu": {
    "en": "suigetsu",
    "aliases": [
     "水月-すいげつ-",
     "水月(ゲーム)"
-   ]
+   ],
+   "ja": "水月"
   },
   "suite precure": {
    "en": "suite precure",
@@ -26155,7 +26999,8 @@
     "スイートプリキュア♪",
     "スイートプリキュア",
     "スイプリ"
-   ]
+   ],
+   "ja": "スイートプリキュア♪"
   },
   "summer pockets": {
    "en": "summer pockets",
@@ -26166,25 +27011,29 @@
     "夏日口袋",
     "Summer_Pockets",
     "サマポケアニメ"
-   ]
+   ],
+   "ja": "Summer Pockets"
   },
   "summon night": {
    "en": "summon night",
    "aliases": [
     "サモンナイト"
-   ]
+   ],
+   "ja": "サモンナイト"
   },
   "summon night 3": {
    "en": "summon night 3",
    "aliases": [
     "サモンナイト3"
-   ]
+   ],
+   "ja": "サモンナイト3"
   },
   "super mario galaxy": {
    "en": "super mario galaxy",
    "aliases": [
     "スーパーマリオギャラクシー"
-   ]
+   ],
+   "ja": "スーパーマリオギャラクシー"
   },
   "super smash bros.": {
    "en": "super smash bros.",
@@ -26210,21 +27059,24 @@
     "SSBU",
     "SmashUltimate",
     "任天堂明星大乱斗"
-   ]
+   ],
+   "ja": "大乱闘スマッシュブラザーズ"
   },
   "superman (series)": {
    "en": "superman (series)",
    "aliases": [
     "スーパーマン",
     "superman"
-   ]
+   ],
+   "ja": "スーパーマン"
   },
   "suzumiya haruhi no yuuutsu": {
    "en": "suzumiya haruhi no yuuutsu",
    "aliases": [
     "涼宮ハルヒの憂鬱",
     "ハルヒ性転換シリーズ"
-   ]
+   ],
+   "ja": "涼宮ハルヒの憂鬱"
   },
   "sword art online": {
    "en": "sword art online",
@@ -26235,19 +27087,22 @@
     "刀劍神域",
     "刀剑神域",
     "SAOクリア"
-   ]
+   ],
+   "ja": "ソードアート・オンライン"
   },
   "sword art online: alicization": {
    "en": "sword art online: alicization",
    "aliases": [
     "アリシゼーション"
-   ]
+   ],
+   "ja": "ソードアート・オンライン アリシゼーション"
   },
   "sword art online: code register": {
    "en": "sword art online: code register",
    "aliases": [
     "コード・レジスタ"
-   ]
+   ],
+   "ja": "ソードアート・オンライン コード・レジスタ"
   },
   "sword art online alternative: gun gale online": {
    "en": "sword art online alternative: gun gale online",
@@ -26256,14 +27111,16 @@
     "GGO",
     "ガンゲイル・オンライン",
     "ガンゲイルオンライン"
-   ]
+   ],
+   "ja": "ソードアート・オンライン オルタナティブ ガンゲイル・オンライン"
   },
   "synthesizer v": {
    "en": "synthesizer v",
    "aliases": [
     "SynthesizerV",
     "SynthV"
-   ]
+   ],
+   "ja": "Synthesizer V"
   },
   "taimanin (series)": {
    "en": "taimanin (series)",
@@ -26273,13 +27130,15 @@
     "对魔忍",
     "대마인",
     "東方対魔忍"
-   ]
+   ],
+   "ja": "対魔忍"
   },
   "taimanin asagi": {
    "en": "taimanin asagi",
    "aliases": [
     "対魔忍アサギ"
-   ]
+   ],
+   "ja": "対魔忍アサギ"
   },
   "taimanin yukikaze": {
    "en": "taimanin yukikaze",
@@ -26287,7 +27146,8 @@
     "対魔忍ユキカゼ",
     "對魔忍雪風",
     "对魔忍雪风"
-   ]
+   ],
+   "ja": "対魔忍ユキカゼ"
   },
   "tales of (series)": {
    "en": "tales of (series)",
@@ -26295,7 +27155,8 @@
     "テイルズオブシリーズ",
     "テイルズオブ",
     "テイルズ"
-   ]
+   ],
+   "ja": "テイルズ オブ"
   },
   "tales of berseria": {
    "en": "tales of berseria",
@@ -26303,7 +27164,8 @@
     "テイルズオブベルセリア",
     "ベルセリア",
     "TOB"
-   ]
+   ],
+   "ja": "テイルズ オブ ベルセリア"
   },
   "tales of graces": {
    "en": "tales of graces",
@@ -26312,7 +27174,8 @@
     "テイルズオブグレイセス",
     "グレイセス",
     "TOG"
-   ]
+   ],
+   "ja": "テイルズ オブ グレイセス"
   },
   "tales of symphonia": {
    "en": "tales of symphonia",
@@ -26321,7 +27184,8 @@
     "テイルズオブシンフォニア",
     "シンフォニア",
     "TOS"
-   ]
+   ],
+   "ja": "テイルズ オブ シンフォニア"
   },
   "tales of the abyss": {
    "en": "tales of the abyss",
@@ -26330,7 +27194,8 @@
     "テイルズオブジアビス",
     "アビス",
     "TOA"
-   ]
+   ],
+   "ja": "テイルズ オブ ジ アビス"
   },
   "tales of vesperia": {
    "en": "tales of vesperia",
@@ -26339,7 +27204,8 @@
     "テイルズオブヴェスペリア",
     "ヴェスペリア",
     "TOV"
-   ]
+   ],
+   "ja": "テイルズ オブ ヴェスペリア"
   },
   "tales of xillia": {
    "en": "tales of xillia",
@@ -26348,7 +27214,8 @@
     "テイルズオブエクシリア",
     "エクシリア",
     "TOX"
-   ]
+   ],
+   "ja": "テイルズ オブ エクシリア"
   },
   "tales of zestiria": {
    "en": "tales of zestiria",
@@ -26357,26 +27224,30 @@
     "テイルズオブゼスティリア",
     "ゼスティリア",
     "TOZ"
-   ]
+   ],
+   "ja": "テイルズ オブ ゼスティリア"
   },
   "tamako market": {
    "en": "tamako market",
    "aliases": [
     "たまこまーけっと"
-   ]
+   ],
+   "ja": "たまこまーけっと"
   },
   "tangled": {
    "en": "tangled",
    "aliases": [
     "塔の上のラプンツェル"
-   ]
+   ],
+   "ja": "塔の上のラプンツェル"
   },
   "tantei opera milky holmes": {
    "en": "tantei opera milky holmes",
    "aliases": [
     "探偵オペラミルキィホームズ",
     "ミルキィホームズ"
-   ]
+   ],
+   "ja": "探偵オペラ ミルキィホームズ"
   },
   "tate no yuusha no nariagari": {
    "en": "tate no yuusha no nariagari",
@@ -26386,7 +27257,8 @@
     "盾之勇者成名录",
     "盾の勇者",
     "ShieldHero"
-   ]
+   ],
+   "ja": "盾の勇者の成り上がり"
   },
   "tears of themis": {
    "en": "tears of themis",
@@ -26394,7 +27266,8 @@
     "未定事件簿",
     "TearsOfThemis",
     "미해결사건부"
-   ]
+   ],
+   "ja": "未定事件簿"
   },
   "teen titans": {
    "en": "teen titans",
@@ -26402,30 +27275,35 @@
     "Teentitans",
     "ティーンタイタンズ",
     "ティーン・タイタンズ"
-   ]
+   ],
+   "ja": "ティーン・タイタンズ"
   },
   "teen titans (tv series)": {
-   "en": "teen titans (tv series)"
+   "en": "teen titans (tv series)",
+   "ja": "ティーン・タイタンズ"
   },
   "tejina senpai (series)": {
    "en": "tejina senpai (series)",
    "aliases": [
     "手品先輩",
     "tejima_sempai"
-   ]
+   ],
+   "ja": "手品先輩"
   },
   "tekken": {
    "en": "tekken",
    "aliases": [
     "鉄拳"
-   ]
+   ],
+   "ja": "鉄拳"
   },
   "tekken 8": {
    "en": "tekken 8",
    "aliases": [
     "鉄拳8",
     "tekken8"
-   ]
+   ],
+   "ja": "鉄拳8"
   },
   "tengen toppa gurren lagann": {
    "en": "tengen toppa gurren lagann",
@@ -26433,7 +27311,8 @@
     "天元突破グレンラガン",
     "グレンラガン",
     "天元突破紅蓮螺岩"
-   ]
+   ],
+   "ja": "天元突破グレンラガン"
   },
   "tenki no ko": {
    "en": "tenki no ko",
@@ -26441,7 +27320,8 @@
     "天気の子",
     "Weathering_with_you",
     "天气之子"
-   ]
+   ],
+   "ja": "天気の子"
   },
   "tensei oujo to tensai reijou no mahou kakumei": {
    "en": "tensei oujo to tensai reijou no mahou kakumei",
@@ -26453,7 +27333,8 @@
     "転天アニメ",
     "magirevo",
     "転天"
-   ]
+   ],
+   "ja": "転生王女と天才令嬢の魔法革命"
   },
   "tensei shitara slime datta ken": {
    "en": "tensei shitara slime datta ken",
@@ -26463,7 +27344,8 @@
     "关于我转生变成史莱姆这档事",
     "転腐ら",
     "魔王と竜の建国譚"
-   ]
+   ],
+   "ja": "転生したらスライムだった件"
   },
   "tenshi souzou re-boot!": {
    "en": "tenshi souzou re-boot!",
@@ -26471,7 +27353,8 @@
     "天使騒々",
     "天使☆騒々",
     "天使騒々RE-BOOT!"
-   ]
+   ],
+   "ja": "天使☆騒々 RE-BOOT!"
   },
   "tensui no sakuna-hime": {
    "en": "tensui no sakuna-hime",
@@ -26480,10 +27363,12 @@
     "サクナヒメ",
     "SAKUNA",
     "SAKUNA_of_rice_and_ruin"
-   ]
+   ],
+   "ja": "天穂のサクナヒメ"
   },
   "tera online": {
-   "en": "tera online"
+   "en": "tera online",
+   "ja": "TERA"
   },
   "the king of fighters": {
    "en": "the king of fighters",
@@ -26497,21 +27382,24 @@
     "ザキングオブファイターズ",
     "TheKingOfFighters",
     "KingOfFighters"
-   ]
+   ],
+   "ja": "THE KING OF FIGHTERS"
   },
   "the king of fighters xiv": {
    "en": "the king of fighters xiv",
    "aliases": [
     "KOF14",
     "KOFXIV"
-   ]
+   ],
+   "ja": "THE KING OF FIGHTERS XIV"
   },
   "the king of fighters xv": {
    "en": "the king of fighters xv",
    "aliases": [
     "KOFXV",
     "KOF15"
-   ]
+   ],
+   "ja": "THE KING OF FIGHTERS XV"
   },
   "the legend of korra": {
    "en": "the legend of korra",
@@ -26524,7 +27412,8 @@
     "The_Legend_of_Korra",
     "コラの伝説",
     "Legend_of_Korra"
-   ]
+   ],
+   "ja": "レジェンド・オブ・コーラ"
   },
   "the legend of zelda": {
    "en": "the legend of zelda",
@@ -26537,7 +27426,8 @@
     "塞尔达传说",
     "LegendOfZelda",
     "ゼルダの伝説【腐】"
-   ]
+   ],
+   "ja": "ゼルダの伝説"
   },
   "the legend of zelda: breath of the wild": {
    "en": "the legend of zelda: breath of the wild",
@@ -26551,7 +27441,8 @@
     "旷野之息",
     "荒野之息",
     "塞尔达传说旷野之息"
-   ]
+   ],
+   "ja": "ゼルダの伝説 ブレス オブ ザ ワイルド"
   },
   "the legend of zelda: ocarina of time": {
    "en": "the legend of zelda: ocarina of time",
@@ -26562,20 +27453,23 @@
     "時オカ",
     "塞尔达传说时之笛",
     "oot"
-   ]
+   ],
+   "ja": "ゼルダの伝説 時のオカリナ"
   },
   "the legend of zelda: skyward sword": {
    "en": "the legend of zelda: skyward sword",
    "aliases": [
     "スカイウォードソード",
     "skywardsword"
-   ]
+   ],
+   "ja": "ゼルダの伝説 スカイウォードソード"
   },
   "the legend of zelda: spirit tracks": {
    "en": "the legend of zelda: spirit tracks",
    "aliases": [
     "大地の汽笛"
-   ]
+   ],
+   "ja": "ゼルダの伝説 大地の汽笛"
   },
   "the legend of zelda: tears of the kingdom": {
    "en": "the legend of zelda: tears of the kingdom",
@@ -26591,7 +27485,8 @@
     "王国之泪",
     "TearsOfTheKingdom",
     "tears_of_the_kingdom"
-   ]
+   ],
+   "ja": "ゼルダの伝説 ティアーズ オブ ザ キングダム"
   },
   "the legend of zelda: the wind waker": {
    "en": "the legend of zelda: the wind waker",
@@ -26599,7 +27494,8 @@
     "風のタクト",
     "ゼルダの伝説風のタクト",
     "windwaker"
-   ]
+   ],
+   "ja": "ゼルダの伝説 風のタクト"
   },
   "the legend of zelda: twilight princess": {
    "en": "the legend of zelda: twilight princess",
@@ -26608,7 +27504,8 @@
     "塞尔达传说黄昏公主",
     "twilight_princess",
     "TwilightPrincess"
-   ]
+   ],
+   "ja": "ゼルダの伝説 トワイライトプリンセス"
   },
   "the moon studio": {
    "en": "the moon studio",
@@ -26630,7 +27527,8 @@
     "アウルハウス",
     "猫头鹰魔法社",
     "theowlhousefanart"
-   ]
+   ],
+   "ja": "アウルハウス"
   },
   "the ring": {
    "en": "the ring",
@@ -26639,7 +27537,8 @@
     "リング(鈴木光司)",
     "ringu",
     "TheRing"
-   ]
+   ],
+   "ja": "リング"
   },
   "tiger & bunny": {
    "en": "tiger & bunny",
@@ -26651,7 +27550,8 @@
     "Tiger&Bunny",
     "タイバニ2",
     "TIGER&BUNNY2"
-   ]
+   ],
+   "ja": "TIGER & BUNNY"
   },
   "to heart": {
    "en": "to heart",
@@ -26660,17 +27560,20 @@
     "トゥハート",
     "同班同學",
     "青春紀事"
-   ]
+   ],
+   "ja": "ToHeart"
   },
   "to heart (series)": {
-   "en": "to heart (series)"
+   "en": "to heart (series)",
+   "ja": "ToHeart"
   },
   "to heart 2": {
    "en": "to heart 2",
    "aliases": [
     "ToHeart2",
     "同班同學2"
-   ]
+   ],
+   "ja": "ToHeart2"
   },
   "to love-ru": {
    "en": "to love-ru",
@@ -26680,20 +27583,23 @@
     "とらぶる",
     "ToLOVEる-とらぶる",
     "tolove"
-   ]
+   ],
+   "ja": "To LOVEる -とらぶる-"
   },
   "to love-ru darkness": {
    "en": "to love-ru darkness",
    "aliases": [
     "ToLOVEるダークネス"
-   ]
+   ],
+   "ja": "To LOVEる -とらぶる- ダークネス"
   },
   "toaru kagaku no mental out": {
    "en": "toaru kagaku no mental out",
    "aliases": [
     "とある科学の心理掌握",
     "とある魔術の禁書目録外伝とある科学の心理掌握〈メンタルアウト〉"
-   ]
+   ],
+   "ja": "とある科学の心理掌握"
   },
   "toaru kagaku no railgun": {
    "en": "toaru kagaku no railgun",
@@ -26701,36 +27607,42 @@
     "とある科学の超電磁砲",
     "とある科学の携帯怪獣",
     "某科学的超电磁炮"
-   ]
+   ],
+   "ja": "とある科学の超電磁砲"
   },
   "toaru kagaku no railgun s": {
    "en": "toaru kagaku no railgun s",
    "aliases": [
     "とある科学の超電磁砲S"
-   ]
+   ],
+   "ja": "とある科学の超電磁砲S"
   },
   "toaru kagaku no railgun t": {
    "en": "toaru kagaku no railgun t",
    "aliases": [
     "とある科学の超電磁砲T",
     "To_Aru_Kagaku_no_Railgun_T"
-   ]
+   ],
+   "ja": "とある科学の超電磁砲T"
   },
   "toaru majutsu no index": {
    "en": "toaru majutsu no index",
    "aliases": [
     "とある魔術の禁書目録",
     "魔法禁书目录"
-   ]
+   ],
+   "ja": "とある魔術の禁書目録"
   },
   "toaru majutsu no index: new testament": {
    "en": "toaru majutsu no index: new testament",
    "aliases": [
     "新約とある魔術の禁書目録"
-   ]
+   ],
+   "ja": "新約 とある魔術の禁書目録"
   },
   "toaru majutsu no index: old testament": {
-   "en": "toaru majutsu no index: old testament"
+   "en": "toaru majutsu no index: old testament",
+   "ja": "旧約 とある魔術の禁書目録"
   },
   "toji no miko": {
    "en": "toji no miko",
@@ -26740,7 +27652,8 @@
     "とじとも",
     "刀使巫女",
     "篝火を絶やすな"
-   ]
+   ],
+   "ja": "刀使の巫女"
   },
   "tokidoki bosotto roshia-go de dereru tonari no alya-san": {
    "en": "tokidoki bosotto roshia-go de dereru tonari no alya-san",
@@ -26750,7 +27663,8 @@
     "RoshiDere",
     "时不时说一句俄罗斯语来掩饰害羞的邻桌艾莉同学",
     "不時輕聲地以俄語遮羞的鄰座艾莉同學"
-   ]
+   ],
+   "ja": "時々ボソッとロシア語でデレる隣のアーリャさん"
   },
   "tokyo afterschool summoners": {
    "en": "tokyo afterschool summoners",
@@ -26759,7 +27673,8 @@
     "放サモ",
     "Housamo",
     "东京放课后"
-   ]
+   ],
+   "ja": "東京放課後サモナーズ"
   },
   "tokyo ghoul": {
    "en": "tokyo ghoul",
@@ -26769,26 +27684,31 @@
     "トーキョーグール",
     "tokyoghoul",
     "东京食尸鬼"
-   ]
+   ],
+   "ja": "東京喰種"
   },
   "tokyo ghoul:re": {
    "en": "tokyo ghoul:re",
    "aliases": [
     "東京喰種:re"
-   ]
+   ],
+   "ja": "東京喰種:re"
   },
   "tokyo mew mew": {
-   "en": "tokyo mew mew"
+   "en": "tokyo mew mew",
+   "ja": "東京ミュウミュウ"
   },
   "tomb raider": {
    "en": "tomb raider",
    "aliases": [
     "トゥームレイダー",
     "tombraider"
-   ]
+   ],
+   "ja": "トゥームレイダー"
   },
   "top wo nerae! (series)": {
-   "en": "top wo nerae! (series)"
+   "en": "top wo nerae! (series)",
+   "ja": "トップをねらえ!"
   },
   "top wo nerae 2!": {
    "en": "top wo nerae 2!",
@@ -26797,14 +27717,16 @@
     "トップをねらえ2!",
     "トップをねらえ2",
     "DIEBUSTER"
-   ]
+   ],
+   "ja": "トップをねらえ2!"
   },
   "toradora!": {
    "en": "toradora!",
    "aliases": [
     "とらドラ!",
     "とらドラ"
-   ]
+   ],
+   "ja": "とらドラ!"
   },
   "touhou": {
    "en": "touhou",
@@ -26831,14 +27753,16 @@
     "東方Projectイラスト",
     "おは東方",
     "東方ロング化"
-   ]
+   ],
+   "ja": "東方Project"
   },
   "touhou (pc-98)": {
    "en": "touhou (pc-98)",
    "aliases": [
     "東方旧作",
     "东方旧作"
-   ]
+   ],
+   "ja": "東方Project"
   },
   "touken ranbu": {
    "en": "touken ranbu",
@@ -26853,7 +27777,8 @@
     "刀剣乱夢",
     "刀剑乱舞",
     "聖杯乱舞"
-   ]
+   ],
+   "ja": "刀剣乱舞"
   },
   "transformers": {
    "en": "transformers",
@@ -26866,7 +27791,8 @@
     "TF擬人化",
     "TFfanart",
     "Humanformers"
-   ]
+   ],
+   "ja": "トランスフォーマー"
   },
   "transformers: generation 1": {
    "en": "transformers: generation 1",
@@ -26874,16 +27800,19 @@
     "G1",
     "戦え!超ロボット生命体トランスフォーマー",
     "トランスフォーマー2010"
-   ]
+   ],
+   "ja": "戦え!超ロボット生命体トランスフォーマー"
   },
   "trigun": {
    "en": "trigun",
    "aliases": [
     "トライガン"
-   ]
+   ],
+   "ja": "トライガン"
   },
   "trigun stampede": {
-   "en": "trigun stampede"
+   "en": "trigun stampede",
+   "ja": "TRIGUN STAMPEDE"
   },
   "tropical-rouge! precure": {
    "en": "tropical-rouge! precure",
@@ -26892,19 +27821,22 @@
     "トロピカル~ジュプリキュア",
     "トロピカルージュプリキュア",
     "トロプリ"
-   ]
+   ],
+   "ja": "トロピカル〜ジュ!プリキュア"
   },
   "tsugu (vtuber)": {
    "en": "tsugu (vtuber)",
    "aliases": [
     "鳩羽つぐ"
-   ]
+   ],
+   "ja": "鳩羽つぐ"
   },
   "tsukihime": {
    "en": "tsukihime",
    "aliases": [
     "月姫"
-   ]
+   ],
+   "ja": "月姫"
   },
   "tsukihime (remake)": {
    "en": "tsukihime (remake)",
@@ -26912,14 +27844,16 @@
     "月姫Apieceofblueglassmoon",
     "月姫リメイク",
     "月姫R"
-   ]
+   ],
+   "ja": "月姫"
   },
   "tsuujou kougeki ga zentai kougeki de ni-kai kougeki no okaasan wa suki desu ka?": {
    "en": "tsuujou kougeki ga zentai kougeki de ni-kai kougeki no okaasan wa suki desu ka?",
    "aliases": [
     "通常攻撃が全体攻撃で二回攻撃のお母さんは好きですか?",
     "お母好き"
-   ]
+   ],
+   "ja": "通常攻撃が全体攻撃で二回攻撃のお母さんは好きですか?"
   },
   "twisted wonderland": {
    "en": "twisted wonderland",
@@ -26939,20 +27873,23 @@
     "扭曲仙境",
     "迪士尼扭曲仙境",
     "twst女体化"
-   ]
+   ],
+   "ja": "ツイステッドワンダーランド"
   },
   "uchuu senkan yamato": {
    "en": "uchuu senkan yamato",
    "aliases": [
     "宇宙戦艦ヤマト"
-   ]
+   ],
+   "ja": "宇宙戦艦ヤマト"
   },
   "uchuu senkan yamato 2199": {
    "en": "uchuu senkan yamato 2199",
    "aliases": [
     "宇宙戦艦ヤマト2199",
     "ヤマト2199"
-   ]
+   ],
+   "ja": "宇宙戦艦ヤマト2199"
   },
   "umamusume": {
    "en": "umamusume",
@@ -26993,7 +27930,8 @@
     "UMA",
     "ウマ娘加湿器ステークス",
     "ウマッチョ娘"
-   ]
+   ],
+   "ja": "ウマ娘 プリティーダービー"
   },
   "umineko no naku koro ni": {
    "en": "umineko no naku koro ni",
@@ -27002,7 +27940,8 @@
     "海猫鸣泣之时",
     "うみねこFA",
     "うみねこのなく頃に散"
-   ]
+   ],
+   "ja": "うみねこのなく頃に"
   },
   "under night in-birth": {
    "en": "under night in-birth",
@@ -27014,7 +27953,8 @@
     "inbirth",
     "UnderNightInBirth",
     "UnderNightIn-Birth"
-   ]
+   ],
+   "ja": "UNDER NIGHT IN-BIRTH"
   },
   "undertale": {
    "en": "undertale",
@@ -27029,7 +27969,8 @@
     "undertail",
     "传说之下",
     "undertaleAU"
-   ]
+   ],
+   "ja": "UNDERTALE"
   },
   "uni create": {
    "en": "uni create",
@@ -27039,7 +27980,8 @@
     "unicreate",
     "ライヴラリ",
     "Liverary"
-   ]
+   ],
+   "ja": "ゆにクリエイト"
   },
   "urusei yatsura": {
    "en": "urusei yatsura",
@@ -27048,7 +27990,8 @@
     "令和うる星やつら",
     "うる☆やつら",
     "うる☆"
-   ]
+   ],
+   "ja": "うる星やつら"
   },
   "utau": {
    "en": "utau",
@@ -27056,33 +27999,39 @@
     "UTAU",
     "utau",
     "utauloid"
-   ]
+   ],
+   "ja": "UTAU"
   },
   "utawarerumono": {
-   "en": "utawarerumono"
+   "en": "utawarerumono",
+   "ja": "うたわれるもの"
   },
   "utawarerumono: itsuwari no kamen": {
    "en": "utawarerumono: itsuwari no kamen",
    "aliases": [
     "偽りの仮面",
     "うたわれるもの"
-   ]
+   ],
+   "ja": "うたわれるもの"
   },
   "uzaki-chan wa asobitai!": {
    "en": "uzaki-chan wa asobitai!",
    "aliases": [
     "宇崎ちゃんは遊びたい!",
     "宇崎ちゃんは遊びたい"
-   ]
+   ],
+   "ja": "宇崎ちゃんは遊びたい!"
   },
   "va-11 hall-a": {
-   "en": "va-11 hall-a"
+   "en": "va-11 hall-a",
+   "ja": "VA-11 Hall-A"
   },
   "valkyrie profile (series)": {
    "en": "valkyrie profile (series)",
    "aliases": [
     "ヴァルキリープロファイル"
-   ]
+   ],
+   "ja": "ヴァルキリープロファイル"
   },
   "vento aureo": {
    "en": "vento aureo",
@@ -27090,20 +28039,23 @@
     "黄金之风",
     "JOJO的奇妙冒险:黄金之风",
     "黄金の風"
-   ]
+   ],
+   "ja": "黄金の風"
   },
   "violet evergarden (series)": {
    "en": "violet evergarden (series)",
    "aliases": [
     "紫罗兰永恒花园",
     "ヴァイオレット・エヴァーガーデン"
-   ]
+   ],
+   "ja": "ヴァイオレット・エヴァーガーデン"
   },
   "vividred operation": {
    "en": "vividred operation",
    "aliases": [
     "ビビッドレッド・オペレーション"
-   ]
+   ],
+   "ja": "ビビッドレッド・オペレーション"
   },
   "vocaloid": {
    "en": "vocaloid",
@@ -27119,7 +28071,8 @@
     "亜種",
     "Vocaloid亚种",
     "派生Vocaloid"
-   ]
+   ],
+   "ja": "VOCALOID"
   },
   "voiceroid": {
    "en": "voiceroid",
@@ -27129,13 +28082,15 @@
     "voiceroid",
     "コッショリ",
     "VOICEROIDドット絵部"
-   ]
+   ],
+   "ja": "VOICEROID"
   },
   "voicevox": {
    "en": "voicevox",
    "aliases": [
     "VOICEVOX"
-   ]
+   ],
+   "ja": "VOICEVOX"
   },
   "voms": {
    "en": "voms",
@@ -27147,7 +28102,8 @@
     "VOMS3周年記念",
     "VOMS新メンバー2023",
     "VOMS4周年記念"
-   ]
+   ],
+   "ja": "VOMS Project"
   },
   "vshojo": {
    "en": "vshojo",
@@ -27160,7 +28116,8 @@
     "VShojoNova",
     "VShojoArt",
     "V少女"
-   ]
+   ],
+   "ja": "VShojo"
   },
   "vsinger (vocaloid)": {
    "en": "vsinger (vocaloid)",
@@ -27168,7 +28125,8 @@
     "VOCALOID-CHINA",
     "VOCALOIDCHINA",
     "Vsinger"
-   ]
+   ],
+   "ja": "Vsinger"
   },
   "vspo!": {
    "en": "vspo!",
@@ -27178,7 +28136,8 @@
     "ぶいすぽ",
     "0.2秒の物語",
     "ぶいすぽっ"
-   ]
+   ],
+   "ja": "ぶいすぽっ!"
   },
   "waktaverse": {
    "en": "waktaverse",
@@ -27188,7 +28147,8 @@
     "이세계아이돌",
     "이세돌",
     "WAKTAVERSE"
-   ]
+   ],
+   "ja": "WAKTAVERSE"
   },
   "warhammer 40k": {
    "en": "warhammer 40k",
@@ -27203,13 +28163,15 @@
     "warhammer_40000",
     "战锤40k",
     "战锤"
-   ]
+   ],
+   "ja": "ウォーハンマー40,000"
   },
   "warioware": {
    "en": "warioware",
    "aliases": [
     "メイドインワリオ"
-   ]
+   ],
+   "ja": "メイド イン ワリオ"
   },
   "warship girls r": {
    "en": "warship girls r",
@@ -27224,7 +28186,8 @@
     "전함소녀R",
     "Warshipgirls",
     "warship_girls"
-   ]
+   ],
+   "ja": "戦艦少女R"
   },
   "watashi ga motenai no wa dou kangaetemo omaera ga warui!": {
    "en": "watashi ga motenai no wa dou kangaetemo omaera ga warui!",
@@ -27236,7 +28199,8 @@
     "watamote",
     "丧女",
     "no_matter_how_i_look_at_it_it's_you_guys'_fault_i'm_not_popular!"
-   ]
+   ],
+   "ja": "私がモテないのはどう考えてもお前らが悪い!"
   },
   "watashi ni tenshi ga maiorita!": {
    "en": "watashi ni tenshi ga maiorita!",
@@ -27245,7 +28209,8 @@
     "wataten",
     "わたてん",
     "わたてん100users入り"
-   ]
+   ],
+   "ja": "私に天使が舞い降りた!"
   },
   "wednesday (netflix)": {
    "en": "wednesday (netflix)",
@@ -27253,35 +28218,41 @@
     "Wednesday",
     "wednesdaynetflix",
     "ウェンズデー"
-   ]
+   ],
+   "ja": "ウェンズデー"
   },
   "who framed roger rabbit": {
    "en": "who framed roger rabbit",
    "aliases": [
     "ロジャー・ラビット"
-   ]
+   ],
+   "ja": "ロジャー・ラビット"
   },
   "wii fit": {
    "en": "wii fit",
    "aliases": [
     "WiiFit"
-   ]
+   ],
+   "ja": "Wii Fit"
   },
   "witches of africa": {
-   "en": "witches of africa"
+   "en": "witches of africa",
+   "ja": "Witches of Africa"
   },
   "wizarding world": {
    "en": "wizarding world",
    "aliases": [
     "ウィザーディング・ワールド",
     "魔法ワールド"
-   ]
+   ],
+   "ja": "魔法ワールド"
   },
   "wonder woman (series)": {
    "en": "wonder woman (series)",
    "aliases": [
     "wonderwoman"
-   ]
+   ],
+   "ja": "ワンダーウーマン"
   },
   "wonderful precure!": {
    "en": "wonderful precure!",
@@ -27294,7 +28265,8 @@
     "わんぷり",
     "わんプリ",
     "ワンプリ"
-   ]
+   ],
+   "ja": "わんだふるぷりきゅあ!"
   },
   "working!!": {
    "en": "working!!",
@@ -27303,7 +28275,8 @@
     "Working!!",
     "working",
     "Wagnaria!!"
-   ]
+   ],
+   "ja": "WORKING!!"
   },
   "world witches series": {
    "en": "world witches series",
@@ -27314,7 +28287,8 @@
     "ww版深夜の真剣お絵描き60分一本勝負",
     "偽ストライクウィッチーズ",
     "オリジナルウィッチ"
-   ]
+   ],
+   "ja": "ワールドウィッチーズ"
   },
   "wuthering waves": {
    "en": "wuthering waves",
@@ -27325,7 +28299,8 @@
     "WuWaFanart",
     "명조",
     "WutheringWaves"
-   ]
+   ],
+   "ja": "鳴潮"
   },
   "x-men": {
    "en": "x-men",
@@ -27336,26 +28311,30 @@
     "エックスメン",
     "xmen",
     "the_uncanny_x-men_(series)"
-   ]
+   ],
+   "ja": "X-MEN"
   },
   "xblaze": {
    "en": "xblaze",
    "aliases": [
     "エクスブレイズ",
     "XBLAZE"
-   ]
+   ],
+   "ja": "XBLAZE"
   },
   "xblaze code: embryo": {
    "en": "xblaze code: embryo",
    "aliases": [
     "XBLAZE"
-   ]
+   ],
+   "ja": "XBLAZE CODE: EMBRYO"
   },
   "xenoblade chronicles: future connected": {
    "en": "xenoblade chronicles: future connected",
    "aliases": [
     "つながる未来"
-   ]
+   ],
+   "ja": "つながる未来"
   },
   "xenoblade chronicles (series)": {
    "en": "xenoblade chronicles (series)",
@@ -27364,7 +28343,8 @@
     "ゼノブレイド",
     "Xenoblade",
     "異度神劍"
-   ]
+   ],
+   "ja": "ゼノブレイド"
   },
   "xenoblade chronicles 1": {
    "en": "xenoblade chronicles 1",
@@ -27375,7 +28355,8 @@
     "Xenoblade",
     "XenobladeChronicles",
     "XenobladeChroniclesDE"
-   ]
+   ],
+   "ja": "ゼノブレイド"
   },
   "xenoblade chronicles 2": {
    "en": "xenoblade chronicles 2",
@@ -27383,27 +28364,31 @@
     "ゼノブレイド2",
     "XenobladeChronicles2",
     "Xenoblade2"
-   ]
+   ],
+   "ja": "ゼノブレイド2"
   },
   "xenoblade chronicles 3": {
    "en": "xenoblade chronicles 3",
    "aliases": [
     "ゼノブレイド3",
     "XenobladeChronicles3"
-   ]
+   ],
+   "ja": "ゼノブレイド3"
   },
   "xenoblade chronicles 3: future redeemed": {
    "en": "xenoblade chronicles 3: future redeemed",
    "aliases": [
     "新たなる未来"
-   ]
+   ],
+   "ja": "ゼノブレイド"
   },
   "xenogears": {
    "en": "xenogears",
    "aliases": [
     "ゼノギアス",
     "xenogears"
-   ]
+   ],
+   "ja": "ゼノギアス"
   },
   "xenosaga": {
    "en": "xenosaga",
@@ -27412,14 +28397,16 @@
     "xenosaga",
     "異域傳說",
     "异度传说"
-   ]
+   ],
+   "ja": "ゼノサーガ"
   },
   "xenosaga episode iii": {
    "en": "xenosaga episode iii",
    "aliases": [
     "ゼノサーガエピソードIII",
     "ゼノサーガエピソードIIIツァラトゥストラはかく語りき"
-   ]
+   ],
+   "ja": "ゼノサーガエピソードIII"
   },
   "yagate kimi ni naru": {
    "en": "yagate kimi ni naru",
@@ -27429,7 +28416,8 @@
     "终将成为你",
     "Bloom_Into_You",
     "やが君"
-   ]
+   ],
+   "ja": "やがて君になる"
   },
   "yahari ore no seishun lovecome wa machigatteiru.": {
    "en": "yahari ore no seishun lovecome wa machigatteiru.",
@@ -27440,14 +28428,16 @@
     "俺ガイル",
     "やはり俺の青春ラブコメはまちがっている",
     "我的青春恋爱物语果然有问题"
-   ]
+   ],
+   "ja": "やはり俺の青春ラブコメはまちがっている。"
   },
   "yama no susume": {
    "en": "yama no susume",
    "aliases": [
     "ヤマノススメ",
     "向山进发"
-   ]
+   ],
+   "ja": "ヤマノススメ"
   },
   "yes! precure 5": {
    "en": "yes! precure 5",
@@ -27456,7 +28446,8 @@
     "yes!プリキュア5",
     "プリキュア5",
     "プリ5"
-   ]
+   ],
+   "ja": "Yes!プリキュア5"
   },
   "yes! precure 5 gogo!": {
    "en": "yes! precure 5 gogo!",
@@ -27466,14 +28457,16 @@
     "Yes!プリキュア5Go!Go!",
     "yes!プリキュア5gogo!",
     "yes光之美少女5gogo"
-   ]
+   ],
+   "ja": "Yes!プリキュア5GoGo!"
   },
   "yofukashi no uta": {
    "en": "yofukashi no uta",
    "aliases": [
     "よふかしのうた",
     "Call_of_the_Night"
-   ]
+   ],
+   "ja": "よふかしのうた"
   },
   "yoru no kurage wa oyogenai": {
    "en": "yoru no kurage wa oyogenai",
@@ -27482,14 +28475,16 @@
     "Jellyfish_can't_swim_in_the_night",
     "ヨルクラ",
     "yorukura_anime"
-   ]
+   ],
+   "ja": "夜のクラゲは泳げない"
   },
   "yotsubato!": {
    "en": "yotsubato!",
    "aliases": [
     "よつばと!",
     "よつばと"
-   ]
+   ],
+   "ja": "よつばと!"
   },
   "yu-gi-oh!": {
    "en": "yu-gi-oh!",
@@ -27512,14 +28507,16 @@
     "現代遊戯王",
     "游戏王",
     "遊戯王女キャラ"
-   ]
+   ],
+   "ja": "遊☆戯☆王"
   },
   "yu-gi-oh! 5d's": {
    "en": "yu-gi-oh! 5d's",
    "aliases": [
     "遊戯王5D's",
     "遊戯王5D's女性向け"
-   ]
+   ],
+   "ja": "遊☆戯☆王5D's"
   },
   "yu-gi-oh! arc-v": {
    "en": "yu-gi-oh! arc-v",
@@ -27527,39 +28524,45 @@
     "遊戯王ARC-V",
     "遊戯王ARC-V女性向け",
     "游戏王arc-v"
-   ]
+   ],
+   "ja": "遊☆戯☆王ARC-V"
   },
   "yu-gi-oh! duel monsters": {
    "en": "yu-gi-oh! duel monsters",
    "aliases": [
     "遊☆戯☆王デュエルモンスターズ",
     "遊戯王DM"
-   ]
+   ],
+   "ja": "遊☆戯☆王デュエルモンスターズ"
   },
   "yu-gi-oh! gx": {
    "en": "yu-gi-oh! gx",
    "aliases": [
     "遊戯王GX",
     "遊戯王GX女性向け"
-   ]
+   ],
+   "ja": "遊☆戯☆王デュエルモンスターズGX"
   },
   "yu-gi-oh! sevens": {
    "en": "yu-gi-oh! sevens",
    "aliases": [
     "遊戯王SEVENS"
-   ]
+   ],
+   "ja": "遊☆戯☆王SEVENS"
   },
   "yu-gi-oh! zexal": {
    "en": "yu-gi-oh! zexal",
    "aliases": [
     "遊戯王ZEXAL"
-   ]
+   ],
+   "ja": "遊☆戯☆王ZEXAL"
   },
   "yume 2kki": {
    "en": "yume 2kki",
    "aliases": [
     "ゆめ2っき"
-   ]
+   ],
+   "ja": "ゆめ2っき"
   },
   "yume nikki": {
    "en": "yume nikki",
@@ -27569,13 +28572,15 @@
     "梦日记",
     "YumeNikki",
     "ゆめにっき派生"
-   ]
+   ],
+   "ja": "ゆめにっき"
   },
   "yumekui merry": {
    "en": "yumekui merry",
    "aliases": [
     "夢喰いメリー"
-   ]
+   ],
+   "ja": "夢喰いメリー"
   },
   "yuri!!! on ice": {
    "en": "yuri!!! on ice",
@@ -27583,10 +28588,12 @@
     "ユーリ!!!onICE",
     "yoi",
     "YOI【腐】"
-   ]
+   ],
+   "ja": "ユーリ!!! on ICE"
   },
   "yuru yuri": {
-   "en": "yuru yuri"
+   "en": "yuru yuri",
+   "ja": "ゆるゆり"
   },
   "yurucamp": {
    "en": "yurucamp",
@@ -27596,33 +28603,38 @@
     "ゆるキャンΔ",
     "搖曳露營",
     "摇曳露营"
-   ]
+   ],
+   "ja": "ゆるキャン△"
   },
   "yuuki yuuna wa yuusha de aru": {
    "en": "yuuki yuuna wa yuusha de aru",
    "aliases": [
     "結城友奈は勇者である",
     "ゆゆゆ"
-   ]
+   ],
+   "ja": "結城友奈は勇者である"
   },
   "yuusha de aru": {
    "en": "yuusha de aru",
    "aliases": [
     "勇者であるシリーズ"
-   ]
+   ],
+   "ja": "勇者であるシリーズ"
   },
   "yuusha to maou": {
    "en": "yuusha to maou",
    "aliases": [
     "勇者と魔王"
-   ]
+   ],
+   "ja": "勇者と魔王"
   },
   "yuyushiki": {
    "en": "yuyushiki",
    "aliases": [
     "ゆゆ式",
     "悠悠式"
-   ]
+   ],
+   "ja": "ゆゆ式"
   },
   "zenless zone zero": {
    "en": "zenless zone zero",
@@ -27646,7 +28658,8 @@
     "zzzS2Fanart",
     "ZZZ(ズィー・ゼー・ゾー)",
     "ZZZenless"
-   ]
+   ],
+   "ja": "ゼンレスゾーンゼロ"
   },
   "zero no kiseki": {
    "en": "zero no kiseki",
@@ -27654,20 +28667,23 @@
     "零の軌跡",
     "軌跡シリーズ",
     "英雄伝説VII"
-   ]
+   ],
+   "ja": "零の軌跡"
   },
   "zero no tsukaima": {
    "en": "zero no tsukaima",
    "aliases": [
     "ゼロの使い魔"
-   ]
+   ],
+   "ja": "ゼロの使い魔"
   },
   "zeta gundam": {
    "en": "zeta gundam",
    "aliases": [
     "機動戦士Ζガンダム",
     "Zガンダム"
-   ]
+   ],
+   "ja": "機動戦士Ζガンダム"
   },
   "zoids": {
    "en": "zoids",
@@ -27676,14 +28692,16 @@
     "ZOIDs",
     "ゾイド",
     "索斯機械獸"
-   ]
+   ],
+   "ja": "ゾイド"
   },
   "zoids genesis": {
    "en": "zoids genesis",
    "aliases": [
     "ゾイドジェネシス",
     "機獸創世紀"
-   ]
+   ],
+   "ja": "ゾイドジェネシス"
   },
   "zombie land saga": {
    "en": "zombie land saga",
@@ -27698,10 +28716,12 @@
     "あなたの推しゾンビ",
     "좀비랜드사가",
     "ゾンビランドサガリベンジ"
-   ]
+   ],
+   "ja": "ゾンビランドサガ"
   },
   "zootopia": {
-   "en": "zootopia"
+   "en": "zootopia",
+   "ja": "ズートピア"
   }
  }
 }

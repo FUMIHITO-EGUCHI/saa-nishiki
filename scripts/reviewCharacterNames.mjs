@@ -261,7 +261,7 @@ export function applyCharacterNames(names, reportRows, { minConfidence = 'high' 
 
 // official_work_names.json (qualifier -> title, read at runtime by
 // characterLocalization) follows the reviewed titles: every qualifier whose
-// characters all belong to one reviewed work takes that work's title.
+// characters mostly (over half) belong to one reviewed work takes that work's title.
 export function syncOfficialWorkNames(officialWorkNames, worksFile, { minCharacters = 3 } = {}) {
   const tally = new Map();
   for (const [tag, works] of Object.entries(worksFile.characters ?? {})) {
@@ -278,7 +278,7 @@ export function syncOfficialWorkNames(officialWorkNames, worksFile, { minCharact
     const total = ranked.reduce((sum, [, value]) => sum + value, 0);
     const ja = worksFile.works?.[work]?.ja;
     const known = Object.hasOwn(officialWorkNames, qualifier);
-    if (!ja || count < total || (!known && count < minCharacters)) continue;
+    if (!ja || count * 2 <= total || (!known && count < minCharacters)) continue;
     if (officialWorkNames[qualifier] === ja) continue;
     officialWorkNames[qualifier] = ja;
     changed += 1;
@@ -345,10 +345,7 @@ function applyReport(args) {
     const worksFile = readJson(args.works);
     const changed = applyWorkTitles(worksFile, rows, { minConfidence: args.minConfidence });
     fs.writeFileSync(args.works, `${JSON.stringify(worksFile, null, 1)}\n`, 'utf8');
-    const officialWorkNames = readJson(args.official);
-    const officialChanged = syncOfficialWorkNames(officialWorkNames, worksFile);
-    if (officialChanged) fs.writeFileSync(args.official, `${JSON.stringify(officialWorkNames, null, 2)}\n`, 'utf8');
-    console.log(JSON.stringify({ stage: 'works', rows: rows.length, changed, officialChanged, file: args.works }));
+    console.log(JSON.stringify({ stage: 'works', rows: rows.length, changed, file: args.works }));
     return;
   }
   const database = readJson(args.names);
