@@ -50,17 +50,19 @@ test('the main process routes the pod-ssh marker through podOllamaRequest and pr
     assert.match(status, /path: '\/api\/tags', timeoutMs: 5000/);
 });
 
-test('categorizeTags: Codex first, the pod (or local Ollama) only for refused batches', () => {
-    const script = read('scripts/categorizeTags.mjs');
-    assert.match(script, /\['auto', 'ollama', 'codex', 'pod'\]\.includes\(args\.backend\)/);
-    assert.match(script, /args\.fallback = podConfigured \? 'pod' : 'ollama';/);
-    assert.match(script, /: \[\{ backend: 'codex', rows: selected \}\]\)/, 'auto = everything to Codex');
-    assert.match(script, /args\.nsfwDirect/, 'the old pre-split survives as --nsfw-direct');
-    assert.match(script, /return \(await assignAndValidate\(args\.fallback, args, rows\)\)/);
-    assert.match(script, /return verifyAndValidate\(args\.fallback, args, rows\);/);
-    assert.match(script, /if \(backend === 'pod'\) return callOllamaJson\(await podModelFor\(args\), systemPrompt, userContent, schema, \{ via: 'pod', args \}\);/);
-    assert.match(script, /podTransport\.podOllamaRequest\(\{ settings: await podSettings\(args\), method: 'POST', path: '\/api\/chat', body: payload, timeoutMs: 600_000 \}\)/);
-    assert.match(script, /keep_alive: via === 'pod' \? '5m' : 0,/);
+test('batch scripts: Codex first, the pod (or local Ollama) only for refused batches', () => {
+    const backend = read('scripts/llmBatchBackend.mjs');
+    assert.match(backend, /BACKENDS = Object\.freeze\(\['auto', 'codex', 'ollama', 'pod'\]\)/);
+    assert.match(backend, /args\.fallback = isPodConfigured\(args\.podSettings\) \? 'pod' : 'ollama';/);
+    assert.match(backend, /if \(!args\.nsfwDirect\) return \[\{ backend: 'codex', rows \}\];/, 'auto = everything to Codex');
+    assert.match(backend, /return requestRows\(args\.fallback, rows, \{ systemPrompt, buildPrompt, schema, validate, label \}\);/, 'a refused Codex batch reroutes to the fallback');
+    assert.match(backend, /podTransport\.podOllamaRequest\(\{ settings: podSettings\(\), method: 'POST', path: '\/api\/chat', body, timeoutMs: 600_000 \}\)/);
+    assert.match(backend, /ollamaChatPayload\(podModel\(\), systemPrompt, userContent, schema, '5m'\)/, 'the pod keeps the model warm');
+    for (const script of ['scripts/categorizeTags.mjs', 'scripts/reviewJapaneseTags.mjs']) {
+        const source = read(script);
+        assert.match(source, /createBatchClient\(args\)/, `${script} uses the shared client`);
+        assert.match(source, /planLanes\(args, selected\)/, `${script} routes through the shared lanes`);
+    }
 });
 
 test('bootstrap.sh restores the volatile pieces and keeps generated files off the pod disks', () => {
@@ -82,6 +84,6 @@ test('the pod route uses the pod model setting instead of the local Small / Larg
     assert.match(renderer, /pod_model: setupTextbox\('system-settings-ai-pod-model', LANG\.ai_pod_model/);
     const html = read('scripts/html_shared_body.js');
     assert.match(html, /system-settings-ai-pod-model/);
-    const script = read('scripts/categorizeTags.mjs');
-    assert.match(script, /raw\?\.data\?\.ai_pod_model/, 'the batch script reads the same setting from the sectioned app.json');
+    const script = read('scripts/llmBatchBackend.mjs');
+    assert.match(script, /raw\?\.data\?\.ai_pod_model/, 'the batch scripts read the same setting from the sectioned app.json');
 });

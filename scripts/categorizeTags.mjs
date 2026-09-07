@@ -1,4 +1,4 @@
-// Batch tag-category assignment with a local Ollama model.
+// Batch tag-category assignment with Codex plus an uncensored Ollama model.
 //
 // Fills data/tag_categories.json for the detailed tag-picker filters (see
 // scripts/main/tagCategories.js). Follows the two-pass pattern established by
@@ -6,70 +6,24 @@
 // verification pass double-checks every proposal, and only high-confidence,
 // verified assignments are applied. Applied records carry source "LLM" plus the
 // model name so provenance stays distinguishable from the hand-checked
-// "Danbooru Wiki" seed entries.
-import { spawnSync } from 'node:child_process';
+// "Danbooru Wiki" seed entries. Backends and routing live in llmBatchBackend.mjs.
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { parseTagRows, splitReviewRows, parseReviewResponse } from './reviewJapaneseTags.mjs';
+import { parseTagRows } from './reviewJapaneseTags.mjs';
+import {
+  backendArgDefaults, backendHelpText, createBatchClient, isNsfwTag, planLanes,
+  takeBackendArg, validateBackendArgs,
+} from './llmBatchBackend.mjs';
 import { TAG_CATEGORY_LABELS } from './main/tagCategories.js';
+
+export { isNsfwTag };
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const projectDir = path.dirname(scriptDir);
 const DEFAULT_INPUT = path.join(projectDir, 'data', 'danbooru_e621_merged.csv');
 const DEFAULT_ALIASES = path.join(projectDir, 'data', 'danbooru_e621_merged_ja.csv');
 const DEFAULT_CATEGORIES = path.join(projectDir, 'data', 'tag_categories.json');
-const DEFAULT_MODEL = 'hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M';
-const DEFAULT_CODEX_MODEL = 'gpt-5.6-luna';
-const OLLAMA_URL = process.env.OLLAMA_TAG_REVIEW_URL || 'http://127.0.0.1:11434/api/chat';
-// Pod lane: the same Ollama API on the Runpod pod, reached through the SSH relay
-// (scripts/main/podSshTransport.js) with the pod settings from settings/app.json.
-const DEFAULT_POD_SETTINGS = path.join(projectDir, 'settings', 'app.json');
-const DEFAULT_POD_MODEL = 'huihui_ai/qwen3-abliterated:8b';
-let podTransport = null;
-async function podSettings(args) {
-  const file = JSON.parse(fs.readFileSync(args.podSettings, 'utf8'));
-  const raw = file && typeof file.data === 'object' ? file.data : file; // sectioned app.json or a flat object
-  if (raw.api_pod_ssh_enable !== true || !String(raw.api_pod_ssh_target ?? '').trim()) {
-    throw new Error(`pod SSH is not configured in ${args.podSettings} (api_pod_ssh_enable / api_pod_ssh_target)`);
-  }
-  return raw;
-}
-// --pod-model wins; otherwise the app's ai_pod_model setting; otherwise the default
-async function podModelFor(args) {
-  if (args.podModelExplicit) return args.podModel;
-  try {
-    const raw = JSON.parse(fs.readFileSync(args.podSettings, 'utf8'));
-    const configured = String(raw?.data?.ai_pod_model ?? raw?.ai_pod_model ?? '').trim();
-    if (configured) return configured;
-  } catch { /* no settings file */ }
-  return args.podModel;
-}
-async function podChat(args, payload) {
-  podTransport ??= await import('./main/podSshTransport.js');
-  const reply = await podTransport.podOllamaRequest({ settings: await podSettings(args), method: 'POST', path: '/api/chat', body: payload, timeoutMs: 600_000 });
-  if (!reply.ok) throw new Error(`pod ollama: ${reply.message}`);
-  return reply.json;
-}
-
-// Routing policy: explicit tags go to the local uncensored model (a cloud model
-// may refuse or skew on them); everything else goes to Codex, which is far
-// faster than the partially CPU-offloaded local 35B. A batch Codex rejects or
-// garbles falls back to the local model, so this list only has to catch the
-// obvious cases, not be exhaustive.
-const NSFW_TAG_PATTERN = new RegExp([
-  'sex', 'penis', 'pussy', 'vagina', 'anal', 'anus', '(^|_)cum', 'semen', 'ejaculat', 'erection',
-  'fellatio', 'irrumatio', 'cunnilingus', 'paizuri', 'handjob', 'footjob', 'masturbat', 'orgasm',
-  'nipple', 'areola', 'topless', 'bottomless', 'nude', 'naked', 'pubic', 'penetrat', 'futanari',
-  'testicle', 'condom', 'bukkake', 'gangbang', 'rape', 'bdsm', 'bondage', 'dildo', 'vibrator',
-  'cameltoe', 'vulva', 'clitoris', 'lactation', '(^|_)hetero($|_)', 'yaoi', 'yuri_sex', '(^|_)oral', 'fingering',
-  'breasts_out', 'spread_legs', 'spread_pussy', 'x-ray', 'internal_cumshot', 'clothed_sex',
-].join('|'));
-
-export function isNsfwTag(tag) {
-  return NSFW_TAG_PATTERN.test(String(tag).toLowerCase());
-}
 
 // Danbooru general/meta and their E621 counterparts; character, artist, work,
 // species and lore tags are already covered by the coarse group filters.
@@ -156,29 +110,21 @@ composition_quality = framing, viewpoint, subject count, lighting, quality and m
 
 function parseArgs(argv) {
   const args = {
+    ...backendArgDefaults(),
     mode: 'assign', input: DEFAULT_INPUT, aliases: DEFAULT_ALIASES, categories: DEFAULT_CATEGORIES,
-    report: '', output: '', model: DEFAULT_MODEL, codexModel: DEFAULT_CODEX_MODEL, backend: 'auto',
-    podModel: DEFAULT_POD_MODEL, podSettings: DEFAULT_POD_SETTINGS, fallback: '', nsfwDirect: false,
-    batchSize: 40, codexBatchSize: 100, offset: 0, limit: 0,
-    minHeat: 10000, groups: DEFAULT_GROUPS, recheck: '',
+    report: '', output: '', offset: 0, limit: 0,
+    minHeat: 10000, groups: DEFAULT_GROUPS, recheck: '', help: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
+    const consumed = takeBackendArg(args, argv, index);
+    if (consumed) { index += consumed - 1; continue; }
     if (arg === '--apply') args.mode = 'apply';
     else if (arg === '--input') args.input = argv[++index];
     else if (arg === '--aliases') args.aliases = argv[++index];
     else if (arg === '--categories') args.categories = argv[++index];
     else if (arg === '--report') args.report = argv[++index];
     else if (arg === '--output') args.output = argv[++index];
-    else if (arg === '--model') args.model = argv[++index];
-    else if (arg === '--codex-model') args.codexModel = argv[++index];
-    else if (arg === '--backend') args.backend = argv[++index];
-    else if (arg === '--pod-model') { args.podModel = argv[++index]; args.podModelExplicit = true; }
-    else if (arg === '--pod-settings') args.podSettings = argv[++index];
-    else if (arg === '--fallback') args.fallback = argv[++index];
-    else if (arg === '--nsfw-direct') args.nsfwDirect = true;
-    else if (arg === '--batch-size') args.batchSize = Number.parseInt(argv[++index], 10);
-    else if (arg === '--codex-batch-size') args.codexBatchSize = Number.parseInt(argv[++index], 10);
     else if (arg === '--offset') args.offset = Number.parseInt(argv[++index], 10);
     else if (arg === '--limit') args.limit = Number.parseInt(argv[++index], 10);
     else if (arg === '--min-heat') args.minHeat = Number.parseInt(argv[++index], 10);
@@ -187,24 +133,7 @@ function parseArgs(argv) {
     else if (arg === '--help') args.help = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (!Number.isInteger(args.batchSize) || args.batchSize < 1 || args.batchSize > 200) {
-    throw new Error('--batch-size must be an integer from 1 to 200');
-  }
-  if (!Number.isInteger(args.codexBatchSize) || args.codexBatchSize < 1 || args.codexBatchSize > 200) {
-    throw new Error('--codex-batch-size must be an integer from 1 to 200');
-  }
-  if (!['auto', 'ollama', 'codex', 'pod'].includes(args.backend)) {
-    throw new Error('--backend must be auto, ollama, codex, or pod');
-  }
-  // where a batch Codex refuses or garbles goes: the pod when its SSH is configured, else the local model
-  if (!args.fallback) {
-    let podConfigured = false;
-    try { const file = JSON.parse(fs.readFileSync(args.podSettings, 'utf8')); const raw = file?.data ?? file; podConfigured = raw.api_pod_ssh_enable === true && Boolean(String(raw.api_pod_ssh_target ?? '').trim()); } catch { /* no settings file */ }
-    args.fallback = podConfigured ? 'pod' : 'ollama';
-  }
-  if (!['ollama', 'pod'].includes(args.fallback)) {
-    throw new Error('--fallback must be ollama or pod');
-  }
+  validateBackendArgs(args);
   if (!Number.isInteger(args.offset) || args.offset < 0) throw new Error('--offset must be a non-negative integer');
   if (!Number.isInteger(args.limit) || args.limit < 0) throw new Error('--limit must be a non-negative integer');
   if (!Number.isInteger(args.minHeat) || args.minHeat < 0) throw new Error('--min-heat must be a non-negative integer');
@@ -317,82 +246,6 @@ export function mergeCategories(existing, reviews, model, { recheck = '' } = {})
   return { data, added, updated };
 }
 
-async function callOllamaJson(model, systemPrompt, userContent, schema, { via = 'ollama', args = null } = {}) {
-  const chatPayload = {
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userContent },
-      ],
-      stream: false,
-      think: false,
-      format: schema,
-      temperature: 0.1,
-      options: { num_predict: 4096 },
-      // the pod keeps the model warm between batches; locally VRAM goes back to ComfyUI
-      keep_alive: via === 'pod' ? '5m' : 0,
-  };
-  if (via === 'pod') return parseReviewResponse(String((await podChat(args, chatPayload))?.message?.content ?? ''));
-  const response = await fetch(OLLAMA_URL, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    signal: AbortSignal.timeout(300_000),
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userContent },
-      ],
-      stream: false,
-      think: false,
-      format: schema,
-      temperature: 0.1,
-      options: { num_predict: 4096 },
-      keep_alive: 0,
-    }),
-  });
-  if (!response.ok) throw new Error(`Ollama HTTP ${response.status}: ${await response.text()}`);
-  const payload = await response.json();
-  if (typeof payload?.message?.content !== 'string') throw new Error('Ollama response has no message content');
-  return parseReviewResponse(payload.message.content);
-}
-
-// Non-interactive Codex call: the prompt goes over stdin, the response shape is
-// enforced with --output-schema, and the final message is read from a temp file.
-// read-only sandbox; the model is told to answer directly without tools.
-function callCodexJson(model, systemPrompt, userContent, schema) {
-  const stamp = `saa-cat-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const schemaFile = path.join(os.tmpdir(), `${stamp}-schema.json`);
-  const outFile = path.join(os.tmpdir(), `${stamp}-out.json`);
-  fs.writeFileSync(schemaFile, JSON.stringify(schema), 'utf8');
-  try {
-    const commandLine = [
-      'codex', 'exec', '--ephemeral', '--skip-git-repo-check', '--color', 'never',
-      '-s', 'read-only',
-      '-m', model,
-      '-c', 'model_reasoning_effort="low"',
-      '--output-schema', schemaFile,
-      '-o', outFile,
-      '-',
-    ].map(part => (/\s/.test(part) ? `"${part}"` : part)).join(' ');
-    const result = spawnSync(commandLine, {
-      input: `${systemPrompt}\n\nAnswer directly with the JSON only. Do not run commands or read files.\n\n${userContent}`,
-      encoding: 'utf8',
-      shell: true, // resolves the npm shim on Windows
-      timeout: 600_000,
-    });
-    if (result.error) throw result.error;
-    if (result.status !== 0) {
-      throw new Error(`codex exec exited with ${result.status}: ${String(result.stderr).slice(-400)}`);
-    }
-    if (!fs.existsSync(outFile)) throw new Error('codex exec produced no output message');
-    return parseReviewResponse(fs.readFileSync(outFile, 'utf8'));
-  } finally {
-    fs.rmSync(schemaFile, { force: true });
-    fs.rmSync(outFile, { force: true });
-  }
-}
-
 function buildAssignPrompt(rows) {
   return `Classify exactly ${rows.length} tags. Return exactly ${rows.length} JSON rows, one for every item, with these input ids: ${rows.map(row => row.i).join(', ')}.\n${JSON.stringify(rows.map(({ i, tag, alias = '' }) => ({ i, tag, alias })))} `;
 }
@@ -401,58 +254,15 @@ function buildVerifyPrompt(rows) {
   return `Check exactly ${rows.length} proposed categories. Return exactly ${rows.length} JSON rows, one for every item, with these input ids: ${rows.map(row => row.i).join(', ')}.\n${JSON.stringify(rows.map(row => ({ i: row.i, tag: row.tag, alias: row.alias, proposed: row.category })))} `;
 }
 
-async function callBackend(backend, args, systemPrompt, userContent, schema) {
-  if (backend === 'codex') return callCodexJson(args.codexModel, systemPrompt, userContent, schema);
-  if (backend === 'pod') return callOllamaJson(await podModelFor(args), systemPrompt, userContent, schema, { via: 'pod', args });
-  return callOllamaJson(args.model, systemPrompt, userContent, schema);
-}
-
-async function assignAndValidate(backend, args, rows) {
-  try {
-    return validateAssignmentRows(rows, await callBackend(backend, args, ASSIGN_SYSTEM_PROMPT, buildAssignPrompt(rows), ASSIGN_RESPONSE_SCHEMA));
-  } catch (error) {
-    if (backend === 'codex') {
-      // Refusal or malformed output: reroute the whole batch to the local model.
-      process.stdout.write(`Codex assignment failed (${error.message.slice(0, 160)}); falling back to ${args.fallback}...\n`);
-      return (await assignAndValidate(args.fallback, args, rows)).map(row => ({ ...row, model: args.fallback === 'pod' ? args.podModel : args.model }));
-    }
-    const parts = splitReviewRows(rows);
-    if (parts.length === 1) throw error;
-    process.stdout.write(`Retrying invalid assignment response as ${parts[0].length}+${parts[1].length} rows...\n`);
-    return [...await assignAndValidate(backend, args, parts[0]), ...await assignAndValidate(backend, args, parts[1])];
-  }
-}
-
-async function verifyAndValidate(backend, args, rows) {
-  try {
-    return validateVerificationRows(rows, await callBackend(backend, args, VERIFY_SYSTEM_PROMPT, buildVerifyPrompt(rows), VERIFY_RESPONSE_SCHEMA));
-  } catch (error) {
-    if (backend === 'codex') {
-      process.stdout.write(`Codex verification failed (${error.message.slice(0, 160)}); falling back to ${args.fallback}...\n`);
-      return verifyAndValidate(args.fallback, args, rows);
-    }
-    const parts = splitReviewRows(rows);
-    if (parts.length === 1) throw error;
-    process.stdout.write(`Retrying invalid verification response as ${parts[0].length}+${parts[1].length} rows...\n`);
-    return [...await verifyAndValidate(backend, args, parts[0]), ...await verifyAndValidate(backend, args, parts[1])];
-  }
-}
-
 function printHelp() {
-  console.log(`Assign tag-picker categories with Codex plus a local Ollama model.
+  console.log(`Assign tag-picker categories with Codex plus an uncensored Ollama model.
 
 Assignment mode (writes a JSONL report):
   node scripts/categorizeTags.mjs --report <report.jsonl> [--min-heat 10000] [--groups 0,7,5,14] [--limit N]
   --recheck <category> also re-judges the LLM-sourced tags filed under that
   category (pass the same flag to --apply so they may move).
 
-Backends (--backend auto|codex|ollama|pod, default auto):
-  auto sends everything to Codex first (--codex-model, default ${DEFAULT_CODEX_MODEL});
-  a batch Codex refuses or garbles falls back to --fallback (pod when the SSH
-  pod is configured in --pod-settings, default settings/app.json; else ollama).
-  --nsfw-direct sends explicit tags straight to the fallback model instead.
-  pod = the Ollama model on the Runpod pod over the SSH relay (--pod-model,
-  default ${DEFAULT_POD_MODEL}); ollama = OLLAMA_TAG_REVIEW_URL / 127.0.0.1:11434.
+${backendHelpText()}
 
 Apply verified high-confidence assignments into data/tag_categories.json:
   node scripts/categorizeTags.mjs --apply --report <report.jsonl> [--output data/tag_categories.json]
@@ -469,40 +279,37 @@ async function runAssign(args) {
   const selected = candidates.slice(args.offset, args.limit ? args.offset + args.limit : undefined);
   if (!selected.length) throw new Error('No rows selected');
 
-  // auto: everything goes to Codex first; a batch it refuses or garbles falls
-  // back to the uncensored model (--fallback: the pod over SSH when configured,
-  // else local Ollama). --nsfw-direct sends explicit tags straight to the
-  // fallback model instead, saving Codex round-trips.
-  const lanes = args.backend === 'auto'
-    ? (args.nsfwDirect
-      ? [
-        { backend: 'codex', rows: selected.filter(row => !isNsfwTag(row.tag)) },
-        { backend: args.fallback, rows: selected.filter(row => isNsfwTag(row.tag)) },
-      ]
-      : [{ backend: 'codex', rows: selected }])
-    : [{ backend: args.backend, rows: selected }];
+  const client = createBatchClient(args);
+  const lanes = planLanes(args, selected);
   process.stdout.write(`Categorizing ${selected.length} of ${candidates.length} candidate tags (min heat ${args.minHeat}, groups ${args.groups.join(',')}): ${lanes.map(lane => `${lane.rows.length} via ${lane.backend}`).join(', ')}...\n`);
   fs.writeFileSync(args.report, '', 'utf8');
-  for (const lane of lanes) {
-    const laneModel = lane.backend === 'codex' ? args.codexModel : lane.backend === 'pod' ? args.podModel : args.model;
-    const laneBatchSize = lane.backend === 'codex' ? args.codexBatchSize : args.batchSize;
-    for (let start = 0; start < lane.rows.length; start += laneBatchSize) {
-      const batch = lane.rows.slice(start, start + laneBatchSize);
-      process.stdout.write(`[${lane.backend}] Assigning ${start + 1}-${start + batch.length}/${lane.rows.length}...\n`);
-      const reviews = await assignAndValidate(lane.backend, args, batch);
-      const candidatesToVerify = reviews.filter(review => review.category !== 'unknown');
-      if (candidatesToVerify.length) {
-        process.stdout.write(`[${lane.backend}] Verifying ${candidatesToVerify.length} proposed categories...\n`);
-        const verification = await verifyAndValidate(lane.backend, args, candidatesToVerify);
-        const verificationById = new Map(verification.map(row => [row.i, row]));
-        for (const review of reviews) review.verification = verificationById.get(review.i) || null;
+  try {
+    for (const lane of lanes) {
+      const laneBatchSize = client.batchSizeFor(lane.backend);
+      for (let start = 0; start < lane.rows.length; start += laneBatchSize) {
+        const batch = lane.rows.slice(start, start + laneBatchSize);
+        process.stdout.write(`[${lane.backend}] Assigning ${start + 1}-${start + batch.length}/${lane.rows.length}...\n`);
+        const reviews = await client.requestRows(lane.backend, batch, {
+          systemPrompt: ASSIGN_SYSTEM_PROMPT, buildPrompt: buildAssignPrompt, schema: ASSIGN_RESPONSE_SCHEMA,
+          validate: validateAssignmentRows, label: 'assignment',
+        });
+        const candidatesToVerify = reviews.filter(review => review.category !== 'unknown');
+        if (candidatesToVerify.length) {
+          process.stdout.write(`[${lane.backend}] Verifying ${candidatesToVerify.length} proposed categories...\n`);
+          const verification = await client.requestRows(lane.backend, candidatesToVerify, {
+            systemPrompt: VERIFY_SYSTEM_PROMPT, buildPrompt: buildVerifyPrompt, schema: VERIFY_RESPONSE_SCHEMA,
+            validate: validateVerificationRows, label: 'verification',
+          });
+          const verificationById = new Map(verification.map(row => [row.i, row]));
+          for (const review of reviews) review.verification = verificationById.get(review.i) || null;
+        }
+        fs.appendFileSync(args.report, `${JSON.stringify({ model: client.modelFor(lane.backend), backend: lane.backend, rows: reviews })}\n`, 'utf8');
       }
-      fs.appendFileSync(args.report, `${JSON.stringify({ model: laneModel, backend: lane.backend, rows: reviews })}\n`, 'utf8');
     }
+  } finally {
+    client.close();
   }
   console.log(`Wrote assignment report: ${args.report}`);
-  // the pod lane keeps an ssh child alive; close it so the process can exit
-  podTransport?.stopPodSshSession?.();
 }
 
 function readReport(reportPath) {

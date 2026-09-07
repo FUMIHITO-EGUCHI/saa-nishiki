@@ -5,12 +5,16 @@ import {
   applyHighConfidenceReviews,
   buildReviewPrompt,
   compactWikiEvidence,
+  findSharedAliases,
   formatTagRows,
+  isPoliteStyleRow,
   isSuspiciousTagRow,
+  loadBaseIndex,
   loadReferenceAliases,
   normalizeTagKey,
   parseReviewResponse,
   parseTagRows,
+  selectReviewRows,
   splitReviewRows,
   validateReviewRows,
   validateVerificationRows,
@@ -183,4 +187,54 @@ test('keeps a matching reference on each validated review row', () => {
     { i: 1, action: 'change', confidence: 'high', alias: '暁美ほむら' },
   ]);
   assert.equal(review[0].reference, '暁美ほむら');
+});
+
+test('style and shared-alias selectors flag machine forms and collisions', () => {
+  assert.equal(isPoliteStyleRow({ tag: 'leaning_forward', alias: '前方に傾いています' }), true);
+  assert.equal(isPoliteStyleRow({ tag: 'holding_sword', alias: '剣を持っている' }), false);
+  const shared = findSharedAliases([
+    { tag: 'stuffed_toy', alias: 'ぬいぐるみ' },
+    { tag: 'stuffed_cat', alias: 'ぬいぐるみ' },
+    { tag: 'hat', alias: '帽子' },
+  ]);
+  assert.deepEqual([...shared], [['ぬいぐるみ', ['stuffed_toy', 'stuffed_cat']]]);
+  assert.equal(isSuspiciousTagRow({ tag: ':3', alias: '：3' }), true);
+});
+
+test('selectReviewRows scopes by base group and heat, dedupes rows, adds siblings and missing tags', () => {
+  const rows = parseTagRows('1girl,一人の女の子\n1girl,一人の女の子\nstuffed_cat,ぬいぐるみ\nstuffed_toy,ぬいぐるみ\nleg_up,足を上げます\nsome_artist,作家\n');
+  const base = loadBaseIndex('1girl,0,600,\nstuffed_cat,0,300,\nstuffed_toy,0,400,\nleg_up,0,50,\nsome_artist,1,900,\nfox_ears,0,500,\n');
+  const all = selectReviewRows(rows, { base, groups: [0], minHeat: 100, select: ['all'] });
+  assert.deepEqual(all.map(row => row.tag), ['1girl', 'stuffed_toy', 'stuffed_cat']);
+  assert.deepEqual(all[2].siblings, ['stuffed_toy']);
+  const ambiguous = selectReviewRows(rows, { base, groups: [0], select: ['ambiguous'] });
+  assert.deepEqual(ambiguous.map(row => row.tag), ['stuffed_toy', 'stuffed_cat']);
+  const style = selectReviewRows(rows, { base, groups: [0], select: ['style'] });
+  assert.deepEqual(style.map(row => row.tag), ['leg_up']);
+  const missing = selectReviewRows(rows, { base, groups: [0], select: ['missing'] });
+  assert.deepEqual(missing, [{ i: 7, tag: 'fox_ears', alias: '', heat: 500, siblings: [], missing: true }]);
+  assert.equal(selectReviewRows(rows, { select: ['all'] }).length, 5);
+});
+
+test('apply matches repeated rows by tag, appends missing translations and drops removed aliases', () => {
+  const rows = parseTagRows('1girl,一人の女の子\n1girl,一人の女の子\nsolo,一人の女の子\n:3,：3\n');
+  const verified = { accepted: true, confidence: 'high' };
+  const applied = applyHighConfidenceReviews(rows, [
+    { i: 3, tag: 'solo', original: '一人の女の子', action: 'change', confidence: 'high', alias: '一人', verification: verified },
+    { i: 4, tag: ':3', original: '：3', action: 'remove', confidence: 'high', alias: '', verification: verified },
+    { i: 5, tag: 'fox_ears', original: '', action: 'change', confidence: 'high', alias: '狐耳', missing: true, verification: verified },
+    { i: 6, tag: 'capelet', original: '', action: 'change', confidence: 'medium', alias: 'ケープレット', missing: true, verification: verified },
+  ]);
+  assert.deepEqual(applied.map(row => [row.tag, row.alias]), [
+    ['1girl', '一人の女の子'], ['1girl', '一人の女の子'], ['solo', '一人'], [':3', ''], ['fox_ears', '狐耳'],
+  ]);
+  const duplicated = applyHighConfidenceReviews(rows, [
+    { i: 1, tag: '1girl', original: '一人の女の子', action: 'change', confidence: 'high', alias: '女の子1人', verification: verified },
+  ]);
+  assert.deepEqual(duplicated.slice(0, 2).map(row => row.alias), ['女の子1人', '女の子1人']);
+});
+
+test('a change to the identical alias is recorded as keep', () => {
+  const review = validateReviewRows([{ i: 1, tag: 'hat', alias: '帽子' }], [{ i: 1, action: 'change', confidence: 'high', alias: '帽子' }]);
+  assert.equal(review[0].action, 'keep');
 });
