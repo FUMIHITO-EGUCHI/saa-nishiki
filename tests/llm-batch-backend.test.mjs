@@ -34,6 +34,8 @@ test('backend options parse and default to Codex with a local fallback', () => {
   assert.equal(parse([]).codexEffort, '', 'the reasoning effort defaults to the Codex config');
   assert.equal(parse(['--codex-effort', 'xhigh']).codexEffort, 'xhigh');
   assert.throws(() => parse(['--codex-effort', 'max']), /--codex-effort/);
+  assert.equal(parse(['--codex-tier', 'priority']).codexTier, 'priority');
+  assert.throws(() => parse(['--codex-tier', 'turbo']), /--codex-tier/);
 });
 
 test('lanes: everything to Codex unless --nsfw-direct or an explicit backend', () => {
