@@ -129,7 +129,7 @@ function parseArgs(argv) {
   const args = {
     ...backendArgDefaults(),
     mode: 'review', input: DEFAULT_INPUT, base: DEFAULT_BASE, report: '', output: '', wikiCache: '',
-    offset: 0, limit: 0, select: ['suspicious'], groups: [0], minHeat: 0, help: false,
+    offset: 0, limit: 0, select: ['suspicious'], groups: [0], minHeat: 0, maxHeat: Number.POSITIVE_INFINITY, help: false,
   };
   let selectGiven = false;
   for (let index = 0; index < argv.length; index += 1) {
@@ -145,6 +145,7 @@ function parseArgs(argv) {
     else if (arg === '--offset') args.offset = Number.parseInt(argv[++index], 10);
     else if (arg === '--limit') args.limit = Number.parseInt(argv[++index], 10);
     else if (arg === '--min-heat') args.minHeat = Number.parseInt(argv[++index], 10);
+    else if (arg === '--max-heat') args.maxHeat = Number.parseInt(argv[++index], 10);
     else if (arg === '--groups') args.groups = argv[++index].split(',').map(value => Number.parseInt(value, 10));
     else if (arg === '--select') { args.select = argv[++index].split(',').map(value => value.trim()).filter(Boolean); selectGiven = true; }
     else if (arg === '--suspicious-only') { args.select = ['suspicious']; selectGiven = true; }
@@ -156,6 +157,7 @@ function parseArgs(argv) {
   if (!Number.isInteger(args.offset) || args.offset < 0) throw new Error('--offset must be a non-negative integer');
   if (!Number.isInteger(args.limit) || args.limit < 0) throw new Error('--limit must be a non-negative integer');
   if (!Number.isInteger(args.minHeat) || args.minHeat < 0) throw new Error('--min-heat must be a non-negative integer');
+  if (!(Number.isInteger(args.maxHeat) || args.maxHeat === Number.POSITIVE_INFINITY) || args.maxHeat < args.minHeat) throw new Error('--max-heat must be an integer >= --min-heat');
   if (!args.groups.length || args.groups.some(group => !Number.isInteger(group) || group < 0)) {
     throw new Error('--groups must be a comma-separated list of non-negative integers');
   }
@@ -278,11 +280,11 @@ export function findSharedAliases(rows) {
 // per distinct tag+alias), filtered by the --select names, plus synthetic rows
 // for tags the dictionary lacks when `missing` is selected. Rows are ordered by
 // heat so --limit takes the most used tags first.
-export function selectReviewRows(rows, { base = null, groups = [0], minHeat = 0, select = ['suspicious'] } = {}) {
+export function selectReviewRows(rows, { base = null, groups = [0], minHeat = 0, maxHeat = Number.POSITIVE_INFINITY, select = ['suspicious'] } = {}) {
   const inScope = tag => {
     if (!base) return true;
     const info = base.get(tag);
-    return Boolean(info) && groups.includes(info.group) && info.heat >= minHeat;
+    return Boolean(info) && groups.includes(info.group) && info.heat >= minHeat && info.heat <= maxHeat;
   };
   const heatOf = tag => base?.get(tag)?.heat ?? 0;
   const scoped = [];
@@ -309,7 +311,7 @@ export function selectReviewRows(rows, { base = null, groups = [0], minHeat = 0,
     const known = new Set(rows.map(row => row.tag));
     let nextId = rows.length;
     for (const [tag, info] of base) {
-      if (known.has(tag) || !groups.includes(info.group) || info.heat < minHeat) continue;
+      if (known.has(tag) || !groups.includes(info.group) || info.heat < minHeat || info.heat > maxHeat) continue;
       nextId += 1;
       selected.push({ i: nextId, tag, alias: '', heat: info.heat, siblings: [], missing: true });
     }
@@ -485,9 +487,10 @@ function printHelp() {
   console.log(`Review Japanese tag aliases with Codex plus an uncensored Ollama model.
 
 Review mode (writes a JSONL report):
-  node scripts/reviewJapaneseTags.mjs --report <report.jsonl> [--select suspicious,style,ambiguous,missing|all] [--groups 0] [--min-heat N] [--limit N] [--wiki-cache data/.cache/danbooru-wiki.jsonl] [--dry-run]
+  node scripts/reviewJapaneseTags.mjs --report <report.jsonl> [--select suspicious,style,ambiguous,missing|all] [--groups 0] [--min-heat N] [--max-heat N] [--limit N] [--wiki-cache data/.cache/danbooru-wiki.jsonl] [--dry-run]
   Scope: rows whose tag is in --base (default data/danbooru_e621_merged.csv) with a
-  matching group and heat; without a base file every row is in scope.
+  matching group and heat (--min-heat / --max-heat bound the usage count, so a
+  large audit can run in heat bands); without a base file every row is in scope.
   Selections: suspicious = untranslated / machine-like aliases (default),
   style = polite or sentence endings, ambiguous = one alias shared by several
   tags, missing = tags the dictionary lacks, all = every row in scope.
@@ -514,7 +517,7 @@ async function runReview(args) {
   const base = loadBase(args);
   const referenceAliases = loadReferenceAliases();
   const wikiCache = args.wikiCache ? loadWikiCache(args.wikiCache) : new Map();
-  const pool = selectReviewRows(rows, { base, groups: args.groups, minHeat: args.minHeat, select: args.select });
+  const pool = selectReviewRows(rows, { base, groups: args.groups, minHeat: args.minHeat, maxHeat: args.maxHeat, select: args.select });
   const selected = pool
     .slice(args.offset, args.limit ? args.offset + args.limit : undefined)
     .map(row => ({
