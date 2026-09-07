@@ -471,6 +471,38 @@ To apply an `Artist` tag in the `Anima Model`, prefix it with `@`, e.g. `mira` �
 | `Wildcards` | 255 | Wildcards | SAA |
 </details>
 
+### Japanese tag alias review (maintainers)
+
+`scripts/reviewJapaneseTags.mjs` audits the bundled aliases in
+`data/danbooru_e621_merged_ja.csv` with an LLM: a review pass proposes
+keep / change / remove for every row, a verification pass double-checks each
+proposal, and `--apply` writes back only high-confidence decisions accepted by
+both passes. Every batch goes to Codex first (`codex exec`, model
+`gpt-5.6-luna`); a batch Codex refuses or garbles is re-run on an uncensored
+Ollama model, on the Runpod pod when Pod SSH is configured or locally
+otherwise (`--backend`, `--fallback`, `--model`, `--pod-model`).
+
+Rows are scoped against the merged base file (`--groups`, default Danbooru
+General; `--min-heat` keeps the most used tags) and picked by `--select`:
+
+| Selection | Rows |
+| --- | --- |
+| `suspicious` | untranslated, English-only, or known machine-translation aliases (default) |
+| `style` | polite or sentence endings (`〜ます`, `〜です`, `〜ています`) |
+| `ambiguous` | one alias shared by several tags; the sibling tags are sent for disambiguation |
+| `missing` | base tags with no alias row; accepted translations are appended |
+| `all` | every row in scope |
+
+```text
+node scripts/reviewJapaneseTags.mjs --select suspicious,style,ambiguous,missing --min-heat 542 --report review.jsonl
+node scripts/reviewJapaneseTags.mjs --apply --report review.jsonl --output data/danbooru_e621_merged_ja.csv
+```
+
+`--dry-run` writes the selection without calling a model. A removed alias
+drops its row; a decision applies to every repeated row of the same tag.
+`scripts/categorizeTags.mjs` uses the same backends to fill
+`data/tag_categories.json` for the tag-picker category filters.
+
 ### Japanese tag alias integration (maintainers)
 
 `scripts/integrateJapaneseTagAliases.mjs` builds a review candidate from a

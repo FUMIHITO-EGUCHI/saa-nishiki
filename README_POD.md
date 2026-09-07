@@ -70,7 +70,7 @@ With Pod SSH on, the checkpoint / LoRA / VAE / upscaler / ControlNet lists in th
 
 ## Tag dictionary batches
 
-`scripts/categorizeTags.mjs` sends every batch to Codex first; a batch Codex refuses or garbles is re-run on the pod's Ollama when Pod SSH is configured in `settings/app.json` (`--fallback ollama` for the local model instead, `--backend pod` to use the pod for everything, `--pod-model` to pick the model).
+`scripts/categorizeTags.mjs` and `scripts/reviewJapaneseTags.mjs` (shared backends in `scripts/llmBatchBackend.mjs`) send every batch to Codex first; a batch Codex refuses or garbles is re-run on the pod's Ollama when Pod SSH is configured in `settings/app.json` (`--fallback ollama` for the local model instead, `--backend pod` to use the pod for everything, `--pod-model` to pick the model).
 
 ## Troubleshooting
 
