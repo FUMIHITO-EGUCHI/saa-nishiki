@@ -22,6 +22,7 @@ export const DEFAULT_POD_SETTINGS = path.join(projectDir, 'settings', 'app.json'
 export const OLLAMA_URL = process.env.OLLAMA_TAG_REVIEW_URL || 'http://127.0.0.1:11434/api/chat';
 export const BACKENDS = Object.freeze(['auto', 'codex', 'ollama', 'pod']);
 export const FALLBACKS = Object.freeze(['ollama', 'pod']);
+export const CODEX_EFFORTS = Object.freeze(['minimal', 'low', 'medium', 'high', 'xhigh']);
 // Codex batches at or below this size go to the fallback model when they fail.
 export const CODEX_SPLIT_FLOOR = 25;
 
@@ -45,6 +46,8 @@ export function backendArgDefaults() {
     backend: 'auto',
     model: DEFAULT_OLLAMA_MODEL,
     codexModel: DEFAULT_CODEX_MODEL,
+    // '' = the reasoning effort from ~/.codex/config.toml (the user's default, e.g. xhigh)
+    codexEffort: '',
     podModel: DEFAULT_POD_MODEL,
     podModelExplicit: false,
     podSettings: DEFAULT_POD_SETTINGS,
@@ -64,6 +67,7 @@ export function takeBackendArg(args, argv, index) {
     case '--backend': args.backend = value(); return 2;
     case '--model': args.model = value(); return 2;
     case '--codex-model': args.codexModel = value(); return 2;
+    case '--codex-effort': args.codexEffort = value(); return 2;
     case '--pod-model': args.podModel = value(); args.podModelExplicit = true; return 2;
     case '--pod-settings': args.podSettings = value(); return 2;
     case '--fallback': args.fallback = value(); return 2;
@@ -92,6 +96,7 @@ export function validateBackendArgs(args) {
     throw new Error('--codex-batch-size must be an integer from 1 to 200');
   }
   if (!BACKENDS.includes(args.backend)) throw new Error('--backend must be auto, ollama, codex, or pod');
+  if (args.codexEffort && !CODEX_EFFORTS.includes(args.codexEffort)) throw new Error(`--codex-effort must be one of ${CODEX_EFFORTS.join(', ')}`);
   // where a batch Codex refuses or garbles goes: the pod when its SSH is configured, else the local model
   if (!args.fallback) args.fallback = isPodConfigured(args.podSettings) ? 'pod' : 'ollama';
   if (!FALLBACKS.includes(args.fallback)) throw new Error('--fallback must be ollama or pod');
@@ -100,7 +105,8 @@ export function validateBackendArgs(args) {
 
 export function backendHelpText() {
   return `Backends (--backend auto|codex|ollama|pod, default auto):
-  auto sends everything to Codex first (--codex-model, default ${DEFAULT_CODEX_MODEL});
+  auto sends everything to Codex first (--codex-model, default ${DEFAULT_CODEX_MODEL};
+  --codex-effort minimal|low|medium|high|xhigh, default: ~/.codex/config.toml);
   a batch Codex refuses or garbles falls back to --fallback (pod when the SSH
   pod is configured in --pod-settings, default settings/app.json; else ollama).
   --nsfw-direct sends explicit tags straight to the fallback model instead.
@@ -175,7 +181,7 @@ async function callLocalOllama(model, systemPrompt, userContent, schema) {
 // Non-interactive Codex call: the prompt goes over stdin, the response shape is
 // enforced with --output-schema, and the final message is read from a temp file.
 // read-only sandbox; the model is told to answer directly without tools.
-export function callCodexJson(model, systemPrompt, userContent, schema) {
+export function callCodexJson(model, systemPrompt, userContent, schema, { effort = '' } = {}) {
   const stamp = `saa-batch-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const schemaFile = path.join(os.tmpdir(), `${stamp}-schema.json`);
   const outFile = path.join(os.tmpdir(), `${stamp}-out.json`);
@@ -185,7 +191,8 @@ export function callCodexJson(model, systemPrompt, userContent, schema) {
       'codex', 'exec', '--ephemeral', '--skip-git-repo-check', '--color', 'never',
       '-s', 'read-only',
       '-m', model,
-      '-c', 'model_reasoning_effort="low"',
+      // reasoning effort and service tier come from ~/.codex/config.toml unless --codex-effort is given
+      ...(effort ? ['-c', `model_reasoning_effort="${effort}"`] : []),
       '--output-schema', schemaFile,
       '-o', outFile,
       '-',
@@ -264,7 +271,7 @@ export function createBatchClient(args, transports = {}) {
 
   async function callJson(backend, systemPrompt, userContent, schema) {
     if (transports[backend]) return transports[backend](systemPrompt, userContent, schema);
-    if (backend === 'codex') return callCodexJson(args.codexModel, systemPrompt, userContent, schema);
+    if (backend === 'codex') return callCodexJson(args.codexModel, systemPrompt, userContent, schema, { effort: args.codexEffort });
     if (backend === 'pod') return callPod(systemPrompt, userContent, schema);
     return callLocalOllama(args.model, systemPrompt, userContent, schema);
   }
