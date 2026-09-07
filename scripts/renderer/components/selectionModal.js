@@ -278,8 +278,9 @@ export function createSelectionModal({
             item.dataset.index = String(index);
             item.dataset.key = optionKey(option);
             const labelSpan = createElement('span', 'selection-modal-option-label', optionLabel(option));
-            if (option.description) {
-                labelSpan.appendChild(createElement('span', 'selection-modal-option-desc', ` ${option.description}`));
+            const description = typeof option.description === 'function' ? option.description() : option.description;
+            if (description) {
+                labelSpan.appendChild(createElement('span', 'selection-modal-option-desc', ` ${description}`));
             }
             item.appendChild(labelSpan);
             if (option.category) item.appendChild(createElement('span', 'selection-modal-option-category', option.category));

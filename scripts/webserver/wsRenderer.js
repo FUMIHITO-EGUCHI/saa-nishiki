@@ -94,6 +94,8 @@ async function init() {
             language: cachedFiles.languages,
             //characterThumb: cachedFiles.characterThumb,
             characterList: cachedFiles.characters,
+            characterNames: cachedFiles.characterNames,
+            characterWorks: cachedFiles.characterWorks,
             ocList: cachedFiles.ocCharacters,
             viewTags: cachedFiles.viewTags,
             tagAssist: cachedFiles.tagAssist,            

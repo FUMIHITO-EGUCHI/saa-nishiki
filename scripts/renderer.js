@@ -634,6 +634,7 @@ async function init(){
             characterThumb: cachedFiles.characterThumb,
             characterList: cachedFiles.characters,
             characterNames: cachedFiles.characterNames,
+            characterWorks: cachedFiles.characterWorks,
             tagAssist: cachedFiles.tagAssist,
 
             ocList: cachedFiles.ocCharacters,

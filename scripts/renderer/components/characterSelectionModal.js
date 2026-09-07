@@ -4,6 +4,7 @@ import { addFavorites, delFavorites } from './favoriteCharacters.js';
 import { createSelectionModal } from './selectionModal.js';
 import { normalizeSearchText, normalizeSelectionKey } from './selectionModalLogic.js';
 import { originalKey } from '../../shared/characterKeys.js';
+import { characterWorkSearchTerms, characterWorkTitles } from '../../shared/characterWorks.js';
 
 function splitLabels(value, count) {
     const labels = Array.isArray(value)
@@ -18,6 +19,8 @@ function characterAttributes(tag) {
     return String(raw).split(',').map(item => item.trim()).filter(Boolean);
 }
 
+// A character is found by its name in any language and by the works it belongs
+// to (艦これ, FGO, kantai collection, …); the works are shown after the name.
 function characterOption(key, value, category) {
     return {
         key,
@@ -30,6 +33,8 @@ function characterOption(key, value, category) {
             language: globalThis.globalSettings?.language,
             characterNames: globalThis.cachedFiles?.characterNames,
         }),
+        description: () => characterWorkTitles(globalThis.cachedFiles?.characterWorks, value, globalThis.globalSettings?.language).join(' / '),
+        keywords: () => characterWorkSearchTerms(globalThis.cachedFiles?.characterWorks, value),
     };
 }
 

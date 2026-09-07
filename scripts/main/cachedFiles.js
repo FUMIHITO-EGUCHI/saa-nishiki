@@ -20,6 +20,7 @@ let cachedCharacterThumb = {};
 let cachedLanguages = {};
 let cachedCharacter = {};
 let cachedCharacterNames = {};
+let cachedCharacterWorks = {};
 let cachedOCCharacter = {};
 let cachedViewTags = {};
 let cachedUserListMeta = {};
@@ -152,7 +153,16 @@ function setupCachedFiles(thumbSelect) {
         };
     }
     const character_names = loadFileEx('data', 'character_names.json', cachedCharacterNames);
-    const official_work_names = loadFileEx('data', 'official_work_names.json', cachedCharacterNames);
+    // Official work titles live under their own key (characterLocalization reads
+    // characterNames.officialWorkNames); merging them flat would hide them.
+    const officialWorkNames = {};
+    const official_work_names = loadFileEx('data', 'official_work_names.json', officialWorkNames);
+    cachedCharacterNames.officialWorkNames = officialWorkNames;
+    // Which works a character belongs to (search by series in the picker);
+    // optional: an older data folder without it just has no work search.
+    if (fs.existsSync(path.join(appPath, 'data', 'character_works.json'))) {
+        loadFileEx('data', 'character_works.json', cachedCharacterWorks);
+    }
     const oc_characters = loadFileEx('data', 'original_character.json', cachedOCCharacterBase);
     const view_tags = loadFileEx('data', 'view_tags.json', cachedViewTagsBase);
 
@@ -177,6 +187,7 @@ function setupCachedFiles(thumbSelect) {
             languages: cachedLanguages,
             characters: cachedCharacter,
             characterNames: cachedCharacterNames,
+            characterWorks: cachedCharacterWorks,
             ocCharacters: cachedOCCharacter,
             viewTags: cachedViewTags,
             userListMeta: cachedUserListMeta,
@@ -255,6 +266,7 @@ function getCachedFiles() {
         languages: cachedLanguages,
         characters: cachedCharacter,
         characterNames: cachedCharacterNames,
+        characterWorks: cachedCharacterWorks,
         ocCharacters: cachedOCCharacter,
         viewTags: cachedViewTags,
         userListMeta: cachedUserListMeta,
@@ -271,6 +283,7 @@ function getCachedFilesWithoutThumb() {
         languages: cachedLanguages,
         characters: cachedCharacter,
         characterNames: cachedCharacterNames,
+        characterWorks: cachedCharacterWorks,
         ocCharacters: cachedOCCharacter,
         viewTags: cachedViewTags,
         userListMeta: cachedUserListMeta,

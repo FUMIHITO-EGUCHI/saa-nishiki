@@ -23,14 +23,18 @@ export function normalizeSelectionKey(value) {
     return normalizePromptToken(value);
 }
 
+// keywords: extra search terms that are not shown (a character's works, in every
+// language), given as an array or a function returning one.
 function optionSearchFields(option) {
     const label = typeof option?.label === 'function' ? option.label() : option?.label;
+    const keywords = typeof option?.keywords === 'function' ? option.keywords() : option?.keywords;
     return [
         option?.key,
         option?.value,
         label,
         option?.category,
         ...(Array.isArray(option?.attributes) ? option.attributes : []),
+        ...(Array.isArray(keywords) ? keywords : []),
     ].map(normalizeSearchText).filter(Boolean);
 }
 
