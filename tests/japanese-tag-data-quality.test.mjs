@@ -95,3 +95,15 @@ test('holding tags use natural image-state labels', () => {
   assert.equal(aliases.get('holding_halo'), 'ヘイローを手に持っている');
   assert.equal(aliases.get('halo'), 'ヘイロー');
 });
+
+// Aliases settled by hand during the 2026-09 review; a batch run must not undo them.
+test('hand-reviewed aliases keep their Danbooru meaning', () => {
+  const aliases = loadAliases();
+  assert.equal(aliases.get('lying'), '横たわる');
+  assert.equal(aliases.get('no_shoes'), '靴なし', 'socks or legwear without shoes; barefoot is its own tag');
+  assert.equal(aliases.get('barefoot'), '裸足');
+  assert.equal(aliases.get('covered_nipples'), '浮き乳首', 'nipple shape showing through clothing, not hidden or inverted');
+  assert.equal(aliases.get('unworn_shoes'), '脱いだ靴');
+  assert.equal(aliases.get('aged_down'), '若返り');
+});
+
