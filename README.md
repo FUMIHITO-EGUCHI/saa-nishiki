@@ -351,6 +351,7 @@ Forge-based ControlNet DOES NOT support `none(null)`; it accepts `None(String)`.
 7. [comfyui-art-venture](https://github.com/sipherxyz/comfyui-art-venture) requires a `square image`; non-square input produces warnings.
 8. If your IPA image is too big, the `Resolution` selection for `IP Adapter` resizes it; `1024` is enough in most cases.
 9. The `Info` button does not work when `Pre-Process Model` is `IP Adapter`.
+10. **Union models** (xinsir `controlnet-union-sdxl`, ProMax): every slot has a `Union control type`. `auto` derives the type from the `Pre-processor` (OpenPose, Depth, Canny/LineArt, …) when the `Post-processor` name contains `union` / `promax`, and leaves plain single-purpose models alone; pick a type by hand when the slot carries a ready-made map with `Pre-processor` = `none`. On ComfyUI this adds a `SetUnionControlNetType` node between the loader and `Apply ControlNet`.
 
 All `Pre-processor` models are managed by [comfyui_controlnet_aux](https://github.com/Fannovel16/comfyui_controlnet_aux) (ComfyUI); most download from Hugging Face.
 All `Post-processor` models (the `Apply ControlNet Model`) must be downloaded by yourself from `ComfyUI Model Manager` or Hugging Face.
@@ -544,6 +545,41 @@ full replacement candidate. Keep the kanji-only output out of this step until
 it has been manually checked; an empty alias means that the candidate is
 removed rather than imported.
 
+### Character names and works (maintainers)
+
+`data/character_works.json` records the Danbooru copyright tags every
+character of the bundled lists belongs to, plus each work's Japanese title
+and its other names (the picker searches them). It is built offline from the
+[SpadeA/danbooru-tag-csv](https://huggingface.co/datasets/SpadeA/danbooru-tag-csv)
+dump (`danbooru_tags.csv`, `danbooru_tags_cooccurrence.csv`) and the Danbooru
+wiki cache written by `scripts/fetchDanbooruWiki.mjs`:
+
+```text
+node scripts/fetchDanbooruWiki.mjs --input character_tags.csv --cache data/.cache/danbooru-wiki.jsonl
+node scripts/buildCharacterWorks.mjs --tags danbooru_tags.csv --pairs danbooru_tags_cooccurrence.csv
+```
+
+A character keeps the works it shares at least a fifth of its posts with
+(`--min-share`, top `--max-works`); characters the dump does not know inherit
+the works of the characters carrying the same `(qualifier)`. Reviewed Japanese
+titles in the output file survive a rebuild.
+
+`scripts/reviewCharacterNames.mjs` reviews the Japanese side with the same
+LLM batch backend as the tag review (Codex first, `--backend` / `--fallback`
+as above): `--stage works` names the works in Japanese (official Japanese
+titles, evidence: the Danbooru other names), `--stage characters` reviews
+`data/character_names.json` (official spellings, translated qualifiers such
+as 改二 / 水着, the work title from `character_works.json` appended when the
+tag carries one). `--apply` writes only rows at or above `--min-confidence`
+(default `high`) and, for works, refreshes `data/official_work_names.json`:
+
+```text
+node scripts/reviewCharacterNames.mjs --stage works --report works.jsonl
+node scripts/reviewCharacterNames.mjs --stage works --apply works.jsonl --min-confidence medium
+node scripts/reviewCharacterNames.mjs --stage characters --report names.jsonl
+node scripts/reviewCharacterNames.mjs --stage characters --apply names.jsonl
+```
+
 ## Image info
 <details>
 <summary>Drag and drop an image into the SAA window; supports Png/Jpeg/Webp.</summary>
@@ -551,6 +587,8 @@ Works with WebUI (Forge Neo and A1111) and ComfyUI (with the image save node fro
 Double-click the image to close.
 The `Send` button overrides `Common Prompt`, `Negative Prompt`, `Width & Height`, `CFG`, `Step` and `Seed`.
 LoRA in `Common Prompt` also works if you have the same one. If you don't like LoRA in prompts, try `Send LoRA to Slot`.
+
+A generated image can be opened the same way: the gallery's `Info` button opens the shown image in `Image Info`, and the image context menus (split, grid and full-screen view) have `Open in Image Info`. From there `Send tags`, `Add ControlNet`, `Run Tagger` and `Tiled-Upscale` work on that image.
 
 <img src="examples/nishiki_image_info.png" width=45%>
 </details>
@@ -560,7 +598,7 @@ LoRA in `Common Prompt` also works if you have the same one. If you don't like L
 Favorite characters, original characters and tags are managed in the selection modal: open the modal, toggle the star on an entry, and use the favorites group at the top to find them again. Favorite tags are highlighted on capsules. Favorites are saved with your settings.
 
 ### Preview and Search
-The Character List supports keyword search in English, Chinese and Japanese.
+The Character List supports keyword search in English, Chinese and Japanese, and by the work a character belongs to: `艦これ`, `kantai collection`, `FGO`, `ボカロ`, `崩壊` all narrow the list to that series, and `kantai 加賀` combines a work with a name. The works are shown after the character name (`data/character_works.json`, see the maintainers section below).
 
 <img src="examples/nishiki_character_select.png" width=45%>
 

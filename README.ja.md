@@ -351,6 +351,7 @@ Forge 系 ControlNet は `none(null)` を受け付けず、`None(String)` を受
 7. [comfyui-art-venture](https://github.com/sipherxyz/comfyui-art-venture) は `正方形画像` を要求します。非正方形の入力では警告が出ます。
 8. IPA 画像が大きすぎる場合、`IP Adapter` の `Resolution` で入力画像がリサイズされます。ほとんどの場合 `1024` で十分です。
 9. `Pre-Process Model` が `IP Adapter` のとき `Info` ボタンは動作しません。
+10. **Union モデル**（xinsir `controlnet-union-sdxl`、ProMax）: 各スロットに `Union control type` があります。`auto` は `Post-processor` 名に `union` / `promax` を含むとき `Pre-processor`（OpenPose、Depth、Canny/LineArt など）から種類を決め、通常の単機能モデルには何もしません。`Pre-processor` = `none` で加工済み画像を渡すときは種類を手動で選んでください。ComfyUI ではローダーと `Apply ControlNet` の間に `SetUnionControlNetType` ノードが追加されます。
 
 すべての `Pre-processor` モデルは [comfyui_controlnet_aux](https://github.com/Fannovel16/comfyui_controlnet_aux)（ComfyUI）が管理し、多くは Hugging Face からダウンロードされます。
 すべての `Post-processor` モデル（`Apply ControlNet Model`）は `ComfyUI Model Manager` か Hugging Face から自分でダウンロードしてください。
@@ -479,6 +480,8 @@ WebUI（Forge Neo と A1111）と ComfyUI（ComfyUI_Mira の画像保存ノー�
 `Send` ボタンは `Common Prompt`、`Negative Prompt`、`Width & Height`、`CFG`、`Step`、`Seed` を上書きします。
 同じ LoRA を持っていれば `Common Prompt` 内の LoRA も機能します。プロンプト内の LoRA が不要なら `Send LoRA to Slot` を試してください。
 
+生成済み画像も同じように開けます。ギャラリーの `Info` ボタンは表示中の画像を `Image Info` で開き、画像の右クリックメニュー（分割・グリッド・全画面表示）には `Open in Image Info` があります。そこから `Send tags`、`Add ControlNet`、`Run Tagger`、`Tiled-Upscale` がその画像に対して使えます。
+
 <img src="examples/nishiki_image_info.png" width=45%>
 </details>
 
@@ -487,7 +490,7 @@ WebUI（Forge Neo と A1111）と ComfyUI（ComfyUI_Mira の画像保存ノー�
 キャラクター、オリジナルキャラクター、タグのお気に入りは選択モーダルで管理します。モーダルを開いてエントリの星を切り替え、上部のお気に入りグループから再び探せます。お気に入りタグはカプセル上で強調表示されます。お気に入りは設定と一緒に保存されます。
 
 ### プレビューと検索
-キャラクターリストは英語・中国語・日本語のキーワード検索に対応しています。
+キャラクターリストは英語・中国語・日本語のキーワード検索に加え、所属作品でも検索できます。`艦これ`、`kantai collection`、`FGO`、`ボカロ`、`崩壊` などでその作品のキャラクターに絞り込め、`kantai 加賀` のように作品と名前を組み合わせられます。作品名はキャラクター名の後ろに表示されます（`data/character_works.json`、生成手順は英語 README のメンテナ向けセクション参照）。
 
 <img src="examples/nishiki_character_select.png" width=45%>
 
