@@ -2442,3 +2442,6 @@ body {
 .prompt-field-editor-block.is-left .prompt-field-editor-block-head { color: var(--saa-stripe-positive); }
 .prompt-field-editor-block.is-right .prompt-field-editor-block-head { color: var(--saa-accent); }
 .prompt-field-editor-block-empty { font-size: 11px; color: var(--saa-placeholder); padding: 2px 4px; }
+
+/* field list rows accept a dragged capsule (move; Ctrl / Alt = copy) */
+.prompt-field-list-row.is-drop-target { outline: 2px dashed var(--saa-accent); outline-offset: -2px; background: var(--saa-bg-hover); }

@@ -375,7 +375,36 @@ export function setupPromptFieldManager() {
         count.textContent = n > 0 ? String(n) : '';
         row.append(dot, name, count);
         row.addEventListener('click', () => selectField(entry.id));
+        attachCapsuleDropTarget(row, entry.id);
         return row;
+    }
+
+    // A capsule (or a selection of capsules) dragged from the focused editor can be
+    // dropped on any row of the field list: only one editor is open at a time, so
+    // the list is how tags reach the other fields, the LEFT / RIGHT ones included.
+    // Same payload as the chip rows (scripts/renderer/components/tagCapsuleField.js);
+    // Ctrl / Alt copies instead of moving.
+    const CAPSULE_MIME = 'application/x-saa-capsule';
+    function attachCapsuleDropTarget(row, fieldId) {
+        const carriesCapsule = event => Array.from(event.dataTransfer?.types ?? []).includes(CAPSULE_MIME);
+        row.addEventListener('dragover', event => {
+            if (!carriesCapsule(event)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = event.ctrlKey || event.altKey ? 'copy' : 'move';
+            row.classList.add('is-drop-target');
+        });
+        row.addEventListener('dragleave', () => row.classList.remove('is-drop-target'));
+        row.addEventListener('drop', event => {
+            row.classList.remove('is-drop-target');
+            if (!carriesCapsule(event)) return;
+            event.preventDefault();
+            let payload = null;
+            try { payload = JSON.parse(event.dataTransfer.getData(CAPSULE_MIME) || 'null'); } catch { payload = null; }
+            if (!payload?.field || !payload?.id || payload.field === fieldId) return;
+            const what = Array.isArray(payload.ids) && payload.ids.length > 1 ? payload.ids : payload.id;
+            const moved = globalThis.prompt?.tagCapsuleFields?.transfer?.(payload.field, what, fieldId, { copy: event.ctrlKey || event.altKey });
+            if (moved) renderFieldList(); // the tag counts of both rows change
+        });
     }
 
     function sideHeadRow(entry) {

@@ -81,6 +81,18 @@ test('the enable dot, the disabled look, the selection and the editor blocks are
     }
 });
 
+test('every row of the Prompts field list (LEFT / RIGHT included) accepts a dragged capsule or selection', () => {
+    const manager = read('scripts/renderer/components/promptFieldManager.js');
+    assert.match(manager, /attachCapsuleDropTarget\(row, entry\.id\);/, 'wired on every field row');
+    assert.match(manager, /const CAPSULE_MIME = 'application\/x-saa-capsule';/, 'same payload as the chip rows');
+    assert.match(manager, /const what = Array\.isArray\(payload\.ids\) && payload\.ids\.length > 1 \? payload\.ids : payload\.id;/);
+    assert.match(manager, /tagCapsuleFields\?\.transfer\?\.\(payload\.field, what, fieldId, \{ copy: event\.ctrlKey \|\| event\.altKey \}\)/);
+    assert.match(manager, /if \(!payload\?\.field \|\| !payload\?\.id \|\| payload\.field === fieldId\) return;/, 'a drop on its own row is a no-op');
+    for (const file of ['html/index_dark.css', 'html/index_light.css']) {
+        assert.match(read(file), /\.prompt-field-list-row\.is-drop-target \{/, `${file}: drop highlight`);
+    }
+});
+
 test('a Refine snapshot used as the prompt override never re-introduces disabled tags', () => {
     const bridge = read('scripts/renderer/tools/promptBatchExpansion.js');
     assert.match(bridge, /return stripDisabledTags\(activeOverride\.fields\[key\]\);/);
