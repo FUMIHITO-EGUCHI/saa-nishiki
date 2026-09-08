@@ -1,0 +1,264 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+    .slot-trigger:hover { background: #393941 !important; }
+    .modal-option:hover { background: #393941 !important; }
+    .chip:hover { background: #2e2e35 !important; }
+  </style>
+</helmet>
+<div style="position: relative; width: 640px; min-height: 420px; padding: 16px; background: #111111; box-sizing: border-box;">
+  <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; color: #e8e8ea; overflow: hidden;">
+
+    <!-- card head -->
+    <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border-bottom: 1px solid #3a3a40; box-sizing: border-box;">
+      <span style="font-weight: 600; font-size: 12.5px; white-space: nowrap;">Characters &amp; Views</span>
+      <span style="font-size: 11px; color: #9a9aa3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ subtitle }}</span>
+      <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
+        <span style="font-size: 12px; color: #bdbdc4; white-space: nowrap;">Regional Condition</span>
+        <button onClick="{{ toggleRegional }}" style="width: 30px; height: 16px; padding: 0; border: none; border-radius: 8px; background: {{ sw.bg }}; position: relative; cursor: pointer;">
+          <i style="position: absolute; top: 2px; left: {{ sw.left }}; width: 12px; height: 12px; border-radius: 6px; background: {{ sw.knob }};"></i>
+        </button>
+      </div>
+    </div>
+
+    <div style="padding: 8px 10px 10px;">
+
+      <!-- character slots: one list for both normal and original characters -->
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{ slots }}" as="slot" hint-placeholder-count="2">
+          <div style="min-width: 0;">
+            <label style="display: block; margin-bottom: 4px; font-size: 11.5px; color: #bdbdc4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ slot.label }}</label>
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 4px;">
+              <button class="slot-trigger" onClick="{{ slot.open }}" style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 13px; text-align: left; overflow: hidden; cursor: pointer;">
+                <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ slot.name }}</span>
+                <sc-if value="{{ slot.isOc }}" hint-placeholder-val="{{ false }}">
+                  <span style="flex: none; height: 16px; padding: 0 5px; border: 1px solid #d66aa8; border-radius: 8px; color: #d66aa8; font-size: 10px; font-weight: 600; line-height: 14px; letter-spacing: 0.04em;">OC</span>
+                </sc-if>
+              </button>
+              <input value="{{ slot.weight }}" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- slot count buttons: only when the sides are free (Regional off) -->
+      <sc-if value="{{ regionalOff }}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; gap: 4px; justify-content: flex-end; margin: 4px 0 0;">
+          <button onClick="{{ addSlot }}" style="min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font: inherit; font-size: 13px; line-height: 1; cursor: pointer;">+</button>
+          <button onClick="{{ removeSlot }}" style="min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font: inherit; font-size: 13px; line-height: 1; cursor: pointer;">−</button>
+        </div>
+      </sc-if>
+
+      <!-- views -->
+      <div style="margin: 6px 0 0; padding: 6px 0 0; border-top: 1px dashed #3a3a40;">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 2px 0 0;">
+          <span style="font-size: 11.5px; color: #bdbdc4;">Angle</span>
+          <span style="font-size: 11.5px; color: #bdbdc4;">Camera</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 2px 0;">
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-size: 13px; box-sizing: border-box;"><span>none</span><span style="color: #9a9aa3; font-size: 10px;">▼</span></div>
+            <input value="1.0" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-size: 13px; box-sizing: border-box;"><span>none</span><span style="color: #9a9aa3; font-size: 10px;">▼</span></div>
+            <input value="1.0" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+          </div>
+        </div>
+      </div>
+
+      <!-- regional settings: ratio / overlap span a real range and stay sliders; strength (0-10, usually 0.5-1.5) is a number box beside the side's area -->
+      <sc-if value="{{ regional }}" hint-placeholder-val="{{ true }}">
+        <div style="margin: 6px 0 0; padding: 6px 0 0; border-top: 1px dashed #3a3a40; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px;">
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #bdbdc4;"><span>Image Left/Right Ratio</span><span style="color: #e8e8ea;">50</span></div>
+              <div style="position: relative; height: 6px; margin: 8px 0 6px; border-radius: 3px; background: linear-gradient(90deg, #2f6fd6, #8a4bd9);"><i style="position: absolute; top: -4px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 7px; background: #35c47a;"></i></div>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #bdbdc4;"><span>Regional Overlap Ratio</span><span style="color: #e8e8ea;">20</span></div>
+              <div style="position: relative; height: 6px; margin: 8px 0 6px; border-radius: 3px; background: linear-gradient(90deg, #2f6fd6, #8a4bd9);"><i style="position: absolute; top: -4px; left: 10%; width: 14px; height: 14px; margin-left: -7px; border-radius: 7px; background: #35c47a;"></i></div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px;">
+            <div style="display: grid; grid-template-columns: auto minmax(0, 1fr) auto 40px; gap: 6px; align-items: center;">
+              <span style="font-size: 11.5px; color: #bdbdc4; white-space: nowrap;">Left Area</span>
+              <div style="display: flex; align-items: center; justify-content: space-between; min-height: 26px; padding: 0 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-size: 12px; box-sizing: border-box;"><span>default</span><span style="color: #9a9aa3; font-size: 10px;">▼</span></div>
+              <span style="font-size: 11.5px; color: #bdbdc4; white-space: nowrap;">Strength</span>
+              <input value="1.0" style="min-width: 0; min-height: 26px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+            </div>
+            <div style="display: grid; grid-template-columns: auto minmax(0, 1fr) auto 40px; gap: 6px; align-items: center;">
+              <span style="font-size: 11.5px; color: #bdbdc4; white-space: nowrap;">Right Area</span>
+              <div style="display: flex; align-items: center; justify-content: space-between; min-height: 26px; padding: 0 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-size: 12px; box-sizing: border-box;"><span>default</span><span style="color: #9a9aa3; font-size: 10px;">▼</span></div>
+              <span style="font-size: 11.5px; color: #bdbdc4; white-space: nowrap;">Strength</span>
+              <input value="1.0" style="min-width: 0; min-height: 26px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <!-- selection modal: one list, Character / Original are filter chips -->
+  <sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.55);">
+      <div style="display: flex; flex-direction: column; width: 560px; max-height: 380px; border: 2px solid #666666; border-radius: 9px; background: #111111; color: #eeeeee; overflow: hidden; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: rgb(39, 39, 42); border-bottom: 1px solid #555555;">
+          <span style="font-size: 16px;">{{ modalTitle }}</span>
+          <button onClick="{{ closeModal }}" style="padding: 0 4px; border: none; background: transparent; color: #eeeeee; font-size: 24px; line-height: 1; cursor: pointer;">×</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 8px 12px 0;">
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input placeholder="Search name / tag" style="flex: 1; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 13px; box-sizing: border-box;">
+            <div style="display: flex; gap: 4px;">
+              <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="3">
+                <button class="chip" onClick="{{ chip.pick }}" style="height: 24px; padding: 0 10px; border: 1px solid {{ chip.border }}; border-radius: 12px; background: {{ chip.bg }}; color: {{ chip.color }}; font: inherit; font-size: 12px; cursor: pointer;">{{ chip.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="min-height: 18px; padding: 3px 12px; font-size: 12px; opacity: 0.8;">{{ statusLine }}</div>
+        <div style="margin: 0 12px 8px; border: 1px solid #555555; border-radius: 5px; background: #19191c; overflow-y: auto; max-height: 210px;">
+          <sc-for list="{{ options }}" as="option" hint-placeholder-count="6">
+            <div class="modal-option" onClick="{{ option.pick }}" style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-height: 30px; padding: 6px 9px; background: {{ option.bg }}; font-weight: {{ option.weight }}; cursor: pointer; box-sizing: border-box;">
+              <span style="display: flex; gap: 8px; align-items: baseline; min-width: 0;">
+                <span style="flex: none; width: 12px; color: #4da3ff;">{{ option.mark }}</span>
+                <span style="min-width: 0; overflow-wrap: anywhere;">{{ option.label }}</span>
+              </span>
+              <span style="flex: none; font-size: 11.5px; color: {{ option.catColor }};">{{ option.catLabel }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 8px 12px; background: rgb(39, 39, 42); border-top: 1px solid #555555;">
+          <button onClick="{{ closeModal }}" style="min-width: 78px; min-height: 30px; padding: 4px 10px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; cursor: pointer;">Cancel</button>
+          <button onClick="{{ applyModal }}" style="min-width: 78px; min-height: 30px; padding: 4px 10px; border: 1px solid #555555; border-radius: 5px; background: #285f8f; color: #eeeeee; font: inherit; cursor: pointer;">Apply</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"regional":{"editor":"boolean","default":true,"section":"Mode"},"$preview":{"width":640,"height":420}}'>
+const CHARACTERS = [
+  { key: 'gotou_hitori', label: '後藤ひとり (ぼっち・ざ・ろっく!)', kind: 'character' },
+  { key: 'ijichi_nijika', label: '伊地知虹夏 (ぼっち・ざ・ろっく!)', kind: 'character' },
+  { key: 'kita_ikuyo', label: '喜多郁代 (ぼっち・ざ・ろっく!)', kind: 'character' },
+  { key: 'yamada_ryou', label: '山田リョウ (ぼっち・ざ・ろっく!)', kind: 'character' },
+  { key: 'hatsune_miku', label: '初音ミク (VOCALOID)', kind: 'character' },
+  { key: 'oc:Alice', label: 'Alice', kind: 'original' },
+  { key: 'oc:Kurah-chan', label: 'Kurah-chan', kind: 'original' },
+  { key: 'oc:Sensei', label: 'Sensei', kind: 'original' },
+];
+const SPECIAL = [
+  { key: 'Random', label: 'Random', kind: 'character' },
+  { key: 'None', label: 'None', kind: 'character' },
+  { key: 'oc:Random', label: 'Random', kind: 'original' },
+];
+const ALL = [...SPECIAL, ...CHARACTERS];
+const KIND_LABEL = { character: 'Character', original: 'Original' };
+const KIND_COLOR = { character: '#aaaaaa', original: '#d66aa8' };
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      regional: props.regional ?? true,
+      // Regional: index 0 = left, 1 = right. Free mode: any count, any mix of normal / OC.
+      slots: [
+        { key: 'gotou_hitori', weight: '1.0' },
+        { key: 'oc:Alice', weight: '1.0' },
+        { key: 'None', weight: '1.0' },
+      ],
+      modalOpen: false,
+      modalIndex: 0,
+      filter: 'all',
+      pending: null,
+    };
+  }
+
+  componentDidUpdate(prev) {
+    if (prev.regional !== this.props.regional && this.props.regional !== this.state.regional) {
+      this.setState({ regional: this.props.regional });
+    }
+  }
+
+  find(key) {
+    return ALL.find(option => option.key === key) || SPECIAL[1];
+  }
+
+  renderVals() {
+    const { regional, slots, modalOpen, modalIndex, filter, pending } = this.state;
+    const visible = regional ? slots.slice(0, 2) : slots;
+    const slotLabel = index => regional
+      ? (index === 0 ? 'Character Left Side' : 'Character Right Side')
+      : `Character list ${index + 1}`;
+    const rows = visible.map((slot, index) => {
+      const option = this.find(slot.key);
+      return {
+        label: slotLabel(index),
+        name: option.label,
+        isOc: option.kind === 'original',
+        weight: slot.weight,
+        open: () => this.setState({ modalOpen: true, modalIndex: index, filter: 'all', pending: option.key }),
+      };
+    });
+    const ocCount = visible.filter(slot => this.find(slot.key).kind === 'original').length;
+    const subtitle = regional
+      ? `2 sides${ocCount ? ` · ${ocCount} OC` : ''} · Angle / Camera`
+      : `${visible.length} lists${ocCount ? ` · ${ocCount} OC` : ''} · Angle / Camera`;
+    const filtered = ALL.filter(option => filter === 'all' || option.kind === filter);
+    const chips = [
+      { id: 'all', label: 'All' },
+      { id: 'character', label: 'Character' },
+      { id: 'original', label: 'Original' },
+    ].map(chip => ({
+      label: chip.label,
+      border: filter === chip.id ? '#4da3ff' : '#666666',
+      bg: filter === chip.id ? '#285f8f' : '#2a2a2f',
+      color: '#eeeeee',
+      pick: () => this.setState({ filter: chip.id }),
+    }));
+    return {
+      subtitle,
+      regional,
+      regionalOff: !regional,
+      sw: regional
+        ? { bg: '#285f8f', left: '16px', knob: '#ffffff' }
+        : { bg: '#3f3f46', left: '2px', knob: '#9a9aa3' },
+      toggleRegional: () => this.setState({ regional: !regional }),
+      slots: rows,
+      addSlot: () => { if (slots.length < 6) this.setState({ slots: [...slots, { key: 'None', weight: '1.0' }] }); },
+      removeSlot: () => { if (slots.length > 1) this.setState({ slots: slots.slice(0, -1) }); },
+      modalOpen,
+      modalTitle: slotLabel(modalIndex),
+      statusLine: `${filtered.length} entries · ${CHARACTERS.filter(o => o.kind === 'character').length} characters, ${CHARACTERS.filter(o => o.kind === 'original').length} original`,
+      chips,
+      options: filtered.map(option => ({
+        label: option.label,
+        mark: option.key === pending ? '✓' : '',
+        bg: option.key === pending ? '#393941' : 'transparent',
+        weight: option.key === pending ? 600 : 400,
+        catLabel: KIND_LABEL[option.kind],
+        catColor: KIND_COLOR[option.kind],
+        pick: () => this.setState({ pending: option.key }),
+      })),
+      closeModal: () => this.setState({ modalOpen: false }),
+      applyModal: () => {
+        const next = slots.map((slot, index) => index === modalIndex ? { ...slot, key: pending || 'None' } : slot);
+        this.setState({ slots: next, modalOpen: false });
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

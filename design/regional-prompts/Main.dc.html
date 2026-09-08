@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+  </style>
+</helmet>
+<div style="width: 760px; padding: 16px; background: #111111; box-sizing: border-box;">
+  <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; color: #e8e8ea; overflow: hidden;">
+
+    <!-- card header -->
+    <div style="display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 12px; border-bottom: 1px solid #3a3a40;">
+      <span style="font-weight: 600; font-size: 12.5px;">Prompts</span>
+      <span style="font-size: 11px; color: #9a9aa3;">Both sides → side → Character → Positive · Negative per side · Exclude applies to all</span>
+      <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
+        <span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border: 1px solid #4da3ff; border-radius: 11px; background: #222226; color: #e8e8ea; font-size: 11px; font-weight: 600;"><i style="width: 7px; height: 7px; border-radius: 50%; background: #4da3ff;"></i>Regional</span>
+        <button style="height: 22px; padding: 0 8px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #e8e8ea; font-size: 11px; cursor: pointer;">Fields ⇅</button>
+        <button style="height: 22px; padding: 0 8px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #e8e8ea; font-size: 11px; cursor: pointer;">Default ▾</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 12px; padding: 8px 12px 12px 8px;">
+
+      <!-- field list: one column, full-width rows; sides are stacked sections -->
+      <div style="display: flex; flex-direction: column; gap: 2px; padding-right: 10px; border-right: 1px solid #3a3a40;">
+
+        <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #d98b3a; padding: 8px 8px 2px;">BOTH SIDES</div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #d98b3a; flex: none;"></span>
+          <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: #bdbdc4;">Common</span>
+          <span style="font-size: 10px; color: #9a9aa3; flex: none;">2</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #c8a06a; flex: none;"></span>
+          <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: #bdbdc4;">Background</span>
+          <span style="font-size: 10px; color: #9a9aa3; flex: none;">3</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #c8a06a; flex: none;"></span>
+          <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: #bdbdc4;">Style</span>
+          <span style="font-size: 10px; color: #9a9aa3; flex: none;">2</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #b06ad6; flex: none;"></span>
+          <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: #bdbdc4;">Lighting</span>
+          <span style="font-size: 10px; color: #9a9aa3; flex: none;">1</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #d64b5c; flex: none;"></span>
+          <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: #bdbdc4;">Negative</span>
+          <span style="font-size: 10px; color: #9a9aa3; flex: none;">4</span>
+        </div>
+
+        <!-- swap row: sits between the shared block and the two sides -->
+        <div style="display: flex; align-items: center; gap: 6px; padding: 10px 8px 2px;">
+          <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #9a9aa3;">SIDES</span>
+          <button title="Swap left and right: prompts, negatives, characters, strengths" style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; margin-left: auto; border: 1px solid #4a4a52; border-radius: 11px; background: #222226; color: #bdbdc4; font-size: 10.5px; cursor: pointer;">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5h10M9.5 3l2.5 2.5L9.5 8"></path><path d="M14 10.5H4M6.5 8L4 10.5 6.5 13"></path></svg>
+            Swap
+          </button>
+        </div>
+
+        <!-- LEFT block: full-width rows, a 2px side stripe on the left edge -->
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 4px 0 4px 6px; border-left: 2px solid #69b85a; border-radius: 0 6px 6px 0;">
+          <button title="Collapse LEFT" style="display: flex; align-items: center; gap: 5px; min-height: 20px; padding: 2px 8px 0; border: none; background: transparent; color: #69b85a; font: inherit; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; cursor: pointer; text-align: left;">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><path d="M4 6l4 4 4-4"></path></svg>
+            LEFT
+          </button>
+          <button title="Change the left character" style="display: flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 8px; border: none; border-radius: 5px; background: transparent; color: #bdbdc4; font: inherit; cursor: pointer; text-align: left;">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#4da3ff" stroke-width="1.5" stroke-linecap="round" style="flex: none; opacity: 0.9;"><circle cx="8" cy="5.5" r="2.8"></circle><path d="M2.8 13.5c.7-2.6 2.6-4 5.2-4s4.5 1.4 5.2 4"></path></svg>
+            <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px;">Hatsune Miku (Vocaloid)</span>
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#77777f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><path d="M6 4l4 4-4 4"></path></svg>
+          </button>
+          <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px; background: #285f8f;">
+            <span style="width: 7px; height: 7px; border-radius: 2px; background: #69b85a; flex: none;"></span>
+            <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; font-weight: 600; color: #ffffff;">Positive</span>
+            <span style="font-size: 10px; color: #cfe6ff; flex: none;">3</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+            <span style="width: 7px; height: 7px; border-radius: 2px; background: #d64b5c; flex: none;"></span>
+            <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: #bdbdc4;">Negative</span>
+            <span style="font-size: 10px; color: #9a9aa3; flex: none;">1</span>
+          </div>
+        </div>
+
+        <!-- RIGHT block -->
+        <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 6px; padding: 4px 0 4px 6px; border-left: 2px solid #4da3ff; border-radius: 0 6px 6px 0;">
+          <button title="Expand RIGHT" style="display: flex; align-items: center; gap: 5px; min-height: 20px; padding: 2px 8px 0; border: none; background: transparent; color: #4da3ff; font: inherit; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; cursor: pointer; text-align: left;">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><path d="M6 4l4 4-4 4"></path></svg>
+            RIGHT
+            <span style="margin-left: auto; font-weight: 500; letter-spacing: 0; color: #77777f;">3 fields · 7 tags</span>
+          </button>
+          <button title="Change the right character" style="display: flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 8px; border: none; border-radius: 5px; background: transparent; color: #bdbdc4; font: inherit; cursor: pointer; text-align: left;">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#4da3ff" stroke-width="1.5" stroke-linecap="round" style="flex: none; opacity: 0.9;"><circle cx="8" cy="5.5" r="2.8"></circle><path d="M2.8 13.5c.7-2.6 2.6-4 5.2-4s4.5 1.4 5.2 4"></path></svg>
+            <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px;">Kagamine Rin (Vocaloid)</span>
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#77777f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><path d="M6 4l4 4-4 4"></path></svg>
+          </button>
+        </div>
+
+        <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #c8b45a; padding: 10px 8px 2px;">ALL</div>
+        <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px; border-radius: 5px;">
+          <span style="width: 7px; height: 7px; border-radius: 2px; background: #c8b45a; flex: none;"></span>
+          <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: #bdbdc4;">Exclude</span>
+          <span style="font-size: 10px; color: #9a9aa3; flex: none;"></span>
+        </div>
+        <button style="margin: 8px 4px 2px; height: 26px; border: 1px dashed #4a4a52; border-radius: 5px; background: transparent; color: #9a9aa3; font-size: 11px; cursor: pointer;">+ Add field</button>
+      </div>
+
+      <!-- focus editor bound to the selected field -->
+      <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+        <div style="display: flex; align-items: center; gap: 8px; min-height: 24px; min-width: 0;">
+          <span style="width: 8px; height: 8px; border-radius: 2px; background: #69b85a; flex: none;"></span>
+          <span style="font-size: 12px; font-weight: 600; color: #bdbdc4; flex: none;">Positive</span>
+          <span title="LEFT · Hatsune Miku (Vocaloid)" style="display: inline-flex; align-items: center; gap: 5px; max-width: 200px; height: 18px; padding: 0 7px; border-radius: 9px; background: rgba(105, 184, 90, 0.18); color: #9ee493; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; min-width: 0;"><span style="flex: none;">LEFT</span><span style="flex: none; opacity: 0.6;">·</span><span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; letter-spacing: 0;">Hatsune Miku (Vocaloid)</span></span>
+          <div style="display: flex; align-items: center; gap: 6px; margin-left: auto; flex: none;">
+            <button style="height: 22px; padding: 0 9px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font-size: 11px; cursor: pointer;">Choose tags</button>
+            <div style="display: inline-flex; border: 1px solid #4a4a52; border-radius: 5px; overflow: hidden;">
+              <button style="height: 22px; width: 26px; border: none; background: #222226; color: #bdbdc4; font-size: 11px; cursor: pointer;">≡</button>
+              <button style="height: 22px; width: 26px; border: none; background: #285f8f; color: #ffffff; font-size: 11px; cursor: pointer;">◐</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; min-height: 200px; padding: 10px 12px; border: 1px solid #3a3a40; border-left: 3px solid #69b85a; border-radius: 6px; background: #27272a;">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border: 1px solid #666666; border-radius: 12px; background: #2a2a2f; color: #eeeeee; font-size: 12px;">twin braids</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 6px 0 9px; border: 1px solid #4e7a48; border-radius: 12px; background: #2a2a2f; color: #eeeeee; font-size: 12px;">smile <span style="font-family: Consolas, 'Cascadia Mono', monospace; font-size: 11px; color: #9ee493;">:1.20</span></span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border: 1px solid #666666; border-radius: 12px; background: #2a2a2f; color: #eeeeee; font-size: 12px;">looking at viewer</span>
+            <button style="display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border: 1px dashed #4a4a52; border-radius: 12px; background: transparent; color: #9a9aa3; font-size: 12px; cursor: pointer;">+ Add tag</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-top: auto; font-size: 11px; color: #9a9aa3;">
+            <span>3 tags · 1 weighted</span>
+            <button style="display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font-size: 10.5px; cursor: pointer;">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h9M8 5l3 3-3 3"></path><path d="M13 3v10"></path></svg>
+              Send to right
+            </button>
+            <span style="margin-left: auto;">✦</span>
+          </div>
+        </div>
+
+        <!-- final prompt: one preview per side, negatives included -->
+        <div style="display: flex; flex-direction: column; gap: 5px; margin: 4px 0 0;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #9a9aa3;">
+            <span>▾ Final prompt</span>
+            <span style="margin-left: auto;">Image #1 · expand to review</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;">
+            <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; border: 1px solid #444444; border-top: 2px solid #69b85a; border-radius: 5px; background: #1c1c20; font-size: 11px; line-height: 1.5; color: #bdbdc4;">
+              <div><span style="color: #d98b3a;">masterpiece, best quality, </span><span style="color: #c8a06a;">night city, neon, </span><span style="color: #b06ad6;">rim light, </span><span style="color: #4da3ff;">hatsune miku, </span><span style="color: #69b85a;">twin braids, (smile:1.2), looking at viewer</span></div>
+              <div style="padding-top: 4px; border-top: 1px dashed #3a3a40;"><span style="color: #d64b5c;">bad quality, worst quality, sketch, censor, </span><span style="color: #e5484d;">hat</span></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; border: 1px solid #444444; border-top: 2px solid #4da3ff; border-radius: 5px; background: #1c1c20; font-size: 11px; line-height: 1.5; color: #bdbdc4;">
+              <div><span style="color: #d98b3a;">masterpiece, best quality, </span><span style="color: #c8a06a;">night city, neon, </span><span style="color: #b06ad6;">rim light, </span><span style="color: #4da3ff;">kagamine rin, </span><span style="color: #69b85a;">short hair, bow, </span><span style="color: #b06ad6;">sailor collar, pleated skirt</span></div>
+              <div style="padding-top: 4px; border-top: 1px dashed #3a3a40;"><span style="color: #d64b5c;">bad quality, worst quality, sketch, censor</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

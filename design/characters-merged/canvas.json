@@ -1,0 +1,48 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 640,
+      "h": 420,
+      "title": "Characters & Views · Regional on",
+      "is_interactive": true
+    },
+    {
+      "file": "FreeSlots.dc.html",
+      "x": 740,
+      "y": 0,
+      "w": 640,
+      "h": 420,
+      "title": "Characters & Views · Regional off",
+      "is_interactive": true
+    }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -170,
+      "w": 360,
+      "text": "Original characters live in the same slots as normal characters.\nRegional on: two slots, Left and Right - either can hold a normal character or an OC. The four-column row (Character L/R + Original L/R) is gone.\nClick a slot: the picker shows both kinds in one list; the Character / Original chips filter it. An OC in a slot shows a small OC badge."
+    },
+    {
+      "id": "free-note",
+      "x": 740,
+      "y": -130,
+      "w": 320,
+      "text": "Regional off: the fixed 'Original Character' slot is gone too. Any of the 1-6 slots may hold an OC; + / - keep working.\nOC picks are stored as oc:<name>, so saved settings and presets keep their shape."
+    },
+    {
+      "id": "strength-note",
+      "x": 0,
+      "y": 470,
+      "w": 360,
+      "text": "Strength is 0-10 in steps of 0.1 but lives around 1.0, so it is a number box next to the side's area (same 40px box as the character weight) instead of a full-width slider. Ratio and overlap keep their sliders."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

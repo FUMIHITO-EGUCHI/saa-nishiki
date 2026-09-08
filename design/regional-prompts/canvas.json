@@ -1,0 +1,46 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 760,
+      "h": 720,
+      "title": "Prompts card · Regional on"
+    },
+    {
+      "file": "FieldEditor.dc.html",
+      "x": 860,
+      "y": 0,
+      "w": 440,
+      "h": 600,
+      "title": "Fields editor · side per field"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -190,
+      "w": 380,
+      "text": "Regional prompts, redesigned.\nBOTH SIDES: Common / Background / Style / custom fields marked Both, plus the shared Negative - written into both sides.\nLEFT and RIGHT are stacked sections, not side-by-side columns: every row keeps the full 236px list width, so long names get ellipsis + tooltip instead of a 100px squeeze.\nEach side shows its character (from the Characters card, read-only), its Positive, its own Negative and its side-only custom fields."
+    },
+    {
+      "id": "swap-note",
+      "x": 420,
+      "y": -190,
+      "w": 300,
+      "text": "Swap sits between the shared block and the two sides: one click flips prompts, negatives, characters and Left/Right strengths, and the UI shows the swapped state. It replaces the 'Swap Character' checkbox.\nEach side collapses from its header (RIGHT is shown collapsed): the character row stays visible and the header carries the field / tag count.\nThe character row is a button - it opens the same selection modal as the Characters card, so the character can be changed right here.\nThe editor badge ('LEFT · Hatsune Miku (Vocaloid)') is capped at 200px with ellipsis; 'Send to right' moves the selected capsules across."
+    },
+    {
+      "id": "editor-note",
+      "x": 860,
+      "y": -130,
+      "w": 300,
+      "text": "Custom fields get a side: Both / Left / Right - on the negative chain too.\nBuilt-ins keep their fixed side (Common, Background, Style = both; Positive and Negative = a shared field plus a left and a right field).\nComfyUI gets per-side negative conditioning (masked like the positives); Forge Neo folds per-side negatives into the shared one."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

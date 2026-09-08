@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+  </style>
+</helmet>
+<div style="width: 440px; padding: 16px; background: #111111; box-sizing: border-box;">
+  <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; color: #e8e8ea; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45); overflow: hidden;">
+    <div style="display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 12px; border-bottom: 1px solid #3a3a40;">
+      <span style="font-weight: 600; font-size: 12.5px;">Fields</span>
+      <span style="font-size: 11px; color: #9a9aa3;">drag to reorder · Regional: pick the side</span>
+      <button style="margin-left: auto; height: 22px; width: 22px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font-size: 11px; cursor: pointer;">×</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 12px;">
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #69b85a; padding: 2px 2px 0;">POSITIVE CHAIN</div>
+
+      <!-- built-in rows (fixed side) -->
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border: 1px solid #3a3a40; border-radius: 6px; background: #222226;">
+        <span style="color: #77777f; font-size: 12px;">⋮⋮</span>
+        <span style="width: 7px; height: 7px; border-radius: 2px; background: #d98b3a;"></span>
+        <span style="flex: 1; font-size: 11.5px; color: #bdbdc4;">Common</span>
+        <span style="font-size: 10px; color: #77777f;">both · built-in</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border: 1px solid #3a3a40; border-radius: 6px; background: #222226;">
+        <span style="color: #77777f; font-size: 12px;">⋮⋮</span>
+        <span style="width: 7px; height: 7px; border-radius: 2px; background: #c8a06a;"></span>
+        <span style="flex: 1; font-size: 11.5px; color: #bdbdc4;">Background</span>
+        <span style="font-size: 10px; color: #77777f;">both · built-in</span>
+      </div>
+
+      <!-- custom row: Lighting, applies to both -->
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border: 1px solid #3a3a40; border-radius: 6px; background: #222226;">
+        <span style="color: #77777f; font-size: 12px;">⋮⋮</span>
+        <span style="width: 7px; height: 7px; border-radius: 2px; background: #b06ad6;"></span>
+        <span style="flex: 1; font-size: 11.5px; color: #e8e8ea;">Lighting</span>
+        <div style="display: inline-flex; border: 1px solid #4a4a52; border-radius: 5px; overflow: hidden;">
+          <button style="height: 20px; padding: 0 8px; border: none; background: #285f8f; color: #ffffff; font-size: 10px; font-weight: 600; cursor: pointer;">Both</button>
+          <button style="height: 20px; padding: 0 8px; border: none; border-left: 1px solid #4a4a52; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">Left</button>
+          <button style="height: 20px; padding: 0 8px; border: none; border-left: 1px solid #4a4a52; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">Right</button>
+        </div>
+        <button style="height: 20px; width: 20px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">×</button>
+      </div>
+
+      <!-- built-in positive pair -->
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border: 1px solid #3a3a40; border-radius: 6px; background: #222226;">
+        <span style="color: #77777f; font-size: 12px;">⋮⋮</span>
+        <span style="width: 7px; height: 7px; border-radius: 2px; background: #69b85a;"></span>
+        <span style="flex: 1; font-size: 11.5px; color: #bdbdc4;">Positive</span>
+        <span style="font-size: 10px; color: #77777f;">both · left · right · built-in</span>
+      </div>
+
+      <!-- custom row: Outfit, right only -->
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border: 1px solid #3a3a40; border-radius: 6px; background: #222226;">
+        <span style="color: #77777f; font-size: 12px;">⋮⋮</span>
+        <span style="width: 7px; height: 7px; border-radius: 2px; background: #b06ad6;"></span>
+        <span style="flex: 1; font-size: 11.5px; color: #e8e8ea;">Outfit</span>
+        <div style="display: inline-flex; border: 1px solid #4a4a52; border-radius: 5px; overflow: hidden;">
+          <button style="height: 20px; padding: 0 8px; border: none; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">Both</button>
+          <button style="height: 20px; padding: 0 8px; border: none; border-left: 1px solid #4a4a52; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">Left</button>
+          <button style="height: 20px; padding: 0 8px; border: none; border-left: 1px solid #4a4a52; background: #285f8f; color: #ffffff; font-size: 10px; font-weight: 600; cursor: pointer;">Right</button>
+        </div>
+        <button style="height: 20px; width: 20px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">×</button>
+      </div>
+
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #d64b5c; padding: 8px 2px 0;">NEGATIVE CHAIN</div>
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border: 1px solid #3a3a40; border-radius: 6px; background: #222226;">
+        <span style="color: #77777f; font-size: 12px;">⋮⋮</span>
+        <span style="width: 7px; height: 7px; border-radius: 2px; background: #d64b5c;"></span>
+        <span style="flex: 1; font-size: 11.5px; color: #bdbdc4;">Negative</span>
+        <span style="font-size: 10px; color: #77777f;">both · left · right · built-in</span>
+      </div>
+      <!-- custom negative row: Hands, left only -->
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border: 1px solid #3a3a40; border-radius: 6px; background: #222226;">
+        <span style="color: #77777f; font-size: 12px;">⋮⋮</span>
+        <span style="width: 7px; height: 7px; border-radius: 2px; background: #b06ad6;"></span>
+        <span style="flex: 1; font-size: 11.5px; color: #e8e8ea;">Hands</span>
+        <div style="display: inline-flex; border: 1px solid #4a4a52; border-radius: 5px; overflow: hidden;">
+          <button style="height: 20px; padding: 0 8px; border: none; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">Both</button>
+          <button style="height: 20px; padding: 0 8px; border: none; border-left: 1px solid #4a4a52; background: #285f8f; color: #ffffff; font-size: 10px; font-weight: 600; cursor: pointer;">Left</button>
+          <button style="height: 20px; padding: 0 8px; border: none; border-left: 1px solid #4a4a52; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">Right</button>
+        </div>
+        <button style="height: 20px; width: 20px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">×</button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+        <input value="New field name" style="flex: 1; height: 26px; padding: 0 8px; border: 1px solid #4a4a52; border-radius: 5px; background: #27272a; color: #e8e8ea; font: inherit; font-size: 11.5px;">
+        <div style="display: inline-flex; border: 1px solid #4a4a52; border-radius: 5px; overflow: hidden;">
+          <button style="height: 24px; padding: 0 8px; border: none; background: #285f8f; color: #ffffff; font-size: 10px; font-weight: 600; cursor: pointer;">Both</button>
+          <button style="height: 24px; padding: 0 8px; border: none; border-left: 1px solid #4a4a52; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">Left</button>
+          <button style="height: 24px; padding: 0 8px; border: none; border-left: 1px solid #4a4a52; background: #222226; color: #9a9aa3; font-size: 10px; cursor: pointer;">Right</button>
+        </div>
+        <button style="height: 26px; padding: 0 10px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #e8e8ea; font-size: 11px; cursor: pointer;">+ Add</button>
+      </div>
+      <div style="font-size: 10.5px; line-height: 1.5; color: #77777f;">Side only matters while Regional is on; with it off every field joins the single chain as today. On Forge Neo a per-side negative is folded into the shared negative (the backend has no regional negative).</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
