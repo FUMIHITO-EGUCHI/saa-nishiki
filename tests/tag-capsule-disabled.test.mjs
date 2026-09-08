@@ -35,7 +35,10 @@ test('toggle flips one capsule; setAll flips every capsule', () => {
 
 test('stripDisabledTags removes ~tokens from plain field text and keeps the rest verbatim', () => {
     assert.equal(stripDisabledTags('1girl, ~long hair, (smile:1.1)'), '1girl, (smile:1.1)');
-    assert.equal(stripDisabledTags('line one, ~x\n~y, line two'), 'line one\n line two');
+    assert.equal(stripDisabledTags('line one, ~x\n~y, line two'), 'line one\nline two');
+    assert.equal(stripDisabledTags('~(blue eyes:1.2), smile'), 'smile', 'no leading blank for the backend');
+    assert.equal(stripDisabledTags('smile, ~long hair,'), 'smile');
+    assert.equal(stripDisabledTags('~only'), '');
     assert.equal(stripDisabledTags('no markers here'), 'no markers here');
     assert.equal(stripDisabledTags(''), '');
 });

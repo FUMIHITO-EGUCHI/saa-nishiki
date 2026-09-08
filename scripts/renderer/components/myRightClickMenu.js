@@ -535,7 +535,16 @@ function chipContext(chip) {
     const key = fieldKeyOf(chip.closest('[data-field-key]'));
     const field = key ? fieldSet()?.get?.(key) ?? null : null;
     const capsule = field?.findCapsule?.(chip.dataset.capsuleId) ?? null;
-    return { key, field, capsule };
+    // a right-click on a selected chip addresses the whole selection (ids in chip order)
+    const selected = field?.getSelectedIds?.() ?? [];
+    const ids = capsule && selected.includes(capsule.id) ? selected : (capsule ? [capsule.id] : []);
+    const capsules = ids.map(id => field?.findCapsule?.(id)).filter(Boolean);
+    return { key, field, capsule, ids, capsules };
+}
+
+// "Disable tag" / "Disable 3 tags": the count only shows for a multi-selection
+function countLabel(base, count) {
+    return count > 1 ? `${base} (${count})` : base;
 }
 
 function textareaSelection(scope) {
@@ -581,8 +590,15 @@ function registerDefaultMenuItems() {
     });
     rc.append('tag_toggle', LANG.right_menu_disable_tag, {
         selector: '.tag-capsule-chip',
-        label: chip => (chip.classList.contains('is-disabled') ? lang().right_menu_enable_tag : lang().right_menu_disable_tag),
-        func: (chip) => chip.querySelector('.tag-capsule-chip-toggle')?.click(),
+        label: chip => {
+            const { ids } = chipContext(chip);
+            return countLabel(chip.classList.contains('is-disabled') ? lang().right_menu_enable_tag : lang().right_menu_disable_tag, ids.length);
+        },
+        func: (chip) => {
+            const { field, ids } = chipContext(chip);
+            if (field && ids.length > 1) field.setDisabledFor(ids, !chip.classList.contains('is-disabled'));
+            else chip.querySelector('.tag-capsule-chip-toggle')?.click();
+        },
     });
     rc.append('tag_related', LANG.right_menu_related_tags, {
         selector: '.tag-capsule-chip',
@@ -595,26 +611,39 @@ function registerDefaultMenuItems() {
     rc.append('separator_tag_1', null, { selector: '.tag-capsule-chip' });
     rc.append('tag_move_to', LANG.right_menu_move_to, {
         selector: '.tag-capsule-chip',
+        label: chip => countLabel(lang().right_menu_move_to, chipContext(chip).ids.length),
         items: chip => {
-            const { key, capsule } = chipContext(chip);
-            return targetEntries(key, targetId => fieldSet()?.transfer(key, capsule?.id, targetId, { copy: false }));
+            const { key, capsule, ids } = chipContext(chip);
+            const what = ids.length > 1 ? ids : capsule?.id;
+            return targetEntries(key, targetId => fieldSet()?.transfer(key, what, targetId, { copy: false }));
         },
     });
     rc.append('tag_copy_to', LANG.right_menu_copy_to, {
         selector: '.tag-capsule-chip',
+        label: chip => countLabel(lang().right_menu_copy_to, chipContext(chip).ids.length),
         items: chip => {
-            const { key, capsule } = chipContext(chip);
-            return targetEntries(key, targetId => fieldSet()?.transfer(key, capsule?.id, targetId, { copy: true }));
+            const { key, capsule, ids } = chipContext(chip);
+            const what = ids.length > 1 ? ids : capsule?.id;
+            return targetEntries(key, targetId => fieldSet()?.transfer(key, what, targetId, { copy: true }));
         },
     });
     rc.append('separator_tag_2', null, { selector: '.tag-capsule-chip' });
     rc.append('tag_copy_text', LANG.right_menu_copy_tag, {
         selector: '.tag-capsule-chip',
-        func: (chip) => copyText(chipContext(chip).capsule?.value ?? chip.querySelector('.tag-capsule-chip-name')?.textContent ?? ''),
+        label: chip => countLabel(lang().right_menu_copy_tag, chipContext(chip).ids.length),
+        func: (chip) => {
+            const { capsules } = chipContext(chip);
+            copyText(capsules.length ? capsules.map(capsule => capsule.value).join(', ') : chip.querySelector('.tag-capsule-chip-name')?.textContent ?? '');
+        },
     });
     rc.append('tag_remove', LANG.right_menu_remove_tag, {
         selector: '.tag-capsule-chip',
-        func: (chip) => chip.querySelector('.tag-capsule-chip-remove')?.click(),
+        label: chip => countLabel(lang().right_menu_remove_tag, chipContext(chip).ids.length),
+        func: (chip) => {
+            const { field, ids } = chipContext(chip);
+            if (field && ids.length > 1) field.removeIds(ids);
+            else chip.querySelector('.tag-capsule-chip-remove')?.click();
+        },
     });
     rc.append('separator_tag_3', null, { selector: '.tag-capsule-chip' });
 

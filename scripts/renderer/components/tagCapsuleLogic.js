@@ -237,13 +237,68 @@ export function setAllCapsulesDisabled(capsules = [], disabled) {
 export function stripDisabledTags(text = '') {
     const source = String(text ?? '');
     if (!source.includes(DISABLED_TAG_MARKER)) return source;
+    // a line that only held disabled tags disappears; the others are re-joined
+    // cleanly so no ", ," or leading blank is left for the backend
     return source
         .split('\n')
         .map(line => line
             .split(',')
-            .filter(token => !token.trim().startsWith(DISABLED_TAG_MARKER))
-            .join(','))
+            .map(token => token.trim())
+            .filter(token => token && !token.startsWith(DISABLED_TAG_MARKER))
+            .join(', '))
+        .filter((line, index, lines) => line !== '' || lines.length === 1)
         .join('\n');
+}
+
+// ---------------------------------------------------------------- multi-selection
+
+export function removeCapsules(capsules = [], ids = []) {
+    const drop = new Set(ids);
+    if (drop.size === 0) return capsules;
+    const next = capsules.filter(capsule => !drop.has(capsule.id));
+    return next.length === capsules.length ? capsules : assignCapsuleIds(next);
+}
+
+// disabled: true / false, or 'toggle' (each selected capsule flips on its own)
+export function setCapsulesDisabled(capsules = [], ids = [], disabled = true) {
+    const pick = new Set(ids);
+    if (pick.size === 0) return capsules;
+    return capsules.map(capsule => {
+        if (!pick.has(capsule.id)) return capsule;
+        return { ...capsule, disabled: disabled === 'toggle' ? !capsule.disabled : disabled === true };
+    });
+}
+
+// Moves the selected capsules as one block (their relative order kept) so that the
+// block starts where the capsule currently at `to` sits; `to === length` appends.
+export function moveCapsules(capsules = [], ids = [], to) {
+    const pick = new Set(ids);
+    const block = capsules.filter(capsule => pick.has(capsule.id));
+    if (block.length === 0) return capsules;
+    const target = Math.max(0, Math.min(capsules.length, Math.floor(finiteNumber(to, capsules.length))));
+    const anchor = capsules[target] ?? null;
+    if (anchor && pick.has(anchor.id)) return capsules;
+    const rest = capsules.filter(capsule => !pick.has(capsule.id));
+    const position = anchor ? rest.findIndex(capsule => capsule.id === anchor.id) : rest.length;
+    const next = [...rest.slice(0, position), ...block, ...rest.slice(position)];
+    if (next.every((capsule, index) => capsule === capsules[index])) return capsules;
+    return assignCapsuleIds(next);
+}
+
+// Several capsules into another field at `at`, in their source order.
+export function transferCapsules(source = [], target = [], ids = [], options = {}) {
+    const { at = target.length, copy = false } = options;
+    const pick = new Set(ids);
+    const block = source.filter(capsule => pick.has(capsule.id)).map(capsule => ({
+        value: capsule.value,
+        weightPlan: normalizeWeightPlan(capsule.weightPlan),
+        disabled: capsule.disabled === true,
+    }));
+    if (block.length === 0) return { source, target, moved: [] };
+    const position = Math.max(0, Math.min(target.length, Math.floor(finiteNumber(at, target.length))));
+    const nextTarget = assignCapsuleIds([...target.slice(0, position), ...block, ...target.slice(position)]);
+    const nextSource = copy ? source : assignCapsuleIds(source.filter(capsule => !pick.has(capsule.id)));
+    return { source: nextSource, target: nextTarget, moved: nextTarget.slice(position, position + block.length) };
 }
 
 export function previewBatch(capsules = [], count = 1, generationSeed = 0, tokenPrefix = '') {

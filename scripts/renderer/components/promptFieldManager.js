@@ -705,6 +705,178 @@ export function setupPromptFieldManager() {
             renderEditorLists();
         });
 
+        // Rows are dragged to change their position (and, while Regional is on, the
+        // block they sit in = the side). The payload rides under its own MIME type so
+        // only the editor lists accept it; ↑ ↓ stay for the keyboard.
+        const UNIT_MIME = 'application/x-saa-field-unit';
+        let dragging = null; // { orderKey, id }
+
+        // Puts `id` back into its chain before `beforeId` (null = after the last unit
+        // of `blockIds`, or at the chain end), and moves a custom field to `side`.
+        function placeUnit(orderKey, id, { beforeId = null, blockIds = [], side = null } = {}) {
+            const order = SETTINGS[orderKey].filter(unitId => unitId !== id);
+            let position = order.length;
+            if (beforeId && beforeId !== id && order.includes(beforeId)) {
+                position = order.indexOf(beforeId);
+            } else {
+                const last = blockIds.filter(unitId => unitId !== id && order.includes(unitId)).at(-1);
+                if (last) position = order.indexOf(last) + 1;
+            }
+            order.splice(position, 0, id);
+            SETTINGS[orderKey] = order;
+            const custom = fields.find(field => field.id === id);
+            if (custom && side && isRegional()) {
+                if (side === 'both') delete custom.side; else custom.side = side;
+                persistFields();
+            }
+            applyDomOrder();
+            renderEditorLists();
+        }
+
+        function clearDropMarks() {
+            for (const node of panel.querySelectorAll('.is-drop-before, .is-drop-target')) node.classList.remove('is-drop-before', 'is-drop-target');
+        }
+
+        function attachDropZone(zone, orderKey, side, blockIds) {
+            zone.addEventListener('dragover', event => {
+                if (!dragging || dragging.orderKey !== orderKey) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                clearDropMarks();
+                const row = event.target.closest('.prompt-field-editor-row');
+                if (row && zone.contains(row)) row.classList.add('is-drop-before'); else zone.classList.add('is-drop-target');
+            });
+            zone.addEventListener('dragleave', event => {
+                if (!zone.contains(event.relatedTarget)) clearDropMarks();
+            });
+            zone.addEventListener('drop', event => {
+                if (!dragging || dragging.orderKey !== orderKey) return;
+                event.preventDefault();
+                const row = event.target.closest('.prompt-field-editor-row');
+                const beforeId = row && zone.contains(row) ? row.dataset.unitId : null;
+                const id = dragging.id;
+                dragging = null;
+                clearDropMarks();
+                placeUnit(orderKey, id, { beforeId, blockIds, side });
+            });
+        }
+
+        function buildEditorRow(orderKey, id, regional) {
+            const custom = fields.find(field => field.id === id);
+            const row = document.createElement('div');
+            row.className = 'prompt-field-editor-row';
+            row.dataset.unitId = id;
+            row.draggable = true;
+            row.title = 'Drag to reorder' + (regional && custom ? ' or to another side' : '');
+            row.addEventListener('dragstart', event => {
+                dragging = { orderKey, id };
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData(UNIT_MIME, JSON.stringify(dragging));
+                event.dataTransfer.setData('text/plain', custom ? custom.name : (BUILTIN_LABELS[id] || id));
+                row.classList.add('is-dragging');
+            });
+            row.addEventListener('dragend', () => { dragging = null; row.classList.remove('is-dragging'); clearDropMarks(); });
+
+            const label = document.createElement('span');
+            label.className = 'prompt-field-editor-label';
+            label.textContent = custom ? custom.name : (BUILTIN_LABELS[id] || id);
+            if (STRUCTURAL_UNITS.has(id)) label.classList.add('is-structural');
+            row.appendChild(label);
+            if (regional && !custom && !STRUCTURAL_UNITS.has(id)) {
+                const fixed = document.createElement('span');
+                fixed.className = 'prompt-field-editor-side-fixed';
+                fixed.textContent = id === 'positive' || id === 'negative' ? 'both · left · right' : sideOf(id, fields);
+                row.appendChild(fixed);
+            }
+
+            const up = document.createElement('button');
+            up.type = 'button';
+            up.textContent = '↑';
+            up.addEventListener('click', () => moveUnit(orderKey, id, -1));
+            const down = document.createElement('button');
+            down.type = 'button';
+            down.textContent = '↓';
+            down.addEventListener('click', () => moveUnit(orderKey, id, 1));
+            row.append(up, down);
+
+            if (custom) {
+                if (regional) {
+                    // Both / Left / Right for the regional chain (see regionalSides.js)
+                    const sideControl = document.createElement('div');
+                    sideControl.className = 'prompt-field-editor-side';
+                    const currentSide = normalizeSide(custom.side);
+                    for (const side of ['both', 'left', 'right']) {
+                        const option = document.createElement('button');
+                        option.type = 'button';
+                        option.textContent = SIDE_LABELS[side];
+                        option.classList.toggle('is-selected', side === currentSide);
+                        option.addEventListener('click', () => {
+                            if (side === 'both') delete custom.side; else custom.side = side;
+                            persistFields();
+                            applyDomOrder();
+                            renderEditorLists();
+                        });
+                        sideControl.appendChild(option);
+                    }
+                    row.appendChild(sideControl);
+                }
+                const rename = document.createElement('button');
+                rename.type = 'button';
+                rename.textContent = '✎';
+                rename.title = 'Rename';
+                rename.addEventListener('click', () => {
+                    // inline rename: swap the label for a text input (no blocking dialogs)
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = custom.name;
+                    input.maxLength = 40;
+                    input.className = 'prompt-field-editor-rename';
+                    const commit = () => {
+                        const name = input.value.trim();
+                        if (name !== '') custom.name = name.slice(0, 40);
+                        persistFields();
+                        renderCustomFields();
+                        renderEditorLists();
+                    };
+                    input.addEventListener('keydown', (event) => {
+                        if (event.key === 'Enter') commit();
+                        if (event.key === 'Escape') renderEditorLists();
+                    });
+                    input.addEventListener('blur', commit);
+                    label.replaceWith(input);
+                    input.focus();
+                    input.select();
+                });
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.textContent = '×';
+                remove.title = 'Delete field';
+                remove.addEventListener('click', () => {
+                    fields = fields.filter(field => field.id !== custom.id);
+                    SETTINGS[orderKey] = SETTINGS[orderKey].filter(unitId => unitId !== custom.id);
+                    // explicit delete: the field's preset bucket goes with it
+                    if (SETTINGS.prompt_field_presets && typeof SETTINGS.prompt_field_presets === 'object' && custom.id in SETTINGS.prompt_field_presets) {
+                        const store = { ...SETTINGS.prompt_field_presets };
+                        delete store[custom.id];
+                        SETTINGS.prompt_field_presets = store;
+                    }
+                    persistFields();
+                    renderCustomFields();
+                    applyDomOrder();
+                    renderEditorLists();
+                });
+                row.append(rename, remove);
+            }
+            return row;
+        }
+
+        // The side a unit is listed under in the editor: built-ins that feed both
+        // prompts (positive / negative, structural units) sit in BOTH SIDES.
+        function editorSideOf(id) {
+            if (STRUCTURAL_UNITS.has(id) || id === 'positive' || id === 'negative') return 'both';
+            return sideOf(id, fields);
+        }
+
         renderEditorLists = () => {
             // Both / Left / Right only exist while Regional is on (the stored sides are kept)
             const regional = isRegional();
@@ -716,102 +888,32 @@ export function setupPromptFieldManager() {
                 const orderKey = list.dataset.order;
                 list.innerHTML = '';
                 const order = SETTINGS[orderKey];
-                for (const id of order) {
-                    const custom = fields.find(field => field.id === id);
-                    const row = document.createElement('div');
-                    row.className = 'prompt-field-editor-row';
-
-                    const label = document.createElement('span');
-                    label.className = 'prompt-field-editor-label';
-                    label.textContent = custom ? custom.name : (BUILTIN_LABELS[id] || id);
-                    if (STRUCTURAL_UNITS.has(id)) label.classList.add('is-structural');
-                    row.appendChild(label);
-                    if (regional && !custom && !STRUCTURAL_UNITS.has(id)) {
-                        const fixed = document.createElement('span');
-                        fixed.className = 'prompt-field-editor-side-fixed';
-                        fixed.textContent = id === 'positive' || id === 'negative' ? 'both · left · right' : sideOf(id, fields);
-                        row.appendChild(fixed);
+                if (!regional) {
+                    for (const id of order) list.appendChild(buildEditorRow(orderKey, id, false));
+                    attachDropZone(list, orderKey, null, order);
+                    continue;
+                }
+                // Regional: the same BOTH SIDES / LEFT / RIGHT blocks as the Prompts card,
+                // so a field's side is visible and a row can be dragged into another block
+                const blocks = { both: [], left: [], right: [] };
+                for (const id of order) blocks[editorSideOf(id)].push(id);
+                for (const side of ['both', 'left', 'right']) {
+                    const block = document.createElement('div');
+                    block.className = `prompt-field-editor-block is-${side}`;
+                    block.dataset.side = side;
+                    const head = document.createElement('div');
+                    head.className = 'prompt-field-editor-block-head';
+                    head.textContent = side === 'both' ? 'BOTH SIDES' : side.toUpperCase();
+                    block.appendChild(head);
+                    if (blocks[side].length === 0) {
+                        const empty = document.createElement('div');
+                        empty.className = 'prompt-field-editor-block-empty';
+                        empty.textContent = 'Drop a field here';
+                        block.appendChild(empty);
                     }
-
-                    const up = document.createElement('button');
-                    up.type = 'button';
-                    up.textContent = '↑';
-                    up.addEventListener('click', () => moveUnit(orderKey, id, -1));
-                    const down = document.createElement('button');
-                    down.type = 'button';
-                    down.textContent = '↓';
-                    down.addEventListener('click', () => moveUnit(orderKey, id, 1));
-                    row.append(up, down);
-
-                    if (custom) {
-                        if (regional) {
-                            // Both / Left / Right for the regional chain (see regionalSides.js)
-                            const sideControl = document.createElement('div');
-                            sideControl.className = 'prompt-field-editor-side';
-                            const currentSide = normalizeSide(custom.side);
-                            for (const side of ['both', 'left', 'right']) {
-                                const option = document.createElement('button');
-                                option.type = 'button';
-                                option.textContent = SIDE_LABELS[side];
-                                option.classList.toggle('is-selected', side === currentSide);
-                                option.addEventListener('click', () => {
-                                    if (side === 'both') delete custom.side; else custom.side = side;
-                                    persistFields();
-                                    applyDomOrder();
-                                    renderEditorLists();
-                                });
-                                sideControl.appendChild(option);
-                            }
-                            row.appendChild(sideControl);
-                        }
-                        const rename = document.createElement('button');
-                        rename.type = 'button';
-                        rename.textContent = '✎';
-                        rename.title = 'Rename';
-                        rename.addEventListener('click', () => {
-                            // inline rename: swap the label for a text input (no blocking dialogs)
-                            const input = document.createElement('input');
-                            input.type = 'text';
-                            input.value = custom.name;
-                            input.maxLength = 40;
-                            input.className = 'prompt-field-editor-rename';
-                            const commit = () => {
-                                const name = input.value.trim();
-                                if (name !== '') custom.name = name.slice(0, 40);
-                                persistFields();
-                                renderCustomFields();
-                                renderEditorLists();
-                            };
-                            input.addEventListener('keydown', (event) => {
-                                if (event.key === 'Enter') commit();
-                                if (event.key === 'Escape') renderEditorLists();
-                            });
-                            input.addEventListener('blur', commit);
-                            label.replaceWith(input);
-                            input.focus();
-                            input.select();
-                        });
-                        const remove = document.createElement('button');
-                        remove.type = 'button';
-                        remove.textContent = '×';
-                        remove.title = 'Delete field';
-                        remove.addEventListener('click', () => {
-                            fields = fields.filter(field => field.id !== custom.id);
-                            SETTINGS[orderKey] = SETTINGS[orderKey].filter(unitId => unitId !== custom.id);
-                            // explicit delete: the field's preset bucket goes with it
-                            if (SETTINGS.prompt_field_presets && typeof SETTINGS.prompt_field_presets === 'object' && custom.id in SETTINGS.prompt_field_presets) {
-                                const store = { ...SETTINGS.prompt_field_presets };
-                                delete store[custom.id];
-                                SETTINGS.prompt_field_presets = store;
-                            }
-                            persistFields();
-                            renderCustomFields();
-                            applyDomOrder();
-                            renderEditorLists();
-                        });
-                        row.append(rename, remove);
-                    }
-                    list.appendChild(row);
+                    for (const id of blocks[side]) block.appendChild(buildEditorRow(orderKey, id, true));
+                    attachDropZone(block, orderKey, side, blocks[side]);
+                    list.appendChild(block);
                 }
             }
         };

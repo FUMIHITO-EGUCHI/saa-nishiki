@@ -25,9 +25,13 @@ test('tag capsule entries: weight, toggle, related, move/copy to field, copy tex
     for (const index of ['tag_edit_weight', 'tag_toggle', 'tag_related', 'tag_move_to', 'tag_copy_to', 'tag_copy_text', 'tag_remove']) {
         assert.match(menu, new RegExp(`rc\\.append\\('${index}',[^{]*\\{\\s*selector: '\\.tag-capsule-chip'`), `${index} scoped to a chip`);
     }
-    assert.match(menu, /fieldSet\(\)\?\.transfer\(key, capsule\?\.id, targetId, \{ copy: false \}\)/);
-    assert.match(menu, /fieldSet\(\)\?\.transfer\(key, capsule\?\.id, targetId, \{ copy: true \}\)/);
-    assert.match(menu, /label: chip => \(chip\.classList\.contains\('is-disabled'\)/, 'toggle label follows the chip state');
+    // a selected chip carries the whole selection: ids array instead of one id
+    assert.match(menu, /const what = ids\.length > 1 \? ids : capsule\?\.id;/);
+    assert.match(menu, /fieldSet\(\)\?\.transfer\(key, what, targetId, \{ copy: false \}\)/);
+    assert.match(menu, /fieldSet\(\)\?\.transfer\(key, what, targetId, \{ copy: true \}\)/);
+    assert.match(menu, /countLabel\(chip\.classList\.contains\('is-disabled'\) \? lang\(\)\.right_menu_enable_tag : lang\(\)\.right_menu_disable_tag, ids\.length\)/, 'toggle label follows the chip state and the selection size');
+    assert.match(menu, /field\.setDisabledFor\(ids, !chip\.classList\.contains\('is-disabled'\)\)/);
+    assert.match(menu, /field\.removeIds\(ids\)/);
 });
 
 test('prompt field entries work for every field through data-field-key (custom fields included)', () => {
@@ -56,7 +60,8 @@ test('cross-field drag-and-drop carries its own MIME type and Ctrl/Alt copies', 
     assert.match(field, /CAPSULE_MIME = 'application\/x-saa-capsule'/);
     assert.match(field, /event\.dataTransfer\.effectAllowed = 'copyMove'/);
     assert.match(field, /onExternalDrop\?\.\(payload, at, \{ copy: event\.ctrlKey \|\| event\.altKey \}\)/);
-    assert.match(field, /onExternalDrop: \(payload, at, \{ copy \}\) => set\.transfer\(payload\.field, payload\.id, key, \{ at, copy \}\)/);
+    assert.match(field, /onExternalDrop: \(payload, at, \{ copy \}\) => set\.transfer\(payload\.field, Array\.isArray\(payload\.ids\) && payload\.ids\.length > 1 \? payload\.ids : payload\.id, key, \{ at, copy \}\)/);
+    assert.match(field, /JSON\.stringify\(\{ field: key, id: capsules\[dragIndex\]\?\.id \?\? '', ids \}\)/, 'the payload lists every selected capsule');
 });
 
 test('menu labels exist in every language table', () => {

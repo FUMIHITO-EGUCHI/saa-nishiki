@@ -25,6 +25,10 @@ import {
     setCapsulePlan,
     toggleCapsuleDisabled,
     transferCapsule,
+    moveCapsules,
+    removeCapsules,
+    setCapsulesDisabled,
+    transferCapsules,
 } from './tagCapsuleLogic.js';
 import { createIcon, renderChips } from './tagCapsuleChip.js';
 import { FAVORITE_TAGS_CHANGED_EVENT, favGroupForKey, isFavoriteTag } from './favoriteTags.js';
@@ -106,6 +110,53 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     let suppressInput = false;
     let discardedNotice = 0;
     let dragIndex = -1;
+
+    // ---------------------------------------------------------------- multi-selection
+    // Ctrl/Cmd+click toggles a chip, Shift+click extends from the focused chip, Ctrl+A
+    // takes every chip, Escape clears. A drag, Delete or a context-menu action on a
+    // selected chip applies to the whole selection.
+    const selectedIds = new Set();
+    let anchorIndex = -1;
+    function selectionIds() {
+        return capsules.filter(capsule => selectedIds.has(capsule.id)).map(capsule => capsule.id);
+    }
+    function applySelectionClasses() {
+        const chipNodes = chips.querySelectorAll(':scope > .tag-capsule-chip');
+        chipNodes.forEach((chip, index) => {
+            chip.classList.toggle('is-selected', selectedIds.has(capsules[index]?.id));
+            chip.setAttribute('aria-selected', selectedIds.has(capsules[index]?.id) ? 'true' : 'false');
+        });
+    }
+    function setSelection(ids) {
+        selectedIds.clear();
+        for (const id of ids ?? []) selectedIds.add(id);
+        applySelectionClasses();
+    }
+    function clearSelection() {
+        if (selectedIds.size === 0) return;
+        selectedIds.clear();
+        anchorIndex = -1;
+        applySelectionClasses();
+    }
+    function toggleSelected(index) {
+        const id = capsules[index]?.id;
+        if (!id) return;
+        if (selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+        anchorIndex = index;
+        applySelectionClasses();
+    }
+    function selectRange(index) {
+        const from = anchorIndex >= 0 ? anchorIndex : focusIndex;
+        const [start, end] = from <= index ? [from, index] : [index, from];
+        for (let position = start; position <= end; position += 1) {
+            if (capsules[position]) selectedIds.add(capsules[position].id);
+        }
+        applySelectionClasses();
+    }
+    function pruneSelection() {
+        const alive = new Set(capsules.map(capsule => capsule.id));
+        for (const id of [...selectedIds]) if (!alive.has(id)) selectedIds.delete(id);
+    }
     const guard = value => { suppressInput = value; };
 
     // ---------------------------------------------------------------- header
@@ -404,6 +455,8 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             });
             chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
             updateRoving();
+            pruneSelection();
+            applySelectionClasses();
         }
         renderFooter();
         renderBadge();
@@ -510,11 +563,27 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             return;
         }
         if (event.target.closest('.tag-capsule-chip-toggle')) {
-            commitCapsules(toggleCapsuleDisabled(capsules, index));
+            // on a selected chip the dot flips the whole selection together
+            const ids = selectedIds.has(capsules[index]?.id) ? selectionIds() : [];
+            commitCapsules(ids.length > 1 ? setCapsulesDisabled(capsules, ids, !capsules[index].disabled) : toggleCapsuleDisabled(capsules, index));
             focusChip(index);
             return;
         }
+        if (event.ctrlKey || event.metaKey) {
+            toggleSelected(index);
+            focusIndex = index;
+            updateRoving();
+            return;
+        }
+        if (event.shiftKey) {
+            selectRange(index);
+            focusIndex = index;
+            updateRoving();
+            return;
+        }
+        clearSelection();
         focusIndex = index;
+        anchorIndex = index;
         updateRoving();
         openPopover(index);
     });
@@ -528,6 +597,27 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         if (event.isComposing || event.keyCode === 229) return;
         const onAdd = event.target === addButton;
         const state = { index: onAdd ? capsules.length : focusIndex, count: capsules.length };
+        // selection keys first: Ctrl+A selects every chip, Escape drops the selection,
+        // Delete on a selected chip removes the whole selection
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a' && !onAdd) {
+            event.preventDefault();
+            setSelection(capsules.map(capsule => capsule.id));
+            return;
+        }
+        if (event.key === 'Escape' && selectedIds.size > 0) {
+            event.preventDefault();
+            clearSelection();
+            return;
+        }
+        if ((event.key === 'Delete' || event.key === 'Backspace') && !onAdd && selectedIds.size > 1 && selectedIds.has(capsules[focusIndex]?.id)) {
+            event.preventDefault();
+            const ids = selectionIds();
+            const next = removeCapsules(capsules, ids);
+            selectedIds.clear();
+            commitCapsules(next);
+            focusChip(Math.max(0, Math.min(focusIndex, next.length - 1)), { fallbackToAdd: true });
+            return;
+        }
         const result = handleChipKey(state, event.key, { ctrlKey: event.ctrlKey, metaKey: event.metaKey });
         const handled = result.action !== null || result.index !== state.index
             || ['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(event.key);
@@ -576,12 +666,17 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         dragIndex = chipIndexOf(event.target);
         if (dragIndex < 0) { event.preventDefault(); return; }
         event.dataTransfer.effectAllowed = 'copyMove';
-        event.dataTransfer.setData('text/plain', capsules[dragIndex]?.value ?? '');
-        event.dataTransfer.setData(CAPSULE_MIME, JSON.stringify({ field: key, id: capsules[dragIndex]?.id ?? '' }));
+        // a selected chip drags the whole selection; any other chip drags alone
+        const ids = selectedIds.has(capsules[dragIndex]?.id) ? selectionIds() : [capsules[dragIndex]?.id ?? ''];
+        event.dataTransfer.setData('text/plain', capsules.filter(capsule => ids.includes(capsule.id)).map(capsule => capsule.value).join(', '));
+        event.dataTransfer.setData(CAPSULE_MIME, JSON.stringify({ field: key, id: capsules[dragIndex]?.id ?? '', ids }));
         event.target.classList.add('is-dragging');
+        if (ids.length > 1) {
+            for (const chip of chips.querySelectorAll(':scope > .tag-capsule-chip.is-selected')) chip.classList.add('is-dragging');
+        }
     });
-    chips.addEventListener('dragend', event => {
-        event.target.classList?.remove('is-dragging');
+    chips.addEventListener('dragend', () => {
+        for (const chip of chips.querySelectorAll(':scope > .tag-capsule-chip.is-dragging')) chip.classList.remove('is-dragging');
         dragIndex = -1;
     });
     chips.addEventListener('dragover', event => {
@@ -603,6 +698,19 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         if (dragIndex >= 0) {
             event.preventDefault();
             let target = chipIndexOf(event.target);
+            const draggedId = capsules[dragIndex]?.id;
+            if (selectedIds.has(draggedId) && selectedIds.size > 1) {
+                // the selection moves as a block: before the chip dropped on, or to the end
+                const next = moveCapsules(capsules, selectionIds(), target < 0 ? capsules.length : target);
+                if (next !== capsules) {
+                    const keep = new Set(selectionIds().map(id => capsules.find(capsule => capsule.id === id)?.value));
+                    commitCapsules(next);
+                    setSelection(next.filter(capsule => keep.has(capsule.value)).map(capsule => capsule.id));
+                    focusChip(Math.max(0, next.findIndex(capsule => selectedIds.has(capsule.id))));
+                }
+                dragIndex = -1;
+                return;
+            }
             if (target < 0) target = capsules.length - 1;
             if (target !== dragIndex) {
                 commitCapsules(moveCapsule(capsules, dragIndex, target));
@@ -724,6 +832,21 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             omitDisabled: true,
         }),
         setAllDisabled: disabled => { commitCapsules(setAllCapsulesDisabled(capsules, disabled)); },
+        // multi-selection (context menu / drag entry points); ids in chip order
+        getSelectedIds: selectionIds,
+        setSelection,
+        clearSelection,
+        removeIds: ids => {
+            const next = removeCapsules(capsules, ids);
+            if (next === capsules) return;
+            selectedIds.clear();
+            commitCapsules(next);
+            focusChip(Math.max(0, Math.min(focusIndex, next.length - 1)), { fallbackToAdd: true });
+        },
+        setDisabledFor: (ids, disabled) => {
+            const next = setCapsulesDisabled(capsules, ids, disabled);
+            if (next !== capsules) commitCapsules(next);
+        },
         getLabel: fieldLabel,
         // cross-field transfer + context menu entry points
         replaceCapsules: next => { commitCapsules(Array.isArray(next) ? next : capsules); },
@@ -841,7 +964,7 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
             initialMode: sharedMode,
             onModeChange: propagateMode,
             fetchRelated,
-            onExternalDrop: (payload, at, { copy }) => set.transfer(payload.field, payload.id, key, { at, copy }),
+            onExternalDrop: (payload, at, { copy }) => set.transfer(payload.field, Array.isArray(payload.ids) && payload.ids.length > 1 ? payload.ids : payload.id, key, { at, copy }),
             getExcludeText: () => fields.get('exclude')?.textbox?.value ?? globalThis.prompt?.exclude?.getValue?.() ?? '',
             initialPlans: extras.weight_plans,
             initialBatch: extras.batch,
@@ -899,12 +1022,17 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         setMode: mode => propagateMode(mode === 'capsule' ? 'capsule' : 'string'),
         // Moves (copy: duplicates) one capsule into another field, weight plan and
         // disabled state included. Returns the inserted capsule or null.
+        // `capsuleId` may be an array: the whole selection moves as one block.
         transfer: (sourceKey, capsuleId, targetKey, { at, copy = false } = {}) => {
             const source = fields.get(sourceKey);
             const target = fields.get(targetKey);
             if (!source || !target || sourceKey === targetKey) return null;
-            const result = transferCapsule(source.getCapsules(), target.getCapsules(), capsuleId, { at, copy });
-            if (!result.moved) return null;
+            const many = Array.isArray(capsuleId);
+            const result = many
+                ? transferCapsules(source.getCapsules(), target.getCapsules(), capsuleId, { at, copy })
+                : transferCapsule(source.getCapsules(), target.getCapsules(), capsuleId, { at, copy });
+            const moved = many ? result.moved : (result.moved ? [result.moved] : []);
+            if (moved.length === 0) return null;
             batchUpdateDepth += 1;
             try {
                 if (!copy) source.replaceCapsules(result.source);
@@ -913,8 +1041,9 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
                 batchUpdateDepth = Math.max(0, batchUpdateDepth - 1);
             }
             requestFinalPromptRefresh();
-            target.focusCapsule(result.moved.id);
-            return result.moved;
+            if (many) target.setSelection(moved.map(capsule => capsule.id));
+            target.focusCapsule(moved[0].id);
+            return many ? moved : moved[0];
         },
         fieldKeyOf: element => element?.closest?.('[data-field-key]')?.dataset.fieldKey ?? null,
         hasRelated: typeof fetchRelated === 'function',

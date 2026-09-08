@@ -15,7 +15,8 @@ function fieldSet() {
 // Disabled tags ("~tag", toggled off on a capsule) never reach the prompt.
 export function readPromptValue(key) {
     if (activeOverride?.fields && typeof activeOverride.fields[key] === 'string') {
-        return activeOverride.fields[key];
+        // a Refine snapshot (baseFields) carries the raw field text, "~tag" included
+        return stripDisabledTags(activeOverride.fields[key]);
     }
     return stripDisabledTags(globalThis.prompt?.[key]?.getValue?.() ?? '');
 }
