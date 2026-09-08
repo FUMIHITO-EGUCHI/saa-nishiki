@@ -579,7 +579,16 @@ node scripts/reviewCharacterNames.mjs --stage works --report works.jsonl
 node scripts/reviewCharacterNames.mjs --stage works --apply works.jsonl --min-confidence medium
 node scripts/reviewCharacterNames.mjs --stage characters --report names.jsonl
 node scripts/reviewCharacterNames.mjs --stage characters --apply names.jsonl
+node scripts/reviewCharacterNames.mjs --stage verify --input names.jsonl --report verify.jsonl
+node scripts/reviewCharacterNames.mjs --stage verify --apply verify.jsonl
 ```
+
+`--stage verify` is the regression gate: it shows the model every applied
+change as before / after with the same evidence and asks which one is right;
+`--apply` reverts the changes judged "before" (medium confidence and up).
+Read the reverted list — a verdict against an official rename (Raymond ->
+ジャック) is wrong, and a "(1st costume)" verdict usually means the qualifier
+translation, not the name, needs a hand fix.
 
 ## Image info
 <details>

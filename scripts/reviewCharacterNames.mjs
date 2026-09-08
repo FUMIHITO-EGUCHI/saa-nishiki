@@ -31,7 +31,7 @@ const DEFAULT_OFFICIAL = path.join(projectDir, 'data', 'official_work_names.json
 const DEFAULT_WIKI = path.join(projectDir, 'data', '.cache', 'danbooru-wiki.jsonl');
 const JAPANESE = 'ja-JP';
 const CONFIDENCES = ['high', 'medium', 'low'];
-const STAGES = ['works', 'characters'];
+const STAGES = ['works', 'characters', 'verify'];
 const SELECTIONS = ['all', 'missing', 'nowork'];
 const MAX_OTHER_NAMES = 12;
 const JAPANESE_SCRIPT = /[぀-ヿ一-鿿]/;
@@ -296,6 +296,91 @@ export function syncOfficialWorkNames(officialWorkNames, worksFile, { minCharact
   return changed;
 }
 
+// ---------------------------------------------------------------- verify
+// Second opinion on the applied changes: is the new name at least as good as
+// the old one? A "before" verdict reverts the change.
+const VERIFY_RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    rows: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          i: { type: 'integer' },
+          verdict: { type: 'string', enum: ['after', 'before', 'unsure'] },
+          confidence: { type: 'string', enum: CONFIDENCES },
+        },
+        required: ['i', 'verdict', 'confidence'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['rows'],
+  additionalProperties: false,
+};
+
+export const VERIFY_SYSTEM_PROMPT = `You are the quality gate for Japanese display names of Danbooru character tags in an illustration app. Each row shows the tag, the previous name ("before"), the newly proposed name ("after"), the works the character belongs to and the Danbooru other_names (mixed scripts, no order).
+
+Decide for every row:
+- "after": the new name is better or equally good — the official Japanese spelling (kanji/kana as the work writes it, katakana with "・" for foreign names, official Latin spellings kept), qualifiers translated the way the work does (kai ni -> 改二, swimsuit -> 水着, 1st costume -> 初期衣装), the work title in the last （） only when the tag carries one.
+- "before": the old name was better — the new one is a wrong character, a wrong reading, a fan nickname or slang instead of the official name, a Chinese or Korean spelling, a machine transliteration, a lost or wrong qualifier, or a wrong work.
+- "unsure": you cannot tell which is right.
+A change from romaji-style katakana (アマミ・ハルカ) to the official kanji (天海春香) is "after"; a change from an established official name to something unverified is "before". Judge the name, not the formatting of parentheses.
+
+Return exactly one JSON row per input row, same "i", nothing else.`;
+
+// The applied (high-confidence) changes of a characters report, with evidence.
+export function buildVerifyRows(reportRows, { worksFile, wikiNames, minConfidence = 'high' } = {}) {
+  const accepted = CONFIDENCES.slice(0, CONFIDENCES.indexOf(minConfidence) + 1);
+  const rows = [];
+  for (const row of reportRows) {
+    if (row.action !== 'change' || !accepted.includes(row.confidence)) continue;
+    const after = cleanCharacterName(row.tag, row.name);
+    if (!after || after === row.current) continue;
+    rows.push({
+      i: rows.length + 1,
+      tag: row.tag,
+      before: row.current,
+      after,
+      works: (worksFile?.characters?.[row.tag] ?? []).map(work => worksFile.works?.[work]?.ja || work),
+      otherNames: wikiNames?.get(normalizeKey(row.tag)) ?? wikiNames?.get(normalizeKey(toDanbooru(row.tag))) ?? [],
+    });
+  }
+  return rows;
+}
+
+export function buildVerifyPrompt(rows) {
+  return `Judge exactly ${rows.length} name changes. Return exactly ${rows.length} JSON rows with these input ids: ${rows.map(row => row.i).join(', ')}.\n${JSON.stringify(rows.map(({ i, tag, before, after, works, otherNames }) => ({ i, tag, before, after, works, otherNames })))}`;
+}
+
+export function validateVerifyRows(inputRows, outputRows) {
+  if (outputRows.length !== inputRows.length) throw new Error(`LLM returned ${outputRows.length} rows for ${inputRows.length} inputs`);
+  const inputById = new Map(inputRows.map(row => [row.i, row]));
+  const seen = new Set();
+  return outputRows.map((row, index) => {
+    const input = inputById.get(row?.i);
+    if (!input || seen.has(row.i)) throw new Error(`Invalid or duplicate index at response row ${index + 1}`);
+    seen.add(row.i);
+    if (!['after', 'before', 'unsure'].includes(row.verdict)) throw new Error(`Invalid verdict for ${input.tag}: ${row.verdict}`);
+    if (!CONFIDENCES.includes(row.confidence)) throw new Error(`Invalid confidence for ${input.tag}: ${row.confidence}`);
+    return { i: input.i, tag: input.tag, before: input.before, after: input.after, verdict: row.verdict, confidence: row.confidence };
+  });
+}
+
+// Revert the changes the verifier rejected ("before" at or above minConfidence).
+export function applyVerify(names, verifyRows, { minConfidence = 'medium' } = {}) {
+  const accepted = CONFIDENCES.slice(0, CONFIDENCES.indexOf(minConfidence) + 1);
+  const reverted = [];
+  for (const row of verifyRows) {
+    if (row.verdict !== 'before' || !accepted.includes(row.confidence)) continue;
+    if (names[row.tag] !== row.after) continue;   // changed since; leave it
+    if (row.before) names[row.tag] = row.before; else delete names[row.tag];
+    reverted.push(row);
+  }
+  return reverted;
+}
+
 function readReportRows(reportPath) {
   return fs.readFileSync(reportPath, 'utf8').split('\n').filter(Boolean).flatMap(line => JSON.parse(line).rows ?? []);
 }
@@ -303,7 +388,7 @@ function readReportRows(reportPath) {
 function parseArgs(argv) {
   const args = {
     ...backendArgDefaults(),
-    stage: '', report: '', apply: '', select: 'all', recheck: false, minConfidence: 'high',
+    stage: '', report: '', apply: '', input: '', select: 'all', recheck: false, minConfidence: 'high',
     offset: 0, limit: 0, dryRun: false, help: false,
     works: DEFAULT_WORKS, names: DEFAULT_NAMES, official: DEFAULT_OFFICIAL, wikiCache: DEFAULT_WIKI,
   };
@@ -314,6 +399,7 @@ function parseArgs(argv) {
     if (arg === '--stage') args.stage = argv[++index];
     else if (arg === '--report') args.report = argv[++index];
     else if (arg === '--apply') args.apply = argv[++index];
+    else if (arg === '--input') args.input = argv[++index];
     else if (arg === '--select') args.select = argv[++index];
     else if (arg === '--recheck') args.recheck = true;
     else if (arg === '--min-confidence') args.minConfidence = argv[++index];
@@ -360,6 +446,14 @@ function applyReport(args) {
   }
   const database = readJson(args.names);
   const names = { ...(database[JAPANESE] ?? {}) };
+  if (args.stage === 'verify') {
+    const reverted = applyVerify(names, rows, { minConfidence: args.minConfidence === 'high' ? 'medium' : args.minConfidence });
+    database[JAPANESE] = Object.fromEntries(Object.entries(names).sort(([left], [right]) => left.localeCompare(right)));
+    fs.writeFileSync(args.names, `${JSON.stringify(database, null, 2)}\n`, 'utf8');
+    for (const row of reverted) console.log(`revert ${row.tag}: ${row.after} -> ${row.before || '(none)'} [${row.confidence}]`);
+    console.log(JSON.stringify({ stage: 'verify', rows: rows.length, reverted: reverted.length, file: args.names }));
+    return;
+  }
   const changed = applyCharacterNames(names, rows, { minConfidence: args.minConfidence });
   database[JAPANESE] = Object.fromEntries(Object.entries(names).sort(([left], [right]) => left.localeCompare(right)));
   fs.writeFileSync(args.names, `${JSON.stringify(database, null, 2)}\n`, 'utf8');
@@ -377,6 +471,10 @@ export async function main(argv = process.argv.slice(2)) {
   if (args.stage === 'works') {
     rows = buildWorkRows(worksFile, readJson(args.official), { recheck: args.recheck });
     request = { systemPrompt: WORK_SYSTEM_PROMPT, buildPrompt: buildWorkPrompt, schema: WORK_RESPONSE_SCHEMA, validate: validateWorkRows, label: 'works' };
+  } else if (args.stage === 'verify') {
+    if (!args.input) throw new Error('--stage verify needs --input <characters report>');
+    rows = buildVerifyRows(readReportRows(args.input), { worksFile, wikiNames: loadWikiOtherNames(args.wikiCache), minConfidence: args.minConfidence });
+    request = { systemPrompt: VERIFY_SYSTEM_PROMPT, buildPrompt: buildVerifyPrompt, schema: VERIFY_RESPONSE_SCHEMA, validate: validateVerifyRows, label: 'verify' };
   } else {
     const names = readJson(args.names)[JAPANESE] ?? {};
     rows = buildCharacterRows({
