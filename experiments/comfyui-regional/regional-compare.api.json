@@ -1,0 +1,621 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {
+      "ckpt_name": "waiIllustriousSDXL_v170.safetensors"
+    },
+    "_meta": {
+      "title": "Checkpoint"
+    }
+  },
+  "2": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "masterpiece, best quality, amazing quality, 2girls, hug from behind, standing, indoors, window light, looking at viewer",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "Base (both sides)"
+    }
+  },
+  "3": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "1girl, long blonde hair, blue eyes, white blouse, blush",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "Left"
+    }
+  },
+  "4": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "1girl, short black hair, red eyes, black jacket, smile",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "Right"
+    }
+  },
+  "5": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "bad quality, worst quality, worst detail, sketch, censor, jpeg artifacts, signature, watermark",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "Negative (both sides)"
+    }
+  },
+  "6": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "Negative (left)"
+    }
+  },
+  "7": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "Negative (right)"
+    }
+  },
+  "8": {
+    "class_type": "ConditioningConcat",
+    "inputs": {
+      "conditioning_to": [
+        "2",
+        0
+      ],
+      "conditioning_from": [
+        "3",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Base + Left"
+    }
+  },
+  "9": {
+    "class_type": "ConditioningConcat",
+    "inputs": {
+      "conditioning_to": [
+        "2",
+        0
+      ],
+      "conditioning_from": [
+        "4",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Base + Right"
+    }
+  },
+  "10": {
+    "class_type": "ConditioningConcat",
+    "inputs": {
+      "conditioning_to": [
+        "5",
+        0
+      ],
+      "conditioning_from": [
+        "6",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Negative + left"
+    }
+  },
+  "11": {
+    "class_type": "ConditioningConcat",
+    "inputs": {
+      "conditioning_to": [
+        "5",
+        0
+      ],
+      "conditioning_from": [
+        "7",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Negative + right"
+    }
+  },
+  "12": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {
+      "width": 1216,
+      "height": 832,
+      "batch_size": 1
+    },
+    "_meta": {
+      "title": "Latent (shared)"
+    }
+  },
+  "13": {
+    "class_type": "CreateTillingPNGMask",
+    "inputs": {
+      "Width": 1216,
+      "Height": 832,
+      "Colum_first": true,
+      "Rows": 1,
+      "Colums": 1,
+      "Layout": "1,0.2,1"
+    },
+    "_meta": {
+      "title": "Regional layout"
+    }
+  },
+  "14": {
+    "class_type": "PngRectanglesToMask",
+    "inputs": {
+      "PngRectangles": [
+        "13",
+        2
+      ],
+      "Intenisity": 1,
+      "Blur": 0,
+      "Start_At_Index": 0,
+      "Overlap": "Next",
+      "Overlap_Count": 1
+    },
+    "_meta": {
+      "title": "Mask left"
+    }
+  },
+  "15": {
+    "class_type": "PngRectanglesToMask",
+    "inputs": {
+      "PngRectangles": [
+        "13",
+        2
+      ],
+      "Intenisity": 1,
+      "Blur": 0,
+      "Start_At_Index": 2,
+      "Overlap": "Previous",
+      "Overlap_Count": 1
+    },
+    "_meta": {
+      "title": "Mask right"
+    }
+  },
+  "16": {
+    "class_type": "ConditioningSetMask",
+    "inputs": {
+      "conditioning": [
+        "8",
+        0
+      ],
+      "mask": [
+        "14",
+        0
+      ],
+      "strength": 1,
+      "set_cond_area": "default"
+    },
+    "_meta": {
+      "title": "A: left masked"
+    }
+  },
+  "17": {
+    "class_type": "ConditioningSetMask",
+    "inputs": {
+      "conditioning": [
+        "9",
+        0
+      ],
+      "mask": [
+        "15",
+        0
+      ],
+      "strength": 1,
+      "set_cond_area": "default"
+    },
+    "_meta": {
+      "title": "A: right masked"
+    }
+  },
+  "18": {
+    "class_type": "ConditioningCombine",
+    "inputs": {
+      "conditioning_1": [
+        "16",
+        0
+      ],
+      "conditioning_2": [
+        "17",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "A: positive"
+    }
+  },
+  "19": {
+    "class_type": "ConditioningSetMask",
+    "inputs": {
+      "conditioning": [
+        "10",
+        0
+      ],
+      "mask": [
+        "14",
+        0
+      ],
+      "strength": 1,
+      "set_cond_area": "default"
+    },
+    "_meta": {
+      "title": "A: neg left masked"
+    }
+  },
+  "20": {
+    "class_type": "ConditioningSetMask",
+    "inputs": {
+      "conditioning": [
+        "11",
+        0
+      ],
+      "mask": [
+        "15",
+        0
+      ],
+      "strength": 1,
+      "set_cond_area": "default"
+    },
+    "_meta": {
+      "title": "A: neg right masked"
+    }
+  },
+  "21": {
+    "class_type": "ConditioningCombine",
+    "inputs": {
+      "conditioning_1": [
+        "19",
+        0
+      ],
+      "conditioning_2": [
+        "20",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "A: negative"
+    }
+  },
+  "22": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "seed": 12345,
+      "steps": 28,
+      "cfg": 5,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "positive": [
+        "18",
+        0
+      ],
+      "negative": [
+        "21",
+        0
+      ],
+      "latent_image": [
+        "12",
+        0
+      ],
+      "denoise": 1
+    },
+    "_meta": {
+      "title": "A: sampler"
+    }
+  },
+  "23": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "22",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "_meta": {
+      "title": "A: decode"
+    }
+  },
+  "24": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "23",
+        0
+      ],
+      "filename_prefix": "regional/A_current"
+    },
+    "_meta": {
+      "title": "A: current (SetMask + Combine)"
+    }
+  },
+  "25": {
+    "class_type": "ToBasicPipe",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ],
+      "vae": [
+        "1",
+        2
+      ],
+      "positive": [
+        "2",
+        0
+      ],
+      "negative": [
+        "5",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "B: base pipe"
+    }
+  },
+  "26": {
+    "class_type": "KSamplerAdvancedProvider",
+    "inputs": {
+      "cfg": 5,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "sigma_factor": 1,
+      "basic_pipe": [
+        "25",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "B: base sampler"
+    }
+  },
+  "27": {
+    "class_type": "ToBasicPipe",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ],
+      "vae": [
+        "1",
+        2
+      ],
+      "positive": [
+        "8",
+        0
+      ],
+      "negative": [
+        "10",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "B: left pipe"
+    }
+  },
+  "28": {
+    "class_type": "KSamplerAdvancedProvider",
+    "inputs": {
+      "cfg": 5,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "sigma_factor": 1,
+      "basic_pipe": [
+        "27",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "B: left sampler"
+    }
+  },
+  "29": {
+    "class_type": "RegionalPrompt",
+    "inputs": {
+      "mask": [
+        "14",
+        0
+      ],
+      "advanced_sampler": [
+        "28",
+        0
+      ],
+      "variation_seed": 0,
+      "variation_strength": 0,
+      "variation_method": "linear"
+    },
+    "_meta": {
+      "title": "B: left region"
+    }
+  },
+  "30": {
+    "class_type": "ToBasicPipe",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "clip": [
+        "1",
+        1
+      ],
+      "vae": [
+        "1",
+        2
+      ],
+      "positive": [
+        "9",
+        0
+      ],
+      "negative": [
+        "11",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "B: right pipe"
+    }
+  },
+  "31": {
+    "class_type": "KSamplerAdvancedProvider",
+    "inputs": {
+      "cfg": 5,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "sigma_factor": 1,
+      "basic_pipe": [
+        "30",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "B: right sampler"
+    }
+  },
+  "32": {
+    "class_type": "RegionalPrompt",
+    "inputs": {
+      "mask": [
+        "15",
+        0
+      ],
+      "advanced_sampler": [
+        "31",
+        0
+      ],
+      "variation_seed": 0,
+      "variation_strength": 0,
+      "variation_method": "linear"
+    },
+    "_meta": {
+      "title": "B: right region"
+    }
+  },
+  "33": {
+    "class_type": "CombineRegionalPrompts",
+    "inputs": {
+      "regional_prompts1": [
+        "29",
+        0
+      ],
+      "regional_prompts2": [
+        "32",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "B: regions"
+    }
+  },
+  "34": {
+    "class_type": "RegionalSampler",
+    "inputs": {
+      "seed": 12345,
+      "seed_2nd": 0,
+      "seed_2nd_mode": "ignore",
+      "steps": 28,
+      "base_only_steps": 8,
+      "denoise": 1,
+      "samples": [
+        "12",
+        0
+      ],
+      "base_sampler": [
+        "26",
+        0
+      ],
+      "regional_prompts": [
+        "33",
+        0
+      ],
+      "overlap_factor": 32,
+      "restore_latent": true,
+      "additional_mode": "ratio between",
+      "additional_sampler": "AUTO",
+      "additional_sigma_ratio": 0.3
+    },
+    "_meta": {
+      "title": "B: regional sampler"
+    }
+  },
+  "35": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "34",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "_meta": {
+      "title": "B: decode"
+    }
+  },
+  "36": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "35",
+        0
+      ],
+      "filename_prefix": "regional/B_sampler"
+    },
+    "_meta": {
+      "title": "B: RegionalSampler"
+    }
+  }
+}
