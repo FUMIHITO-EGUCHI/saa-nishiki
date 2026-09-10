@@ -105,6 +105,8 @@ contextBridge.exposeInMainWorld('api', {
   // Runpod pod lifecycle: 'status' | 'start' | 'stop' (never terminate)
   runpodPodControl: async (action) => ipcRenderer.invoke('runpod-pod-control', action),
   podRunBootstrap: async () => ipcRenderer.invoke('pod-run-bootstrap'),
+  // pod setup wizard: { action: 'probe' | 'deploy' | 'provision' | 'log', components, civitaiToken, name, offset }
+  podSetup: async (args) => ipcRenderer.invoke('pod-setup', args),
   // the pod's Ollama: { action: 'models' | 'pull' | 'unload', model }
   podOllama: async (args) => ipcRenderer.invoke('pod-ollama', args),
   getModelList: async (args) => ipcRenderer.invoke('get-model-list', args),

@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+    .card { border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; color: #e8e8ea; padding: 10px 12px; }
+    .row { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border: 1px solid #3a3a40; border-radius: 11px; background: #222226; color: #bdbdc4; font-size: 11px; white-space: nowrap; }
+    .pill i { width: 7px; height: 7px; border-radius: 50%; background: #35c47a; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #e8e8ea; font: inherit; font-size: 12px; cursor: pointer; }
+    .btn-danger { border-color: #e5484d; color: #e5484d; }
+    .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; cursor: pointer; }
+    .dim { font-size: 11.5px; color: #77777f; }
+    .val { font-size: 11.5px; color: #bdbdc4; }
+    .menu { width: 232px; border: 1px solid #3a3a40; border-radius: 6px; background: #222226; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); padding: 4px; }
+    .mi { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 0 8px; border-radius: 4px; font-size: 12px; color: #e8e8ea; }
+    .mi small { margin-left: auto; font-size: 10.5px; color: #77777f; }
+    .caption { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3; margin: 0 0 6px; }
+    .why { margin: 8px 0 0; font-size: 11.5px; color: #9a9aa3; }
+  </style>
+</helmet>
+<div style="width: 660px; padding: 16px; background: #111111; box-sizing: border-box;">
+
+  <p class="caption">Direction B · one line and an overflow menu</p>
+
+  <div class="card">
+    <div class="row">
+      <span class="pill"><i></i>Running</span>
+      <span class="val">RTX A6000</span><span class="dim">·</span>
+      <span class="val">$0.18/h</span><span class="dim">·</span>
+      <span class="val">2 h 14 m</span>
+      <div style="display: flex; align-items: center; gap: 6px; margin-left: auto;">
+        <button type="button" class="btn btn-danger">Stop pod</button>
+        <button type="button" class="icon-btn" aria-label="More">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"></circle><circle cx="12" cy="12" r="1.6"></circle><circle cx="19" cy="12" r="1.6"></circle></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: flex-end; margin-top: 6px;">
+    <div class="menu">
+      <div class="mi">Pod setup<small>all installed</small></div>
+      <div class="mi">Restart services<small>ComfyUI, Ollama</small></div>
+      <div class="mi">Refresh model lists</div>
+      <div style="height: 1px; background: #3a3a40; margin: 4px 6px;"></div>
+      <div class="mi">Connection<small>ssh.runpod.io</small></div>
+      <div class="mi">LLM model<small>Gemma4 12B</small></div>
+    </div>
+  </div>
+
+  <p class="why"><strong style="color: #bdbdc4; font-weight: 600;">Trade-off.</strong> The tightest possible panel, and it scales if more pod actions arrive. But it hides state: you cannot see that ComfyUI is down, or that the checkpoint is missing, without opening the menu — which is exactly the thing that went wrong on the fresh pod. Direction A spends two more lines to keep that visible.</p>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+    .fld { display: flex; flex-direction: column; gap: 3px; }
+    .fld > span { font-size: 11.5px; color: #bdbdc4; }
+    .fld > div { height: 26px; border: 1px solid #4a4a52; border-radius: 5px; background: #27272a; padding: 0 7px; display: flex; align-items: center; font-size: 11.5px; color: #9a9aa3; overflow: hidden; }
+    .legacy { height: 30px; padding: 0 12px; border: none; border-radius: 4px; background: #3a3f4a; color: #ffffff; font: inherit; font-size: 14px; cursor: pointer; }
+  </style>
+</helmet>
+<div style="width: 760px; padding: 16px; background: #111111; box-sizing: border-box;">
+
+  <div style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3; margin-bottom: 8px;">Today · Settings · Backend</div>
+
+  <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; color: #e8e8ea; padding: 12px;">
+
+    <div style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3; margin-bottom: 6px;">Runpod pod over SSH</div>
+
+    <div style="display: flex; align-items: center; gap: 6px; min-height: 28px; margin-bottom: 8px;">
+      <span style="display: inline-flex; align-items: center; width: 30px; height: 16px; border-radius: 8px; background: #285f8f; position: relative;">
+        <span style="position: absolute; top: 2px; left: 16px; width: 12px; height: 12px; border-radius: 6px; background: #ffffff;"></span>
+      </span>
+      <span style="font-size: 12px; color: #bdbdc4;">Pod SSH</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; align-items: end;">
+      <label class="fld"><span>SSH target</span><div>xtvmrn9tjhkyo7-64411215@ssh.runpod.io</div></label>
+      <label class="fld"><span>Private key</span><div>C:\Users\kurah\.ssh\id_ed25519</div></label>
+      <label class="fld"><span>ComfyUI port</span><div>8188</div></label>
+      <label class="fld"><span>Pod image save dir</span><div></div></label>
+      <label class="fld"><span>Runpod API key</span><div>******</div></label>
+      <label class="fld"><span>Runpod pod id</span><div>xtvmrn9tjhkyo7</div></label>
+      <label class="fld"><span>Civitai API token</span><div>******</div></label>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+      <button type="button" class="legacy">Pod setup wizard</button>
+      <button type="button" class="legacy">Pod status</button>
+      <button type="button" class="legacy">Start pod</button>
+      <button type="button" class="legacy" style="background: #7a3b3b;">Stop pod</button>
+      <button type="button" class="legacy">Run bootstrap</button>
+      <button type="button" class="legacy">Fetch pod models</button>
+    </div>
+
+    <p style="margin: 8px 0 0; font-size: 11.5px; color: #9a9aa3;">pod models applied: checkpoints 1, loras 1, upscalers 1, controlnet 1</p>
+    <p style="margin: 8px 0 0; font-size: 11.5px; color: #9a9aa3;">Pod setup wizard installs the custom nodes and models a brand-new pod is missing. Start / Stop use the Runpod REST API (never terminate). After a start, run the bootstrap once ComfyUI answers; Fetch pod models reads the pod's own checkpoint / LoRA lists.</p>
+    <p style="margin: 8px 0 0; font-size: 11.5px; color: #9a9aa3;">Images stream over SSH and are saved locally only; nothing is written to the pod's disks. The API address above is ignored while this is on.</p>
+  </div>
+
+  <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; color: #e8e8ea; padding: 12px; margin-top: 12px;">
+    <div style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3; margin-bottom: 6px;">Settings · AI · Runpod pod</div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; align-items: end;">
+      <label class="fld"><span>Pod address</span><div>https://…-8188.proxy.runpod.net</div></label>
+      <label class="fld"><span>Pod auth</span><div>******</div></label>
+      <label class="fld"><span>Pod Ollama model</span><div>hf.co/HauhauCS/Gemma4-12B-QAT…</div></label>
+      <label class="fld"><span>Pod LLM keep-alive</span><div>10m</div></label>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+      <button type="button" class="legacy">Pod LLM models</button>
+      <button type="button" class="legacy">Pull model</button>
+      <button type="button" class="legacy">Unload LLM</button>
+    </div>
+
+    <p style="margin: 8px 0 0; font-size: 11.5px; color: #9a9aa3;">pulled: gemma4-12b-qat, qwen3-abliterated:8b · loaded: —</p>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px 10px; border: 1px solid #3a3a40; border-radius: 6px; background: #1c1c20;">
+    <span style="font-size: 11.5px; color: #ffb454;">9 buttons across two settings pages</span>
+    <span style="font-size: 11.5px; color: #9a9aa3;">— six of them are one-shot actions with an order you have to know: status, start, bootstrap, fetch models.</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

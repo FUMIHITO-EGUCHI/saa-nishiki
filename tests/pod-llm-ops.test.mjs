@@ -74,7 +74,7 @@ test('the transport lists / pulls / unloads pod models over the relay and unload
 
 test('the AI settings page carries the pod LLM buttons and describes the model list', () => {
     const html = read('scripts/html_shared_body.js');
-    for (const cls of ['system-settings-ai-pod-keep-alive', 'system-settings-ai-pod-llm-models', 'system-settings-ai-pod-llm-pull', 'system-settings-ai-pod-llm-unload', 'system-settings-ai-pod-llm-result']) {
+    for (const cls of ['system-settings-ai-pod-keep-alive', 'pod-btn-llm-check', 'pod-btn-llm-pull', 'pod-btn-llm-unload', 'system-settings-ai-pod-llm-result']) {
         assert.match(html, new RegExp(cls), cls);
     }
     const t = (key, fallback) => fallback;

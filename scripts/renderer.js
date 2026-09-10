@@ -294,14 +294,20 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
             value: SETTINGS.pod_image_save_dir,
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.pod_image_save_dir = value; }),
+        // secrets: the last argument is passwordMode, so the field shows ****** unless focused
         api_pod_runpod_api_key: setupTextbox('system-settings-api-pod-runpod-key', LANG.api_pod_runpod_api_key, {
             value: SETTINGS.api_pod_runpod_api_key,
             maxLines: 1
-            }, true, (value) => { globalThis.globalSettings.api_pod_runpod_api_key = value.trim(); }),
+            }, true, (value) => { globalThis.globalSettings.api_pod_runpod_api_key = value.trim(); }, true),
         api_pod_runpod_pod_id: setupTextbox('system-settings-api-pod-runpod-pod-id', LANG.api_pod_runpod_pod_id, {
             value: SETTINGS.api_pod_runpod_pod_id,
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.api_pod_runpod_pod_id = value.trim(); }),
+        // only the pod setup wizard uses this: Civitai refuses an unauthenticated checkpoint download
+        api_pod_civitai_token: setupTextbox('system-settings-api-pod-civitai-token', LANG.api_pod_civitai_token, {
+            value: SETTINGS.api_pod_civitai_token,
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.api_pod_civitai_token = value.trim(); }, true),
 
         api_fast_enable: setupCheckbox('system-settings-api-fast-enable', LANG.api_fast_enable, SETTINGS.api_fast_enable, true,
             (value) => {

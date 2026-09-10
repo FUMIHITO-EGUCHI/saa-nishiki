@@ -1,0 +1,40 @@
+{
+  "artboards": [
+    { "file": "Current.dc.html", "x": 0, "y": 0, "w": 760, "h": 900, "title": "Today · 9 buttons" },
+    { "file": "Main.dc.html", "x": 860, "y": 0, "w": 760, "h": 440, "title": "Direction A · status-first panel" },
+    { "file": "AltToolbar.dc.html", "x": 860, "y": 560, "w": 660, "h": 340, "title": "Direction B · toolbar + overflow" },
+    { "file": "States.dc.html", "x": 1720, "y": 0, "w": 720, "h": 900, "title": "Direction A · the four states" },
+    { "file": "LlmRow.dc.html", "x": 0, "y": 1020, "w": 660, "h": 540, "title": "AI page · pod LLM row" }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -240,
+      "w": 400,
+      "text": "Pod control panel, consolidated.\nToday: 9 buttons over two settings pages (Backend: setup wizard, status, start, stop, bootstrap, fetch models — AI: LLM models, pull, unload), plus 7 connection fields always expanded.\nThe buttons carry an order you have to know: start, wait, bootstrap, fetch models. Nothing on screen says which step you are on."
+    },
+    {
+      "id": "principle",
+      "x": 860,
+      "y": -240,
+      "w": 400,
+      "text": "Direction A keeps two rules.\n1. State is shown, not queried. The pill polls; 'Pod status' stops being a button.\n2. An action appears only when it applies. 'Restart services' exists while a service is down; 'Download' while the chosen LLM is missing; 'Unload' while one is resident. Healthy pod, running: two buttons on screen (Stop pod, Pod setup) plus two quiet ones.\n9 buttons -> 2 always visible, 4 contextual."
+    },
+    {
+      "id": "states-note",
+      "x": 1720,
+      "y": -240,
+      "w": 400,
+      "text": "The same panel across the states a pod really goes through. Rows that cannot be true yet are not drawn: a stopped pod shows no service chips, an unconfigured one shows only the wizard.\nThe fourth is the fresh-pod failure we hit: ComfyUI down after a start. The fix is offered where the problem is reported, and it is named for what it does rather than for the script it runs."
+    },
+    {
+      "id": "llm-note",
+      "x": 0,
+      "y": 1620,
+      "w": 400,
+      "text": "The AI page's three buttons collapse into the model row itself. The dropdown is the model list, so listing is not an action. Download and Unload are states of the same row.\nDownload progress is reported in bytes, matching the setup wizard."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

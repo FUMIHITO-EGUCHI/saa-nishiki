@@ -77,9 +77,12 @@ test('runpod: settings keys, IPC, CLI and the relay bootstrap command are wired'
     const relay = read('scripts/pod/comfy_ws_relay.py');
     assert.match(relay, /elif cmd == 'bootstrap':/);
     assert.match(relay, /BOOTSTRAP_SCRIPT = '\/workspace\/saa\/bootstrap\.sh'/);
-    assert.match(relay, /subprocess\.Popen\(\['bash', script\]/, 'only the fixed script path is executed');
+    assert.match(relay, /subprocess\.Popen\(\['bash', script, \*\(args or \[\]\)\]/, 'only the fixed script paths are executed');
     const html = read('scripts/html_shared_body.js');
-    for (const cls of ['system-settings-api-pod-runpod-key', 'system-settings-api-pod-runpod-pod-id', 'system-settings-api-pod-status', 'system-settings-api-pod-start', 'system-settings-api-pod-stop', 'system-settings-api-pod-bootstrap', 'system-settings-api-pod-fetch-models', 'system-settings-api-pod-result']) {
+    // the panel replaced the button row: the power / repair / model actions are
+    // states of one panel now (scripts/renderer/podControl.js)
+    for (const cls of ['system-settings-api-pod-runpod-key', 'system-settings-api-pod-runpod-pod-id', 'pod-state-pill',
+        'pod-btn-start', 'pod-btn-stop', 'pod-btn-repair', 'pod-btn-models', 'pod-btn-check', 'system-settings-api-pod-result']) {
         assert.ok(html.includes(cls), cls);
     }
     const lang = JSON.parse(read('data/language.json'));
@@ -164,4 +167,56 @@ test('pills: the pod Ollama shows standby (not a failure) while the relay is idl
     const down = formatBackendStatus({ ollama: { configured: true, remote: true, ok: false, mode: 'Small', error: 'Ollama is not running on the pod' } }, { failures: 1 });
     assert.deepEqual([down[0].state, down[0].label], ['warn', 'Ollama · Pod · Small · no answer']);
     assert.match(read('scripts/renderer/components/statusPills.js'), /!status\.ollama\.ok && !status\.ollama\.standby/, 'standby does not count towards the red threshold');
+});
+
+// ---- the pod panel's state machine (a stopped pod must never be dialled)
+
+test('panel phases: the Runpod API answers first, the relay only when it is worth dialling', async () => {
+    const { resolvePhase, describePodFacts, describeInventory, describeSetup, describeConnection } =
+        await import('../scripts/renderer/podControl.js');
+    const t = (key, fallback) => fallback;
+    const running = { ok: true, pod: { desiredStatus: 'RUNNING' } };
+    const exited = { ok: true, pod: { desiredStatus: 'EXITED' } };
+    const target = 'abc-1@ssh.runpod.io';
+
+    assert.equal(resolvePhase({ target: '' }), 'unconfigured');
+    assert.equal(resolvePhase({ target }), 'unknown', 'nothing checked yet is not "stopped"');
+    assert.equal(resolvePhase({ target, status: exited }), 'stopped');
+    // a stopped pod hangs an SSH dial for 60 s, so the panel must decide before probing
+    assert.equal(resolvePhase({ target, status: exited, probe: { ok: false, idle: true } }), 'stopped');
+    assert.equal(resolvePhase({ target, status: running, probe: { ok: true } }), 'running');
+    assert.equal(resolvePhase({ target, status: running, probe: { ok: false, idle: true } }), 'running', 'not dialled is not "down"');
+    assert.equal(resolvePhase({ target, status: running, probe: { ok: false, message: 'timed out' } }), 'starting');
+    // no API key: the relay is the only signal, and a failure is honestly "no answer"
+    assert.equal(resolvePhase({ target, probe: { ok: true } }), 'running');
+    assert.equal(resolvePhase({ target, probe: { ok: false, message: 'connect failed' } }), 'unreachable');
+    assert.equal(resolvePhase({ target, probe: { ok: false, idle: true } }), 'unknown');
+    // a broken API key must not read as "stopped"
+    assert.equal(resolvePhase({ target, status: { ok: false, message: 'HTTP 401' } }), 'unknown');
+
+    assert.equal(describePodFacts({ gpu: 'RTX A6000', costPerHr: 0.18, uptimeSeconds: 8040 }, t), 'RTX A6000 · $0.18/h · up 2 h 14 m');
+    assert.equal(describePodFacts({ uptimeSeconds: 120 }, t), 'up 2 m');
+    assert.equal(describePodFacts(null, t), '');
+    assert.equal(describeInventory({ models: { checkpoints: ['a'], loras: [] }, nodes: ['x', 'y'] }, t), '1 checkpoints · 0 LoRAs · 2 nodes');
+    assert.equal(describeInventory(null, t), '');
+    assert.equal(describeSetup(null, t), 'not checked yet');
+    assert.equal(describeConnection({}, t), 'no SSH target set');
+    // the key is shown by file name only, on either path flavour
+    const windowsKey = ['C:', 'Users', 'me', '.ssh', 'id_ed25519'].join(String.fromCharCode(92));
+    assert.equal(describeConnection({ api_pod_ssh_target: target, api_pod_ssh_key: windowsKey }, t),
+        'abc-1@ssh.runpod.io · id_ed25519 · port 8188');
+    assert.equal(describeConnection({ api_pod_ssh_target: target, api_pod_ssh_key: '/home/me/.ssh/id_ed25519', api_pod_ssh_comfy_port: 9000 }, t),
+        'abc-1@ssh.runpod.io · id_ed25519 · port 9000');
+});
+
+test('the panel never dials a pod it has not confirmed is running', () => {
+    const source = read('scripts/renderer/podControl.js');
+    assert.match(source, /const shouldDial = dial \|\| desired === 'RUNNING';/);
+    assert.match(source, /action: 'probe', open: shouldDial/);
+    const transport = read('scripts/main/podSshTransport.js');
+    assert.match(transport, /open:false only asks a relay that is already connected/, 'transport contract');
+    assert.match(transport, /export async function podProbe\(\{ settings, open = true \}\)/);
+    assert.match(transport, /return \{ ok: false, message: 'pod relay not connected', idle: true \};/);
+    // every pod call is wrapped: a rejection becomes a message, never an unhandled throw
+    assert.match(source, /\.catch\(error => \(\{ ok: false, message: error\?\.message \?\? String\(error\) \}\)\)/);
 });

@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+    .card { border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; color: #e8e8ea; padding: 10px 12px; }
+    .row { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+    .lab { width: 74px; flex: none; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border: 1px solid #3a3a40; border-radius: 11px; background: #222226; color: #bdbdc4; font-size: 11px; white-space: nowrap; }
+    .pill i { width: 7px; height: 7px; border-radius: 50%; background: #35c47a; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #e8e8ea; font: inherit; font-size: 12px; cursor: pointer; }
+    .btn-primary { border-color: #285f8f; background: #285f8f; color: #ffffff; }
+    .btn-danger { border-color: #e5484d; color: #e5484d; }
+    .btn-warn { border-color: #ffb454; color: #ffb454; }
+    .dim { font-size: 11.5px; color: #77777f; }
+    .val { font-size: 11.5px; color: #bdbdc4; }
+    .sep { border-top: 1px dashed #3a3a40; margin: 8px 0; }
+    .caption { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3; margin: 0 0 6px; }
+    .why { margin: 6px 0 0; font-size: 11.5px; color: #9a9aa3; }
+  </style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 18px; width: 720px; padding: 16px; background: #111111; box-sizing: border-box;">
+
+  <!-- 1. nothing configured -->
+  <div>
+    <p class="caption">1 · No pod configured</p>
+    <div class="card">
+      <div class="row">
+        <span class="pill"><i style="background: #9a9aa3;"></i>Not configured</span>
+        <span class="val">add an SSH target to use a pod for generation</span>
+        <button type="button" class="btn btn-primary" style="margin-left: auto;">Pod setup</button>
+      </div>
+    </div>
+    <p class="why">One button. Everything else is meaningless until a pod answers, so nothing else is drawn.</p>
+  </div>
+
+  <!-- 2. stopped -->
+  <div>
+    <p class="caption">2 · Pod stopped</p>
+    <div class="card">
+      <div class="row">
+        <span class="pill"><i style="background: #9a9aa3;"></i>Stopped</span>
+        <span class="val">RTX A6000 48 GB</span><span class="dim">·</span>
+        <span class="val">$0.18/h while running</span><span class="dim">·</span>
+        <span class="dim">volume kept, no GPU charge</span>
+        <button type="button" class="btn btn-primary" style="margin-left: auto;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v8"></path><path d="M7.2 6.8a7 7 0 1 0 9.6 0"></path></svg>
+          Start pod
+        </button>
+      </div>
+      <div class="sep"></div>
+      <div class="row">
+        <span class="lab">Connection</span>
+        <span class="val" style="font-family: Consolas, monospace;">xtvmrn9tjhkyo7-64411215@ssh.runpod.io</span>
+        <button type="button" class="btn" style="margin-left: auto; color: #bdbdc4;">Edit</button>
+      </div>
+    </div>
+    <p class="why">Services and setup rows are hidden: a stopped pod cannot answer, so a stale "ComfyUI down" would be a lie.</p>
+  </div>
+
+  <!-- 3. starting -->
+  <div>
+    <p class="caption">3 · Starting</p>
+    <div class="card">
+      <div class="row">
+        <span class="pill" style="border-color: #ffb454;"><i style="background: #ffb454;"></i>Starting</span>
+        <span class="val">waiting for ComfyUI</span><span class="dim">·</span>
+        <span class="dim">42 s</span>
+        <div style="flex: 1 1 auto; height: 4px; border-radius: 2px; background: #2c2c32; max-width: 180px; overflow: hidden;">
+          <div style="width: 45%; height: 100%; background: #ffb454;"></div>
+        </div>
+        <button type="button" class="btn btn-danger" style="margin-left: auto;">Stop pod</button>
+      </div>
+    </div>
+    <p class="why">The app polls on its own. Nobody has to press "Pod status" to find out whether the start took.</p>
+  </div>
+
+  <!-- 4. running, ComfyUI down -->
+  <div>
+    <p class="caption">4 · Running, a service is down</p>
+    <div class="card">
+      <div class="row">
+        <span class="pill"><i></i>Running</span>
+        <span class="val">RTX A6000 48 GB</span><span class="dim">·</span>
+        <span class="val">$0.18/h</span><span class="dim">·</span>
+        <span class="val">up 3 m</span>
+        <button type="button" class="btn btn-danger" style="margin-left: auto;">Stop pod</button>
+      </div>
+      <div class="sep"></div>
+      <div class="row">
+        <span class="lab">Services</span>
+        <span class="pill" style="border-color: #e5484d; color: #e8e8ea;"><i style="background: #e5484d;"></i>ComfyUI down</span>
+        <span class="pill"><i></i>Ollama</span>
+        <span class="dim">port 8188 refused</span>
+        <button type="button" class="btn btn-warn" style="margin-left: auto;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5a3.5 3.5 0 0 0 4.6 4.6l-9.6 9.6a2.1 2.1 0 0 1-3-3l9.6-9.6a3.5 3.5 0 0 0-1.6-1.6z"></path></svg>
+          Restart services
+        </button>
+      </div>
+    </div>
+    <p class="why">"Run bootstrap" becomes "Restart services", and it only exists while something is actually broken. Healthy pod, no button.</p>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

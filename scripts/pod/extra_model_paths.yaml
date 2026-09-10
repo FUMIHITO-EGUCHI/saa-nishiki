@@ -1,0 +1,14 @@
+# SAA pod model roots. Everything under /workspace survives a STOP -> START;
+# ComfyUI's own models/ folder on the container disk does not.
+saa:
+    base_path: /workspace/models/
+    checkpoints: checkpoints/
+    loras: loras/
+    vae: vae/
+    controlnet: controlnet/
+    upscale_models: upscale_models/
+    embeddings: embeddings/
+    clip_vision: clip_vision/
+    ultralytics_bbox: ultralytics/bbox/
+    ultralytics_segm: ultralytics/segm/
+    sams: sams/

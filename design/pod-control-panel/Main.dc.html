@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+  </style>
+</helmet>
+<div style="width: 760px; padding: 16px; background: #111111; box-sizing: border-box;">
+
+  <div style="font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3; margin-bottom: 8px;">Settings · Backend</div>
+
+  <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; color: #e8e8ea; overflow: hidden;">
+
+    <!-- head: identity + the one power control -->
+    <div style="display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 12px; border-bottom: 1px solid #3a3a40;">
+      <span style="font-weight: 600; font-size: 12.5px;">Runpod pod</span>
+      <span style="font-size: 11px; color: #9a9aa3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;">image generation and the LLM run on the pod over one SSH session</span>
+      <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+        <span style="font-size: 12px; color: #bdbdc4;">Use pod GPU</span>
+        <span style="display: inline-flex; align-items: center; width: 30px; height: 16px; border-radius: 8px; background: #285f8f; position: relative;">
+          <span style="position: absolute; top: 2px; left: 16px; width: 12px; height: 12px; border-radius: 6px; background: #ffffff;"></span>
+        </span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; padding: 10px 12px 12px;">
+
+      <!-- 1. power and state: the pill is live, so there is no "Pod status" button -->
+      <div style="display: flex; align-items: center; gap: 10px; min-height: 34px;">
+        <span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border: 1px solid #3a3a40; border-radius: 11px; background: #222226; color: #e8e8ea; font-size: 11px; white-space: nowrap;">
+          <i style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #35c47a;"></i>Running
+        </span>
+        <span style="font-size: 11.5px; color: #bdbdc4;">RTX A6000 48 GB</span>
+        <span style="font-size: 11.5px; color: #77777f;">·</span>
+        <span style="font-size: 11.5px; color: #bdbdc4;">$0.18/h</span>
+        <span style="font-size: 11.5px; color: #77777f;">·</span>
+        <span style="font-size: 11.5px; color: #bdbdc4;">up 2 h 14 m</span>
+        <span style="font-size: 11.5px; color: #77777f;">·</span>
+        <span style="font-size: 11.5px; color: #77777f;">refreshed 20 s ago</span>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+          <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid #e5484d; border-radius: 5px; background: #222226; color: #e5484d; font: inherit; font-size: 12px; cursor: pointer;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v8"></path><path d="M7.2 6.8a7 7 0 1 0 9.6 0"></path></svg>
+            Stop pod
+          </button>
+        </div>
+      </div>
+
+      <div style="height: 1px; background: transparent; border-top: 1px dashed #3a3a40; margin: 10px 0;"></div>
+
+      <!-- 2. what is actually running on it, with the fix that only shows when it is needed -->
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px;">
+        <span style="width: 74px; flex: none; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3;">Services</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border: 1px solid #3a3a40; border-radius: 11px; background: #222226; color: #bdbdc4; font-size: 11px;">
+          <i style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #35c47a;"></i>ComfyUI
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border: 1px solid #3a3a40; border-radius: 11px; background: #222226; color: #bdbdc4; font-size: 11px;">
+          <i style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #35c47a;"></i>Ollama
+        </span>
+        <span style="font-size: 11.5px; color: #77777f;">1 checkpoint · 1 LoRA · 9 nodes</span>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+          <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font: inherit; font-size: 12px; cursor: pointer;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"></path><path d="M20 5v6h-6"></path></svg>
+            Refresh lists
+          </button>
+        </div>
+      </div>
+
+      <div style="height: 1px; background: transparent; border-top: 1px dashed #3a3a40; margin: 10px 0;"></div>
+
+      <!-- 3. setup: the wizard owns everything a pod needs installed -->
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px;">
+        <span style="width: 74px; flex: none; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3;">Setup</span>
+        <span style="font-size: 11.5px; color: #bdbdc4;">all 7 components installed</span>
+        <span style="font-size: 11.5px; color: #77777f;">·</span>
+        <span style="font-size: 11.5px; color: #77777f;">checked 2 min ago</span>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+          <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #e8e8ea; font: inherit; font-size: 12px; cursor: pointer;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10"></path><path d="M18 7h2"></path><path d="M4 17h4"></path><path d="M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg>
+            Pod setup
+          </button>
+        </div>
+      </div>
+
+      <div style="height: 1px; background: transparent; border-top: 1px dashed #3a3a40; margin: 10px 0;"></div>
+
+      <!-- 4. connection: seven fields fold into one summary line once they work -->
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px;">
+        <span style="width: 74px; flex: none; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3;">Connection</span>
+        <span style="font-size: 11.5px; color: #bdbdc4; font-family: Consolas, monospace;overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;">xtvmrn9tjhkyo7-64411215@ssh.runpod.io</span>
+        <span style="font-size: 11.5px; color: #77777f;">·</span>
+        <span style="font-size: 11.5px; color: #77777f;">id_ed25519</span>
+        <span style="font-size: 11.5px; color: #77777f;">·</span>
+        <span style="font-size: 11.5px; color: #77777f;">port 8188</span>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+          <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font: inherit; font-size: 12px; cursor: pointer;">
+            Edit
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <p style="margin: 8px 0 0; font-size: 11.5px; color: #9a9aa3; max-width: 640px;">Images stream over SSH and are saved locally only; nothing is written to the pod's disks. Stop the pod when you are done — the volume stays, the GPU billing does not.</p>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -431,25 +431,66 @@ export const sharedBodyHTML = `
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">
                   <div class="settings-group-title">Runpod pod over SSH</div>
-                  <div class="settings-grid">
-                    <div class="system-settings-api-pod-ssh-enable ui-switch"></div>
-                    <div class="system-settings-api-pod-ssh-target"></div>
-                    <div class="system-settings-api-pod-ssh-key"></div>
-                    <div class="system-settings-api-pod-ssh-port"></div>
-                    <div class="system-settings-api-pod-save-dir"></div>
-                    <div class="system-settings-api-pod-runpod-key"></div>
-                    <div class="system-settings-api-pod-runpod-pod-id"></div>
-                  </div>
-                  <div class="settings-button-row pod-control-row">
-                    <div class="system-settings-api-pod-status"></div>
-                    <div class="system-settings-api-pod-start"></div>
-                    <div class="system-settings-api-pod-stop"></div>
-                    <div class="system-settings-api-pod-bootstrap"></div>
-                    <div class="system-settings-api-pod-fetch-models"></div>
+                  <!-- One state-driven panel (scripts/renderer/podControl.js): the pill reports
+                       the pod, and an action is only rendered while it applies. -->
+                  <div class="pod-panel">
+                    <div class="pod-panel-head">
+                      <span class="pod-panel-title" data-ui-text="ui_pod_panel_title">Runpod pod</span>
+                      <span class="pod-panel-sub" data-ui-text="ui_pod_panel_sub">generation and the LLM run on the pod over one SSH session</span>
+                      <div class="system-settings-api-pod-ssh-enable ui-switch pod-panel-switch"></div>
+                    </div>
+                    <div class="pod-panel-body">
+                      <div class="pod-row pod-row-power">
+                        <span class="status-pill pod-state-pill" role="button" tabindex="0"><i></i><span class="pod-state-text">—</span></span>
+                        <span class="pod-facts"></span>
+                        <div class="pod-row-actions">
+                          <button type="button" class="pod-btn pod-btn-check" hidden data-ui-text="ui_pod_check">Check pod</button>
+                          <button type="button" class="pod-btn pod-btn-primary pod-btn-start" hidden data-ui-text="ui_pod_start">Start pod</button>
+                          <button type="button" class="pod-btn pod-btn-danger pod-btn-stop" hidden data-ui-text="ui_pod_stop">Stop pod</button>
+                        </div>
+                      </div>
+                      <div class="pod-sep pod-sep-services" hidden></div>
+                      <div class="pod-row pod-row-services" hidden>
+                        <span class="pod-row-label" data-ui-text="ui_pod_row_services">Services</span>
+                        <span class="status-pill pod-chip pod-chip-comfy"><i></i><span>ComfyUI</span></span>
+                        <span class="status-pill pod-chip pod-chip-ollama"><i></i><span>Ollama</span></span>
+                        <span class="pod-inventory"></span>
+                        <div class="pod-row-actions">
+                          <button type="button" class="pod-btn pod-btn-warn pod-btn-repair" hidden data-ui-text="ui_pod_repair">Restart services</button>
+                          <button type="button" class="pod-btn pod-btn-models" data-ui-text="ui_pod_fetch_models">Refresh lists</button>
+                        </div>
+                      </div>
+                      <div class="pod-sep"></div>
+                      <div class="pod-row pod-row-setup">
+                        <span class="pod-row-label" data-ui-text="ui_pod_row_setup">Setup</span>
+                        <span class="pod-setup-summary"></span>
+                        <div class="pod-row-actions">
+                          <button type="button" class="pod-btn pod-btn-setup" data-ui-text="ui_pod_wizard_open">Pod setup</button>
+                        </div>
+                      </div>
+                      <div class="pod-sep"></div>
+                      <div class="pod-row pod-row-connection">
+                        <span class="pod-row-label" data-ui-text="ui_pod_row_connection">Connection</span>
+                        <span class="pod-connection-summary"></span>
+                        <div class="pod-row-actions">
+                          <button type="button" class="pod-btn pod-btn-edit" aria-expanded="false" data-ui-text="ui_pod_edit">Edit</button>
+                        </div>
+                      </div>
+                      <div class="pod-connection-fields" hidden>
+                        <div class="settings-grid">
+                          <div class="system-settings-api-pod-ssh-target"></div>
+                          <div class="system-settings-api-pod-ssh-key"></div>
+                          <div class="system-settings-api-pod-ssh-port"></div>
+                          <div class="system-settings-api-pod-save-dir"></div>
+                          <div class="system-settings-api-pod-runpod-key"></div>
+                          <div class="system-settings-api-pod-runpod-pod-id"></div>
+                          <div class="system-settings-api-pod-civitai-token"></div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <p class="settings-note system-settings-api-pod-result"></p>
-                  <p class="settings-note" data-ui-text="ui_settings_pod_control_note">Start / Stop use the Runpod REST API (never terminate). After a start, run the bootstrap once ComfyUI answers; Fetch pod models reads the pod's own checkpoint / LoRA lists.</p>
-                  <p class="settings-note" data-ui-text="ui_settings_pod_ssh_note">Images stream over SSH and are saved locally only; nothing is written to the pod's disks. The API address above is ignored while this is on.</p>
+                  <p class="settings-note" data-ui-text="ui_settings_pod_ssh_note">Images stream over SSH and are saved locally only; nothing is written to the pod's disks. The API address above is ignored while this is on. Start / Stop need a Runpod API key and never terminate the pod.</p>
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">
                   <div class="settings-group-title" data-ui-text="ui_settings_fast_group">Fast generation</div>
@@ -503,20 +544,36 @@ export const sharedBodyHTML = `
                 </div>
                 <div class="settings-group" data-when-ai="Pod">
                   <div class="settings-group-title">Runpod pod (Ollama)</div>
-                  <div class="settings-grid">
-                    <div class="system-settings-ai-pod-model"></div>
-                    <div class="system-settings-ai-pod-keep-alive"></div>
-                    <div class="system-settings-ai-pod-address"></div>
-                    <div class="system-settings-ai-pod-share ui-switch"></div>
-                    <div class="system-settings-ai-pod-auth"></div>
-                  </div>
-                  <div class="settings-button-row pod-control-row">
-                    <div class="system-settings-ai-pod-llm-models"></div>
-                    <div class="system-settings-ai-pod-llm-pull"></div>
-                    <div class="system-settings-ai-pod-llm-unload"></div>
+                  <!-- The model row IS the model list: listing is not an action, and Download /
+                       Unload only appear in the state that calls for them. -->
+                  <div class="pod-panel pod-llm-panel">
+                    <div class="pod-panel-body">
+                      <div class="pod-row pod-row-llm">
+                        <span class="pod-row-label" data-ui-text="ui_pod_row_model">Model</span>
+                        <div class="system-settings-ai-pod-model pod-llm-model"></div>
+                        <span class="status-pill pod-chip pod-chip-llm" hidden><i></i><span></span></span>
+                        <div class="pod-row-actions">
+                          <button type="button" class="pod-btn pod-btn-primary pod-btn-llm-pull" hidden data-ui-text="ui_pod_llm_pull">Download</button>
+                          <button type="button" class="pod-btn pod-btn-llm-unload" hidden data-ui-text="ui_pod_llm_unload">Unload</button>
+                          <button type="button" class="pod-btn pod-btn-llm-check" data-ui-text="ui_pod_llm_models">Check models</button>
+                        </div>
+                      </div>
+                      <div class="pod-row pod-row-llm-keep">
+                        <span class="pod-row-label"></span>
+                        <span class="pod-llm-hint" data-ui-text="ui_pod_llm_hint">unloaded automatically before each image generation</span>
+                        <div class="system-settings-ai-pod-keep-alive pod-llm-keep"></div>
+                      </div>
+                    </div>
                   </div>
                   <p class="settings-note system-settings-ai-pod-llm-result"></p>
-                  <p class="settings-note" data-ui-text="ui_settings_pod_llm_note">Pod LLM models lists what Ollama on the pod has pulled and loaded; Pull model downloads the model named above into the pod's workspace (minutes); Unload frees the GPU. Image generation unloads the model by itself.</p>
+                  <div class="pod-llm-proxy">
+                    <div class="settings-grid">
+                      <div class="system-settings-ai-pod-address"></div>
+                      <div class="system-settings-ai-pod-share ui-switch"></div>
+                      <div class="system-settings-ai-pod-auth"></div>
+                    </div>
+                  </div>
+                  <p class="settings-note" data-ui-text="ui_settings_pod_llm_note">The model list comes from the pod itself. Download fetches the named model into the pod's workspace (minutes); Unload frees the GPU. The address and auth below are only used when Pod SSH is not configured.</p>
                 </div>
                 <div class="settings-group" data-when-ai="Local|Pod">
                   <div class="settings-group-title">Model &amp; sampling</div>

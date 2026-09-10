@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+    .card { border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; color: #e8e8ea; padding: 10px 12px; }
+    .row { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+    .lab { width: 62px; flex: none; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3; }
+    .select { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px; border: 1px solid #4a4a52; border-radius: 5px; background: #27272a; color: #e8e8ea; font-size: 11.5px; min-width: 0; }
+    .select span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border: 1px solid #3a3a40; border-radius: 11px; background: #222226; color: #bdbdc4; font-size: 11px; white-space: nowrap; }
+    .pill i { width: 7px; height: 7px; border-radius: 50%; background: #35c47a; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #e8e8ea; font: inherit; font-size: 12px; cursor: pointer; }
+    .btn-primary { border-color: #285f8f; background: #285f8f; color: #ffffff; }
+    .dim { font-size: 11.5px; color: #77777f; }
+    .caption { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #9a9aa3; margin: 0 0 6px; }
+    .why { margin: 6px 0 0; font-size: 11.5px; color: #9a9aa3; }
+  </style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 18px; width: 660px; padding: 16px; background: #111111; box-sizing: border-box;">
+
+  <div>
+    <p class="caption">Settings · AI · pod LLM — three buttons become one row</p>
+    <div class="card">
+      <div class="row">
+        <span class="lab">Model</span>
+        <label class="select" style="flex: 1 1 auto;">
+          <span>hf.co/HauhauCS/Gemma4-12B-QAT-Uncensored:Q4_K_M</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto; flex: none;"><path d="M6 9l6 6 6-6"></path></svg>
+        </label>
+        <span class="pill"><i></i>loaded</span>
+        <button type="button" class="btn" style="color: #bdbdc4;">Unload</button>
+      </div>
+      <div class="row" style="min-height: 24px;">
+        <span class="lab"></span>
+        <span class="dim">7.6 GB · keep warm for</span>
+        <label class="select" style="width: 74px;"><span>10m</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto; flex: none;"><path d="M6 9l6 6 6-6"></path></svg>
+        </label>
+        <span class="dim">unloaded automatically before each generation</span>
+      </div>
+    </div>
+    <p class="why">The dropdown lists what the pod actually has, so "Pod LLM models" stops being a button. "Unload" only appears while a model is resident.</p>
+  </div>
+
+  <div>
+    <p class="caption">Same row · model not on the pod yet</p>
+    <div class="card">
+      <div class="row">
+        <span class="lab">Model</span>
+        <label class="select" style="flex: 1 1 auto; border-color: #ffb454;">
+          <span>huihui_ai/qwen3-abliterated:8b</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: auto; flex: none;"><path d="M6 9l6 6 6-6"></path></svg>
+        </label>
+        <span class="pill" style="border-color: #ffb454; color: #e8e8ea;"><i style="background: #ffb454;"></i>not on the pod</span>
+        <button type="button" class="btn btn-primary">Download · 5 GB</button>
+      </div>
+    </div>
+    <p class="why">"Pull model" appears only when the chosen model is missing, and says what it will cost in bytes.</p>
+  </div>
+
+  <div>
+    <p class="caption">Same row · downloading</p>
+    <div class="card">
+      <div class="row">
+        <span class="lab">Model</span>
+        <label class="select" style="flex: 1 1 auto;">
+          <span>huihui_ai/qwen3-abliterated:8b</span>
+        </label>
+        <div style="flex: 0 0 150px; height: 4px; border-radius: 2px; background: #2c2c32; overflow: hidden;">
+          <div style="width: 62%; height: 100%; background: #4da3ff;"></div>
+        </div>
+        <span class="dim">3.1 / 5.0 GB</span>
+        <button type="button" class="btn" style="color: #bdbdc4;">Cancel</button>
+      </div>
+    </div>
+    <p class="why">Same treatment as the setup wizard's downloads: bytes, not a spinner.</p>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

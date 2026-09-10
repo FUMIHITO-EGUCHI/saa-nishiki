@@ -443,3 +443,85 @@ export async function podRunBootstrap({ settings }) {
     if (!reply.ok) return { ok: false, message: reply.message ?? 'bootstrap failed' };
     return { ok: true, log: reply.log ?? '' };
 }
+
+// ---------------------------------------------------------------- pod setup wizard
+//
+// A stock runpod-slim pod has ComfyUI and its venv but no custom nodes and no
+// model files, so bootstrap.sh alone cannot bring it up. These four calls are
+// what the wizard drives, all through the same single SSH session: read the
+// pod's state, push SAA's copies of the durable scripts, run the provisioning,
+// and stream its log. The relay only ever writes and runs its own fixed paths.
+
+// The files the relay accepts in a deploy, and where they come from in the repo.
+const DEPLOY_SOURCES = Object.freeze({
+    'bootstrap.sh': 'bootstrap.sh',
+    'provision.sh': 'provision.sh',
+    'extra_model_paths.yaml': 'extra_model_paths.yaml',
+});
+
+// What the pod has right now: GPU, free space, deployed scripts, nodes, models,
+// whether ComfyUI and Ollama answer. { ok, probe, provisioning } or { ok:false, message }.
+//
+// open:false only asks a relay that is already connected. A stopped pod does not
+// refuse the SSH connection, it hangs until the 60 s start timeout, so the panel
+// must not dial one on a passive refresh - it asks the Runpod API first.
+export async function podProbe({ settings, open = true }) {
+    if (open) {
+        const failure = await openSession(settings);
+        if (failure) return { ok: false, message: failure };
+    } else if (podSessionState() !== 'connected') {
+        return { ok: false, message: 'pod relay not connected', idle: true };
+    }
+    const reply = await session.request({ cmd: 'probe' }, 30_000);
+    if (!reply.ok) return { ok: false, message: reply.message ?? 'probe failed' };
+    return { ok: true, probe: reply.probe ?? {}, provisioning: reply.provisioning === true };
+}
+
+// Push bootstrap.sh / provision.sh / extra_model_paths.yaml onto the pod's volume.
+export async function podDeployScripts({ settings }) {
+    const failure = await openSession(settings);
+    if (failure) return { ok: false, message: failure };
+    const files = [];
+    for (const [name, source] of Object.entries(DEPLOY_SOURCES)) {
+        const path = fileURLToPath(new URL(`../pod/${source}`, import.meta.url));
+        try {
+            files.push({ name, data: fs.readFileSync(path).toString('base64') });
+        } catch (error) {
+            return { ok: false, message: `cannot read ${source}: ${error.message}` };
+        }
+    }
+    const reply = await session.request({ cmd: 'deploy', files }, 60_000);
+    if (!reply.ok) {
+        const detail = Object.entries(reply.errors ?? {}).map(([name, message]) => `${name}: ${message}`).join('; ');
+        return { ok: false, message: detail || reply.message || 'deploy failed' };
+    }
+    return { ok: true, written: reply.written ?? [] };
+}
+
+// Start provision.sh for the selected components. The Civitai token is handed to
+// the relay for the child's environment only — it is never put on a command line.
+export async function podProvision({ settings, components, civitaiToken = '', civitaiUrl = '' }) {
+    const failure = await openSession(settings);
+    if (failure) return { ok: false, message: failure };
+    const wanted = (Array.isArray(components) ? components : []).map(String);
+    if (wanted.length === 0) return { ok: false, message: 'nothing selected to install' };
+    const reply = await session.request({ cmd: 'provision', components: wanted, civitaiToken, civitaiUrl }, 30_000);
+    if (!reply.ok) return { ok: false, message: reply.message ?? 'provision failed' };
+    return { ok: true, log: reply.log ?? '' };
+}
+
+// Tail bootstrap.log / provision.log from a byte offset: { ok, text, offset, size, running }.
+export async function podReadLog({ settings, name = 'provision', offset = 0 }) {
+    const failure = await openSession(settings);
+    if (failure) return { ok: false, message: failure };
+    const reply = await session.request({ cmd: 'log', name, offset }, 30_000);
+    if (!reply.ok) return { ok: false, message: reply.message ?? 'log read failed' };
+    return {
+        ok: true,
+        text: reply.text ?? '',
+        offset: Number(reply.offset) || 0,
+        size: Number(reply.size) || 0,
+        running: reply.running === true,
+        missing: reply.missing === true,
+    };
+}

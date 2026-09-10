@@ -67,7 +67,7 @@ test('batch scripts: Codex first, the pod (or local Ollama) only for refused bat
 
 test('bootstrap.sh restores the volatile pieces and keeps generated files off the pod disks', () => {
     const script = read('scripts/pod/bootstrap.sh');
-    assert.match(script, /grep -v 'git\+' "\$IMPACT_REQ"/, 'the sam2 git+ line would prompt for GitHub credentials');
+    assert.match(script, /grep -v 'git\+' "\$req" > "\$REQ_DIR\/\$node_name\.txt"/, 'the sam2 git+ line would prompt for GitHub credentials');
     assert.match(script, /OLLAMA_MODELS=\/workspace\/ollama\/models OLLAMA_HOST=127\.0\.0\.1:11434/, 'Ollama stays on loopback with durable models');
     assert.match(script, /--output-directory \/dev\/shm\/comfy_out --temp-directory \/dev\/shm\/comfy_tmp/);
     assert.match(script, /--pull\) PULL_MODELS=/);

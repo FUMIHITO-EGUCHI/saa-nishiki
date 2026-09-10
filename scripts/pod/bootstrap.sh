@@ -51,18 +51,22 @@ log "GPU: $(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/de
 log "workspace: $(df -h /workspace 2>/dev/null | awk 'NR==2 {print $4 " free of " $2}')"
 
 # ---------------------------------------------------------------- pip (volatile)
-# ADetailer / tagger / metadata deps that ComfyUI custom nodes import at start.
-# Impact-Pack's requirements carry a git+ line (sam2) that prompts for GitHub
-# credentials on the pod and kills the session, so it is filtered out.
+# ADetailer / tagger / metadata deps that ComfyUI custom nodes import at start,
+# plus every custom node's own requirements so a rebuilt venv comes back complete.
+# Some of those carry a git+ line (Impact-Pack's sam2) that prompts for GitHub
+# credentials on the pod and kills the session, so those lines are filtered out.
 log "python: $PYTHON"
 if ! "$PYTHON" -c "import onnxruntime, piexif, ultralytics, segment_anything" >/dev/null 2>&1; then
   log "restoring pip packages (this takes about a minute)"
-  IMPACT_REQ="$COMFY_DIR/custom_nodes/ComfyUI-Impact-Pack/requirements.txt"
+  REQ_DIR=/workspace/saa/reqs
+  rm -rf "$REQ_DIR"; mkdir -p "$REQ_DIR"
   REQ_ARGS=()
-  if [ -f "$IMPACT_REQ" ]; then
-    grep -v 'git+' "$IMPACT_REQ" > /workspace/saa/impact-req.txt
-    REQ_ARGS=(-r /workspace/saa/impact-req.txt)
-  fi
+  for req in "$COMFY_DIR"/custom_nodes/*/requirements.txt; do
+    [ -f "$req" ] || continue
+    node_name=$(basename "$(dirname "$req")")
+    grep -v 'git+' "$req" > "$REQ_DIR/$node_name.txt"
+    REQ_ARGS+=(-r "$REQ_DIR/$node_name.txt")
+  done
   "$PYTHON" -m pip install --quiet onnxruntime piexif segment-anything ultralytics "${REQ_ARGS[@]}" > "$LOG_DIR/pip.log" 2>&1 \
     && log "pip packages restored" \
     || log "pip restore FAILED - see $LOG_DIR/pip.log"
@@ -112,7 +116,9 @@ done
 # files go to RAM (/dev/shm): nothing generated is written to the pod's disks.
 if [ "$START_COMFY" = 1 ]; then
   if pgrep -f "main.py --listen" >/dev/null 2>&1; then
-    if grep -q "output-directory /dev/shm" /proc/$(pgrep -f "main.py --listen" | head -1)/cmdline 2>/dev/null \
+    # /proc/<pid>/cmdline separates the arguments with NULs, hence the tr.
+    if tr '\0' ' ' < "/proc/$(pgrep -f "main.py --listen" | head -1)/cmdline" 2>/dev/null \
+         | grep -q -- "--output-directory /dev/shm" \
        && "$PYTHON" -c "import onnxruntime, ultralytics" >/dev/null 2>&1; then
       log "ComfyUI already running with RAM output dirs"
     else
@@ -122,8 +128,16 @@ if [ "$START_COMFY" = 1 ]; then
   fi
   if ! pgrep -f "main.py --listen" >/dev/null 2>&1; then
     mkdir -p /dev/shm/comfy_out /dev/shm/comfy_tmp
+    # ComfyUI aborts on a missing --extra-model-paths-config file, so the flag is
+    # only passed once provision.sh has put the config in place.
+    EXTRA_ARGS=()
+    if [ -f "$EXTRA_MODEL_PATHS" ]; then
+      EXTRA_ARGS=(--extra-model-paths-config "$EXTRA_MODEL_PATHS")
+    else
+      log "no $EXTRA_MODEL_PATHS - starting without the /workspace/models roots"
+    fi
     (cd "$COMFY_DIR" && nohup "$PYTHON" main.py --listen 0.0.0.0 --port "$COMFY_PORT" --enable-cors-header \
-        --extra-model-paths-config "$EXTRA_MODEL_PATHS" \
+        "${EXTRA_ARGS[@]}" \
         --output-directory /dev/shm/comfy_out --temp-directory /dev/shm/comfy_tmp > "$LOG_DIR/comfy.log" 2>&1 &)
     for _ in $(seq 1 90); do
       curl -s -m 2 "http://127.0.0.1:$COMFY_PORT/system_stats" >/dev/null 2>&1 && break
