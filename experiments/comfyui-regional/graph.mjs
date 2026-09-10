@@ -20,6 +20,13 @@ export const DEFAULT_SETTINGS = {
     // With false the "left" prompt is the TOP region and "right" the bottom one.
     columFirst: true,
     maskStrength: 1.0,      // branch A: ConditioningSetMask strength (SAA's Left/Right Str)
+    // Per-side overrides. A uniform maskStrength is a no-op: ConditioningCombine
+    // normalises the overlapping conditionings, so scaling both sides by the same
+    // factor leaves their ratio - and the picture - unchanged (measured: 0.0 mean
+    // pixel difference between 1.0 and 0.5). Only a DIFFERENCE between the sides
+    // moves anything, which is what these two are for.
+    maskStrengthLeft: null,
+    maskStrengthRight: null,
     baseOnlySteps: 8,       // branch B: steps before any region is applied
     overlapFactor: 32,      // branch B: mask dilation that blends the region seams
     additionalMode: 'ratio between',
@@ -103,11 +110,11 @@ function baseNodes(S, P) {
         { id: 15, type: 'PngRectanglesToMask', title: 'Mask right', col: 3, row: 6, widgets: { Intenisity: 1, Blur: 0, Start_At_Index: 2, Overlap: 'Previous', Overlap_Count: 1 }, to: { PngRectangles: [13, 2] } },
 
         // ---- A: current SAA method ---------------------------------------------
-        { id: 16, type: 'ConditioningSetMask', title: 'A: left masked', col: 4, row: 0, widgets: { strength: S.maskStrength, set_cond_area: 'default' }, to: { conditioning: [8, 0], mask: [14, 0] } },
-        { id: 17, type: 'ConditioningSetMask', title: 'A: right masked', col: 4, row: 1, widgets: { strength: S.maskStrength, set_cond_area: 'default' }, to: { conditioning: [9, 0], mask: [15, 0] } },
+        { id: 16, type: 'ConditioningSetMask', title: 'A: left masked', col: 4, row: 0, widgets: { strength: S.maskStrengthLeft ?? S.maskStrength, set_cond_area: 'default' }, to: { conditioning: [8, 0], mask: [14, 0] } },
+        { id: 17, type: 'ConditioningSetMask', title: 'A: right masked', col: 4, row: 1, widgets: { strength: S.maskStrengthRight ?? S.maskStrength, set_cond_area: 'default' }, to: { conditioning: [9, 0], mask: [15, 0] } },
         { id: 18, type: 'ConditioningCombine', title: 'A: positive', col: 5, row: 0, to: { conditioning_1: [16, 0], conditioning_2: [17, 0] } },
-        { id: 19, type: 'ConditioningSetMask', title: 'A: neg left masked', col: 4, row: 2, widgets: { strength: S.maskStrength, set_cond_area: 'default' }, to: { conditioning: [10, 0], mask: [14, 0] } },
-        { id: 20, type: 'ConditioningSetMask', title: 'A: neg right masked', col: 4, row: 3, widgets: { strength: S.maskStrength, set_cond_area: 'default' }, to: { conditioning: [11, 0], mask: [15, 0] } },
+        { id: 19, type: 'ConditioningSetMask', title: 'A: neg left masked', col: 4, row: 2, widgets: { strength: S.maskStrengthLeft ?? S.maskStrength, set_cond_area: 'default' }, to: { conditioning: [10, 0], mask: [14, 0] } },
+        { id: 20, type: 'ConditioningSetMask', title: 'A: neg right masked', col: 4, row: 3, widgets: { strength: S.maskStrengthRight ?? S.maskStrength, set_cond_area: 'default' }, to: { conditioning: [11, 0], mask: [15, 0] } },
         { id: 21, type: 'ConditioningCombine', title: 'A: negative', col: 5, row: 1, to: { conditioning_1: [19, 0], conditioning_2: [20, 0] } },
         { id: 22, type: 'KSampler', title: 'A: sampler', col: 6, row: 0, widgets: { seed: S.seed, steps: S.steps, cfg: S.cfg, sampler_name: S.sampler, scheduler: S.scheduler, denoise: 1 }, to: { model: [1, 0], positive: [18, 0], negative: [21, 0], latent_image: [12, 0] } },
         { id: 23, type: 'VAEDecode', title: 'A: decode', col: 7, row: 0, to: { samples: [22, 0], vae: [1, 2] } },
