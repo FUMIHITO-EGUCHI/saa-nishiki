@@ -41,7 +41,7 @@ Rules:
 11. Before output, verify that preserved positive concepts are absent from the negative prompt and every changed weight matches the requested intensity.
 12. Keep "changes" to one short sentence summarizing the reconstruction.`;
 
-export const REFINE_SYSTEM_PROMPT = `You are a full prompt architect for WAI Illustrious SDXL.
+export const LEGACY_V2_REFINE_SYSTEM_PROMPT = `You are a full prompt architect for WAI Illustrious SDXL.
 Return exactly one JSON object and no markdown. The object must contain numeric "schema_version": 2 and string fields "common", "positive", "positive_right", "negative", and "changes". Always return positive_right; use an empty string outside Regional mode.
 
 The user message contains an instruction, editable prompt fields, and generation_context. Rewrite only the editable fields. generation_context shows the complete prompt currently sent to the image backend and may contain generated-only Characters, Views, JSON slot content, character negative tags, resolved Wildcards, Exclude results, and slot LoRA. Use that context to understand the image, but never copy generated-only material into the editable fields.
@@ -62,6 +62,27 @@ Rules:
 11. Before output, verify that schema_version is numeric 2, every prompt field is a string, positive_right follows the mode rule, and generated-only context was not copied.
 12. Keep changes to one short sentence summarizing the reconstruction.`;
 
+export const REFINE_SYSTEM_PROMPT = `You are a full prompt architect for WAI Illustrious SDXL.
+Return exactly one JSON object and no markdown. The object must contain numeric "schema_version": 3 and string fields "common", "positive", "positive_right", "negative", "negative_left", "negative_right", and "changes". Always return every field; outside Regional mode positive_right, negative_left and negative_right are empty strings.
+
+The user message contains an instruction, editable prompt fields, and generation_context. Rewrite only the editable fields. generation_context shows the complete prompts currently sent to the image backend and may contain generated-only Characters, Views, JSON slot content, character negative tags, resolved Wildcards, Exclude results, and slot LoRA. Use that context to understand the image, but never copy generated-only material into the editable fields.
+
+Refine always means full reconstruction of the editable prompt set. Apply the instruction, then rebuild the entire positive and negative prompts represented by common, positive, positive_right, negative, negative_left, and negative_right. Return complete replacement fields, never a patch, suffix, delta, commentary, or an already-composed backend prompt. The instruction may be written in Japanese. Prompt output must use concise English Danbooru-style comma-separated tags.
+
+Rules:
+1. Preserve hard constraints and protected inline tokens unless explicitly changed: inline LoRA tokens, embeddings, Wildcards, nested-random expressions, quality anchors, escaped tokens, and identity tags already present in the editable fields. Copy protected tokens exactly.
+2. Do not copy slot LoRA, generated character tags, Views, JSON slot text, or character-derived negative tags from generation_context into the editable fields; the application adds them again after Refine.
+3. Preserve the intended scene semantics, but freely rewrite, consolidate, and reorder ordinary editable tags. Remove duplicates, contradictions, obsolete tags, filler, and tags that no longer support the request.
+4. Reorder the complete positive prompt into this semantic sequence: quality and source, subject and identity, composition and camera, appearance, clothing and accessories, pose and action, setting, lighting, finish.
+5. common contains content shared by both Regional sides; positive and positive_right contain only side-specific content. negative is shared by both sides; negative_left and negative_right contain only that side's exclusions. Outside Regional mode positive_right, negative_left and negative_right must be empty strings.
+6. Apply the instruction across the whole editable prompt. Add only visual tags directly implied by the instruction or necessary for an explicit constraint. Do not invent identities, subjects, clothing, poses, expressions, body traits, settings, or story elements.
+7. Rebuild the negative fields as a concise set of user-editable unwanted artifacts and exclusions. Keep an exclusion in negative when it applies to the whole image, and in negative_left or negative_right when it only applies to that side. Do not copy character-derived negatives from generation_context and never place a desired or preserved positive concept in a negative field.
+8. Map intensity exactly. For "slightly" or Japanese "少し", to strengthen you MUST use exactly 1.10 and to weaken you MUST use exactly 0.90. An unqualified request uses exactly 1.20 and 0.80. "Strongly" uses exactly 1.30 and 0.70.
+9. Use emphasis syntax (tag:1.20) only on decisive visual concepts. Keep ordinary weights between 0.70 and 1.50. Do not rewrite inline LoRA weights.
+10. Even for a narrow instruction, return a fully audited, reorganized complete replacement for every editable prompt field.
+11. Before output, verify that schema_version is numeric 3, every prompt field is a string, positive_right, negative_left and negative_right follow the mode rule, and generated-only context was not copied.
+12. Keep changes to one short sentence summarizing the reconstruction.`;
+
 export function resolveRefineSystemPrompt(savedPrompt) {
     if (typeof savedPrompt !== 'string' || savedPrompt.trim() === '') {
         return REFINE_SYSTEM_PROMPT;
@@ -72,7 +93,17 @@ export function resolveRefineSystemPrompt(savedPrompt) {
     if (savedPrompt.trim() === LEGACY_FULL_REFINE_SYSTEM_PROMPT.trim()) {
         return REFINE_SYSTEM_PROMPT;
     }
+    if (savedPrompt.trim() === LEGACY_V2_REFINE_SYSTEM_PROMPT.trim()) {
+        return REFINE_SYSTEM_PROMPT;
+    }
     return savedPrompt;
+}
+
+// Structured Refine output: schema 2 (common / positive / positive_right / negative)
+// and schema 3, which adds the per-side negatives. Both rebuild the editable fields;
+// legacy output remains generation-only.
+export function isStructuredRefineFormat(format) {
+    return format === 'v2' || format === 'v3';
 }
 
 export function normalizePromptMode(mode) {
@@ -126,6 +157,36 @@ export function buildRefineV2UserContent({
     };
     return JSON.stringify({
         schema_version: 2,
+        instruction: requireString(instruction, 'instruction'),
+        editor,
+        generation_context: context,
+    });
+}
+
+// Schema 3 adds the Regional per-side negatives, editable and rendered alike, so the
+// model can move an exclusion between the shared field and one side.
+export function buildRefineV3UserContent({
+    instruction = '',
+    editorFields = {},
+    generationContext = {},
+} = {}) {
+    const editor = {
+        common: requireString(editorFields.common ?? '', 'editorFields.common'),
+        positive: requireString(editorFields.positive ?? '', 'editorFields.positive'),
+        positive_right: requireString(editorFields.positiveRight ?? '', 'editorFields.positiveRight'),
+        negative: requireString(editorFields.negative ?? '', 'editorFields.negative'),
+        negative_left: requireString(editorFields.negativeLeft ?? '', 'editorFields.negativeLeft'),
+        negative_right: requireString(editorFields.negativeRight ?? '', 'editorFields.negativeRight'),
+    };
+    const context = {
+        positive: requireString(generationContext.positive ?? '', 'generationContext.positive'),
+        positive_right: requireString(generationContext.positiveRight ?? '', 'generationContext.positiveRight'),
+        negative: requireString(generationContext.negative ?? '', 'generationContext.negative'),
+        negative_left: requireString(generationContext.negativeLeft ?? '', 'generationContext.negativeLeft'),
+        negative_right: requireString(generationContext.negativeRight ?? '', 'generationContext.negativeRight'),
+    };
+    return JSON.stringify({
+        schema_version: 3,
         instruction: requireString(instruction, 'instruction'),
         editor,
         generation_context: context,
@@ -336,22 +397,29 @@ export function parseRefineEnvelope(content, options = {}) {
     }
 
     if (Object.hasOwn(parsed, 'schema_version')) {
-        if (parsed.schema_version !== 2) {
+        if (parsed.schema_version !== 2 && parsed.schema_version !== 3) {
             return invalidEnvelope('Unsupported Refine schema_version', originalPrompts);
         }
+        const withSideNegatives = parsed.schema_version === 3;
         try {
             const editorFields = {
                 common: validatePrompt(parsed.common, 'common', { allowEmpty: true }),
                 positive: validatePrompt(parsed.positive, 'positive', { allowEmpty: true }),
                 positiveRight: validatePrompt(parsed.positive_right, 'positive_right', { allowEmpty: true }),
                 negative: validatePrompt(parsed.negative, 'negative', { allowEmpty: true }),
+                // schema 2 knows no per-side negatives: null keeps the side fields as they are
+                negativeLeft: withSideNegatives ? validatePrompt(parsed.negative_left, 'negative_left', { allowEmpty: true }) : null,
+                negativeRight: withSideNegatives ? validatePrompt(parsed.negative_right, 'negative_right', { allowEmpty: true }) : null,
             };
             const changes = validateChanges(parsed.changes);
-            if (regional && !Object.hasOwn(parsed, 'positive_right')) {
-                return invalidEnvelope('positive_right is required for Regional Refine', originalPrompts);
+            const required = withSideNegatives ? ['positive_right', 'negative_left', 'negative_right'] : ['positive_right'];
+            for (const key of regional ? required : []) {
+                if (!Object.hasOwn(parsed, key)) {
+                    return invalidEnvelope(`${key} is required for Regional Refine`, originalPrompts);
+                }
             }
             return {
-                format: 'v2',
+                format: withSideNegatives ? 'v3' : 'v2',
                 validForGeneration: true,
                 validForEditorApply: true,
                 editorFields,

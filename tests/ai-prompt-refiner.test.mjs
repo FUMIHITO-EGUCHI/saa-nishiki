@@ -6,10 +6,13 @@ import {
     PROMPT_MODE_REFINE,
     LEGACY_FULL_REFINE_SYSTEM_PROMPT,
     LEGACY_REFINE_SYSTEM_PROMPT,
+    LEGACY_V2_REFINE_SYSTEM_PROMPT,
     REFINE_SYSTEM_PROMPT,
     applyAiPromptResult,
     buildRefineUserContent,
     buildRefineV2UserContent,
+    buildRefineV3UserContent,
+    isStructuredRefineFormat,
     normalizePromptMode,
     parseRefineEnvelope,
     parseRefineResponse,
@@ -69,12 +72,109 @@ test('v2 response is strict and explicitly classified for generation and editor 
         positive: 'portrait',
         positiveRight: '',
         negative: '',
+        // schema 2 knows no per-side negatives, so the generated ones are kept
+        negativeLeft: null,
+        negativeRight: null,
     });
+});
+
+test('v3 refine request adds the editable and rendered per-side negatives', () => {
+    const content = buildRefineV3UserContent({
+        instruction: '左側だけ影を減らして',
+        editorFields: {
+            common: 'masterpiece',
+            positive: 'left portrait',
+            positiveRight: 'right full body',
+            negative: 'worst quality',
+            negativeLeft: 'harsh shadow',
+            negativeRight: '',
+        },
+        generationContext: {
+            positive: 'masterpiece, alice, left portrait',
+            positiveRight: 'masterpiece, bob, right full body',
+            negative: 'worst quality, harsh shadow, extra arms',
+            negativeLeft: 'worst quality, harsh shadow, extra arms',
+            negativeRight: 'worst quality',
+        },
+    });
+
+    assert.deepEqual(JSON.parse(content), {
+        schema_version: 3,
+        instruction: '左側だけ影を減らして',
+        editor: {
+            common: 'masterpiece',
+            positive: 'left portrait',
+            positive_right: 'right full body',
+            negative: 'worst quality',
+            negative_left: 'harsh shadow',
+            negative_right: '',
+        },
+        generation_context: {
+            positive: 'masterpiece, alice, left portrait',
+            positive_right: 'masterpiece, bob, right full body',
+            negative: 'worst quality, harsh shadow, extra arms',
+            negative_left: 'worst quality, harsh shadow, extra arms',
+            negative_right: 'worst quality',
+        },
+    });
+});
+
+test('v3 response makes the per-side negatives editable fields of their own', () => {
+    const result = parseRefineEnvelope(JSON.stringify({
+        schema_version: 3,
+        common: 'masterpiece',
+        positive: 'left portrait',
+        positive_right: 'right full body',
+        negative: 'worst quality',
+        negative_left: 'harsh shadow',
+        negative_right: '',
+        changes: 'Moved the shadow exclusion to the left side.',
+    }), { regional: true });
+
+    assert.equal(result.format, 'v3');
+    assert.equal(result.validForGeneration, true);
+    assert.equal(result.validForEditorApply, true);
+    assert.deepEqual(result.editorFields, {
+        common: 'masterpiece',
+        positive: 'left portrait',
+        positiveRight: 'right full body',
+        negative: 'worst quality',
+        negativeLeft: 'harsh shadow',
+        negativeRight: '',
+    });
+});
+
+test('Regional v3 output must carry every side field', () => {
+    const base = {
+        schema_version: 3,
+        common: '',
+        positive: 'left',
+        positive_right: 'right',
+        negative: '',
+        negative_left: '',
+        negative_right: '',
+        changes: '',
+    };
+    for (const missing of ['positive_right', 'negative_left', 'negative_right']) {
+        const { [missing]: _dropped, ...partial } = base;
+        const result = parseRefineEnvelope(JSON.stringify(partial), { regional: true });
+        assert.equal(result.format, 'invalid', `${missing} is required`);
+        assert.match(result.error, new RegExp(missing));
+    }
+    assert.equal(parseRefineEnvelope(JSON.stringify(base), { regional: true }).format, 'v3');
+});
+
+test('both structured schemas rebuild the editor, legacy output never does', () => {
+    assert.equal(isStructuredRefineFormat('v2'), true);
+    assert.equal(isStructuredRefineFormat('v3'), true);
+    assert.equal(isStructuredRefineFormat('legacy'), false);
+    assert.equal(isStructuredRefineFormat('invalid'), false);
+    assert.equal(isStructuredRefineFormat(undefined), false);
 });
 
 test('unsupported schema versions are invalid instead of falling back to legacy', () => {
     const result = parseRefineEnvelope(JSON.stringify({
-        schema_version: 3,
+        schema_version: 4,
         positive: 'portrait',
         negative: '',
         changes: '',
@@ -119,20 +219,23 @@ test('prompt processing mode keeps Expand as the backward-compatible default', (
 });
 
 test('Refine always rebuilds and reorganizes the complete prompt set', () => {
-    assert.match(REFINE_SYSTEM_PROMPT, /schema_version/i);
-    assert.match(REFINE_SYSTEM_PROMPT, /common.*positive.*positive_right.*negative/is);
+    assert.match(REFINE_SYSTEM_PROMPT, /"schema_version": 3/);
+    assert.match(REFINE_SYSTEM_PROMPT, /common.*positive.*positive_right.*negative.*negative_left.*negative_right/is);
     assert.match(REFINE_SYSTEM_PROMPT, /generation_context/i);
     assert.match(REFINE_SYSTEM_PROMPT, /rebuild the entire positive and negative prompts/i);
     assert.match(REFINE_SYSTEM_PROMPT, /complete replacement/i);
     assert.match(REFINE_SYSTEM_PROMPT, /reorder/i);
     assert.match(REFINE_SYSTEM_PROMPT, /quality.*subject.*composition.*appearance.*clothing.*action.*setting.*lighting.*finish/i);
     assert.match(REFINE_SYSTEM_PROMPT, /slightly.*must use exactly 1\.10.*must use exactly 0\.90/i);
-    assert.match(REFINE_SYSTEM_PROMPT, /never place.*desired or preserved.*negative prompt/i);
+    assert.match(REFINE_SYSTEM_PROMPT, /never place.*desired or preserved.*negative field/i);
+    // the side negatives only exist while Regional is on
+    assert.match(REFINE_SYSTEM_PROMPT, /outside Regional mode positive_right, negative_left and negative_right must be empty strings/i);
 });
 
 test('saved legacy default migrates to full reconstruction while custom prompts are preserved', () => {
     assert.equal(resolveRefineSystemPrompt(LEGACY_REFINE_SYSTEM_PROMPT), REFINE_SYSTEM_PROMPT);
     assert.equal(resolveRefineSystemPrompt(LEGACY_FULL_REFINE_SYSTEM_PROMPT), REFINE_SYSTEM_PROMPT);
+    assert.equal(resolveRefineSystemPrompt(LEGACY_V2_REFINE_SYSTEM_PROMPT), REFINE_SYSTEM_PROMPT);
     assert.equal(resolveRefineSystemPrompt(''), REFINE_SYSTEM_PROMPT);
     assert.equal(
         resolveRefineSystemPrompt('My intentionally customized refine instructions.'),

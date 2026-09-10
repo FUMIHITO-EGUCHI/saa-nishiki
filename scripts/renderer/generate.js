@@ -12,7 +12,8 @@ import { setQueueAutoStart } from './callbacks.js';
 import { filterPrompts } from './tools/promptFilter.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
 import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
-import { removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
+import { isStructuredRefineFormat, removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
+import { composeNegativeChain } from '../shared/negativeComposition.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { normalizeApiAddress } from '../shared/backendAddress.js';
 import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
@@ -45,6 +46,8 @@ function refineCandidateSummary(candidate) {
         `Positive: ${fields.positive ?? ''}`,
         fields.positiveRight ? `Positive Right: ${fields.positiveRight}` : '',
         `Negative: ${fields.negative ?? ''}`,
+        fields.negativeLeft ? `Negative Left: ${fields.negativeLeft}` : '',
+        fields.negativeRight ? `Negative Right: ${fields.negativeRight}` : '',
     ].filter(Boolean).join('\n');
 }
 
@@ -692,13 +695,13 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         const negativeOrder = normalizeOrder(globalThis.globalSettings.prompt_negative_order, 'negative', globalThis.globalSettings.prompt_custom_fields);
         const negativeTexts = { negative: readPromptValue('negative') };
         for (const custom of getCustomFieldTexts('negative')) negativeTexts[custom.id] = custom.text;
-        const orderedNegatives = negativeOrder.map(id => String(negativeTexts[id] ?? '').trim()).filter(Boolean);
-        const mergedNegativePrompt = [...orderedNegatives, negative_tags].filter(Boolean).join(', ').trim();
-        negativePrompt = mergedNegativePrompt;
+        negativePrompt = composeNegativeChain({ chain: negativeOrder, texts: negativeTexts, characterNegative: negative_tags });
         refineContext = {
             ...promptRefineContext,
             seed: randomSeed,
             characterNegative: negative_tags,
+            // Refine rebuilds the negative around these units, exactly like the positive chain
+            negative: { chain: negativeOrder, texts: negativeTexts },
         };
         thumbImage = thumb;
         charactersName = characters;
@@ -1353,7 +1356,7 @@ export async function startQueue(){
                 resolveComponent: async (value, seed) => processRandomString(await replaceWildcardsAsync(value, seed)),
             });
             const aiPreview = promptResult.preview;
-            if (promptResult.envelope?.format === 'v2') {
+            if (isStructuredRefineFormat(promptResult.envelope?.format)) {
                 recordRefineRunCandidate(queueManager.refineRun, {
                     ...promptResult.envelope,
                     imageIndex: queueManager.loop,
@@ -1395,6 +1398,9 @@ export async function startQueue(){
                 generateData.positive_left = promptResult.positive;
                 generateData.positive_right = promptResult.positiveRight;
                 generateData.negative = promptResult.negative;
+                // ComfyUI masks a negative per side; only a result that rebuilt them replaces them
+                if (typeof promptResult.negativeLeft === 'string') generateData.negative_left = promptResult.negativeLeft;
+                if (typeof promptResult.negativeRight === 'string') generateData.negative_right = promptResult.negativeRight;
                 result = await seartGenerateRegional(queueManager.apiInterface, generateData);
             } else {
                 generateData.positive = promptResult.positive;

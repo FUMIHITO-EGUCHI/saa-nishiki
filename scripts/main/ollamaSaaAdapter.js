@@ -3,6 +3,7 @@ import {
     REFINE_SYSTEM_PROMPT,
     buildRefineUserContent,
     buildRefineV2UserContent,
+    buildRefineV3UserContent,
     normalizePromptMode,
 } from '../aiPromptRefiner.js';
 import { isOllamaChatUrl } from '../shared/ollamaUrl.js';
@@ -35,6 +36,22 @@ export function resolveSaaOllamaModel({ mode = 'Auto', use = 'prompt' } = {}) {
     return MODEL_BY_USE[normalizeUse(use)];
 }
 
+// Which structured Refine schema the saved system prompt asks for. A customized prompt
+// that never mentions schema_version keeps the legacy generation-only request.
+function structuredRefineVersion(systemPrompt) {
+    const text = String(systemPrompt ?? '');
+    const declared = /schema_version\D{0,4}(\d+)/i.exec(text);
+    const version = declared ? Number(declared[1]) : 0;
+    if (version === 2 || version === 3) return version;
+    return /schema_version/i.test(text) ? 2 : 0;
+}
+
+function refineUserContent(version, { instruction, editorFields, generationContext, positive, negative, positiveRight }) {
+    if (version === 3) return buildRefineV3UserContent({ instruction, editorFields, generationContext });
+    if (version === 2) return buildRefineV2UserContent({ instruction, editorFields, generationContext });
+    return buildRefineUserContent({ instruction, positive, negative, positiveRight });
+}
+
 export function buildOllamaChatRequest({
     mode = 'Auto',
     use = 'prompt',
@@ -62,10 +79,11 @@ export function buildOllamaChatRequest({
         : 768;
 
     const useRefine = normalizePromptMode(promptMode) === PROMPT_MODE_REFINE;
-    const useRefineV2 = useRefine
+    const structuredVersion = useRefine
         && editorFields && typeof editorFields === 'object'
         && generationContext && typeof generationContext === 'object'
-        && /schema_version[\s\S]*?2/i.test(refineSystemPrompt || REFINE_SYSTEM_PROMPT);
+        ? structuredRefineVersion(refineSystemPrompt || REFINE_SYSTEM_PROMPT)
+        : 0;
     const request = {
         model: resolveSaaOllamaModel({ mode, use }),
         messages: useRefine
@@ -73,14 +91,14 @@ export function buildOllamaChatRequest({
                 { role: 'system', content: refineSystemPrompt || REFINE_SYSTEM_PROMPT },
                 {
                     role: 'user',
-                    content: useRefineV2
-                        ? buildRefineV2UserContent({ instruction: userPrompt, editorFields, generationContext })
-                        : buildRefineUserContent({
-                            instruction: userPrompt,
-                            positive: existingPositive,
-                            negative: existingNegative,
-                            positiveRight: existingPositiveRight,
-                        }),
+                    content: refineUserContent(structuredVersion, {
+                        instruction: userPrompt,
+                        editorFields,
+                        generationContext,
+                        positive: existingPositive,
+                        negative: existingNegative,
+                        positiveRight: existingPositiveRight,
+                    }),
                 },
             ]
             : [

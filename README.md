@@ -60,6 +60,7 @@ Every prompt edit, preset application and AI refine result is an atomic step in 
 
 ## AI prompt refiner
 In addition to upstream's remote / local `llama.cpp` AI prompt, Nishiki adds a **Refine** mode backed by [Ollama](https://ollama.com/). Refine rewrites the whole prompt with one structured request per batch before the first image, and applies the result field by field to the editor. Refine edits are recorded in the edit history and can be undone.
+While `Regional Condition` is on, Refine rewrites both sides: Common, Positive, Positive (right), Negative and the per-side Negative (left / right). Everything generation adds - characters, Views, JSON slots, Wildcards, slot LoRA - is left where it was and put back around the rewritten fields.
 The AI result is shown in the **AI tab of the Info panel** instead of a pop-up after every generation.
 
 ## Fast generation mode

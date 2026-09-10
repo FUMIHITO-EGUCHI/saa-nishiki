@@ -1,6 +1,7 @@
 import {
     PROMPT_MODE_REFINE,
     applyAiPromptResult,
+    isStructuredRefineFormat,
     normalizePromptMode,
     parseRefineEnvelope,
     removeAiPromptMarker,
@@ -51,7 +52,7 @@ export async function resolveQueuedAiPrompt({
 
     const cleanOriginals = cleanOriginalPrompts(originalPrompts, marker);
     const envelope = parseRefineEnvelope(content, { regional, originalPrompts: cleanOriginals });
-    if (envelope.format === 'v2' && !allowStructured) {
+    if (isStructuredRefineFormat(envelope.format) && !allowStructured) {
         return {
             ok: false,
             ...cleanOriginals,
@@ -69,18 +70,25 @@ export async function resolveQueuedAiPrompt({
             editorFields: null,
         };
     }
-    if (envelope.format !== 'v2') {
+    if (!isStructuredRefineFormat(envelope.format)) {
         const fallback = envelope.generationFallback;
         const weightedFallback = withPlanWeights(fallback, planWeights);
+        // legacy output is one finished negative, so both regional sides take it; a failed
+        // parse leaves the side negatives untouched instead
+        const sided = regional && weightedFallback.ok
+            ? { ...weightedFallback, negativeLeft: weightedFallback.negative, negativeRight: weightedFallback.negative }
+            : weightedFallback;
         const backend = regional && weightedFallback.ok
-            ? mapRegionalBackendPrompts(weightedFallback, regionalSwap)
+            ? mapRegionalBackendPrompts(sided, regionalSwap)
             : null;
         return {
-            ...weightedFallback,
+            ...sided,
             ...(backend ? {
                 positive: backend.positiveLeft,
                 positiveRight: backend.positiveRight,
                 negative: backend.negative,
+                negativeLeft: backend.negativeLeft,
+                negativeRight: backend.negativeRight,
             } : {}),
             preview: fallback.ok ? (envelope.changes || fallback.positive) : '',
             envelope,
@@ -98,6 +106,7 @@ export async function resolveQueuedAiPrompt({
         positive: regional ? backend.positiveLeft : logical.positive,
         positiveRight: regional ? backend.positiveRight : logical.positiveRight,
         negative: regional ? backend.negative : logical.negative,
+        ...(regional ? { negativeLeft: backend.negativeLeft, negativeRight: backend.negativeRight } : {}),
         changes: envelope.changes,
         preview: envelope.changes || logical.positive,
         error: '',
