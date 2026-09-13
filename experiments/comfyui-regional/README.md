@@ -213,10 +213,151 @@ from its explicit training domain, which is untested here; and the interaction t
 Illustrious-native vocabulary, which favours WAI in the tag arms — though the sentence arms
 are vocabulary-neutral and Pony loses those too.
 
+### A language-model encoder: NetaYume Lumina v4
+
+If CLIP's bag-of-words reading is what loses "A does X to B", a model whose text encoder is
+a language model should keep it. NetaYume v4 (Lumina 2, Gemma-2-2B encoder, `lumina.mjs`)
+got the same five directed cases × three seeds, with its own recommended settings
+(res_multistep / linear_quadratic, 40 steps, cfg 5.5, shift 6, system prompt `superior`).
+
+| arm | WAI v17.0 | NetaYume v4 | Anima base v1.0 | WAI-ANIMA v1.0 |
+|---|---|---|---|---|
+| sentence only | 3/15 | **12/15** | **12/15** | **12/15** |
+| tags + one action sentence | 9/15 | 10/15 | 9/15 | 7/15 |
+
+The sentence arm flips from WAI's worst to the best result on the bench, and NetaYume never
+fused the two characters into one. Its hybrid arm loses `feeding` 0/3, so for this model
+the plain sentence is the prompt to write. The two encoder families want opposite prompt
+shapes: a language-model encoder reads the sentence as a sentence, CLIP needs the scene and
+the looks as tags with only the action in words.
+
+**Anima** (`anima.mjs`: 2B DiT, Qwen3-0.6B encoder, the model SAA already ships a UNET
+workflow for) matches NetaYume on sentences with an encoder a quarter of Gemma's size:
+`princess-carry`, `headpat`, `kneel-and-stand` and `feeding` 3/3 each, no fused
+characters. Run with the public `anima-base-v1.0` from `circlestone-labs/Anima` (er_sde /
+simple, 30 steps, cfg 4.5), not WAI-ANIMA, which needs a Civitai token. Its one hard miss
+is `piggyback`, 0/3 in both arms: the black-haired girl carries the blonde every time,
+against the sentence. That is a prior winning, not a binding failure; the same case is
+WAI's hardest. The hybrid arm drops to 9/15 (`feeding` reversed on two seeds; on
+`kneel-and-stand` the tags pull the kneeling girl onto all fours on every seed and one seed
+kneels both). As with NetaYume, a language-model encoder wants the sentence alone.
+
+**WAI-ANIMA v1.0** (Civitai; a fine-tune of Anima base 1.0 that ships the identical Qwen3
+encoder and VAE, so only the DiT changes; `--exp=waianima`, same settings) reads the
+sentences exactly like the base model, cell for cell: 12/15, `piggyback` 0/3 again. The
+hybrid arm is worse at 7/15: on `kneel-and-stand` the tags put the black-haired girl down
+on all fours or kneeling as well on every seed, and `feeding` reverses or turns mutual on
+two seeds. The fine-tune changes the look, not how the sentence is read.
+
+Anima needs the sentence in English. ComfyUI runs the prompt through both the Qwen3 and the
+T5-XXL tokenizers, and the DiT receives the conditioning laid out along the T5 token ids
+(`preprocess_text_embeds(context, t5xxl_ids)`). A Japanese sentence comes out of the T5
+tokenizer as a single `<unk>` (checked on the Pod), so nothing it says reaches the picture.
+
+### Sentences written by a local LLM
+
+Writing the paragraph by hand is what the sentence arm costs. `prose.mjs` lays each case out
+as SAA's fields (quality tags and the count in Common, the place in Background, the framing
+in View, three appearance tags per side, the action in its own field, once in English and
+once in Japanese) and has a local Ollama model write the paragraph. Both models ran on the
+CPU only (`num_gpu 0`), which is how they would run next to WAI-ANIMA on a 12 GB card. The
+paragraphs (`prose-results-v2.json`) then went through WAI-ANIMA v1.0 with the same seeds
+and settings (`--exp=prose`).
+
+| | Gemma4-12B uncensored | Qwen3.5-35B-A3B uncensored |
+|---|---|---|
+| time per paragraph, model loaded | ~34 s (4.1 tok/s) | ~8 s (12.3 tok/s) |
+| model load | 10.5 s | 18.7 – 23.9 s |
+| paragraphs that follow the instructions | 12/12 | 4/12 (adds "stands" 4×, restates the action in the passive 4×) |
+| direction, Action typed in English | 8/15 | 9/15 |
+| direction, Action typed in Japanese | **13/15** | 11/15 |
+| *hand-written sentence, for reference* | *12/15* | |
+
+The first prompt (`prose-results.json`) also had Qwen add "stand" to 7 of 12 paragraphs and
+write "with no specific lighting or color style defined" into one; forbidding both fixed
+the second and halved the first.
+
+**How the action is worded matters more than which model writes it.** From an English
+Action both models keep the bench's own phrase almost word for word, and two of those
+phrases lose. "Giving ... a piggyback ride" brings back the prior (the black-haired girl
+carries, 0/3, as it does for the hand-written sentence). "Is kneeling on the floor and the
+black haired girl is standing over her" puts both girls on all fours, or one over the
+other, on every seed for both models, where the hand-written "kneeling on the floor
+looking up at a girl ... who stands over her" gets 3/3. From a Japanese Action the models
+have to paraphrase, and the paraphrase describes the bodies rather than naming the act:
+"carries the girl with short black hair on her back" wins `piggyback` 2/3 for Gemma, the
+first time a sentence has won that case on an Anima model, and "stands in front of her and
+looks down at her" gets `kneel-and-stand` to 2/3. Qwen's added "stands" and passive
+restatements did not flip a direction on their own; its two extra losses are a piggyback
+and a kneel seed.
+
+Smaller things seen in the pictures: Gemma wrote identical paragraphs for both `feeding`
+arms, so those two columns are the same images; "the scene is an upper body view" once
+came back letterboxed with black bars; on the winning Gemma `piggyback` seed the blonde
+also wears the black jacket.
+
+**Third prompt: the action as bodies, not as the name of the act.** One rule added
+(`prose-results-v3.json`): write where each character is relative to the other, what holds
+or touches what, and who looks at whom; never the name of the act or pose, even when the
+input uses it. Same seeds and settings.
+
+| direction | Gemma EN | Gemma JA | Qwen EN | Qwen JA |
+|---|---|---|---|---|
+| second prompt | 8/15 | 13/15 | 9/15 | 11/15 |
+| third prompt | 9/15 | 13/15 | 11/15 | **14/15** |
+
+Qwen from a Japanese Action is now the best arm on the bench, two above the hand-written
+sentence, and the only one that has won `piggyback` twice (the hand-written sentence and
+Anima base never won it). What the rule did and did not do:
+
+- Both models now write `piggyback` as "carries ... on her back" from the English input
+  too, and it still loses 2/3 there. The wording removed the tag, not the prior; from the
+  Japanese input the same sentence shape won 1/3 (Gemma) and 2/3 (Qwen). Which seed wins
+  is not stable across arms, so this case sits at the edge of what the model will do.
+- `kneel-and-stand` from an English Action still comes back as "stands over her" from both
+  models — the rule was not applied to a phrase the input already had in English — and
+  still fails 0/3 (Gemma) and 1/3 (Qwen): the two end up on the floor together. From the
+  Japanese input both write "stands in front of her, looking down at her" and get 3/3.
+- Everything else is unchanged at 3/3 (`headpat`, `feeding`, and `princess-carry` except
+  one Gemma seed where the two just stand).
+
+So the paraphrase the LLM is forced into by a Japanese Action is what wins, and an English
+Action that already names the pose is copied through. For SAA that means the conversion
+should be told the action is a description to rewrite, not text to keep — or the user
+writes the Action in Japanese, which is the natural case anyway. Qwen's extra "stands"
+and passive restatements are still there in the third prompt and still did not cost a
+direction.
+
+Three of the twelve Qwen JA pictures came back letterboxed (black bars) from "framed as an
+upper body shot" / "seen in full body view"; the framing words read as a film frame.
+
+### Adjectives the tag list does not have
+
+Does CLIP use an adjective + noun pair that is not a tag? Base prompt `1girl, solo, ...,
+holding staff, standing, simple background, full body` on WAI, seeds 1–4, with one phrase
+added. Danbooru has `staff` (83,044 posts), `holding_staff` (50,943) and `wooden_staff`
+(500), and no `long_staff` or `ancient_staff`.
+
+| added | what changed | pixel diff vs base, s1 / s2 / s3 |
+|---|---|---|
+| `long staff` | nothing | 6.6 / 3.8 / 3.2 |
+| `ancient staff` | nothing | 10.1 / 9.0 / 3.5 |
+| `wooden staff` | the staff is wooden, 4/4 | 12.0 / 15.6 / 12.4 |
+| `she is holding a very long ancient wooden staff` | wooden 4/4, and the **hair** got longer 2/4 | 11.8 / 8.8 / 30.4 |
+
+A different seed moves the same image by 30.3 / 31.3 / 32.8, so the two made-up tags are
+inside noise (seed 4 was volatile for every arm and is left out). The prediction that
+"long" would leak onto the hair when written as a tag was wrong: as a tag it is simply
+ignored. The leak happens in the sentence, where "long" is free to attach to any noun.
+SAA marks capsules the dictionary does not know for this reason.
+
 ## Practical line
 
-- Two characters interacting, direction matters → **tags plus one action sentence**, no
-  regions. Best direction control measured (9/15), and it keeps the existing tag prompt.
+- Two characters interacting, direction matters → a **language-model-encoder model with a
+  plain sentence** (Anima or NetaYume, 12/15). Anima already runs through SAA's UNET
+  workflow.
+- Staying on WAI → **tags plus one action sentence**, no regions (9/15). It keeps the
+  existing tag prompt.
 - Deterministic left/right placement needed → Regional, accepting that the action may
   duplicate; keep tools and act tags out of the shared Base field.
 - Three or more characters → outside what masking can do.

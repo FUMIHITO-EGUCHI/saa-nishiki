@@ -1,0 +1,702 @@
+{
+  "numGpu": 0,
+  "systemPrompt": "You rewrite an image-generation prompt written as Danbooru tags into the form a language-model text encoder reads best: the quality tags, then one English paragraph.\n\nThe input is JSON with these fields; any of them may be empty:\n- common: quality tags, the number of people, anything shared by the whole picture\n- background, view: where the scene is and how it is framed\n- style: colour, lighting, rendering\n- left, right: the tags of character A (left) and character B (right)\n- action: who does what to whom, in English or Japanese\n\nWrite:\n1. The quality tags from common first, unchanged and comma-separated.\n2. Then one paragraph of plain English sentences in this order: how many people and where they are; character A's appearance; character B's appearance; the action; the background, colour and light.\n3. Write the action once, in the active voice, with the character who acts as the grammatical subject. Do not restate it in the passive. Refer to each character by their appearance, for example \"the girl with short black hair\". Never call them left, right, A or B.\n4. Write the action as what the two bodies do, not as the name of the act or pose: where each character is relative to the other, what holds or touches what, and who looks at whom. For example, instead of \"lap pillow\" write \"the girl with short brown hair sits on the floor, and the girl with long red hair lies on her back with her head resting on her lap, looking up at her\". Do not use the name of the act or pose, even when the input does.\n5. Use only what the input says and the positions and gaze its action implies. Do not add clothing, expressions, props, lighting or background that are not in it. Do not say that anyone stands, sits or walks unless the action requires it. Keep the direction of the action exactly as given.\n6. Copy character names, series names, LoRA trigger words and any token with parentheses, underscores or weights such as (word:1.2) exactly.\n7. English only. Translate Japanese input. The output must not contain Japanese or any other non-English characters.\n8. Describe only what is in the picture. Never mention that a field is empty or that something is unspecified.\n\nReturn JSON: {\"prompt\": \"<quality tags>, <paragraph>\"}",
+  "results": [
+    {
+      "model": "gemma",
+      "lang": "en",
+      "id": "princess-carry",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black suit",
+        "action": "the black haired girl is carrying the blonde girl in her arms"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are indoors. The girl with long blonde hair and blue eyes wears a white dress, while the girl with short black hair and red eyes wears a black suit. The girl with short black hair and red eyes carries the girl with long blonde hair in her arms. The scene is shown in a full body view.",
+      "wallSec": 55.379,
+      "loadSec": 10.2383521,
+      "promptTokens": 631,
+      "promptSec": 18.907825,
+      "outTokens": 87,
+      "outSec": 26.188602,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 65
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "en",
+      "id": "piggyback",
+      "actor": "blonde",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "outdoors, park",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "the blonde girl is giving the black haired girl a piggyback ride on her back"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are in a park. The girl with long blonde hair and blue eyes wears a white dress. The girl with short black hair and red eyes wears a black jacket. The girl with long blonde hair and blue eyes carries the girl with short black hair and red eyes on her back. The scene is outdoors in a park, shown in a full body view.",
+      "wallSec": 42.186,
+      "loadSec": 0.0035016,
+      "promptTokens": 637,
+      "promptSec": 15.338376,
+      "outTokens": 92,
+      "outSec": 26.832639,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 73
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "en",
+      "id": "headpat",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "upper body",
+        "style": "",
+        "left": "short blonde hair, blue eyes, white blouse",
+        "right": "long black hair, red eyes, black coat",
+        "action": "the black haired girl is patting the blonde girl's head"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are indoors in an upper body view. The girl with short blonde hair and blue eyes wears a white blouse. The girl with long black hair and red eyes wears a black coat. The girl with long black hair and red eyes reaches out to pat the head of the girl with short blonde hair, while the girl with short blonde hair looks at her. The scene is set indoors.",
+      "wallSec": 44.411,
+      "loadSec": 0.0049984,
+      "promptTokens": 632,
+      "promptSec": 14.83369,
+      "outTokens": 101,
+      "outSec": 29.56218,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 78
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "en",
+      "id": "kneel-and-stand",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black coat",
+        "action": "the blonde girl is kneeling on the floor and the black haired girl is standing over her"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are indoors. The girl with long blonde hair and blue eyes wears a white dress. The girl with short black hair and red eyes wears a black coat. The girl with long blonde hair kneels on the floor while the girl with short black hair stands over her. The scene is shown in a full body view.",
+      "wallSec": 41.527,
+      "loadSec": 0.0045048,
+      "promptTokens": 636,
+      "promptSec": 15.830566,
+      "outTokens": 88,
+      "outSec": 25.68248,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 65
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "en",
+      "id": "hands-apart",
+      "actor": "both",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "outdoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white summer dress",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "the two girls are facing each other and holding hands with their arms outstretched"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are outdoors. The girl with long blonde hair and blue eyes wears a white summer dress, while the girl with short black hair and red eyes wears a black jacket. The girl with long blonde hair and the girl with short black hair face each other and hold hands with their arms outstretched. The scene is captured in a full body view.",
+      "wallSec": 40.889,
+      "loadSec": 0.0050012,
+      "promptTokens": 634,
+      "promptSec": 14.829458,
+      "outTokens": 92,
+      "outSec": 26.044861,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 70
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "en",
+      "id": "feeding",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "cafe",
+        "view": "upper body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white blouse",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "the black haired girl is feeding the blonde girl with a spoon"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are in a cafe. The girl with long blonde hair and blue eyes wears a white blouse. The girl with short black hair and red eyes wears a black jacket. The girl with short black hair holds a spoon and feeds the girl with long blonde hair. The scene is an upper body view in a cafe.",
+      "wallSec": 38.104,
+      "loadSec": 0.0045612,
+      "promptTokens": 630,
+      "promptSec": 14.070831,
+      "outTokens": 83,
+      "outSec": 24.018626,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 65
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "ja",
+      "id": "princess-carry",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black suit",
+        "action": "黒髪の子が金髪の子をお姫様抱っこしている"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are indoors in a full body view. The girl with long blonde hair and blue eyes wears a white dress. The girl with short black hair and red eyes wears a black suit. The girl with short black hair holds the girl with long blonde hair in her arms, carrying her like a princess while they face each other. The scene is set indoors.",
+      "wallSec": 41.529,
+      "loadSec": 0.0032197,
+      "promptTokens": 632,
+      "promptSec": 14.809321,
+      "outTokens": 95,
+      "outSec": 26.707036,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 72
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "ja",
+      "id": "piggyback",
+      "actor": "blonde",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "outdoors, park",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "金髪の子が黒髪の子をおんぶしている"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are in a park. The girl with long blonde hair and blue eyes wears a white dress. The girl with short black hair and red eyes wears a black jacket. The girl with long blonde hair and blue eyes carries the girl with short black hair and red eyes on her back. The scene is outdoors in a park.",
+      "wallSec": 41.842,
+      "loadSec": 0.0044999,
+      "promptTokens": 632,
+      "promptSec": 15.096018,
+      "outTokens": 89,
+      "outSec": 26.731297,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 67
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "ja",
+      "id": "headpat",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "upper body",
+        "style": "",
+        "left": "short blonde hair, blue eyes, white blouse",
+        "right": "long black hair, red eyes, black coat",
+        "action": "黒髪の子が金髪の子の頭をなでている"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are indoors in an upper body view. The girl with short blonde hair and blue eyes wears a white blouse. The girl with long black hair and red eyes wears a black coat. The girl with long black hair reaches out and strokes the head of the girl with short blonde hair. The scene is set indoors.",
+      "wallSec": 39.614,
+      "loadSec": 0.003498,
+      "promptTokens": 632,
+      "promptSec": 15.004272,
+      "outTokens": 87,
+      "outSec": 24.593497,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 65
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "ja",
+      "id": "kneel-and-stand",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black coat",
+        "action": "金髪の子が床にひざまずき、黒髪の子がその前に立って見下ろしている"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are indoors. The girl with long blonde hair and blue eyes wears a white dress. The girl with short black hair and red eyes wears a black coat. The girl with long blonde hair and blue eyes kneels on the floor, and the girl with short black hair and red eyes stands in front of her, looking down at her. The scene is indoors.",
+      "wallSec": 43.16,
+      "loadSec": 0.0034978,
+      "promptTokens": 642,
+      "promptSec": 15.356367,
+      "outTokens": 97,
+      "outSec": 27.787856,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 72
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "ja",
+      "id": "hands-apart",
+      "actor": "both",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "outdoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white summer dress",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "二人が向かい合って、腕を伸ばして手をつないでいる"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are outdoors in a full body view. The girl with long blonde hair and blue eyes wears a white summer dress. The girl with short black hair and red eyes wears a black jacket. The girl with long blonde hair and the girl with short black hair face each other, reaching out their arms to hold hands. The scene is set outdoors.",
+      "wallSec": 39.968,
+      "loadSec": 0.0052297,
+      "promptTokens": 636,
+      "promptSec": 14.383805,
+      "outTokens": 89,
+      "outSec": 25.565849,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 70
+      }
+    },
+    {
+      "model": "gemma",
+      "lang": "ja",
+      "id": "feeding",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "cafe",
+        "view": "upper body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white blouse",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "黒髪の子が金髪の子にスプーンで食べさせている"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls are in a cafe. The girl with long blonde hair and blue eyes wears a white blouse. The girl with short black hair and red eyes wears a black jacket. The girl with short black hair holds a spoon and feeds the girl with long blonde hair. The girl with short black hair sits next to the girl with long blonde hair, holding the spoon toward her mouth while the girl with long blonde hair looks at her.",
+      "wallSec": 44.958,
+      "loadSec": 0.0042532,
+      "promptTokens": 632,
+      "promptSec": 14.59749,
+      "outTokens": 109,
+      "outSec": 30.348409,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 86
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "en",
+      "id": "princess-carry",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black suit",
+        "action": "the black haired girl is carrying the blonde girl in her arms"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, two girls stand indoors in a full body view. The girl with long blonde hair, blue eyes, and a white dress is being carried by the girl with short black hair, red eyes, and a black suit. The girl with short black hair holds the girl with long blonde hair in her arms, while the girl with long blonde hair rests against her. The scene takes place indoors with no specific color or lighting details.",
+      "wallSec": 44.317,
+      "loadSec": 26.2476982,
+      "promptTokens": 626,
+      "promptSec": 8.018531,
+      "outTokens": 103,
+      "outSec": 10.033833,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 81
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "en",
+      "id": "piggyback",
+      "actor": "blonde",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "outdoors, park",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "the blonde girl is giving the black haired girl a piggyback ride on her back"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, two girls stand outdoors in a park. The girl with long blonde hair, blue eyes, and a white dress carries the girl with short black hair, red eyes, and a black jacket on her back. The girl with long blonde hair, blue eyes, and a white dress supports the girl with short black hair, red eyes, and a black jacket, who wraps her arms around the carrier's neck and rests her legs around the carrier's waist, looking forward.",
+      "wallSec": 12.909,
+      "loadSec": 0.0080016,
+      "promptTokens": 633,
+      "promptSec": 1.730255,
+      "outTokens": 112,
+      "outSec": 11.156719,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 84
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "en",
+      "id": "headpat",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "upper body",
+        "style": "",
+        "left": "short blonde hair, blue eyes, white blouse",
+        "right": "long black hair, red eyes, black coat",
+        "action": "the black haired girl is patting the blonde girl's head"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, The two girls are indoors in an upper body view. The girl with short blonde hair, blue eyes, and a white blouse stands facing the girl with long black hair, red eyes, and a black coat. The girl with long black hair, red eyes, and a black coat pats the head of the girl with short blonde hair, blue eyes, and a white blouse.",
+      "wallSec": 10.561,
+      "loadSec": 0.0039992,
+      "promptTokens": 626,
+      "promptSec": 1.679685,
+      "outTokens": 95,
+      "outSec": 8.864079,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 70
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "en",
+      "id": "kneel-and-stand",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black coat",
+        "action": "the blonde girl is kneeling on the floor and the black haired girl is standing over her"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, The picture shows two girls indoors in a full body view. The girl with long blonde hair, blue eyes, and a white dress is kneeling on the floor, while the girl with short black hair, red eyes, and a black coat is standing over her.",
+      "wallSec": 8.627,
+      "loadSec": 0.0033283,
+      "promptTokens": 631,
+      "promptSec": 1.72745,
+      "outTokens": 71,
+      "outSec": 6.883367,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 51
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "en",
+      "id": "hands-apart",
+      "actor": "both",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "outdoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white summer dress",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "the two girls are facing each other and holding hands with their arms outstretched"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls stand outdoors in a full body view. The girl with long blonde hair, blue eyes, and a white summer dress faces the girl with short black hair, red eyes, and a black jacket. They hold hands with their arms outstretched while facing each other.",
+      "wallSec": 8.73,
+      "loadSec": 0.0025009,
+      "promptTokens": 631,
+      "promptSec": 1.694841,
+      "outTokens": 74,
+      "outSec": 7.020363,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 52
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "en",
+      "id": "feeding",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "cafe",
+        "view": "upper body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white blouse",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "the black haired girl is feeding the blonde girl with a spoon"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, two girls are in a cafe. The girl with long blonde hair and blue eyes wearing a white blouse is being fed by the girl with short black hair and red eyes wearing a black jacket. The girl with short black hair holds a spoon to the mouth of the girl with long blonde hair, who looks at her. The scene is set in a cafe with an upper body view.",
+      "wallSec": 10.847,
+      "loadSec": 0.0050526,
+      "promptTokens": 626,
+      "promptSec": 1.655694,
+      "outTokens": 95,
+      "outSec": 9.172433,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 77
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "ja",
+      "id": "princess-carry",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black suit",
+        "action": "黒髪の子が金髪の子をお姫様抱っこしている"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, The girl with long blonde hair and blue eyes wearing a white dress and the girl with short black hair and red eyes wearing a black suit are indoors in a full body view. The girl with short black hair and red eyes wearing a black suit holds the girl with long blonde hair and blue eyes wearing a white dress in her arms, lifting her up while the girl with long blonde hair and blue eyes wearing a white dress rests against her chest.",
+      "wallSec": 12.045,
+      "loadSec": 0.0030794,
+      "promptTokens": 627,
+      "promptSec": 1.644271,
+      "outTokens": 107,
+      "outSec": 10.38524,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 91
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "ja",
+      "id": "piggyback",
+      "actor": "blonde",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "outdoors, park",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "金髪の子が黒髪の子をおんぶしている"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, The girl with long blonde hair and blue eyes wearing a white dress carries the girl with short black hair and red eyes wearing a black jacket on her back outdoors in a park, both seen in full body view.",
+      "wallSec": 7.645,
+      "loadSec": 0.0051714,
+      "promptTokens": 627,
+      "promptSec": 1.659517,
+      "outTokens": 61,
+      "outSec": 5.96909,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 46
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "ja",
+      "id": "headpat",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "upper body",
+        "style": "",
+        "left": "short blonde hair, blue eyes, white blouse",
+        "right": "long black hair, red eyes, black coat",
+        "action": "黒髪の子が金髪の子の頭をなでている"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, The two girls are indoors in an upper body view. The girl with short blonde hair, blue eyes, and a white blouse stands next to the girl with long black hair and red eyes wearing a black coat. The girl with long black hair and red eyes strokes the head of the girl with short blonde hair, blue eyes, and a white blouse, who looks up at her.",
+      "wallSec": 11.682,
+      "loadSec": 0.0044989,
+      "promptTokens": 627,
+      "promptSec": 1.711518,
+      "outTokens": 99,
+      "outSec": 9.95258,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 74
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "ja",
+      "id": "kneel-and-stand",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "indoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white dress",
+        "right": "short black hair, red eyes, black coat",
+        "action": "金髪の子が床にひざまずき、黒髪の子がその前に立って見下ろしている"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, two girls are indoors in a full body view. The girl with long blonde hair, blue eyes, and a white dress kneels on the floor, and the girl with short black hair, red eyes, and a black coat stands in front of her, looking down at her.",
+      "wallSec": 9.327,
+      "loadSec": 0.0039981,
+      "promptTokens": 637,
+      "promptSec": 1.733647,
+      "outTokens": 75,
+      "outSec": 7.57686,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 53
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "ja",
+      "id": "hands-apart",
+      "actor": "both",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "outdoors",
+        "view": "full body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white summer dress",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "二人が向かい合って、腕を伸ばして手をつないでいる"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, Two girls stand outdoors in a full-body view. The girl with long blonde hair, blue eyes, and a white summer dress faces the girl with short black hair, red eyes, and a black jacket. They extend their arms toward each other and hold hands, looking at one another. The scene is set outdoors.",
+      "wallSec": 9.741,
+      "loadSec": 0.0039977,
+      "promptTokens": 630,
+      "promptSec": 1.709809,
+      "outTokens": 82,
+      "outSec": 8.012097,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 59
+      }
+    },
+    {
+      "model": "qwen",
+      "lang": "ja",
+      "id": "feeding",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, amazing quality, 2girls",
+        "background": "cafe",
+        "view": "upper body",
+        "style": "",
+        "left": "long blonde hair, blue eyes, white blouse",
+        "right": "short black hair, red eyes, black jacket",
+        "action": "黒髪の子が金髪の子にスプーンで食べさせている"
+      },
+      "prompt": "masterpiece, best quality, amazing quality, 2girls, The scene features two girls in a cafe, framed as an upper body shot. The girl with long blonde hair, blue eyes, and a white blouse stands facing the girl with short black hair, red eyes, and a black jacket. The girl with short black hair, red eyes, and a black jacket holds a spoon and feeds the girl with long blonde hair, blue eyes, and a white blouse, who looks at her while receiving the food.",
+      "wallSec": 12.415,
+      "loadSec": 0.0044995,
+      "promptTokens": 629,
+      "promptSec": 1.664323,
+      "outTokens": 109,
+      "outSec": 10.733954,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "words": 83
+      }
+    }
+  ]
+}

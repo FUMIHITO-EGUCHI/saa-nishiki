@@ -7,7 +7,7 @@ SAA can run image generation and the LLM features on a Runpod pod. Everything go
 | Path on the pod | Survives STOP → START | Content |
 | --- | --- | --- |
 | `/workspace/runpod-slim/ComfyUI` | yes | ComfyUI and the custom nodes (ComfyUI_Mira, Impact-Pack, …) |
-| `/workspace/models` | yes | checkpoints, LoRAs, upscalers (`extra_model_paths.yaml`) |
+| `/workspace/models` | yes | checkpoints, LoRAs, upscalers, and the split diffusion model / text encoder files Anima uses (`diffusion_models/`, `text_encoders/`) (`extra_model_paths.yaml`) |
 | `/workspace/ollama/dist` | yes | the Ollama binary |
 | `/workspace/ollama/models` | yes | pulled Ollama models (`OLLAMA_MODELS`) |
 | `/workspace/runpod-slim/extra_model_paths.yaml` | yes | points ComfyUI at `/workspace/models` |
