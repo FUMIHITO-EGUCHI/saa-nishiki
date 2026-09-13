@@ -53,7 +53,7 @@ test('per-field presets are a library: unioned, current wins, never dropped by a
     });
     const manager = read('scripts/renderer/components/promptFieldManager.js');
     // the container sweep does not delete preset buckets; only the editor's delete button does
-    assert.match(manager, /container\.remove\(\);\s*delete globalThis\.prompt\[id\];\s*globalThis\.prompt\.tagCapsuleFields\?\.remove\?\.\(id\);\s*\}/);
+    assert.match(manager, /container\.remove\(\);\s*delete globalThis\.prompt\[id\];\s*globalThis\.prompt\.tagCapsuleFields\?\.remove\?\.\(id\);\s*for \(const picker of pickers\.get\(id\) \?\? \[\]\) picker\.modal\?\.destroy\?\.\(\);\s*pickers\.delete\(id\);\s*\}/);
     assert.match(manager, /\/\/ explicit delete: the field's preset bucket goes with it/);
 });
 
@@ -65,7 +65,8 @@ test('preset apply goes through the layout merge, undo restores snapshots exactl
     const language = read('scripts/renderer/language.js');
     assert.match(language, /globalThis\.prompt\.fieldManager\?\.refresh\?\.\(\);\s*globalThis\.prompt\.tagCapsuleFields\?\.loadFromSettings\?\.\(SETTINGS\);/, 'field set first, then the capsule plans');
     const manager = read('scripts/renderer/components/promptFieldManager.js');
-    assert.match(manager, /refresh: \(\) => \{\s*fields = normalizeCustomFields\(SETTINGS\.prompt_custom_fields\);/);
+    // the cast rows ("@alias" per character slot) are re-synced before the field set is read
+    assert.match(manager, /refresh: \(\) => \{\s*syncCast\(\);\s*fields = normalizeCustomFields\(SETTINGS\.prompt_custom_fields\);/);
     assert.match(manager, /if \(control\?\.getValue && String\(control\.getValue\(\) \?\? ''\) !== field\.text\) control\.setValue\(field\.text\)/);
     // text callbacks resolve the field by id so a reloaded `fields` array is never stale
     assert.match(manager, /\(value\) => setFieldText\(field\.id, value\)/);

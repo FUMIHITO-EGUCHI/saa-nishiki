@@ -80,22 +80,26 @@ export function setupFinalPromptDisclosure({ container, getExpansion, text = tag
         toggleText.textContent = text('tag_ui_final_prompt');
         prevButton.setAttribute('aria-label', text('tag_ui_prev_image'));
         nextButton.setAttribute('aria-label', text('tag_ui_next_image'));
-        const expansion = typeof getExpansion === 'function' ? getExpansion() : null;
-        const rows = expansion?.rows ?? [];
-        const count = Math.max(1, rows.length);
-        imageIndex = Math.min(imageIndex, count - 1);
-        const showPager = open && count > 1;
-        pager.hidden = !showPager;
-        pagerText.textContent = text('tag_ui_image_n', imageIndex + 1, count);
-        prevButton.disabled = imageIndex <= 0;
-        nextButton.disabled = imageIndex >= count - 1;
         note.textContent = open ? text('tag_ui_readonly_note') : text('tag_ui_expand_to_review');
         const nextChevron = open ? createIcon('chevronDown', 14) : createIcon('chevronRight', 14);
         chevronNode.replaceWith(nextChevron);
         chevronNode = nextChevron;
-
         panel.hidden = !open;
-        if (!open) return;
+        // Closed: no expansion work at all. The toggle click calls render() again, so
+        // opening always shows fresh rows (imageIndex is clamped against them then).
+        if (!open) {
+            pager.hidden = true;
+            return;
+        }
+
+        const expansion = typeof getExpansion === 'function' ? getExpansion() : null;
+        const rows = expansion?.rows ?? [];
+        const count = Math.max(1, rows.length);
+        imageIndex = Math.min(imageIndex, count - 1);
+        pager.hidden = count <= 1;
+        pagerText.textContent = text('tag_ui_image_n', imageIndex + 1, count);
+        prevButton.disabled = imageIndex <= 0;
+        nextButton.disabled = imageIndex >= count - 1;
         const row = rows[imageIndex];
         panel.replaceChildren();
         panel.appendChild(block(text('tag_ui_fp_positive'), row?.positive ?? ''));

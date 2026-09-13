@@ -36,15 +36,19 @@ import { getWeightPopover } from './weightPopover.js';
 import { getBatchWeightDialog } from './batchWeightDialog.js';
 import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
 import { tagText } from './tagUiText.js';
+import { TAG_DICTIONARY_EVENT, tagStatus } from './tagDictionaryStatus.js';
 import { customFieldExtras, isCustomFieldId, normalizeCustomFields, normalizeOrder, setCustomFieldExtras } from '../../shared/promptFieldOrder.js';
 import { sideOrder } from '../../shared/regionalSides.js';
+import { castEnabled, isCastFieldId } from '../../shared/castMembers.js';
 
 // Unit ids of each prompt in generation order (scripts/shared/regionalSides.js), so
 // the Final prompt preview and the batch dialogs mirror what generate.js assembles.
 // Regional: the left / right positive chains and one merged negative (shared, left,
 // right); otherwise the single chains and no right prompt.
 export function chainFromSettings(stored = {}) {
-    const customs = normalizeCustomFields(stored?.prompt_custom_fields);
+    // the "@alias" cast rows join the chain for the Diffusion model type only
+    const customs = normalizeCustomFields(stored?.prompt_custom_fields)
+        .filter(field => castEnabled(stored) || !isCastFieldId(field.id));
     const positive = normalizeOrder(stored?.prompt_positive_order, 'positive', customs);
     const negative = normalizeOrder(stored?.prompt_negative_order, 'negative', customs);
     if (!stored?.regional_condition) return { positive, positiveRight: null, negative };
@@ -120,12 +124,17 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     function selectionIds() {
         return capsules.filter(capsule => selectedIds.has(capsule.id)).map(capsule => capsule.id);
     }
+    // true while at least one chip carries `is-selected`; an empty selection over an
+    // unpainted row is a no-op, so plain renders skip the per-chip attribute writes
+    let selectionPainted = false;
     function applySelectionClasses() {
+        if (selectedIds.size === 0 && !selectionPainted) return;
         const chipNodes = chips.querySelectorAll(':scope > .tag-capsule-chip');
         chipNodes.forEach((chip, index) => {
             chip.classList.toggle('is-selected', selectedIds.has(capsules[index]?.id));
             chip.setAttribute('aria-selected', selectedIds.has(capsules[index]?.id) ? 'true' : 'false');
         });
+        selectionPainted = selectedIds.size > 0;
     }
     function setSelection(ids) {
         selectedIds.clear();
@@ -438,12 +447,28 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         notice.hidden = discardedNotice === 0;
     }
 
+    // renderChips keeps the chips as the leading children of the row (the add slot is
+    // always last), so the chip at a capsule index is a direct child lookup
+    function chipAt(index) {
+        const node = index >= 0 && index < capsules.length ? chips.children[index] : null;
+        return node?.classList.contains('tag-capsule-chip') ? node : null;
+    }
+
+    // Roving tabindex: every chip is created with tabIndex -1, so only the previously
+    // focused chip and the new one need a write (not the whole row on each focus move).
+    let rovingChip = null;
     function updateRoving() {
-        const chipNodes = chips.querySelectorAll(':scope > .tag-capsule-chip');
         focusIndex = Math.max(0, Math.min(capsules.length, focusIndex));
-        chipNodes.forEach((chip, index) => { chip.tabIndex = index === focusIndex ? 0 : -1; });
+        const chip = chipAt(focusIndex);
+        if (rovingChip && rovingChip !== chip) rovingChip.tabIndex = -1;
+        if (chip) chip.tabIndex = 0;
+        rovingChip = chip;
         addButton.tabIndex = focusIndex === capsules.length ? 0 : -1;
     }
+
+    // dictionary answers arrive after the first paint; the chips are re-marked then
+    const onDictionaryEvent = () => { if (mode === 'capsule') render(); };
+    document.addEventListener(TAG_DICTIONARY_EVENT, onDictionaryEvent);
 
     function render() {
         if (mode === 'capsule') {
@@ -452,6 +477,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
                 excludedSet: excludedTagSet(getExcludeText()),
                 trailing: addSlot,
                 isFavorite: value => isFavoriteTag(favGroupForKey(key), value),
+                tagStatus,
             });
             chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
             updateRoving();
@@ -468,7 +494,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         focusIndex = Math.max(0, Math.min(capsules.length, index));
         updateRoving();
         if (focusIndex < capsules.length) {
-            chips.querySelectorAll(':scope > .tag-capsule-chip')[focusIndex]?.focus();
+            chipAt(focusIndex)?.focus();
         } else if (fallbackToAdd) {
             addButton.focus();
         }
@@ -528,12 +554,14 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     function chipIndexOf(target) {
         const chip = target?.closest?.('.tag-capsule-chip');
         if (!chip) return -1;
-        return [...chips.querySelectorAll(':scope > .tag-capsule-chip')].indexOf(chip);
+        // each chip carries its capsule id (tagCapsuleChip.js updateChip); no DOM query needed
+        const id = chip.dataset.capsuleId;
+        return id ? capsules.findIndex(capsule => capsule.id === id) : -1;
     }
 
     function openPopover(index) {
         const capsule = capsules[index];
-        const anchor = chips.querySelectorAll(':scope > .tag-capsule-chip')[index];
+        const anchor = chipAt(index);
         if (!capsule || !anchor) return;
         getWeightPopover().open({
             anchor,
@@ -786,7 +814,21 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     titleObserver.observe(textbox, { attributes: true, attributeFilter: ['placeholder', 'title'] });
 
     // star toggles in the selection modal reflect into the chips immediately
-    document.addEventListener(FAVORITE_TAGS_CHANGED_EVENT, () => render());
+    const onFavoritesChanged = () => render();
+    document.addEventListener(FAVORITE_TAGS_CHANGED_EVENT, onFavoritesChanged);
+
+    // Field removal (custom rows): drops the document-level listeners, the title
+    // observer and any pending timer so a detached field stops rendering.
+    let disposed = false;
+    function dispose() {
+        if (disposed) return;
+        disposed = true;
+        document.removeEventListener(TAG_DICTIONARY_EVENT, onDictionaryEvent);
+        document.removeEventListener(FAVORITE_TAGS_CHANGED_EVENT, onFavoritesChanged);
+        titleObserver.disconnect();
+        clearTimeout(suggestTimer);
+        suggestToken += 1;   // an in-flight related-tags answer is ignored
+    }
 
     // ---------------------------------------------------------------- init
     textbox.dataset.tagCapsuleFieldSetup = 'true';
@@ -863,6 +905,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             const index = capsules.findIndex(capsule => capsule.id === id);
             if (index >= 0) showSuggestions(index, { force: true });
         },
+        dispose,
     };
     if (initialMode === 'capsule') setMode('capsule');
     return api;
@@ -891,8 +934,11 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
     const fieldList = () => [...fields.values()];
     const previewSeed = () => Math.max(0, getGenerationSeed());
 
+    // A muted field (the row's ● switch, promptFieldManager) keeps its chips but
+    // sends nothing: the preview and the batch dialogs see it empty.
+    const mutedKeys = new Set();
     function expansionFields() {
-        return fieldList().map(field => ({ key: field.key, capsules: field.getCapsules(), batch: field.getBatch() }));
+        return fieldList().map(field => ({ key: field.key, capsules: mutedKeys.has(field.key) ? [] : field.getCapsules(), batch: field.getBatch() }));
     }
 
     function expandRows(count, seed) {
@@ -921,6 +967,9 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
     const MODE_STORAGE_KEY = 'saa.capsuleMode';
     let sharedMode = 'string';
     try { sharedMode = localStorage.getItem(MODE_STORAGE_KEY) === 'capsule' ? 'capsule' : 'string'; } catch { /* storage blocked */ }
+    // Fields that hold a sentence (the Action) stay text when the card flips to
+    // capsules; their own toggle still works locally.
+    const sentenceKeys = new Set();
     let propagatingMode = false;
     function propagateMode(mode) {
         if (propagatingMode || mode === sharedMode) return;
@@ -928,7 +977,10 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         try { localStorage.setItem(MODE_STORAGE_KEY, mode); } catch { /* storage blocked */ }
         propagatingMode = true;
         try {
-            for (const field of fields.values()) if (field.getMode() !== mode) field.setMode(mode);
+            for (const [key, field] of fields) {
+                if (sentenceKeys.has(key) && mode === 'capsule') continue;
+                if (field.getMode() !== mode) field.setMode(mode);
+            }
         } finally {
             propagatingMode = false;
         }
@@ -954,6 +1006,19 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         if (extras.batch !== undefined) stored[`${key}_batch`] = { ...extras.batch };
     }
 
+    // The Exclude text re-marks the chips of every other field (excludedSet). Typing
+    // there fires onChange per keystroke, so the fan-out is debounced (trailing);
+    // the Final prompt refresh is not, it stays immediate.
+    const EXCLUDE_FANOUT_DELAY = 150;
+    let excludeFanOutTimer = 0;
+    function scheduleExcludeFanOut(changed) {
+        clearTimeout(excludeFanOutTimer);
+        excludeFanOutTimer = setTimeout(() => {
+            excludeFanOutTimer = 0;
+            for (const other of fields.values()) if (other !== changed) other.refresh();
+        }, EXCLUDE_FANOUT_DELAY);
+    }
+
     function addField(control, key) {
         const stored = settings();
         const extras = readStoredExtras(stored, key);
@@ -961,7 +1026,7 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
             key,
             text,
             getGenerationSeed,
-            initialMode: sharedMode,
+            initialMode: sentenceKeys.has(key) ? 'string' : sharedMode,
             onModeChange: propagateMode,
             fetchRelated,
             onExternalDrop: (payload, at, { copy }) => set.transfer(payload.field, Array.isArray(payload.ids) && payload.ids.length > 1 ? payload.ids : payload.id, key, { at, copy }),
@@ -980,9 +1045,7 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
                         : row.fields[fieldKey],
             })),
             onChange: changed => {
-                if (changed.key === 'exclude') {
-                    for (const other of fields.values()) if (other !== changed) other.refresh();
-                }
+                if (changed.key === 'exclude') scheduleExcludeFanOut(changed);
                 requestFinalPromptRefresh();
             },
         });
@@ -1015,11 +1078,29 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
             return field;
         },
         remove: key => {
-            if (!fields.delete(key)) return;
+            const field = fields.get(key);
+            if (!field) return;
+            field.dispose?.();
+            fields.delete(key);
             requestFinalPromptRefresh();
         },
         getMode: () => sharedMode,
         setMode: mode => propagateMode(mode === 'capsule' ? 'capsule' : 'string'),
+        // muted rows leave the Final prompt preview and the batch expansion
+        setMuted: (key, muted = true) => {
+            const was = mutedKeys.has(key);
+            if (muted) mutedKeys.add(key); else mutedKeys.delete(key);
+            if (was !== mutedKeys.has(key)) requestFinalPromptRefresh();
+        },
+        // marks a field as a sentence (kept as text when the card shows capsules)
+        setSentence: (key, sentence = true) => {
+            if (sentence) sentenceKeys.add(key); else sentenceKeys.delete(key);
+            const field = fields.get(key);
+            if (field && sentence && field.getMode() === 'capsule') {
+                propagatingMode = true;
+                try { field.setMode('string'); } finally { propagatingMode = false; }
+            }
+        },
         // Moves (copy: duplicates) one capsule into another field, weight plan and
         // disabled state included. Returns the inserted capsule or null.
         // `capsuleId` may be an array: the whole selection moves as one block.

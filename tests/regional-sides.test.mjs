@@ -166,32 +166,30 @@ test('the regional renderer path assembles per side and no longer swaps at gener
     assert.match(callbacks, /saa:regional-characters-changed/);
 });
 
-test('the Prompts card lists BOTH SIDES / LEFT / RIGHT with swap, collapse and character rows while Regional is on', () => {
+test('the Scene holds a Regional block with a LEFT / RIGHT box each (swap, character rows, side units) while Regional is on', () => {
     const manager = read('scripts/renderer/components/promptFieldManager.js');
-    assert.match(manager, /if \(isRegional\(\)\) return regionalEntries\(options\);/);
-    assert.match(manager, /entries\.push\(\{ section: 'BOTH SIDES', stripe: 'common' \}\);/);
-    assert.match(manager, /entries\.push\(\{ swapRow: true \}\);/);
-    assert.match(manager, /entries\.push\(\{ sideHead: side, fields: own \}\);\s*entries\.push\(\{ character: side \}\);/);
-    assert.match(manager, /if \(sideCollapsed\[side\] && !includeCollapsed\) continue;/);
-    assert.match(manager, /entries\.push\(\{ section: 'ALL', stripe: 'exclude' \}\);/);
-    // the plain list is untouched with Regional off
-    assert.match(manager, /entries\.push\(\{ section: 'POSITIVE', stripe: 'positive' \}\);/);
+    // the block sits where the first side unit would be; side units go into its boxes
+    assert.match(manager, /if \(boxes\[side\]\.length === 0 && boxes\.left\.length === 0 && boxes\.right\.length === 0\) sequence\.push\(\{ block: true \}\);/);
+    assert.match(manager, /if \(id === 'negative' && regional\) \{\s*put\('negative_left', 'left'\);\s*put\('negative_right', 'right'\);/);
+    assert.match(manager, /box\.className = `scene-side is-\$\{side\}`;/);
     // swap = one undo step through the settings transaction
     assert.match(manager, /runEditTransaction\(\{ source: 'regional-swap', sections: \['prompt', 'generation'\] \}, mutate\)/);
     assert.match(manager, /list\.updateDefaults\(keys\[1\], keys\[0\]\);/, 'one slot per side, an OC may sit on either');
     // character rows open the Characters card's picker for that slot
     assert.match(manager, /sideCharacterTriggers\(side\)\[0\]\?\.click\(\)/);
-    assert.match(manager, /localStorage\.setItem\(SIDE_COLLAPSE_KEY/);
-    // editor: side per custom field, defaults to both
-    assert.match(manager, /prompt-field-editor-side-select/);
+    // a custom row dragged into a box takes that side (both when dropped outside)
     assert.match(manager, /if \(side === 'both'\) delete custom\.side; else custom\.side = side;/);
     assert.match(manager, /negative_left: '\.prompt-negative-left',\s*negative_right: '\.prompt-negative-right',/);
     for (const theme of ['html/index_dark.css', 'html/index_light.css']) {
         const css = read(theme);
-        for (const cls of ['.prompt-side-swap', '.prompt-side-block.is-left', '.prompt-side-head', '.prompt-side-character', '.prompt-side-badge.is-right', '.prompt-field-editor-side']) {
+        for (const cls of ['.prompt-side-swap', '.prompt-side-character']) {
             assert.match(css, new RegExp(cls.replace(/[.]/g, '\\.')), `${theme} styles ${cls}`);
         }
         assert.match(css, /\.regional-condition-swap \{ display: none !important; \}/);
+    }
+    const css = read('html/index.css');
+    for (const cls of ['.scene-regional {', '.scene-side {', '.scene-side.is-right {', '.scene-side-head {']) {
+        assert.ok(css.includes(cls), `index.css styles ${cls}`);
     }
     const favorites = read('scripts/renderer/components/favoriteTags.js');
     assert.match(favorites, /fieldKey === 'negative_left' \|\| fieldKey === 'negative_right'/, 'side negatives use the negative favorites');

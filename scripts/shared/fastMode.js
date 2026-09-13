@@ -50,6 +50,9 @@ function withLoraTag(prompt, tag) {
 export function applyFastMode(generateData, settings) {
     const fast = fastModeConfig(settings);
     if (!fast.enabled || !generateData || typeof generateData !== 'object') return generateData;
+    // The distillation LoRAs are SDXL weights; on a Diffusion (UNET / Anima) model they
+    // do not load and the LCM step count only ruins the picture.
+    if (settings?.api_model_type === 'Diffusion' || generateData.unet?.enable === true) return generateData;
 
     const tag = fastLoraTag(fast);
     const result = { ...generateData };

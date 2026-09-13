@@ -4,6 +4,7 @@ import { addFavorites, delFavorites } from './favoriteCharacters.js';
 import { createSelectionModal } from './selectionModal.js';
 import { normalizeSearchText, normalizeSelectionKey } from './selectionModalLogic.js';
 import { originalKey } from '../../shared/characterKeys.js';
+import { normalizeAlias } from '../../shared/castMembers.js';
 import { characterWorkSearchTerms, characterWorkTitles } from '../../shared/characterWorks.js';
 
 function splitLabels(value, count) {
@@ -205,6 +206,8 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
     let allOptions = makeOptions([[], []], []);
     let committed = Array(dropdownCount).fill(null);
     let weights = Array(dropdownCount).fill('1.0');
+    // cast alias per slot (the "@alias" prompt row and Action reference, Diffusion only)
+    const aliases = Array(dropdownCount).fill('');
     let activeIndex = 0;
     const fields = [];
     const thumbPreview = createCharacterThumbPreview();
@@ -270,10 +273,23 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         weight.inputMode = 'decimal';
         weight.value = '1.0';
         weight.setAttribute('aria-label', `${labels[index]} weight`);
-        controls.append(trigger, weight);
+        const alias = document.createElement('input');
+        alias.type = 'text';
+        alias.className = 'character-selection-alias';
+        alias.maxLength = 20;
+        alias.placeholder = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.cast_alias_placeholder ?? '@alias';
+        alias.setAttribute('aria-label', `${labels[index]} alias`);
+        // one row per slot: alias | character | weight (the alias shows for the cast only)
+        controls.append(alias, trigger, weight);
         fieldElement.append(label, controls);
         grid.appendChild(fieldElement);
-        fields.push({ trigger, weight, label, options: [] });
+        fields.push({ trigger, weight, alias, label, options: [] });
+
+        alias.addEventListener('change', event => {
+            aliases[index] = normalizeAlias(event.target.value);
+            event.target.value = aliases[index];
+            if (typeof callback === 'function') callback(index, committed.map(option => option?.key || 'None'));
+        });
 
         trigger.addEventListener('click', event => {
             event.preventDefault();
@@ -341,6 +357,13 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
             const parsed = Number.parseFloat(value) || 1;
             weights[index] = parsed === 1 ? '1.0' : String(parsed);
             if (fields[index]) fields[index].weight.value = weights[index];
+        },
+        getAlias(index) {
+            return aliases[index] ?? '';
+        },
+        setAlias(index, value) {
+            aliases[index] = normalizeAlias(value);
+            if (fields[index]) fields[index].alias.value = aliases[index];
         },
         setValueOnly(trigger) {
             valueOnly = Boolean(trigger);
@@ -411,7 +434,7 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         container.appendChild(row);
     }
 
-    function build(keys = [], weights = [], valueOnly = null) {
+    function build(keys = [], weights = [], valueOnly = null, aliases = []) {
         const previousValueOnly = valueOnly ?? control?.isValueOnly?.() ?? (globalThis.globalSettings?.language === 'en-US');
         control = createCharacterControl({
             containerId,
@@ -424,6 +447,7 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         const defaults = Array.from({ length: count }, (_, index) => keys[index] ?? 'None');
         control.updateDefaults(...defaults);
         for (let index = 0; index < count; index++) control.setTextValue(index, weights[index] ?? 1);
+        for (let index = 0; index < count; index++) control.setAlias(index, aliases[index] ?? '');
         renderSlotButtons();
     }
 
@@ -435,14 +459,20 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         return control ? Array.from({ length: count }, (_, index) => control.getTextValue(index)) : [];
     }
 
+    function currentAliases() {
+        return control ? Array.from({ length: count }, (_, index) => control.getAlias(index)) : [];
+    }
+
     function setSlotCount(next) {
         const clamped = Math.max(minSlots, Math.min(maxSlots, next));
         if (clamped === count) return;
         const keys = currentKeys().slice(0, Math.min(count, clamped));
         const weights = currentWeights().slice(0, Math.min(count, clamped));
+        const aliases = currentAliases().slice(0, Math.min(count, clamped));
         count = clamped;
         build([...keys, ...Array(Math.max(0, count - keys.length)).fill('None')].slice(0, count),
-            [...weights, ...Array(Math.max(0, count - weights.length)).fill(1)].slice(0, count));
+            [...weights, ...Array(Math.max(0, count - weights.length)).fill(1)].slice(0, count),
+            null, aliases);
         onSlotsChanged?.();
         if (typeof callback === 'function') callback(0, control.getKey());
     }
@@ -450,14 +480,16 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
     const api = {
         // ---- variable-slot surface ----
         getSlotCount: () => count,
-        getSlots: () => Array.from({ length: count }, (_, index) => ({
-            key: control?.getKey()[index] ?? 'None',
-            weight: control?.getTextValue(index) ?? 1,
-        })),
+        getSlots: () => Array.from({ length: count }, (_, index) => {
+            const slot = { key: control?.getKey()[index] ?? 'None', weight: control?.getTextValue(index) ?? 1 };
+            const alias = control?.getAlias(index) ?? '';
+            if (alias !== '') slot.alias = alias;
+            return slot;
+        }),
         setSlots(slots) {
             const list = Array.isArray(slots) && slots.length ? slots.slice(0, maxSlots) : [{ key: 'None', weight: 1 }];
             count = Math.max(minSlots, list.length);
-            build(list.map(slot => slot?.key ?? 'None'), list.map(slot => slot?.weight ?? 1));
+            build(list.map(slot => slot?.key ?? 'None'), list.map(slot => slot?.weight ?? 1), null, list.map(slot => slot?.alias ?? ''));
         },
         addSlot: () => setSlotCount(count + 1),
         removeSlot: () => setSlotCount(count - 1),
@@ -465,7 +497,7 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         setOptions(data, originalData) {
             if (Array.isArray(data?.[0]) && Array.isArray(data?.[1])) charData = data;
             if (Array.isArray(originalData)) ocData = originalData;
-            build(currentKeys(), currentWeights());
+            build(currentKeys(), currentWeights(), null, currentAliases());
             return api;
         },
         updateDefaults(...defaults) {

@@ -157,14 +157,10 @@ export function createSelectionModal({
         return Boolean(activeConfig.favorites?.isFavorite?.(optionKey(option)));
     }
 
-    // A leading '@' searches favorites only (parity with the legacy dropdown's
-    // special search). Only meaningful when a favorites config is active.
+    // Favorites are narrowed with the Fav-only button; the search text is taken as
+    // written ('@' is a cast reference elsewhere and no longer a search prefix).
     function effectiveSearch() {
-        const raw = searchInput.value;
-        if (activeConfig.favorites && raw.trimStart().startsWith('@')) {
-            return { query: raw.trimStart().slice(1), favoritesOnly: true };
-        }
-        return { query: raw, favoritesOnly: favOnly };
+        return { query: searchInput.value, favoritesOnly: favOnly };
     }
 
     function renderFavOnlyButton() {

@@ -441,6 +441,10 @@ class WebUI {
             const ratio_right = Number.parseFloat(ratioes[1]);
             const weight_left = Number.parseFloat(regional.str_left);
             const weight_right = Number.parseFloat(regional.str_right);
+            // Advanced-mode mapping rows are [x1, x2, y1, y2, weight]; the first region
+            // (the "left" prompt) is the left part, or the top part for a top-bottom split
+            const topBottom = regional.split === 'top-bottom';
+            const region = (from, to, weight) => topBottom ? [0.0, 1.0, from, to, weight] : [from, to, 0.0, 1.0, weight];
 
             backendWebUI.startPolling();            
 
@@ -467,20 +471,8 @@ class WebUI {
                             null,           // background
                             null,           // background_weight
                             [               // mapping
-                                [
-                                    0.0,        // x1
-                                    ratio_left, // x2
-                                    0.0,        // y1
-                                    1.0,        // y2
-                                    weight_left // weight
-                                ],
-                                [
-                                    ratio_right,   
-                                    1.0,
-                                    0.0,
-                                    1.0,
-                                    weight_right
-                                ]
+                                region(0.0, ratio_left, weight_left),
+                                region(ratio_right, 1.0, weight_right),
                             ],              // mapping
                             "{ }",          // common_parser
                             false,          // common_debug

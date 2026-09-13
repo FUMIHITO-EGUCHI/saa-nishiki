@@ -119,6 +119,7 @@ export const sharedBodyHTML = `
                   </div>
                   <div class="regional-condition-main">
                     <div class="regional-condition-settings-1">
+                      <div class="regional-condition-split"></div>
                       <div class="regional-condition-image-ratio"></div>
                       <div class="regional-condition-overlap-ratio"></div>
                     </div>
@@ -173,6 +174,26 @@ export const sharedBodyHTML = `
                       <div class="system-settings-ai-preview ui-switch"></div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="ui-card prose-card" id="prose-card" aria-label="Prose" hidden>
+              <div class="ui-card-head">
+                <span class="ui-card-title" data-ui-text="ui_prose_title">Prose</span>
+                <div class="system-settings-ai-prose ui-switch" id="ai-prose-switch"></div>
+                <span class="ui-card-sub" id="prose-card-status"></span>
+                <div class="ui-card-tools">
+                  <span class="prose-scope-label" data-ui-text="ui_prose_scope_label">Dissolve</span>
+                  <div class="ai-mode-segment prose-scope-segment" id="prose-scope-segment" role="radiogroup" aria-label="Prose scope"></div>
+                </div>
+              </div>
+              <div class="ui-card-body prose-card-body">
+                <textarea class="prose-preview" id="prose-preview" rows="4" spellcheck="false"></textarea>
+                <div class="prose-card-foot">
+                  <span class="prose-card-note" id="prose-card-note"></span>
+                  <button type="button" class="prose-button" id="prose-revert" data-ui-text="ui_prose_revert" hidden>Revert</button>
+                  <button type="button" class="prose-button" id="prose-regenerate" data-ui-text="ui_prose_regenerate">Regenerate</button>
                 </div>
               </div>
             </section>
@@ -312,6 +333,7 @@ export const sharedBodyHTML = `
                 <div class="run-param-controls">
                   <div class="generate-sampler run-select"></div>
                   <div class="generate-scheduler run-select"></div>
+                  <button type="button" class="run-mini-button" id="anima-defaults" data-ui-text="ui_anima_defaults" hidden>Anima defaults</button>
                 </div>
               </div>
             </div>

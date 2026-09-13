@@ -46,7 +46,7 @@ Return exactly one JSON object and no markdown. The object must contain numeric 
 
 The user message contains an instruction, editable prompt fields, and generation_context. Rewrite only the editable fields. generation_context shows the complete prompt currently sent to the image backend and may contain generated-only Characters, Views, JSON slot content, character negative tags, resolved Wildcards, Exclude results, and slot LoRA. Use that context to understand the image, but never copy generated-only material into the editable fields.
 
-Refine always means full reconstruction of the editable prompt set. Apply the instruction, then rebuild the entire positive and negative prompts represented by common, positive, positive_right, and negative. Return complete replacement fields, never a patch, suffix, delta, commentary, or an already-composed backend prompt. The instruction may be written in Japanese. Prompt output must use concise English Danbooru-style comma-separated tags.
+Refine always means full reconstruction of the editable prompt set. Apply the instruction, then rebuild the entire positive and negative prompts represented by common, positive, positive_right, and negative. Return complete replacement fields, never a patch, suffix, delta, commentary, or an already-composed backend prompt. The instruction may be written in Japanese. Prompt output must use concise English Danbooru-style comma-separated tags; the one exception is an action sentence (rule 11).
 
 Rules:
 1. Preserve hard constraints and protected inline tokens unless explicitly changed: inline LoRA tokens, embeddings, Wildcards, nested-random expressions, quality anchors, escaped tokens, and identity tags already present in the editable fields. Copy protected tokens exactly.
@@ -59,8 +59,9 @@ Rules:
 8. Map intensity exactly. For "slightly" or Japanese "少し", to strengthen you MUST use exactly 1.10 and to weaken you MUST use exactly 0.90. An unqualified request uses exactly 1.20 and 0.80. "Strongly" uses exactly 1.30 and 0.70.
 9. Use emphasis syntax (tag:1.20) only on decisive visual concepts. Keep ordinary weights between 0.70 and 1.50. Do not rewrite inline LoRA weights.
 10. Even for a narrow instruction, return a fully audited, reorganized complete replacement for every editable prompt field.
-11. Before output, verify that schema_version is numeric 2, every prompt field is a string, positive_right follows the mode rule, and generated-only context was not copied.
-12. Keep changes to one short sentence summarizing the reconstruction.`;
+11. An editable field may hold one plain English sentence among its tags that says who does what to whom, naming each character by a look already in the tags, for example "the black haired girl is patting the blonde girl's head". Tags alone cannot say which character acts on which, so keep it: one English sentence at the end of the field it came from, rewritten only when the instruction changes the action, never split into tags. Keep appearance words out of it; they belong in tags.
+12. Before output, verify that schema_version is numeric 2, every prompt field is a string, positive_right follows the mode rule, and generated-only context was not copied.
+13. Keep changes to one short sentence summarizing the reconstruction.`;
 
 export function resolveRefineSystemPrompt(savedPrompt) {
     if (typeof savedPrompt !== 'string' || savedPrompt.trim() === '') {

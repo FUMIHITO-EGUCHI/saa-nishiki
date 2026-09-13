@@ -926,7 +926,7 @@ const LATENT_UPSCALERS_REMOTE = ['Latent (nearest-exact)', 'Latent (bilinear)', 
 // The remote ComfyUI's own lists (issue #8) replace the local scan for the
 // ComfyUI interface; a null entry keeps the local list for that kind.
 // Returns the kinds that were applied.
-function applyRemoteModelLists(lists, { model_filter_keyword = '*', model_filter = false } = {}) {
+function applyRemoteModelLists(lists, { model_filter_keyword = '*', model_filter_keyword_diffusion = '*', model_filter = false } = {}) {
     const applied = [];
     const take = (value, fallback) => (Array.isArray(value) && value.length > 0 ? [...value] : fallback);
     if (Array.isArray(lists?.checkpoints)) {
@@ -943,7 +943,9 @@ function applyRemoteModelLists(lists, { model_filter_keyword = '*', model_filter
     }
     if (Array.isArray(lists?.controlnet)) { CONTROLNET_COMFYUI = ['none', ...lists.controlnet]; applied.push('controlnet'); }
     if (Array.isArray(lists?.diffusion)) {
-        const filtered = applyModelFilter(lists.diffusion, model_filter_keyword, model_filter);
+        // the Diffusion keyword, as in the local scan (updateDiffusionModelList): the
+        // checkpoint keyword would hide every Anima / Flux model behind an SDXL filter
+        const filtered = applyModelFilter(lists.diffusion, model_filter_keyword_diffusion, model_filter);
         DIFFUSION_MODELS_COMFYUI = filtered.length > 0 ? filtered : ['None'];
         applied.push('diffusion');
     }

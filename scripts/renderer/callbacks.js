@@ -12,6 +12,7 @@ import { myCharacterList, myRegionalCharacterList } from './components/myDropdow
 import { flushSlots } from './slots/slotsManager.js';
 import { changeFontSize } from './components/myTextbox.js';
 import { set_prompt_textBox_Heights } from './components/componentsManager.js';
+import { TAG_DICTIONARY_EVENT } from './components/tagDictionaryStatus.js';
 
 export async function callback_api_model_select(index, selectedValue) {
     const value = selectedValue[0];    
@@ -56,9 +57,29 @@ export async function callback_api_model_type(index, selectedValue) {
         globalThis.generate.controlnet.setValue(false);
         globalThis.generate.controlnet.setEnable(false);
 
+        // Regional masking is built on the SDXL checkpoint route; a language-model encoder
+        // takes "who does what to whom" from the sentence instead (Prose on the AI card).
+        if (globalThis.generate.regionalCondition.getValue()) {
+            globalThis.generate.regionalCondition.setValue(false);
+            // the Scene is laid out once, below, after the cast mode is set
+            callback_regional_condition(false, false, { refreshScene: false });
+        }
+        globalThis.generate.regionalCondition.setEnable(false);
+        globalThis.generate.regionalCondition_dummy.setEnable(false);
+
         //globalThis.generate.adetailer.setValue(false);
         //globalThis.generate.adetailer.setEnable(false);
     }
+    // the AI card shows its Prose switch only for Diffusion; the chip marks (unknown tag /
+    // sentence) mean nothing for a language-model encoder and are re-rendered off
+    globalThis.uiShell?.aiCard?.render?.();
+    document.dispatchEvent(new CustomEvent(TAG_DICTIONARY_EVENT));
+    // the cast (alias per slot, one "@alias" prompt row each), the Prose card and the
+    // Cast / Scene wording exist for Diffusion only (uiShell.js setupModelTypeUi)
+    document.body.classList.toggle('cast-mode', value !== 'Checkpoint');
+    globalThis.uiShell?.modelTypeUi?.render?.();
+    globalThis.uiShell?.proseCard?.render?.();
+    globalThis.prompt?.fieldManager?.refresh?.();
 }
 
 export async function callback_api_interface(index, selectedValue){
@@ -159,6 +180,8 @@ export async function callback_myCharacterList_updateThumb(){
         globalThis.globalSettings.character1 = slots[0]?.key ?? 'None';
         globalThis.globalSettings.character2 = slots[1]?.key ?? 'None';
         globalThis.globalSettings.character3 = slots[2]?.key ?? 'None';
+        // the "@alias" prompt rows follow the slots and their aliases
+        globalThis.prompt?.fieldManager?.refresh?.();
     }
 }
 
@@ -234,6 +257,16 @@ export async function callback_generate_cancel() {
     globalThis.generate.cancelClicked = true;
     globalThis.queueManager.removeAll();
     globalThis.generate.showCancelButtons(false);
+    // Nothing running (the jobs were only queued): no loop will clear the
+    // "Creating prompts…" label or the loading overlay, so do it here.
+    if (!globalThis.inGenerating) {
+        globalThis.generate.loadingMessage = '';
+        if (globalThis.mainGallery?.isLoading) globalThis.mainGallery.hideLoading('cancel', '');
+        globalThis.generate.generate_single.setClickable(true);
+        globalThis.generate.generate_batch.setClickable(true);
+        globalThis.generate.generate_same.setClickable(true);
+        return;
+    }
 
     if (globalThis.inBrowser) {        
         const apiInterface = globalThis.generate.nowAPI;
@@ -260,7 +293,7 @@ export function callback_keep_gallery(keepGallery) {
     globalThis.globalSettings.keep_gallery = keepGallery;
 }
 
-export function callback_regional_condition(trigger, dummy = false) {
+export function callback_regional_condition(trigger, dummy = false, { refreshScene = true } = {}) {
     const SETTINGS = globalThis.globalSettings;
     const FILES = globalThis.cachedFiles;
     const LANG = FILES.language[SETTINGS.language];
@@ -304,9 +337,9 @@ export function callback_regional_condition(trigger, dummy = false) {
         globalThis.prompt.common.setTitle(LANG.custom_prompt);
         globalThis.prompt.positive.setTitle(LANG.api_prompt);
     }
-    // the field list mirrors the container's visibility: re-render it so
-    // "Positive (right)" appears / disappears with the switch
-    globalThis.prompt.fieldManager?.refresh?.();
+    // the Scene mirrors the container's visibility: re-lay it out so the Regional
+    // block appears / disappears with the switch (the model type callback lays out once itself)
+    if (refreshScene) globalThis.prompt.fieldManager?.refresh?.();
     // the Final prompt preview gains / loses its right side with the switch
     globalThis.prompt.tagCapsuleFields?.refreshFinalPrompt?.();
 }

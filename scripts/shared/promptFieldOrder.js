@@ -64,6 +64,8 @@ export function normalizeCustomFields(raw) {
         };
         // Regional side (both / left / right); absent = both, see regionalSides.js
         if (entry.side === 'left' || entry.side === 'right') field.side = entry.side;
+        // muted: the text is kept but leaves the prompt (the row's ● switch)
+        if (entry.muted === true) field.muted = true;
         const plans = normalizeFieldPlans(entry.weight_plans);
         if (plans.length) field.weight_plans = plans;
         const batch = normalizeFieldBatch(entry.batch);
@@ -97,6 +99,35 @@ export function setCustomFieldExtras(rawFields, id, { weight_plans, batch } = {}
         }
         return next;
     });
+}
+
+/**
+ * A muted unit keeps its text but contributes nothing to the prompt. A custom
+ * field carries `muted` in its entry; a built-in unit (common, views, background,
+ * style, positive, positive_right, negative, negative_left, negative_right) is
+ * listed in `prompt_field_muted`.
+ */
+export function isFieldMuted(settings, id) {
+    if (!settings || typeof id !== 'string') return false;
+    if (isCustomFieldId(id)) {
+        return normalizeCustomFields(settings.prompt_custom_fields).some(field => field.id === id && field.muted === true);
+    }
+    return Array.isArray(settings.prompt_field_muted) && settings.prompt_field_muted.includes(id);
+}
+
+/** Settings patch that mutes / unmutes one unit (see isFieldMuted). */
+export function setFieldMuted(settings, id, muted) {
+    if (isCustomFieldId(id)) {
+        const fields = normalizeCustomFields(settings?.prompt_custom_fields).map(field => {
+            if (field.id !== id) return field;
+            const next = { ...field };
+            if (muted) next.muted = true; else delete next.muted;
+            return next;
+        });
+        return { prompt_custom_fields: fields };
+    }
+    const current = Array.isArray(settings?.prompt_field_muted) ? settings.prompt_field_muted.filter(key => key !== id) : [];
+    return { prompt_field_muted: muted ? [...current, id] : current };
 }
 
 export function normalizeOrder(rawOrder, polarity, customFields) {

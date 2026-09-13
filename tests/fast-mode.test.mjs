@@ -35,6 +35,14 @@ test('fast mode off returns the generateData untouched', () => {
     assert.equal(applyFastMode(data, {}), data);
 });
 
+test('fast mode leaves a Diffusion (UNET) generation alone: the LoRA is SDXL-only', () => {
+    const data = sampleGenerateData();
+    assert.equal(applyFastMode(data, { ...FAST_SETTINGS, api_model_type: 'Diffusion' }), data);
+    const unet = { ...sampleGenerateData(), unet: { enable: true, model: 'waiANIMA_v10Base10.safetensors' } };
+    assert.equal(applyFastMode(unet, FAST_SETTINGS), unet);
+    assert.notEqual(applyFastMode(data, { ...FAST_SETTINGS, api_model_type: 'Checkpoint' }), data);
+});
+
 test('fast mode overrides sampling on the base pass and appends the LoRA tag', () => {
     const data = sampleGenerateData();
     const result = applyFastMode(data, FAST_SETTINGS);

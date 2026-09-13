@@ -4,6 +4,7 @@
 // Nothing here touches ComfyUI; it only decides what text and seed each loop reads.
 
 import { stripDisabledTags } from '../components/tagCapsuleLogic.js';
+import { isFieldMuted } from '../../shared/promptFieldOrder.js';
 
 let activeOverride = null;
 
@@ -14,6 +15,8 @@ function fieldSet() {
 // Reads a prompt field, honouring the per-image override while one is active.
 // Disabled tags ("~tag", toggled off on a capsule) never reach the prompt.
 export function readPromptValue(key) {
+    // a muted row (the Scene's ● switch) keeps its text but sends nothing
+    if (isFieldMuted(globalThis.globalSettings, key)) return '';
     if (activeOverride?.fields && typeof activeOverride.fields[key] === 'string') {
         // a Refine snapshot (baseFields) carries the raw field text, "~tag" included
         return stripDisabledTags(activeOverride.fields[key]);

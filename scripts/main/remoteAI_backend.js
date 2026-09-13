@@ -93,6 +93,7 @@ function requestLocal(options) {
             existingPositiveRight,
             editorFields,
             generationContext,
+            keepAlive,
         } = options;
 
         const useOllama = isOllamaChatUrl(apiUrl);
@@ -111,6 +112,7 @@ function requestLocal(options) {
                 generationContext,
                 temperature,
                 n_predict,
+                ...(keepAlive === undefined ? {} : { keepAlive: normalizeKeepAlive(keepAlive, 0) }),
             })
             : {
                 temperature: temperature,

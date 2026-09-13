@@ -58,7 +58,7 @@ test('chip row implements roving tabindex, keyboard reducer actions, drag reorde
   for (const action of ['open', 'add', 'type', 'delete', 'move-left', 'move-right', 'weight-up', 'weight-down', 'exit']) {
     assert.match(field, new RegExp(`case '${action}'`), `${action} handled`);
   }
-  assert.match(field, /chip\.tabIndex = index === focusIndex \? 0 : -1/);
+  assert.match(field, /if \(chip\) chip\.tabIndex = 0;/);
   assert.match(field, /addEventListener\('dragstart'/);
   assert.match(field, /addEventListener\('drop'/);
   assert.match(field, /function openTagModal/, 'add-tag routes to the tag selection modal');

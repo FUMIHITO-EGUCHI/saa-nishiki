@@ -7,7 +7,7 @@ import { processRandomString } from './tools/nestedBraceParsing.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { filterPrompts } from './tools/promptFilter.js';
 import { asFragment, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
-import { sideOrder } from '../shared/regionalSides.js';
+import { normalizeSplit, sideOrder } from '../shared/regionalSides.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue } from './tools/promptBatchExpansion.js';
 import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
 import { removeAiPromptMarker } from '../aiPromptRefiner.js';
@@ -515,12 +515,16 @@ function createRegional(apiInterface) {
     const str_right = globalThis.regional.str_right.getFloat();
 
     const option_left = globalThis.regional.option_left.getValue();
-    const option_right = globalThis.regional.option_right.getValue();    
+    const option_right = globalThis.regional.option_right.getValue();
+
+    // left / right = the first / second region; with 'top-bottom' that is top / bottom
+    const split = normalizeSplit(globalThis.globalSettings.regional_split);
+    const [first, second] = split === 'top-bottom' ? ['Top', 'Bottom'] : ['Left', 'Right'];
 
     const brownColor = (globalThis.globalSettings.css_style==='dark')?'BurlyWood':'Brown';
-    const info = `Regional Condition:\n\tOverlap Ratio: [[color=${brownColor}]${overlap_ratio}[/color]]\n\tImage Ratio: [[color=${brownColor}]${image_ratio}[/color]]\n\tLeft Str: [[color=${brownColor}]${str_left}[/color]]\tMask Area: [[color=${brownColor}]${option_left}[/color]]\n\tRight Str: [[color=${brownColor}]${str_right}[/color]]\tMask Area: [[color=${brownColor}]${option_right}[/color]]\n`;
+    const info = `Regional Condition:\n\tSplit: [[color=${brownColor}]${split}[/color]]\n\tOverlap Ratio: [[color=${brownColor}]${overlap_ratio}[/color]]\n\tImage Ratio: [[color=${brownColor}]${image_ratio}[/color]]\n\t${first} Str: [[color=${brownColor}]${str_left}[/color]]\tMask Area: [[color=${brownColor}]${option_left}[/color]]\n\t${second} Str: [[color=${brownColor}]${str_right}[/color]]\tMask Area: [[color=${brownColor}]${option_right}[/color]]\n`;
 
-    return {info, ratio, str_left, str_right, option_left, option_right};
+    return {info, ratio, split, str_left, str_right, option_left, option_right};
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity

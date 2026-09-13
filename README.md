@@ -42,6 +42,7 @@ The plain textboxes are replaced by a field list with one large focus editor. Ev
 - **Fields editor with sides.** While Regional is on, `Fields ⇅` shows each chain as the same **BOTH SIDES / LEFT / RIGHT** blocks as the Prompts card. Drag a row to reorder it, or drop a custom field into another block to change its side; the arrow and side buttons remain.
 - **Presets.** Each field has its own preset list. A prompt preset stores the whole field layout (fields, names, order and content); applying one restores that layout exactly.
 - **Related-tag suggestions (offline).** Focus a capsule and a strip below the field shows tags that often appear together (from a bundled co-occurrence dictionary, `data/tag_related.txt`) and tags from the same word family. Click to insert; toggle the feature with the ✦ button in the field footer.
+- **Dictionary marks.** A capsule whose tag is not in the tag dictionary gets a wavy underline, because SDXL models mostly ignore such words: in tests `long staff` and `ancient staff` changed nothing, while the real tag `wooden staff` changed the staff every time. A capsule that reads like a sentence (four or more words and not a known tag) is drawn dashed and italic, and is sent as written. LoRA tokens, wildcards and random groups are never marked.
 - **Search.** The autocomplete matches the beginning, the middle and the end of tag names by default.
 - The text editor grows with its content, so long prompts never get clipped.
 
@@ -59,7 +60,7 @@ Give a tag a **weight plan** (start, step, end) and run a batch: SAA walks the p
 Every prompt edit, preset application and AI refine result is an atomic step in a global edit history. Use `Ctrl + Z` / `Ctrl + Shift + Z` (or `Ctrl + Y`) or the toolbar buttons.
 
 ## AI prompt refiner
-In addition to upstream's remote / local `llama.cpp` AI prompt, Nishiki adds a **Refine** mode backed by [Ollama](https://ollama.com/). Refine rewrites the whole prompt with one structured request per batch before the first image, and applies the result field by field to the editor. Refine edits are recorded in the edit history and can be undone.
+In addition to upstream's remote / local `llama.cpp` AI prompt, Nishiki adds a **Refine** mode backed by [Ollama](https://ollama.com/). Refine rewrites the whole prompt with one structured request per batch before the first image, and applies the result field by field to the editor. Refine edits are recorded in the edit history and can be undone. A plain English action sentence among the tags (see *Who does what to whom* under Regional Condition) is kept as a sentence, not broken into tags.
 The AI result is shown in the **AI tab of the Info panel** instead of a pop-up after every generation.
 
 ## Fast generation mode
@@ -437,6 +438,10 @@ Try Regional Condition in 3 steps:
 
 **Sides (Nishiki).** With Regional on, the Prompts card groups the fields into **BOTH SIDES** (Common, Background, Style, the shared Negative and custom fields marked *Both*), **LEFT** and **RIGHT** (each side's character, its Positive, its own Negative and its side-only custom fields) and **ALL** (Exclude). Every custom field gets a side in the Fields editor. **Swap** exchanges left and right in one step (prompts, negatives, weight plans, characters, strengths) and can be undone; it replaces the old *Swap Character* switch. The character rows open the character picker, and each side collapses from its header. On ComfyUI the left and right negatives are masked like the positives; Forge Neo folds them into one negative.
 
+**Split and emphasis.** `Split` cuts the image **Left / Right** or **Top / Bottom**. With Top / Bottom the LEFT / RIGHT blocks read **TOP** / **BOTTOM**: the left prompt goes to the top region and the right prompt to the bottom one (ComfyUI and Forge Neo). Top / Bottom suits a scene where one character's head really is in the lower part (lying down, sitting on the floor): with two standing characters both heads fall in the top region, and in the regional bench all 6 results drew the top prompt's character twice. `Emphasis` (formerly *Strength*) only works as a difference between the two sides. The same value on both sides changes nothing, because the combined conditioning is normalized; a gap makes one side more prominent without changing what the characters do.
+
+**Who does what to whom.** Regions keep two characters' looks apart, but they do not decide an interaction. Write the action as one short English sentence after the tags, actor first, and name each character by a look that is already in the tags (hair colour works best), e.g. `the black haired girl is patting the blonde girl's head`. Naming them by position (`the girl on the left`) was not tested. `Fields editor → + Action sentence` adds a Both-sides field for it at the end of the chain. On WAI Illustrious, a sentence after the tags got the direction right in 9 of 15 test images, against 3 of 15 for the sentence alone. Keep looks out of the sentence: its adjectives can spill onto hair or clothes.
+
 <img src="examples/nishiki_regional.png" width=35%>
 
 ## Semi-Auto Tag Complete
@@ -453,9 +458,8 @@ Use the mouse or `keyboard up and down` with `Enter` / `Tab` to select; press `E
 Supports English, Chinese and Japanese tag search.
 **Special thanks to Kiratian(天痕) for the Chinese tag translation.**
 
-*Artist search for Anima and others*
-Activate it with the `@` symbol. Results are filtered by groups `1` and `8`.
-To apply an `Artist` tag in the `Anima Model`, prefix it with `@`, e.g. `mira` → `@mira`.
+*The `@` prefix*
+`@` is not a search prefix: a word is looked up as written. In an `Action` field, `@alias` refers to a character slot (the alias set on the Characters card, Diffusion model type). To apply an `Artist` tag in the `Anima Model`, write it with the `@` prefix yourself, e.g. `mira` → `@mira`.
 
 | Mark | ID | Category | Group |
 | --- | --- | --- |  --- |

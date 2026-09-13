@@ -33,6 +33,35 @@ export function normalizeSide(value) {
     return value === 'left' || value === 'right' ? value : 'both';
 }
 
+// Split direction. 'left-right' cuts the image into a left and a right region;
+// 'top-bottom' into a top and a bottom one. The side ids stay left / right either way
+// (left = the first region, left or top; right = the second, right or bottom), so
+// prompts, presets and Swap are untouched and only the labels follow the split.
+export const SPLITS = Object.freeze(['left-right', 'top-bottom']);
+
+export function normalizeSplit(value) {
+    return value === 'top-bottom' ? 'top-bottom' : 'left-right';
+}
+
+// What the Split dropdown shows for each value, and back.
+export const SPLIT_LABELS = Object.freeze({ 'left-right': 'Left / Right', 'top-bottom': 'Top / Bottom' });
+
+export function splitLabel(value) {
+    return SPLIT_LABELS[normalizeSplit(value)];
+}
+
+export function splitFromLabel(label) {
+    return SPLITS.find(split => SPLIT_LABELS[split] === label) ?? 'left-right';
+}
+
+export function sideLabel(side, split) {
+    if (side === 'both') return 'BOTH SIDES';
+    const topBottom = normalizeSplit(split) === 'top-bottom';
+    if (side === 'left') return topBottom ? 'TOP' : 'LEFT';
+    if (side === 'right') return topBottom ? 'BOTTOM' : 'RIGHT';
+    return String(side ?? '').toUpperCase();
+}
+
 export function sideOf(id, customFields) {
     if (Object.hasOwn(BUILTIN_SIDES, id)) return BUILTIN_SIDES[id];
     const custom = normalizeCustomFields(customFields).find(field => field.id === id);

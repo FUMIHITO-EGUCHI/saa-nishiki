@@ -62,7 +62,11 @@ test('network failures recover: blocklist lifts on any response, stale error ove
 test('renderer queue and generate loops always clear the busy state and re-enable buttons', () => {
   const queue = generate.slice(generate.indexOf('export async function startQueue()'), generate.indexOf('async function seartGenerate('));
   assert.match(queue, /try \{\n    generateData = globalThis\.queueManager\.getFirstSlot\(\);/);
-  assert.match(queue, /\} catch \(error\) \{[\s\S]*queueManager\.removeAll\(\);[\s\S]*setQueueAutoStart\(false\);[\s\S]*\} finally \{[\s\S]*hideLoading\(ret, retCopy\);[\s\S]*globalThis\.inGenerating = false;\n    \}\n\}/);
+  assert.match(queue, /\} catch \(error\) \{[\s\S]*queueManager\.removeAll\(\);[\s\S]*setQueueAutoStart\(false\);[\s\S]*\} finally \{[\s\S]*hideLoading\(ret, retCopy\);[\s\S]*globalThis\.inGenerating = false;\n    \}\n/);
+  // a job attached while the loop was on its last item is started after the busy flag clears
+  assert.match(queue, /globalThis\.inGenerating = false;\n    \}\n[\s\S]*if \(globalThis\.globalSettings\.generate_auto_start && !globalThis\.generate\.cancelClicked\n\s*&& globalThis\.queueManager\.getSlotsCount\(\) > 0\) \{[\s\S]*await startQueue\(\);\n    \}\n\}/);
+  // cancelling queued-only jobs clears the label and overlay that no loop would clear
+  assert.match(callbacks, /callback_generate_cancel\(\) \{[\s\S]*if \(!globalThis\.inGenerating\) \{\n\s*globalThis\.generate\.loadingMessage = '';/);
 
   for (const [label, source] of [['generate.js', generate], ['generate_regional.js', regional]]) {
     assert.match(source, /let prepareError = null;\n    for\(let loop = 0; loop < loops; loop\+\+\)\{\s*\n      try \{/, `${label} loop body is guarded`);

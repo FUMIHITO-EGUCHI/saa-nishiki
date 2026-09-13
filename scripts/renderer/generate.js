@@ -13,13 +13,15 @@ import { filterPrompts } from './tools/promptFilter.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
 import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
 import { removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
+import { applyProse, describeProse } from './prosePipeline.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { normalizeApiAddress } from '../shared/backendAddress.js';
 import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
 import { resolveQueuedAiPrompt } from './tools/refineGenerationResult.js';
 import { applyRefineEditorPatch } from './tools/refineEditorApplication.js';
 import { completeRefineRunItem, createRefineRunController, recordRefineRunCandidate } from './tools/refineRunState.js';
-import { asFragment, joinOrderedUnits, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
+import { asFragment, isFieldMuted, joinOrderedUnits, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
+import { castEnabled, isCastFieldId } from '../shared/castMembers.js';
 import { stripDisabledTags } from './components/tagCapsuleLogic.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
@@ -178,8 +180,10 @@ export function readViewPromptField(view_list, key, seed) {
 }
 
 export function getViewTags(seed, includeFields = true) {
-    const tag_angle = createViewTag('angle', globalThis.viewList.getValue()[0], seed, globalThis.viewList.getTextValue(0));
-    const tag_camera = createViewTag('camera', globalThis.viewList.getValue()[1], seed, globalThis.viewList.getTextValue(1));
+    // the View row can be muted like any other Scene row
+    const viewsMuted = isFieldMuted(globalThis.globalSettings, 'views');
+    const tag_angle = viewsMuted ? '' : createViewTag('angle', globalThis.viewList.getValue()[0], seed, globalThis.viewList.getTextValue(0));
+    const tag_camera = viewsMuted ? '' : createViewTag('camera', globalThis.viewList.getValue()[1], seed, globalThis.viewList.getTextValue(1));
 
     let combo = '';
     if(tag_angle !== '')
@@ -207,14 +211,19 @@ export function getViewTags(seed, includeFields = true) {
 function readCustomFieldValue(field) {
     // Through the expansion bridge so a batch weight override on a custom field
     // reaches the prompt like it does for the built-in fields.
+    if (field.muted === true) return ''; // the row's ● switch: text kept, nothing sent
     if (globalThis.prompt?.[field.id]?.getValue) return readPromptValue(field.id);
     return stripDisabledTags(field.text || ''); // "~tag" = toggled off on its capsule
 }
 
 export function getCustomFieldTexts(polarity) {
-    const fields = normalizeCustomFields(globalThis.globalSettings.prompt_custom_fields);
+    const SETTINGS = globalThis.globalSettings;
+    const fields = normalizeCustomFields(SETTINGS.prompt_custom_fields);
+    const cast = castEnabled(SETTINGS);
     return fields
         .filter(field => field.polarity === polarity)
+        // the "@alias" rows belong to the Diffusion paragraph; a checkpoint never sees them
+        .filter(field => cast || !isCastFieldId(field.id))
         .map(field => ({ id: field.id, text: readCustomFieldValue(field) }));
 }
 
@@ -417,6 +426,7 @@ async function getCharacters() {
     let characters = '';
     let negativeTags = '';
     let character_name_for_image_prefix = '';
+    const characterTags = [];   // each slot on its own ('' for an empty slot), for the Prose step
 
     for(let index=0; index < slotCount; index++) {
         let {tag, tag_assist, thumb, info, weight, characterName, neg_tags, isOriginal} = await createCharacters(index, seeds);
@@ -427,6 +437,7 @@ async function getCharacters() {
             console.log('remove fav mark ✨ for', tag);
         }
 
+        const before = character;
         if (isOriginal) {
             if(tag.endsWith('.')) {
                 seperate = ' ';
@@ -440,7 +451,8 @@ async function getCharacters() {
             }
             character = packWeight(character, tag, weight, seperate);
             character += tag_assist;
-        }        
+        }
+        characterTags.push(character.slice(before.length));
 
         if (neg_tags) {
             negativeTags = (negativeTags === '') ? neg_tags : `${negativeTags}, ${neg_tags}`;
@@ -460,6 +472,7 @@ async function getCharacters() {
     return{
         thumb: thumbImages,
         characters_tag:character,
+        character_tags: characterTags,
         information: information,
         seed:random_seed,
         characters:characters,
@@ -513,7 +526,8 @@ function appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP, fieldUnits = n
             text: `${BOC || ''}${characters || ''}${EOC || ''}`,
             colored: `${BOC || ''}${colored(characters, characterColor)}${EOC || ''}`,
         },
-        positive: { text: positive || '', colored: colored(positive, positiveColor) },
+        // a separator like every other unit: a custom field (the Action) may follow
+        positive: { text: asFragment(positive), colored: colored(asFragment(positive), positiveColor) },
     };
     for (const custom of fieldUnits?.customs ?? []) {
         const text = asFragment(custom.text);
@@ -661,7 +675,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
             negativePrompt = applied.negative;
         }
     } else {            
-        const {thumb, characters_tag, information, seed, characters, negative_tags, image_prefix} = await getCharacters();
+        const {thumb, characters_tag, character_tags, information, seed, characters, negative_tags, image_prefix} = await getCharacters();
         randomSeed = seed;
         finalInfo = information;
 
@@ -699,6 +713,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
             ...promptRefineContext,
             seed: randomSeed,
             characterNegative: negative_tags,
+            characterTags: character_tags,
         };
         thumbImage = thumb;
         charactersName = characters;
@@ -1399,6 +1414,21 @@ export async function startQueue(){
             } else {
                 generateData.positive = promptResult.positive;
                 generateData.negative = promptResult.negative;
+                // Diffusion (Anima) with Prose on: the tags become one English paragraph
+                const prose = await applyProse(generateData, {
+                    refineContext: queueManager.refineContext,
+                    aiMode: aiRequest.source === 'none' ? 'off' : promptMode,
+                    aiText: aiPrompt,
+                    LANG,
+                });
+                if (prose) {
+                    const proseInfo = describeProse(prose, { LANG, dark: globalThis.globalSettings.css_style === 'dark' });
+                    globalThis.infoBox.image.appendValue(proseInfo);
+                    globalThis.generate.infoBySeed.set(String(generateData.seed), `${finalInfo}${proseInfo}`);
+                    if (prose.applied && globalThis.infoPanel?.showAiResult) {
+                        globalThis.infoPanel.showAiResult(prose.prompt, { focus: Boolean(globalThis.globalSettings.ai_prompt_preview) });
+                    }
+                }
                 result = await seartGenerate(queueManager.apiInterface, generateData);
             }
         } else if(queueManager.genType === 'miraITU') {
@@ -1456,6 +1486,15 @@ export async function startQueue(){
         if(globalThis.queueManager.getSlotsCount() === 0)
             globalThis.generate.showCancelButtons(false);
         globalThis.inGenerating = false;
+    }
+    // A job attached while this loop was on its last item (a generate click during the
+    // final image, or during the paragraph step of another click) found inGenerating
+    // set and could not start its own loop; the loop above had already popped past it.
+    // Pick it up now instead of leaving it queued until the next click.
+    if (globalThis.globalSettings.generate_auto_start && !globalThis.generate.cancelClicked
+        && globalThis.queueManager.getSlotsCount() > 0) {
+        console.log('[Generate] Queue still holds', globalThis.queueManager.getSlotsCount(), 'job(s) attached during the run; starting them.');
+        await startQueue();
     }
 }
 

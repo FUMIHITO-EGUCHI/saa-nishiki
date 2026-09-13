@@ -308,27 +308,11 @@ class PromptManager {
 
         let matches = [];
         if (modifiedIndex >= 0 && modifiedIndex < currentParts.length) {
-            let targetWord = currentParts[modifiedIndex].trim();
-            let artistOnly = false;
-            
-            // Special case: @ prefix handling
-            // Search artist tags for Anima Model
-            if (targetWord.startsWith('@')) {
-                const atCount = (targetWord.match(/@/g) || []).length;
-                if (atCount === 1) {
-                    // Remove the single @ at the beginning and mark as artist-only search
-                    targetWord = targetWord.substring(1) + '*'; // add wildcard to match any artist tag starting with the given text
-                    artistOnly = true;
-                }
-                // if there are multiple @, treat it as normal search (e.g., for tags @_@ or @@@)
-            }                    
-            
-            if (artistOnly) {
-                matches = this.getSuggestions(targetWord, 50, [1, 8], normalizedOptions);
-                matches = matches.filter(match => Number.parseInt(match.group) === 1 || Number.parseInt(match.group) === 8);
-            } else {
-                matches = this.getSuggestions(targetWord, 50, null, normalizedOptions);
-            }
+            const targetWord = currentParts[modifiedIndex].trim();
+            // A leading '@' is a cast reference ("@alias" in an Action, see
+            // scripts/shared/castMembers.js), not a search prefix: the word is looked
+            // up as written, so only tags that really start with '@' (e.g. @_@) match.
+            matches = this.getSuggestions(targetWord, 50, null, normalizedOptions);
         }
 
         for (const match of matches) {
@@ -403,6 +387,10 @@ async function setupTagAutoCompleteBackend(language = 'en-US'){
             return tagGet(text, options);
         });
 
+        ipcMain.handle('tag-lookup', async (event, keys) => {
+            return tagLookup(keys);
+        });
+
         return tagBackend.dataLoaded;
     }
 
@@ -412,7 +400,19 @@ async function setupTagAutoCompleteBackend(language = 'en-US'){
     return false;
 }
 
+// Which dictionary keys ("long_hair", see shared/tagLint.js) exist. `loaded: false`
+// while the tag file is missing, so the renderer never marks tags against an empty
+// dictionary.
+let tagKeySet = null;
+function tagLookup(keys) {
+    if (!tagBackend.dataLoaded) return { loaded: false, known: [] };
+    tagKeySet ??= new Set(tagBackend.prompts.map(entry => String(entry.prompt).toLocaleLowerCase()));
+    const list = Array.isArray(keys) ? keys.filter(key => typeof key === 'string').slice(0, 2000) : [];
+    return { loaded: true, known: list.filter(key => tagKeySet.has(key)) };
+}
+
 async function tagReload(language = activeLanguage){
+    tagKeySet = null;
     tagBackend.prompts = [];
     tagBackend.lastCustomPrompt = "";
     tagBackend.previousCustomPrompt = "";

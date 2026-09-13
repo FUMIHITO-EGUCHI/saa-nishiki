@@ -58,6 +58,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     regional_str_right: 1,
     regional_option_left: 'default',
     regional_option_right: 'default',
+    // 'left-right' | 'top-bottom' (regionalSides.js SPLITS)
+    regional_split: 'left-right',
     character_left: 'None',
     character_right: 'None',
 
@@ -107,6 +109,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     prompt_negative_order: [],
     prompt_field_presets: {},
     prompt_field_collapsed: [],
+    prompt_field_muted: [],
     common_weight_plans: [],
     positive_weight_plans: [],
     positive_right_weight_plans: [],
@@ -151,6 +154,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
     ai_refine_system_prompt: REFINE_SYSTEM_PROMPT,
     ai_prompt_role: 1,
     ai_prompt_preview: true,
+    // Diffusion (Anima) only: the tag prompt is rewritten as one English paragraph by the
+    // local / pod LLM before each image (regional bench: 12-14/15 vs 7-9/15 as tags)
+    ai_prose_enable: false,
+    // what the paragraph dissolves: 'cast' (characters + action), 'scene' (+ background /
+    // style) or 'all'; the rest goes out as the tags it was (scripts/shared/prosePrompt.js)
+    ai_prose_scope: 'cast',
 
     api_interface: 'None',
     api_preview_refresh_time: 1,
@@ -237,12 +246,12 @@ export const SECTION_KEYS = Object.freeze({
         'view_angle', 'view_camera', 'view_background', 'view_style', 'weights4dropdownlist',
         'custom_prompt', 'api_prompt', 'api_prompt_right', 'api_neg_prompt', 'api_neg_prompt_left', 'api_neg_prompt_right',
         'prompt_background', 'prompt_style', 'ai_prompt', 'prompt_ban',
-        'prompt_custom_fields', 'prompt_positive_order', 'prompt_negative_order', 'prompt_field_presets', 'prompt_field_collapsed',
+        'prompt_custom_fields', 'prompt_positive_order', 'prompt_negative_order', 'prompt_field_presets', 'prompt_field_collapsed', 'prompt_field_muted',
         'common_weight_plans', 'positive_weight_plans', 'positive_right_weight_plans', 'negative_weight_plans', 'exclude_weight_plans',
         'background_weight_plans', 'style_weight_plans', 'negative_left_weight_plans', 'negative_right_weight_plans',
         'common_batch', 'positive_batch', 'positive_right_batch', 'negative_batch', 'exclude_batch',
         'background_batch', 'style_batch', 'negative_left_batch', 'negative_right_batch',
-        'ai_interface', 'ai_local_prompt_mode', 'ai_prompt_role', 'ai_prompt_preview',
+        'ai_interface', 'ai_local_prompt_mode', 'ai_prompt_role', 'ai_prompt_preview', 'ai_prose_enable', 'ai_prose_scope',
     ]),
     generation: Object.freeze([
         'random_seed', 'cfg', 'step', 'width', 'height', 'batch', 'api_image_landscape', 'api_model_sampler', 'api_model_scheduler',
@@ -250,7 +259,7 @@ export const SECTION_KEYS = Object.freeze({
         'api_hf_enable', 'api_hf_scale', 'api_hf_denoise', 'api_hf_upscaler_selected', 'api_hf_colortransfer', 'api_hf_random_seed', 'api_hf_steps',
         'api_refiner_enable', 'api_refiner_add_noise', 'api_refiner_model', 'api_refiner_model_vpred', 'api_refiner_ratio',
         'regional_condition', 'regional_swap', 'regional_overlap_ratio', 'regional_image_ratio',
-        'regional_str_left', 'regional_str_right', 'regional_option_left', 'regional_option_right',
+        'regional_str_left', 'regional_str_right', 'regional_option_left', 'regional_option_right', 'regional_split',
     ]),
     lora: Object.freeze(['lora_slot']),
     adetailer: Object.freeze(['api_adetailer_enable', 'ad_slot']),
@@ -321,7 +330,11 @@ function coerce(key, value, defaultValue) {
             .slice(0, MAX_CHARACTER_SLOTS)
             .map(slot => {
                 const weight = Number.parseFloat(slot.weight);
-                return { key: slot.key, weight: Number.isFinite(weight) ? weight : 1 };
+                const result = { key: slot.key, weight: Number.isFinite(weight) ? weight : 1 };
+                // the cast alias (Diffusion prompt rows, scripts/shared/castMembers.js)
+                const alias = typeof slot.alias === 'string' ? slot.alias.trim().slice(0, 20) : '';
+                if (alias !== '') result.alias = alias;
+                return result;
             });
         return slots.length ? slots : clone(defaultValue);
     }

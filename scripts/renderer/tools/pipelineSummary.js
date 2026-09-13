@@ -87,7 +87,8 @@ export function summarizeJson(entries = [], text = {}) {
 
 export function summarizeRegional(settings = {}, text = {}) {
     const parts = [];
-    if (settings.regional_image_ratio !== undefined) parts.push(`${text.ratio ?? 'L/R'} ${settings.regional_image_ratio}`);
+    const topBottom = settings.regional_split === 'top-bottom';
+    if (settings.regional_image_ratio !== undefined) parts.push(`${topBottom ? (text.ratioTopBottom ?? 'T/B') : (text.ratio ?? 'L/R')} ${settings.regional_image_ratio}`);
     if (settings.regional_overlap_ratio !== undefined) parts.push(`${text.overlap ?? 'overlap'} ${settings.regional_overlap_ratio}`);
     if (settings.regional_str_left !== undefined && settings.regional_str_right !== undefined) {
         parts.push(`${fixed(settings.regional_str_left, 1)} / ${fixed(settings.regional_str_right, 1)}`);

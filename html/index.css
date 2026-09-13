@@ -516,7 +516,7 @@ html, body {
     font-size: 1.5rem;
     color: rgba(255, 255, 255, 0.5);
     border: 2px dashed transparent;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .drag-hint-bottom {
@@ -527,7 +527,7 @@ html, body {
     font-size: 1.5rem;
     color: rgba(255, 255, 255, 0.5);
     border: 2px dashed transparent;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .drag-hint-top.active {
@@ -592,6 +592,749 @@ html, body {
     width: 100%;
     padding: 3px;
     text-align: center;
+}
+
+/* cast alias (Diffusion): names the slot's "@alias" prompt row and its Action reference */
+.character-selection-alias {
+    display: none;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 28px;
+    padding: 3px 8px;
+    border: 1px solid;
+    border-radius: 5px;
+    font: inherit;
+    font-size: 0.82rem;
+}
+
+/* the cast row: alias | character | weight, no "Character list n" label */
+.cast-mode .dropdown-character .character-selection-alias {
+    display: block;
+}
+
+.cast-mode .dropdown-character .character-selection-label {
+    display: none;
+}
+
+.cast-mode .dropdown-character .character-selection-controls {
+    grid-template-columns: 104px minmax(0, 1fr) 34px;
+}
+
+/* the regional Left / Right pickers share the control but have no cast row */
+.cast-mode .dropdown-character-regional .character-selection-alias {
+    display: none;
+}
+
+/* Scene: every prompt unit as one row (label | chips) in chain order, edited in place
+   (scripts/renderer/components/promptFieldManager.js) */
+.prompt-scene {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+}
+
+/* one compact row per unit: handle + label | chips | tools (on hover) */
+.prompt-scene .prompt-field > .myTextbox-wrapper {
+    display: grid;
+    grid-template-columns: 136px minmax(0, 1fr) auto;
+    column-gap: 12px;
+    row-gap: 4px;
+    align-items: start;
+}
+
+.prompt-scene .prompt-field .tag-field-header {
+    grid-column: 1;
+    grid-row: 1;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 5px;
+    min-height: 26px;
+    margin: 4px 0 0;
+    min-width: 0;
+}
+
+.prompt-scene .prompt-field > .myTextbox-wrapper > :not(.tag-field-header):not(.tag-field-tools):not(.prompt-action-cast) {
+    grid-column: 2;
+}
+
+/* the label: plain text, no colour square; negative rows red, cast rows the accent */
+.prompts-card .prompt-scene .tag-field-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+    color: var(--saa-muted2, #969ca8);
+}
+
+.prompts-card .prompt-scene .tag-field-label::before {
+    display: none;
+}
+
+.prompts-card .prompt-scene .prompt-field[data-stripe="negative"] .tag-field-label {
+    color: var(--saa-stripe-negative, #e07070);
+}
+
+.prompts-card .prompt-scene .prompt-cast-field .tag-field-label {
+    color: var(--saa-accent, #7fb0f5);
+    font-weight: 600;
+}
+
+.prompt-scene .prompt-field > .myTextbox-wrapper > .tag-field-tools {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    gap: 5px;
+    margin-top: 5px;
+    margin-right: 4px;
+    opacity: 0.35;
+    transition: opacity 0.12s;
+}
+
+.prompt-scene .prompt-field:hover > .myTextbox-wrapper > .tag-field-tools,
+.prompt-scene .prompt-field:focus-within > .myTextbox-wrapper > .tag-field-tools {
+    opacity: 1;
+}
+
+.prompt-scene .prompt-field .tag-field-tools .tag-selection-trigger {
+    min-height: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 4px;
+    font-size: 10.5px;
+}
+
+/* presets and the Text / Chips switch live in the ⋯ menu; "Choose tags" duplicates "+ Add tag" */
+.prompt-scene .prompt-field .tag-field-tools .prompt-preset-button,
+.prompt-scene .prompt-field .tag-field-tools .tag-view-toggle,
+.prompt-scene .prompt-field .tag-field-tools .tag-selection-trigger {
+    display: none;
+}
+
+/* the chip box: a quiet field, no stripe */
+.prompts-card .prompt-scene .prompt-field .tag-capsule-view {
+    min-height: 26px;
+    margin: 2px 0;
+    padding: 6px 8px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 6px;
+    background: var(--saa-bg-field, #16181d);
+    box-shadow: none;
+}
+
+.prompt-scene .tag-capsule-chips {
+    gap: 6px;
+}
+
+/* Segoe UI sits low in a 1-line box: a hair of bottom padding centres the text optically */
+.prompt-scene .tag-capsule-chip {
+    height: 23px;
+    padding: 0 10px 2px 9px;
+    border-radius: 12px;
+    line-height: 1.3;
+}
+
+/* the Scene's own labels say enough: no chain description in the head */
+.prompts-card .ui-card-head .ui-card-sub {
+    display: none;
+}
+
+/* the Scene head keeps the card inset like the other cards (an older prompt-card rule zeroes it) */
+#prompt-text-container.prompts-card > .ui-card-head {
+    padding: 0 10px;
+}
+
+.prompt-scene .tag-capsule-chip-toggle {
+    width: 6px;
+    height: 6px;
+    opacity: 0.55;
+}
+
+.prompt-scene .tag-capsule-chip:hover .tag-capsule-chip-toggle,
+.prompt-scene .tag-capsule-chip.is-disabled .tag-capsule-chip-toggle {
+    opacity: 1;
+}
+
+.prompt-scene .tag-capsule-add {
+    height: 23px;
+    padding: 0 9px 0 6px;
+    border-color: transparent;
+    font-size: 11px;
+}
+
+.prompt-scene .tag-capsule-add:hover {
+    border-color: var(--saa-border-ctl, #474d5b);
+}
+
+/* the chip rows carry no footer ("n tags", weight tools) in the Scene: the ⋯ menu has them */
+.prompt-scene .tag-capsule-footer {
+    display: none;
+}
+
+.prompts-card .prompt-scene .prompt-field [class^="myTextbox-"][class*="-textarea"] {
+    min-height: 40px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    box-shadow: none;
+}
+
+.prompt-scene .prompt-views-row > .myTextbox-wrapper > .dropdown-view {
+    margin: 0;
+    padding: 0;
+    border-top: none;
+}
+
+.prompt-views-row.is-collapsed > .myTextbox-wrapper > .dropdown-view {
+    display: none !important;
+}
+
+/* the row's own label says View; the Angle / Camera captions go into the dropdown titles */
+.prompt-scene .prompt-views-row .view-labels {
+    display: none;
+}
+
+/* the Action sentence reads as its own block at the end of the chain */
+.prompt-scene .prompt-field.prompt-action-field {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--saa-border, #343945);
+}
+
+/* the "@alias" buttons sit above the Action text, in its column; the tools stay at the right like every row */
+.prompt-scene .prompt-action-cast {
+    grid-column: 2;
+    padding: 4px 0 0;
+}
+
+/* a custom field's textbox title duplicates the capsule header's label */
+.prompts-card .prompt-custom-field > .myTextbox-wrapper > [class^="myTextbox-"][class*="-header"] {
+    display: none;
+}
+
+/* handle: grip · chevron · ● */
+.scene-handle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+}
+
+.scene-grip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 18px;
+    color: var(--saa-border-strong, #474d5b);
+    cursor: grab;
+}
+
+/* a pinned row keeps the grip's space so the chevrons line up */
+.scene-grip[hidden] {
+    display: inline-flex;
+    visibility: hidden;
+}
+
+.scene-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--saa-muted2, #969ca8);
+    cursor: pointer;
+}
+
+.scene-chevron svg {
+    transform: rotate(90deg);
+    transition: transform 0.12s;
+}
+
+.prompt-field.is-collapsed .scene-chevron svg {
+    transform: none;
+}
+
+.scene-mute {
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    border: 1px solid var(--saa-accent, #7fb0f5);
+    border-radius: 50%;
+    background: var(--saa-accent, #7fb0f5);
+    box-shadow: inset 0 0 0 3px var(--saa-bg-panel, #1f2229);
+    cursor: pointer;
+}
+
+.prompt-field.is-muted .scene-mute {
+    background: transparent;
+    border-color: var(--saa-border-strong, #474d5b);
+    box-shadow: none;
+}
+
+.scene-label {
+    cursor: pointer;
+}
+
+.scene-count {
+    font-size: 10px;
+    color: var(--saa-muted, #969ca8);
+    margin-left: 2px;
+}
+
+.scene-rename {
+    width: 120px;
+    min-width: 0;
+    height: 20px;
+    padding: 0 6px;
+    border: 1px solid var(--saa-accent, #7fb0f5);
+    border-radius: 4px;
+    background: var(--saa-bg-control, #16181d);
+    color: var(--saa-text, #e4e6ea);
+    font: inherit;
+    font-size: 12px;
+}
+
+/* muted: the tags stay, nothing is sent */
+.prompt-field.is-muted .tag-field-label {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.prompt-field.is-muted .tag-capsule-view,
+.prompt-field.is-muted [class^="myTextbox-"][class*="-textarea"],
+.prompt-field.is-muted .dropdown-view {
+    opacity: 0.45;
+}
+
+.prompt-field.is-muted .tag-capsule-chip {
+    border-style: dashed;
+}
+
+/* collapsed: the header line only (the tools stay reachable) */
+.prompt-field.is-collapsed .myTextbox-wrapper > :not(.tag-field-header):not(.tag-field-tools) {
+    display: none !important;
+}
+
+.prompt-field.is-collapsed .prompt-action-cast {
+    display: none;
+}
+
+/* row tools: polarity badge, delete, ⋯ */
+.scene-polarity,
+.scene-delete,
+.scene-menu-button {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 4px;
+    background: var(--saa-bg-control, #262a33);
+    color: var(--saa-muted2, #969ca8);
+    font: inherit;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.scene-polarity.is-positive {
+    color: var(--saa-stripe-positive, #7fd0a0);
+    border-color: currentColor;
+}
+
+.scene-polarity.is-negative {
+    color: var(--saa-stripe-negative, #e07070);
+    border-color: currentColor;
+}
+
+.scene-delete:hover {
+    color: var(--saa-danger, #e07070);
+}
+
+.scene-menu-button:hover,
+.scene-polarity:hover {
+    background: var(--saa-bg-hover, #2c303a);
+}
+
+.prompt-scene .prompt-field > .myTextbox-wrapper > .tag-field-tools {
+    position: relative;
+}
+
+.scene-row-menu {
+    position: absolute;
+    right: 0;
+    top: 24px;
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+    padding: 4px;
+    border: 1px solid var(--saa-border, #343945);
+    border-radius: 6px;
+    background: var(--saa-bg-panel, #1f2229);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.scene-row-menu button {
+    height: 24px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--saa-text, #e4e6ea);
+    font: inherit;
+    font-size: 11.5px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.scene-row-menu button:hover {
+    background: var(--saa-bg-hover, #2c303a);
+}
+
+.scene-row-menu button.is-danger {
+    color: var(--saa-danger, #e07070);
+}
+
+.scene-row-menu button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* drag: a row moves before the row under the pointer, or to the end of a box */
+.prompt-scene .prompt-field.is-dragging {
+    opacity: 0.4;
+}
+
+.prompt-scene .prompt-field.is-drop-before {
+    box-shadow: inset 0 2px 0 var(--saa-accent, #7fb0f5);
+}
+
+.prompt-scene.is-drop-target,
+.scene-side.is-drop-target {
+    outline: 1px dashed var(--saa-accent, #7fb0f5);
+    outline-offset: 2px;
+}
+
+/* a chip dropped on another row's header moves there (Ctrl / Alt = copy) */
+.prompt-scene .tag-field-header.is-drop-target {
+    outline: 2px dashed var(--saa-accent, #7fb0f5);
+    outline-offset: -2px;
+    border-radius: 4px;
+}
+
+/* "+ Add field" and its popover (name · + Pos | − Neg · Add) */
+.scene-add {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 8px 0 2px 40px;
+}
+
+.scene-add-button {
+    height: 24px;
+    padding: 0 10px;
+    border: 1px dashed var(--saa-border-ctl, #474d5b);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--saa-muted, #969ca8);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.scene-add-button:hover {
+    background: var(--saa-bg-hover, #2c303a);
+    color: var(--saa-text, #e4e6ea);
+}
+
+.scene-add-pop {
+    position: absolute;
+    left: 36px;
+    top: 30px;
+    z-index: 1500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 300px;
+    padding: 8px 10px;
+    border: 1px solid var(--saa-border, #343945);
+    border-radius: 7px;
+    background: var(--saa-bg-panel, #1f2229);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.scene-side .scene-add-pop {
+    left: auto;
+    right: 0;
+}
+
+.scene-add-pop input {
+    flex: 1;
+    min-width: 0;
+    height: 24px;
+    padding: 0 6px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 4px;
+    background: var(--saa-bg-control, #16181d);
+    color: var(--saa-text, #e4e6ea);
+    font: inherit;
+    font-size: 12px;
+}
+
+.scene-add-polarity {
+    display: inline-flex;
+    overflow: hidden;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 5px;
+}
+
+.scene-add-polarity button {
+    height: 22px;
+    padding: 0 8px;
+    border: none;
+    border-left: 1px solid var(--saa-border-ctl, #474d5b);
+    background: var(--saa-bg-control, #262a33);
+    color: var(--saa-muted, #969ca8);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.scene-add-polarity button:first-child {
+    border-left: none;
+}
+
+.scene-add-polarity button.is-selected {
+    background: var(--saa-bg-selected, #2a3550);
+    color: var(--saa-text, #e4e6ea);
+    font-weight: 600;
+}
+
+.scene-add-submit {
+    height: 24px;
+    padding: 0 10px;
+    border: 1px solid var(--saa-accent, #7fb0f5);
+    border-radius: 5px;
+    background: var(--saa-accent, #7fb0f5);
+    color: #0f1013;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.scene-muted-note {
+    font-size: 10.5px;
+    white-space: nowrap;
+    color: var(--saa-warn, #e0a458);
+}
+
+.scene-muted-note:empty {
+    display: none;
+}
+
+/* Regional block: settings on top, one box per side (green = first, orange = second) */
+.scene-regional {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 6px 0;
+    padding: 8px 10px 10px;
+    border: 1px solid var(--saa-warn, #e0a458);
+    border-radius: 8px;
+}
+
+.scene-regional-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.scene-regional-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--saa-warn, #e0a458);
+}
+
+.scene-regional-head .prompt-side-swap {
+    margin-left: auto;
+}
+
+.scene-regional .regional-condition-container {
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.scene-side {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 0 4px 8px;
+    border-left: 3px solid var(--saa-stripe-positive, #7fd0a0);
+    border-radius: 0 6px 6px 0;
+}
+
+.scene-side.is-right {
+    border-left-color: var(--saa-warn, #e0a458);
+}
+
+.scene-side-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+}
+
+.scene-side-name {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--saa-stripe-positive, #7fd0a0);
+}
+
+.scene-side.is-right .scene-side-name {
+    color: var(--saa-warn, #e0a458);
+}
+
+.scene-side-head .prompt-side-character {
+    min-height: 22px;
+}
+
+.scene-side-head .scene-add {
+    margin-left: auto;
+    padding: 0;
+}
+
+.scene-side-head .scene-add-button {
+    height: 20px;
+    padding: 0 8px;
+    font-size: 10.5px;
+}
+
+.scene-side-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Diffusion (Anima): Regional, Fast, Refiner and ControlNet belong to the checkpoint route */
+.cast-mode .regional-condition-trigger-dummy,
+.cast-mode .scene-regional,
+.cast-mode #fast-mode-toggle,
+.cast-mode .pipeline-card .refiner-container,
+.cast-mode .pipeline-card .controlnet-container {
+    display: none;
+}
+
+/* "@alias" buttons over an Action field */
+.prompt-action-cast {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 2px 0 4px;
+}
+
+.prompt-action-cast-chip {
+    height: 20px;
+    padding: 0 8px;
+    border: 1px solid var(--saa-accent, #7fb0f5);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--saa-accent, #7fb0f5);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.prompt-action-cast-chip:hover {
+    background: var(--saa-bg-selected, rgba(127, 176, 245, 0.15));
+}
+
+/* Prose card (Diffusion only) */
+.prose-card .ui-card-head .system-settings-ai-prose [class^="myCheckbox-"][class*="-span"] {
+    display: none;
+}
+
+.prose-card.is-off .prose-card-body {
+    display: none;
+}
+
+.prose-scope-label {
+    font-size: 11px;
+    color: var(--saa-muted, #969ca8);
+    margin-right: 4px;
+}
+
+.prose-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 7px 8px;
+}
+
+.prose-preview {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 72px;
+    padding: 6px 8px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 6px;
+    background: var(--saa-bg-control, #16181d);
+    color: var(--saa-text, #e4e6ea);
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.prose-preview:disabled {
+    opacity: 0.6;
+}
+
+.prose-card-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.prose-card-note {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 11px;
+    color: var(--saa-muted, #969ca8);
+}
+
+.prose-button,
+.run-mini-button {
+    height: 24px;
+    padding: 0 10px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 5px;
+    background: var(--saa-bg-control, #16181d);
+    color: var(--saa-text, #e4e6ea);
+    font: inherit;
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.prose-button:disabled,
+.run-mini-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.run-mini-button {
+    height: 26px;
+    margin-left: 4px;
 }
 
 .selection-modal {

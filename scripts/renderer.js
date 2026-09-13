@@ -1,5 +1,5 @@
 import { updateLanguage, updateSettings, SAMPLER_COMFYUI, SCHEDULER_COMFYUI, SAMPLER_WEBUI, SCHEDULER_WEBUI } from './renderer/language.js';
-import { migrateRegionalSwap } from './shared/regionalSides.js';
+import { SPLITS, migrateRegionalSwap, splitFromLabel, splitLabel } from './shared/regionalSides.js';
 import { setupGallery } from './renderer/customGallery.js';
 import { setupThumbOverlay, setupThumb } from './renderer/customThumbGallery.js';
 import { setupSuggestionSystem } from './renderer/tagAutoComplete.js';
@@ -533,8 +533,15 @@ export async function createRegional(SETTINGS, FILES, LANG) {
         option_left: mySimpleList('regional-condition-option-left', LANG.regional_option_left, ['default', 'mask bounds'],
             (index, value) => { globalThis.globalSettings.regional_option_left = value; }, 5, false, true),
         option_right: mySimpleList('regional-condition-option-right', LANG.regional_option_right, ['default', 'mask bounds'],
-            (index, value) => { globalThis.globalSettings.regional_option_right = value; }, 5, false, true)
+            (index, value) => { globalThis.globalSettings.regional_option_right = value; }, 5, false, true),
+        // left / right (columns) or top / bottom (rows); the prompt sides follow in name only
+        split: mySimpleList('regional-condition-split', LANG.regional_split, SPLITS.map(splitLabel),
+            (index, value) => {
+                globalThis.globalSettings.regional_split = splitFromLabel(value);
+                document.dispatchEvent(new CustomEvent('saa:regional-split-changed'));
+            }, 5, false, true)
     }
+    globalThis.regional.split?.updateDefaults?.(splitLabel(SETTINGS.regional_split));
 }
 
 export async function createAI(SETTINGS, FILES, LANG) {
@@ -544,6 +551,9 @@ export async function createAI(SETTINGS, FILES, LANG) {
             (value) => { globalThis.globalSettings.ai_prompt_role = value; }),
         ai_prompt_preview: setupCheckbox('system-settings-ai-preview', LANG.ai_prompt_preview, SETTINGS.ai_prompt_preview, true,
             (value) => { globalThis.globalSettings.ai_prompt_preview = value; }),
+        // shown by the AI card only while the model type is Diffusion
+        ai_prose_enable: setupCheckbox('system-settings-ai-prose', LANG.ai_prose_enable, SETTINGS.ai_prose_enable, true,
+            (value) => { globalThis.globalSettings.ai_prose_enable = value; globalThis.uiShell?.aiCard?.render?.(); globalThis.uiShell?.proseCard?.render?.(); }),
 
         interface: mySimpleList('system-settings-ai-interface', LANG.ai_interface, ['None', 'Remote', 'Local', 'Pod'],
             (index, value) => {globalThis.globalSettings.ai_interface = value;}, 5, false, true),

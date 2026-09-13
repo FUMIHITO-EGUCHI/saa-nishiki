@@ -6,14 +6,18 @@ import {
     normalizePromptMode,
 } from '../aiPromptRefiner.js';
 import { isOllamaChatUrl } from '../shared/ollamaUrl.js';
+import { PROSE_RESPONSE_FORMAT, PROSE_SYSTEM_PROMPT, isProseMode } from '../shared/prosePrompt.js';
 
 const SMALL_MODEL = 'gemma4-12b-uncensored-comfy:latest';
 const LARGE_MODEL = 'hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M';
 
+// prose: the 35B MoE scored best on the regional bench (14/15 from a Japanese action)
+// and answers in ~8 s on the CPU; Small forces the 12B when its 21 GB of RAM is too much.
 const MODEL_BY_USE = Object.freeze({
     prompt: SMALL_MODEL,
     preview: SMALL_MODEL,
     regional: LARGE_MODEL,
+    prose: LARGE_MODEL,
 });
 
 function normalizeMode(mode) {
@@ -49,6 +53,7 @@ export function buildOllamaChatRequest({
     generationContext = null,
     temperature = 0.7,
     n_predict = 768,
+    keepAlive = 0,
 } = {}) {
     if (typeof systemPrompt !== 'string' || typeof userPrompt !== 'string') {
         throw new TypeError('Ollama prompts must be strings');
@@ -60,6 +65,24 @@ export function buildOllamaChatRequest({
     const safePredict = Number.isInteger(Number(n_predict))
         ? Math.min(4096, Math.max(256, Number(n_predict)))
         : 768;
+
+    // Prose: the fields JSON is the user message and the answer is schema-constrained.
+    // The model stays loaded between images (keepAlive) because the paragraph is
+    // rewritten whenever the fields change, and a CPU-side reload costs 10-25 s.
+    if (isProseMode(promptMode)) {
+        return {
+            model: resolveSaaOllamaModel({ mode, use: 'prose' }),
+            messages: [
+                { role: 'system', content: PROSE_SYSTEM_PROMPT },
+                { role: 'user', content: userPrompt },
+            ],
+            stream: false,
+            think: false,
+            format: PROSE_RESPONSE_FORMAT,
+            options: { temperature: safeTemperature, seed: 1, num_predict: safePredict, num_ctx: 4096 },
+            keep_alive: keepAlive,
+        };
+    }
 
     const useRefine = normalizePromptMode(promptMode) === PROMPT_MODE_REFINE;
     const useRefineV2 = useRefine

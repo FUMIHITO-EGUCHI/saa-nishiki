@@ -60,7 +60,7 @@ test('generation resolves original characters by key, on any slot and either sid
 test('regional strength is a number box beside the side area; ratio and overlap stay sliders', () => {
     const html = read('scripts/html_shared_body.js');
     assert.match(html, /<div class="regional-condition-side regional-condition-side-left">\n\s+<div class="regional-condition-option-left"><\/div>\n\s+<div class="regional-condition-strength-left run-number"><\/div>/);
-    assert.match(html, /<div class="regional-condition-settings-1">\n\s+<div class="regional-condition-image-ratio"><\/div>\n\s+<div class="regional-condition-overlap-ratio"><\/div>\n\s+<\/div>/);
+    assert.match(html, /<div class="regional-condition-settings-1">\n\s+<div class="regional-condition-split"><\/div>\n\s+<div class="regional-condition-image-ratio"><\/div>\n\s+<div class="regional-condition-overlap-ratio"><\/div>\n\s+<\/div>/);
     for (const css of ['html/index_dark.css', 'html/index_light.css']) {
         const text = read(css);
         assert.match(text, /\.characters-card \.regional-condition-settings-2 \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);

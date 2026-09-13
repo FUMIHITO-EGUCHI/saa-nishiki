@@ -105,6 +105,11 @@ async function localGenerateWithPrompt(aiOptions = null) {
 }
 
 
+/** One local / pod LLM call with explicit options; '' on any failure. */
+export async function requestLocalAi(aiOptions) {
+    return localGenerateWithPrompt(aiOptions);
+}
+
 export async function getAiPromptResult(loop, overlay_generate_ai, aiInterface=null, aiRole=null, aiOptions=null, runCache=null) {
     const currentInterface = aiInterface ?? globalThis.ai.interface.getValue();
     const currentRole = aiRole ?? globalThis.ai.ai_select.getValue();

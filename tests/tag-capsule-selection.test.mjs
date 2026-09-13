@@ -77,20 +77,18 @@ test('the enable dot, the disabled look, the selection and the editor blocks are
         assert.match(css, /\.tag-capsule-chip\.is-disabled \.tag-capsule-chip-name \{[^}]*line-through/, `${file}: struck name`);
         assert.equal((css.match(/^\.tag-capsule-chip-toggle \{/gm) ?? []).length, 1, `${file}: one dot rule`);
         assert.match(css, /\.tag-capsule-chip\.is-selected \{/, `${file}: selection`);
-        assert.match(css, /\.prompt-field-editor-block\.is-left \{/, `${file}: editor side block`);
     }
+    assert.match(read('html/index.css'), /\.scene-side \{/, 'Scene side box');
 });
 
 test('every row of the Prompts field list (LEFT / RIGHT included) accepts a dragged capsule or selection', () => {
     const manager = read('scripts/renderer/components/promptFieldManager.js');
-    assert.match(manager, /attachCapsuleDropTarget\(row, entry\.id\);/, 'wired on every field row');
+    assert.match(manager, /attachCapsuleDropTarget\(header, id\);/, 'wired on every Scene row header');
     assert.match(manager, /const CAPSULE_MIME = 'application\/x-saa-capsule';/, 'same payload as the chip rows');
     assert.match(manager, /const what = Array\.isArray\(payload\.ids\) && payload\.ids\.length > 1 \? payload\.ids : payload\.id;/);
     assert.match(manager, /tagCapsuleFields\?\.transfer\?\.\(payload\.field, what, fieldId, \{ copy: event\.ctrlKey \|\| event\.altKey \}\)/);
     assert.match(manager, /if \(!payload\?\.field \|\| !payload\?\.id \|\| payload\.field === fieldId\) return;/, 'a drop on its own row is a no-op');
-    for (const file of ['html/index_dark.css', 'html/index_light.css']) {
-        assert.match(read(file), /\.prompt-field-list-row\.is-drop-target \{/, `${file}: drop highlight`);
-    }
+    assert.match(read('html/index.css'), /\.prompt-scene \.tag-field-header\.is-drop-target \{/, 'drop highlight');
 });
 
 test('a Refine snapshot used as the prompt override never re-introduces disabled tags', () => {
@@ -99,14 +97,15 @@ test('a Refine snapshot used as the prompt override never re-introduces disabled
     assert.match(bridge, /return stripDisabledTags\(globalThis\.prompt\?\.\[key\]\?\.getValue\?\.\(\) \?\? ''\);/);
 });
 
-test('the Fields editor lists BOTH SIDES / LEFT / RIGHT blocks while Regional is on and orders rows by drag', () => {
+test('Scene rows are ordered by drag; a drop into a LEFT / RIGHT box sets the side while Regional is on', () => {
     const manager = read('scripts/renderer/components/promptFieldManager.js');
     assert.match(manager, /const UNIT_MIME = 'application\/x-saa-field-unit';/);
-    assert.match(manager, /function placeUnit\(orderKey, id, \{ beforeId = null, blockIds = \[\], side = null \} = \{\}\)/);
-    assert.match(manager, /if \(custom && side && isRegional\(\)\) \{\s*if \(side === 'both'\) delete custom\.side; else custom\.side = side;/, 'a drop into another block changes the side');
-    assert.match(manager, /row\.draggable = true;/);
-    assert.match(manager, /head\.textContent = side === 'both' \? 'BOTH SIDES' : side\.toUpperCase\(\);/);
-    assert.match(manager, /block\.className = `prompt-field-editor-block is-\$\{side\}`;/);
-    assert.match(manager, /if \(!regional\) \{\s*for \(const id of order\) list\.appendChild\(buildEditorRow\(orderKey, id, false\)\);/, 'one flat list with Regional off');
-    assert.match(manager, /function editorSideOf\(id\) \{[\s\S]*id === 'positive' \|\| id === 'negative'\) return 'both';/);
+    assert.match(manager, /function placeUnit\(orderKey, id, \{ beforeId = null, side = 'both', zone = null \} = \{\}\)/);
+    assert.match(manager, /if \(custom && isRegional\(\)\) \{\s*if \(side === 'both'\) delete custom\.side; else custom\.side = side;/, 'a drop into another box changes the side');
+    // the grip arms the row's native drag; chip drags bubbling through the row are left alone
+    assert.match(manager, /container\.draggable = true;/);
+    assert.match(manager, /if \(!container \|\| container !== armed \|\| event\.target\.closest\('\.tag-capsule-chip'\)\) return;/);
+    assert.match(manager, /setText\(box\.querySelector\('\.scene-side-name'\), sideLabel\(side, SETTINGS\.regional_split\)\);/, 'box names read TOP / BOTTOM for a top-bottom split');
+    // pinned side built-ins and Exclude never move
+    assert.match(manager, /const PINNED_UNITS = new Set\(\['positive_right', 'negative_left', 'negative_right', 'exclude'\]\);/);
 });

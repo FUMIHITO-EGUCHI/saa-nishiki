@@ -17,6 +17,8 @@ export const TAG_UI_DEFAULTS = Object.freeze({
     tag_ui_plans_discarded: '{0} plan(s) discarded',
     tag_ui_badge_variable: '{0} variable · image #1 values',
     tag_ui_excluded: 'Removed by Exclude',
+    tag_ui_unknown: 'Not in the tag dictionary: SDXL models mostly ignore it. Use an existing tag, or say it in a short sentence',
+    tag_ui_sentence: 'Sentence: sent as written. Keep it to the action; words about looks can spill onto hair or clothes',
     tag_ui_disabled: 'Disabled',
     tag_ui_step_auto: '÷ batch count',
     tag_ui_disable_tag: 'Disable this tag',

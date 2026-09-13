@@ -1556,6 +1556,9 @@ class ComfyUI {
     // Regional Condition Mask
     // Set Mask Ratio
     workflow["47"].inputs.Layout = regional.ratio;
+    // Colum_first true cuts the layout into columns (left / right), false into rows
+    // (top / bottom); the first region stays the "left" prompt either way
+    workflow["47"].inputs.Colum_first = regional.split !== 'top-bottom';
     // Set Left Mask Strength and Area
     workflow["50"].inputs.strength = regional.str_left;
     workflow["50"].inputs.set_cond_area = regional.option_left;
@@ -1735,6 +1738,9 @@ class ComfyUI {
     // Regional Condition Mask
     // Set Mask Ratio
     workflow["47"].inputs.Layout = regional.ratio;
+    // Colum_first true cuts the layout into columns (left / right), false into rows
+    // (top / bottom); the first region stays the "left" prompt either way
+    workflow["47"].inputs.Colum_first = regional.split !== 'top-bottom';
     // Set Left Mask Strength and Area
     workflow["50"].inputs.strength = regional.str_left;
     workflow["50"].inputs.set_cond_area = regional.option_left;

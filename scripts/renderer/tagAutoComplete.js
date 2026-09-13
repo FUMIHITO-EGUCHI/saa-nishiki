@@ -439,46 +439,75 @@ export function setupSuggestionSystem() {
             textbox.focus();
         }
 
+        // Off-screen mirror of the textarea used to locate the caret. Created
+        // lazily and reused: one node per textbox, one layout per measurement.
+        let caretMirror = null;
+        let caretMarker = null;
+
+        function getCaretMirror() {
+            if (caretMirror) return caretMirror;
+            caretMirror = document.createElement('div');
+            caretMirror.setAttribute('aria-hidden', 'true');
+            const style = caretMirror.style;
+            style.position = 'absolute';
+            style.top = '0';
+            style.left = '-9999px';
+            style.visibility = 'hidden';
+            style.pointerEvents = 'none';
+            style.overflow = 'hidden';
+            style.boxSizing = 'border-box';
+            style.whiteSpace = 'pre-wrap';
+            caretMarker = document.createElement('span');
+            caretMarker.textContent = '\u200b';
+            document.body.appendChild(caretMirror);
+            return caretMirror;
+        }
+
+        // Horizontal offset (px) of the caret from the start of its visual line,
+        // measured from the mirror: the text before the caret followed by a
+        // zero-width marker, read once via the marker's offsetLeft.
+        function measureCaretOffset(width) {
+            const cursorPosition = Math.min(textbox.selectionStart, textbox.value.length);
+            const textBeforeCursor = textbox.value.substring(0, cursorPosition);
+
+            const mirror = getCaretMirror();
+            const computed = globalThis.getComputedStyle(textbox);
+            const style = mirror.style;
+            style.font = computed.font;
+            style.letterSpacing = computed.letterSpacing;
+            style.tabSize = computed.tabSize;
+            style.wordWrap = computed.wordWrap;
+            style.overflowWrap = computed.overflowWrap;
+            style.wordBreak = computed.wordBreak;
+            style.paddingTop = computed.paddingTop;
+            style.paddingRight = computed.paddingRight;
+            style.paddingBottom = computed.paddingBottom;
+            style.paddingLeft = computed.paddingLeft;
+            style.borderTopWidth = computed.borderTopWidth;
+            style.borderRightWidth = computed.borderRightWidth;
+            style.borderBottomWidth = computed.borderBottomWidth;
+            style.borderLeftWidth = computed.borderLeftWidth;
+            style.width = `${width}px`;
+
+            mirror.textContent = textBeforeCursor;
+            mirror.appendChild(caretMarker);
+
+            // offsetLeft is relative to the mirror's padding edge; strip the
+            // padding so the value is the width of the caret line's text.
+            const paddingLeft = Number.parseFloat(computed.paddingLeft) || 0;
+            return Math.max(0, caretMarker.offsetLeft - paddingLeft);
+        }
+
         function updateSuggestionBoxPosition() {
             const rect = textbox.getBoundingClientRect();
             const textboxTop = rect.top + globalThis.scrollY;
             const textboxBottom = rect.bottom + globalThis.scrollY;
             const textboxLeft = rect.left + globalThis.scrollX;
 
-            const cursorPosition = Math.min(textbox.selectionStart, textbox.value.length);
-            const textBeforeCursor = textbox.value.substring(0, cursorPosition);
-
-            const lineSpan = document.createElement('span');
-            lineSpan.style.position = 'absolute';
-            lineSpan.style.visibility = 'hidden';
-            lineSpan.style.font = globalThis.getComputedStyle(textbox).font;
-            lineSpan.style.whiteSpace = 'pre-wrap';
-            lineSpan.style.width = `${textboxWidth}px`;
-            document.body.appendChild(lineSpan);
-
-            const lines = [];
-            let currentLine = '';
-            for (const char of textBeforeCursor) {
-                lineSpan.textContent = currentLine + char;
-                if (lineSpan.scrollWidth > textboxWidth || char === '\n') {
-                    lines.push(currentLine);
-                    currentLine = char === '\n' ? '' : char;
-                } else {
-                    currentLine += char;
-                }
-            }
-            if (currentLine) lines.push(currentLine);
-            lineSpan.remove();
-
-            const widthSpan = document.createElement('span');
-            widthSpan.style.position = 'absolute';
-            widthSpan.style.visibility = 'hidden';
-            widthSpan.style.font = globalThis.getComputedStyle(textbox).font;
-            widthSpan.style.whiteSpace = 'nowrap';
-            widthSpan.textContent = lines.at(-1) || '';
-            document.body.appendChild(widthSpan);
-            const cursorOffset = widthSpan.offsetWidth;
-            widthSpan.remove();
+            // A textarea that has not been laid out yet has no width to wrap
+            // against; place the box at its left edge instead of measuring.
+            const wrapWidth = rect.width || textboxWidth;
+            const cursorOffset = wrapWidth > 0 ? measureCaretOffset(wrapWidth) : 0;
 
             suggestionBox.style.display = 'block';
             const suggestionWidth = suggestionBox.offsetWidth || 200;

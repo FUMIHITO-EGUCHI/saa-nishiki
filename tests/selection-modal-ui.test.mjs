@@ -104,10 +104,12 @@ test('character modal wires fav_characters into the selection modal', () => {
   assert.doesNotMatch(favorites, /myDropdown/);
 });
 
-test("selection modal searches favorites with an '@' prefix", () => {
+test("selection modal narrows favorites with the Fav-only button; '@' is no search prefix (it is a cast reference)", () => {
   assert.match(modal, /effectiveSearch/);
-  assert.match(modal, /startsWith\('@'\)/);
-  assert.match(modal, /favoritesOnly/);
+  assert.doesNotMatch(modal, /startsWith\('@'\)/);
+  assert.match(modal, /favoritesOnly: favOnly/);
+  const autocomplete = read('scripts/main/tagAutoComplete_backend.js');
+  assert.doesNotMatch(autocomplete, /artistOnly/);
 });
 
 test('myDropdown no longer carries the legacy favorites / overlay machinery', () => {
