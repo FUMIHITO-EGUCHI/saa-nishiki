@@ -173,6 +173,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
     api_pod_ssh_target: '',
     api_pod_ssh_key: '',
     api_pod_ssh_comfy_port: 8188,
+    // local ComfyUI process control (scripts/main/comfyProcess.js): the command that
+    // brings the backend up (a start script or python main.py ...), and whether SAA
+    // runs it at launch when the loopback backend does not answer
+    comfy_launch_command: '',
+    comfy_autostart: false,
     pod_image_save_dir: '',
     // Runpod REST API (issue #4): start / stop / status only; the pod id defaults to the SSH target's prefix
     api_pod_runpod_api_key: '',
@@ -228,7 +233,7 @@ export const SECTION_KEYS = Object.freeze({
     app: Object.freeze([
         'version', 'setup_wizard', 'ws_service', 'ws_addr', 'ws_port',
         'language', 'css_style', 'rightToleft', 'ptompt_textbox_autoresize', 'ptompt_textbox_fontsize', 'ptompt_textbox_heights',
-        'api_interface', 'api_addr', 'api_preview_refresh_time', 'search_modelinsubfolder',
+        'api_interface', 'api_addr', 'api_preview_refresh_time', 'search_modelinsubfolder', 'comfy_launch_command', 'comfy_autostart',
         'api_pod_ssh_enable', 'api_pod_ssh_target', 'api_pod_ssh_key', 'api_pod_ssh_comfy_port', 'pod_image_save_dir', 'api_pod_runpod_api_key', 'api_pod_runpod_pod_id', 'api_pod_civitai_token',
         'api_fast_enable', 'api_fast_lora', 'api_fast_lora_strength', 'api_fast_steps', 'api_fast_cfg', 'api_fast_sampler', 'api_fast_scheduler',
         'model_filter', 'model_filter_keyword', 'model_filter_keyword_diffusion',

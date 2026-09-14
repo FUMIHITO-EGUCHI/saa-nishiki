@@ -452,6 +452,27 @@ export const sharedBodyHTML = `
                   </div>
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">
+                  <div class="settings-group-title" data-ui-text="ui_comfy_proc_title">ComfyUI process</div>
+                  <!-- Start / stop / restart of the local backend (scripts/renderer/comfyProcessControl.js);
+                       hidden in the browser build, which has no process to talk to. -->
+                  <div class="comfy-proc-panel">
+                    <div class="settings-grid">
+                      <div class="system-settings-comfy-launch-command"></div>
+                      <div class="system-settings-comfy-autostart ui-switch"></div>
+                    </div>
+                    <div class="pod-row comfy-proc-row">
+                      <span class="status-pill comfy-proc-pill" role="button" tabindex="0" title="Check"><i></i><span>—</span></span>
+                      <span class="pod-facts comfy-proc-status"></span>
+                      <div class="pod-row-actions">
+                        <button type="button" class="pod-btn pod-btn-primary comfy-proc-start" data-ui-text="ui_comfy_start">Start</button>
+                        <button type="button" class="pod-btn comfy-proc-restart" data-ui-text="ui_comfy_restart">Restart</button>
+                        <button type="button" class="pod-btn pod-btn-danger comfy-proc-stop" data-ui-text="ui_comfy_stop">Stop</button>
+                      </div>
+                    </div>
+                    <p class="settings-note" data-ui-text="ui_comfy_proc_note">Start runs the launch command and waits for the backend on the ComfyUI address above (loopback only). Stop unloads the models, then ends whatever holds that port. Hires fix, LoRA and models are untouched.</p>
+                  </div>
+                </div>
+                <div class="settings-group" data-when-api="ComfyUI">
                   <div class="settings-group-title">Runpod pod over SSH</div>
                   <!-- One state-driven panel (scripts/renderer/podControl.js): the pill reports
                        the pod, and an action is only rendered while it applies. -->

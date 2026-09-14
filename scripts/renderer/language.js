@@ -178,6 +178,8 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     globalThis.generate.api_interface.setTitle(LANG.api_interface);
     globalThis.generate.api_address.setTitle(LANG.api_addr);
+    globalThis.generate.comfy_launch_command?.setTitle(LANG.comfy_launch_command);
+    globalThis.generate.comfy_autostart?.setTitle(LANG.comfy_autostart);
     globalThis.generate.api_preview_refresh_time.setTitle(LANG.api_preview_refresh_time);
     globalThis.generate.api_pod_ssh_enable.setTitle(LANG.api_pod_ssh_enable);
     globalThis.generate.api_pod_ssh_target.setTitle(LANG.api_pod_ssh_target);
@@ -437,6 +439,8 @@ export function updateSettings() {
     globalThis.generate.api_interface.updateDefaults(SETTINGS.api_interface);
     globalThis.generate.api_preview_refresh_time.setValue(SETTINGS.api_preview_refresh_time);
     globalThis.generate.api_address.setValue(SETTINGS.api_addr);
+    globalThis.generate.comfy_launch_command?.setValue(SETTINGS.comfy_launch_command ?? '');
+    globalThis.generate.comfy_autostart?.setValue(SETTINGS.comfy_autostart === true);
     globalThis.generate.api_pod_ssh_enable.setValue(SETTINGS.api_pod_ssh_enable);
     globalThis.generate.api_pod_ssh_target.setValue(SETTINGS.api_pod_ssh_target);
     globalThis.generate.api_pod_ssh_key.setValue(SETTINGS.api_pod_ssh_key);

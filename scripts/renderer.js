@@ -14,6 +14,7 @@ import { setupSlider } from './renderer/components/mySlider.js';
 import { setupCheckbox, setupRadiobox } from './renderer/components/myCheckbox.js';
 import { setupButtons, toggleButtons, showCancelButtons } from './renderer/components/myButtons.js';
 import { setupPodControls } from './renderer/podControl.js';
+import { setupComfyProcessControl } from './renderer/comfyProcessControl.js';
 import { setupCollapsed, setupModelReloadToggle, 
     setupFuctionKeys, setupSwapToggle, reloadFiles, doSwap } from './renderer/components/myCollapsed.js';
 import { setupTextbox, setupInfoBox } from './renderer/components/myTextbox.js';
@@ -280,6 +281,13 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         api_preview_refresh_time: setupSlider('system-settings-api-refresh-rate',
             LANG.api_preview_refresh_time, {min:0, max:5, step:1, defaultValue:SETTINGS.api_preview_refresh_time},
             (value) => { globalThis.globalSettings.api_preview_refresh_time = value; }),
+        // local ComfyUI process control (scripts/renderer/comfyProcessControl.js)
+        comfy_launch_command: setupTextbox('system-settings-comfy-launch-command', LANG.comfy_launch_command, {
+            value: SETTINGS.comfy_launch_command ?? '',
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.comfy_launch_command = value; }),
+        comfy_autostart: setupCheckbox('system-settings-comfy-autostart', LANG.comfy_autostart, SETTINGS.comfy_autostart === true, true,
+            (value) => { globalThis.globalSettings.comfy_autostart = value; }),
 
         api_pod_ssh_enable: setupCheckbox('system-settings-api-pod-ssh-enable', LANG.api_pod_ssh_enable, SETTINGS.api_pod_ssh_enable, true,
             (value) => {
@@ -403,6 +411,7 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         }),
     };
     globalThis.podControls = setupPodControls();
+    globalThis.comfyProcessControl = setupComfyProcessControl();
 }
 
 export async function createPrompt(SETTINGS, FILES, LANG) {

@@ -104,6 +104,8 @@ contextBridge.exposeInMainWorld('api', {
   updateModelListRemote: async (args) => ipcRenderer.invoke('update-model-list-remote', args),
   // Runpod pod lifecycle: 'status' | 'start' | 'stop' (never terminate)
   runpodPodControl: async (action) => ipcRenderer.invoke('runpod-pod-control', action),
+  // local ComfyUI process: { action: 'state' | 'start' | 'stop' | 'restart' } (loopback only)
+  comfyProcess: async (args) => ipcRenderer.invoke('comfy-process', args),
   podRunBootstrap: async () => ipcRenderer.invoke('pod-run-bootstrap'),
   // pod setup wizard: { action: 'probe' | 'deploy' | 'provision' | 'log', components, civitaiToken, name, offset }
   podSetup: async (args) => ipcRenderer.invoke('pod-setup', args),

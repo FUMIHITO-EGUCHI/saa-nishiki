@@ -42,6 +42,8 @@ export function setupSettingsModal() {
             button.setAttribute('aria-selected', String(isActive));
             button.tabIndex = isActive ? 0 : -1;
         }
+        // panels that poll something (the ComfyUI process row) refresh when their page shows
+        document.dispatchEvent(new CustomEvent('saa-settings-page', { detail: { page: pageId } }));
         return true;
     }
 
