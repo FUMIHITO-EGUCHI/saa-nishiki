@@ -1404,7 +1404,8 @@ export async function startQueue(){
             if (globalThis.generate.infoBySeed.size > 512) {
                 globalThis.generate.infoBySeed.delete(globalThis.generate.infoBySeed.keys().next().value);
             }
-            globalThis.generate.loadingMessage = LANG.generate_start.replace('{0}', `${queueManager.id}`).replace('{1}', `[${queueManager.loop + 1}/${queueManager.loops}]`);
+            const startMessage = LANG.generate_start.replace('{0}', `${queueManager.id}`).replace('{1}', `[${queueManager.loop + 1}/${queueManager.loops}]`);
+            globalThis.generate.loadingMessage = startMessage;
 
             if(queueManager.isRegional) {
                 generateData.positive_left = promptResult.positive;
@@ -1421,6 +1422,9 @@ export async function startQueue(){
                     aiText: aiPrompt,
                     LANG,
                 });
+                // applyProse shows its own "writing the paragraph" label while the LLM runs;
+                // put the run label back before the sampler starts.
+                globalThis.generate.loadingMessage = startMessage;
                 if (prose) {
                     const proseInfo = describeProse(prose, { LANG, dark: globalThis.globalSettings.css_style === 'dark' });
                     globalThis.infoBox.image.appendValue(proseInfo);

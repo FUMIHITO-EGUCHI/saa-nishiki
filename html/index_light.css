@@ -2311,12 +2311,13 @@ body {
 /* Regional sides in the Prompts field list */
 .prompt-side-swap { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; margin-left: auto; border: 1px solid var(--saa-border-ctl); border-radius: 11px; background: var(--saa-bg-control); color: var(--saa-muted2); font: inherit; font-size: 10.5px; cursor: pointer; }
 .prompt-side-swap:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
-.prompt-side-character { display: flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 8px; border: none; border-radius: 5px; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 11px; cursor: pointer; text-align: left; }
-.prompt-side-character:hover { background: var(--saa-bg-hover); }
-.prompt-side-character svg { flex: none; color: var(--saa-accent); }
-.prompt-side-character svg:last-child { color: var(--saa-placeholder); }
-.prompt-side-character-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.prompt-side-character.is-empty .prompt-side-character-name { color: var(--saa-placeholder); font-style: italic; }
+.scene-side-character { color: var(--saa-muted2); }
+.scene-side-character.is-empty { color: var(--saa-placeholder); }
+.scene-side-character-source { color: var(--saa-placeholder); }
+.character-selection-side { border: 1px solid var(--saa-border); background: var(--saa-bg-input, transparent); }
+.character-selection-side button { color: var(--saa-muted2); border-right: 1px solid var(--saa-border); }
+.character-selection-side button:hover { background: var(--saa-bg-hover); }
+.character-selection-side button[aria-checked="true"] { background: var(--saa-bg-hover); color: var(--saa-text); }
 /* "Swap Character" is retired: the Prompts card swaps the sides as data */
 .regional-condition-swap { display: none !important; }
 

@@ -60,9 +60,15 @@ test('Scene: every unit is a row edited in place (drag, rename, mute, add), Regi
   assert.match(manager, /const options = \[\['positive', [^\]]*\], \['negative', [^\]]*\]\];/);
   // the regional toggle's inline display decides what is available
   assert.match(manager, /container\.style\.display !== 'none'/);
-  // the Regional switch and settings move into the Scene
-  assert.match(manager, /const regionalSwitch = document\.querySelector\('\.regional-condition-trigger-dummy'\);\s*if \(regionalSwitch\) toolsHost\.insertBefore\(regionalSwitch, toolsHost\.firstChild\);/);
-  assert.match(manager, /const regionalContainer = document\.querySelector\('\.regional-condition-container'\);\s*if \(regionalContainer\) settings\.appendChild\(regionalContainer\);/);
+  // the Regional switch and settings move into the Regional block (head: switch · split · Swap;
+  // settings row: split ratio · overlap; each side head: area · emphasis)
+  assert.match(manager, /const regionalSwitch = document\.querySelector\('\.regional-condition-trigger-dummy'\);\s*if \(regionalSwitch\) head\.appendChild\(regionalSwitch\);/);
+  assert.match(manager, /const settings1 = document\.querySelector\('\.regional-condition-settings-1'\);\s*if \(settings1\) settings\.appendChild\(settings1\);/);
+  assert.match(manager, /const controls = document\.querySelector\(`\.regional-condition-side-\$\{side\}`\);\s*if \(controls\) sideHead\.appendChild\(controls\);/);
+  assert.match(manager, /button\.addEventListener\('click', \(\) => setSplit\(value\)\);/);
+  // off: the block stays, folded to its head, where the side units would be (Checkpoint only)
+  assert.match(manager, /if \(id === 'positive' && !regional && !castEnabled\(SETTINGS\)\) sequence\.push\(\{ block: true \}\);/);
+  assert.match(manager, /group\.classList\.toggle\('is-off', !isRegional\(\)\);/);
 
   const css = read('html/index.css');
   assert.match(css, /\.prompt-scene \.prompt-field > \.myTextbox-wrapper \{\s*display: grid;/);

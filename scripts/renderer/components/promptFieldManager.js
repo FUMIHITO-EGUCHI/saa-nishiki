@@ -20,8 +20,9 @@ import {
     setCustomFieldExtras,
     setFieldMuted,
 } from '../../shared/promptFieldOrder.js';
-import { sideLabel, sideOf, sideOrder, swapSidesPatch } from '../../shared/regionalSides.js';
+import { SPLITS, normalizeSplit, sideLabel, sideOf, sideOrder, splitLabel, swapSidesPatch } from '../../shared/regionalSides.js';
 import { castEnabled, castRoster, isActionNamed, isCastFieldId, isDiffusionFieldId, syncCastFields } from '../../shared/castMembers.js';
+import { regionalSlots, slotSideLabels } from '../../shared/characterSides.js';
 
 const BUILTIN_LABELS = {
     common: 'Common',
@@ -300,7 +301,6 @@ export function setupPromptFieldManager() {
     }
     const ICON_CHEVRON_RIGHT = 'M6 4l4 4-4 4';
     const ICON_SWAP = ['M2 5.5h10M9.5 3l2.5 2.5L9.5 8', 'M14 10.5H4M6.5 8L4 10.5 6.5 13'];
-    const ICON_PERSON = ['M8 8.3a2.8 2.8 0 1 0 0-5.6 2.8 2.8 0 0 0 0 5.6z', 'M2.8 13.5c.7-2.6 2.6-4 5.2-4s4.5 1.4 5.2 4'];
     const ICON_GRIP = ['M6 4h.01M10 4h.01M6 8h.01M10 8h.01M6 12h.01M10 12h.01'];
 
     // ------------------------------------------------------------ mute / collapse
@@ -714,10 +714,12 @@ export function setupPromptFieldManager() {
             event.dataTransfer.setData(UNIT_MIME, JSON.stringify(dragging));
             event.dataTransfer.setData('text/plain', fieldLabel(id));
             container.classList.add('is-dragging');
+            scene?.classList.add('is-row-dragging'); // the side boxes show their drop hint
         });
         host.addEventListener('dragend', event => {
             const container = event.target.closest?.('.prompt-field');
             container?.classList.remove('is-dragging');
+            scene?.classList.remove('is-row-dragging');
             dragging = null;
             disarmDrag();
             clearDropMarks();
@@ -831,23 +833,27 @@ export function setupPromptFieldManager() {
     // The Regional settings (split, ratios, strengths, swap) move from the Characters
     // card into the block's head; the LEFT / RIGHT boxes hold the side units.
 
-    // The side's characters come from the regional character control in the
-    // Characters card: its slot triggers carry the display name and open the picker.
-    function sideCharacterTriggers(side) {
-        const index = side === 'left' ? 0 : 1;
-        const trigger = document.querySelector(`.dropdown-character-regional .character-selection-field[data-index="${index}"] .character-selection-trigger`);
-        return trigger ? [trigger] : [];
-    }
+    // The side's character is the Characters slot whose side column says so
+    // (scripts/shared/characterSides.js); the slot list knows its display name.
     function sideCharacterName(side) {
-        return sideCharacterTriggers(side)
-            .map(trigger => {
-                const name = (trigger.querySelector('.character-selection-name')?.textContent ?? trigger.textContent).trim();
-                return trigger.querySelector('.character-selection-oc-badge') ? `${name} (OC)` : name;
-            })
-            .filter(name => name !== '' && name.toLowerCase() !== 'none')
-            .join(' · ');
+        const slot = regionalSlots(SETTINGS.character_slots)[side];
+        if (!slot) return '';
+        // the name as the Characters card shows it (localized), else the list value
+        const trigger = document.querySelector(`.dropdown-character .character-selection-field[data-index="${slot.index}"] .character-selection-trigger`);
+        let name = (trigger?.querySelector('.character-selection-name')?.textContent ?? trigger?.textContent ?? '').trim();
+        if (name === '') {
+            const values = globalThis.characterList?.getValue?.();
+            const value = Array.isArray(values) ? values[slot.index] : (slot.index === 0 ? values : undefined);
+            name = String(value ?? slot.key ?? '').trim();
+        }
+        if (name === '' || name.toLowerCase() === 'none') return '';
+        return trigger?.querySelector('.character-selection-oc-badge') ? `${name} (OC)` : name;
     }
 
+    // The block: head = title · On/Off switch · split (Left / Right | Top / Bottom) · Swap;
+    // a settings row (split ratio, overlap); one box per side whose head carries the
+    // side's character, area option and emphasis. The regional controls are the ones
+    // built for the Characters card (renderer.js createRegional), moved in here.
     function ensureGroup() {
         if (group) return group;
         group = document.createElement('div');
@@ -857,6 +863,24 @@ export function setupPromptFieldManager() {
         const title = document.createElement('span');
         title.className = 'scene-regional-title';
         head.appendChild(title);
+        // the On / Off switch (renderer.js setupCheckbox on .regional-condition-trigger-dummy)
+        const regionalSwitch = document.querySelector('.regional-condition-trigger-dummy');
+        if (regionalSwitch) head.appendChild(regionalSwitch);
+        const right = document.createElement('div');
+        right.className = 'scene-regional-tools';
+        const split = document.createElement('div');
+        split.className = 'scene-split-seg';
+        split.setAttribute('role', 'radiogroup');
+        for (const value of SPLITS) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.split = value;
+            button.setAttribute('role', 'radio');
+            button.textContent = splitLabel(value);
+            button.addEventListener('click', () => setSplit(value));
+            split.appendChild(button);
+        }
+        right.appendChild(split);
         const swap = document.createElement('button');
         swap.type = 'button';
         swap.className = 'prompt-side-swap';
@@ -864,13 +888,16 @@ export function setupPromptFieldManager() {
         swap.appendChild(svgIcon(ICON_SWAP, 12));
         swap.appendChild(document.createTextNode('Swap'));
         swap.addEventListener('click', () => swapSides());
-        head.appendChild(swap);
+        right.appendChild(swap);
+        head.appendChild(right);
         group.appendChild(head);
+        const body = document.createElement('div');
+        body.className = 'scene-regional-body';
         const settings = document.createElement('div');
         settings.className = 'scene-regional-settings';
-        const regionalContainer = document.querySelector('.regional-condition-container');
-        if (regionalContainer) settings.appendChild(regionalContainer);
-        group.appendChild(settings);
+        const settings1 = document.querySelector('.regional-condition-settings-1');
+        if (settings1) settings.appendChild(settings1);
+        body.appendChild(settings);
         for (const side of ['left', 'right']) {
             const box = document.createElement('div');
             box.className = `scene-side is-${side}`;
@@ -880,16 +907,13 @@ export function setupPromptFieldManager() {
             const name = document.createElement('span');
             name.className = 'scene-side-name';
             sideHead.appendChild(name);
-            const character = document.createElement('button');
-            character.type = 'button';
-            character.className = `prompt-side-character is-${side}`;
-            character.appendChild(svgIcon(ICON_PERSON, 12));
-            const characterName = document.createElement('span');
-            characterName.className = 'prompt-side-character-name';
-            character.appendChild(characterName);
-            character.appendChild(svgIcon(ICON_CHEVRON_RIGHT));
-            character.addEventListener('click', () => sideCharacterTriggers(side)[0]?.click());
+            // "name (Characters · L)": the region's character, chosen in the Characters card
+            const character = document.createElement('span');
+            character.className = `scene-side-character is-${side}`;
             sideHead.appendChild(character);
+            // the side's area option and emphasis (regional-condition-side-left / -right)
+            const controls = document.querySelector(`.regional-condition-side-${side}`);
+            if (controls) sideHead.appendChild(controls);
             const add = document.createElement('button');
             add.type = 'button';
             add.className = 'scene-add-button is-side';
@@ -902,9 +926,24 @@ export function setupPromptFieldManager() {
             const rows = document.createElement('div');
             rows.className = 'scene-side-rows';
             box.appendChild(rows);
-            group.appendChild(box);
+            // shown while a row is dragged: the box takes the row for its side
+            const hint = document.createElement('div');
+            hint.className = 'scene-drop-hint';
+            box.appendChild(hint);
+            body.appendChild(box);
         }
+        group.appendChild(body);
         return group;
+    }
+
+    // Left / Right ↔ Top / Bottom: the same setting the (hidden) split dropdown writes
+    function setSplit(value) {
+        const split = normalizeSplit(value);
+        if (normalizeSplit(SETTINGS.regional_split) === split) return;
+        SETTINGS.regional_split = split;
+        globalThis.regional?.split?.updateDefaults?.(splitLabel(split));
+        document.dispatchEvent(new CustomEvent('saa:regional-split-changed'));
+        renderGroupText();
     }
 
     // writes a text node only when the text changed (no DOM churn on a no-op refresh)
@@ -914,13 +953,17 @@ export function setupPromptFieldManager() {
 
     function renderGroupText() {
         if (!group) return;
-        setText(group.querySelector('.scene-regional-title'), text('regional_condition', 'Regional Condition'));
-        // the settings container is hidden by callback_regional_condition while it can
-        // find it; inside the block it is shown whenever the block is
-        group.querySelector('.regional-condition-container')?.removeAttribute('hidden');
+        setText(group.querySelector('.scene-regional-title'), text('ui_scene_regional_title', 'Regional'));
+        // off: only the head (title + switch) stays
+        group.classList.toggle('is-off', !isRegional());
+        const split = normalizeSplit(SETTINGS.regional_split);
+        for (const button of group.querySelectorAll('.scene-split-seg button')) {
+            button.setAttribute('aria-checked', String(button.dataset.split === split));
+        }
         for (const side of ['left', 'right']) {
             const box = group.querySelector(`.scene-side.is-${side}`);
             setText(box.querySelector('.scene-side-name'), sideLabel(side, SETTINGS.regional_split));
+            setText(box.querySelector('.scene-drop-hint'), text('ui_scene_drop_hint', 'Drag a row here → {0}').replace('{0}', sideLabel(side, SETTINGS.regional_split)));
             // inside a box the side is the box: "Positive (right)" reads "Positive"
             for (const row of box.querySelectorAll('.prompt-field[data-scene-row]')) {
                 const id = idOfContainer(row);
@@ -929,11 +972,12 @@ export function setupPromptFieldManager() {
                 const node = label && [...label.childNodes].find(child => child.nodeType === Node.TEXT_NODE);
                 if (short && node && node.textContent !== short) node.textContent = short;
             }
-            const character = box.querySelector('.prompt-side-character');
+            const character = box.querySelector('.scene-side-character');
             const name = sideCharacterName(side);
+            const column = slotSideLabels(SETTINGS.regional_split)[side];
             character.classList.toggle('is-empty', name === '');
-            character.title = `Change the ${side} character`;
-            setText(character.querySelector('.prompt-side-character-name'), name || text('ui_scene_choose_character', 'Choose character…'));
+            character.title = text('ui_scene_side_character_hint', 'Pick the character for this region in the Characters card ({0} column)').replace('{0}', column);
+            setText(character, text('ui_scene_side_character', '{0} (Characters · {1})').replace('{0}', name || '—').replace('{1}', column));
         }
     }
 
@@ -952,14 +996,9 @@ export function setupPromptFieldManager() {
             globalThis.regional?.str_right?.setValue?.(SETTINGS.regional_str_right);
             globalThis.regional?.option_left?.updateDefaults?.(SETTINGS.regional_option_left);
             globalThis.regional?.option_right?.updateDefaults?.(SETTINGS.regional_option_right);
-            const list = globalThis.characterListRegional;
-            if (list?.getKey) {
-                const keys = list.getKey();
-                const weights = [0, 1].map(index => list.getTextValue(index));
-                list.updateDefaults(keys[1], keys[0]);
-                [1, 0].forEach((from, to) => list.setTextValue(to, weights[from]));
-                document.dispatchEvent(new CustomEvent('saa:regional-characters-changed'));
-            }
+            // the slots' side column flipped with the patch; the regional list and the thumbs follow
+            if (patch.character_slots) globalThis.characterList?.setSlots?.(SETTINGS.character_slots);
+            document.dispatchEvent(new CustomEvent('saa:regional-characters-changed'));
             fields = normalizeCustomFields(SETTINGS.prompt_custom_fields);
             persistFields();
             renderCustomFields();
@@ -988,6 +1027,8 @@ export function setupPromptFieldManager() {
                 if (boxes[side].length === 0 && boxes.left.length === 0 && boxes.right.length === 0) sequence.push({ block: true });
                 boxes[side].push(id);
             } else {
+                // Regional off (Checkpoint): the block stays, folded to its head, where the side units would be
+                if (id === 'positive' && !regional && !castEnabled(SETTINGS)) sequence.push({ block: true });
                 sequence.push({ id });
             }
             placed.add(id);
@@ -1019,30 +1060,36 @@ export function setupPromptFieldManager() {
 
         // bring the host into order (the containers are live components: only the
         // ones out of place move, an unchanged order moves nothing)
+        // every container is located before any host is re-synced: a row that sits in a
+        // side box from the previous layout would otherwise be dropped by the box's sync
+        // before the Scene's own sync could pick it up
+        const boxNodes = { left: boxes.left.map(prepare).filter(Boolean), right: boxes.right.map(prepare).filter(Boolean) };
+        const sequenceNodes = sequence.map(entry => (entry.block ? null : prepare(entry.id)));
+        // containers that are not in this layout (side fields while Regional is off)
+        // stay in the DOM, hidden by their inline display
+        const extraNodes = [];
+        for (const id of [...Object.keys(BUILTIN_CONTAINERS), ...fields.map(field => field.id)]) {
+            if (placed.has(id)) continue;
+            const container = prepare(id);
+            if (container) extraNodes.push(container);
+        }
         const ordered = [];
-        for (const entry of sequence) {
+        sequence.forEach((entry, index) => {
             if (entry.block) {
                 const block = ensureGroup();
                 for (const side of ['left', 'right']) {
                     const rows = block.querySelector(`.scene-side.is-${side} .scene-side-rows`);
-                    syncChildren(rows, boxes[side].map(prepare).filter(Boolean));
+                    syncChildren(rows, boxNodes[side]);
                 }
                 ordered.push(block);
-                continue;
+                return;
             }
-            const container = prepare(entry.id);
-            if (container) ordered.push(container);
-        }
-        // containers that are not in this layout (side fields while Regional is off)
-        // stay in the DOM, hidden by their inline display
-        for (const id of [...Object.keys(BUILTIN_CONTAINERS), ...fields.map(field => field.id)]) {
-            if (placed.has(id)) continue;
-            const container = prepare(id);
-            if (container) ordered.push(container);
-        }
-        if (!regional && group?.parentElement) group.remove();
+            if (sequenceNodes[index]) ordered.push(sequenceNodes[index]);
+        });
+        ordered.push(...extraNodes);
+        if (group?.parentElement && !ordered.includes(group)) group.remove();
         syncChildren(host, ordered);
-        if (regional) renderGroupText();
+        if (group && ordered.includes(group)) renderGroupText();
         addFooter.querySelector('.scene-add-button').textContent = text('ui_scene_add_field', '+ Add field');
         for (const button of group?.querySelectorAll('.scene-add-button.is-side') ?? []) button.textContent = text('ui_scene_add_field', '+ Add field');
         applyRowStates();
@@ -1213,10 +1260,10 @@ export function setupPromptFieldManager() {
     }
 
     // ---------------------------------------------------------------- card tools
-    // The Regional switch moves from the Characters card into the Scene's head (its
-    // block lives in the Scene now); the "n off" note follows it.
-    const regionalSwitch = document.querySelector('.regional-condition-trigger-dummy');
-    if (regionalSwitch) toolsHost.insertBefore(regionalSwitch, toolsHost.firstChild);
+    // The Regional switch and settings move from the Characters card into the Regional
+    // block (built now so they have a home before the first layout); the "n off" note
+    // sits in the Scene's head.
+    ensureGroup();
     const mutedNote = document.createElement('span');
     mutedNote.className = 'scene-muted-note';
     toolsHost.insertBefore(mutedNote, toolsHost.firstChild);

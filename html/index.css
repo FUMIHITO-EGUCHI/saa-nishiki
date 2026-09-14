@@ -620,9 +620,47 @@ html, body {
     grid-template-columns: 104px minmax(0, 1fr) 34px;
 }
 
-/* the regional Left / Right pickers share the control but have no cast row */
-.cast-mode .dropdown-character-regional .character-selection-alias {
+/* the regional Left / Right list only stores what the side column chose */
+.dropdown-character-regional {
+    display: none !important;
+}
+
+/* side column (Regional on, Checkpoint): L / R / · per slot */
+.character-selection-side {
     display: none;
+    box-sizing: border-box;
+    align-self: center;
+    height: 24px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.character-selection-side button {
+    min-width: 22px;
+    height: 100%;
+    padding: 0 6px;
+    border: none;
+    background: transparent;
+    font: inherit;
+    font-size: 10.5px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.character-selection-side button:last-child {
+    border-right: none;
+}
+
+.character-selection-side button[aria-checked="true"] {
+    font-weight: 600;
+}
+
+.regional-on:not(.cast-mode) .dropdown-character .character-selection-side {
+    display: inline-flex;
+}
+
+.regional-on:not(.cast-mode) .dropdown-character .character-selection-controls {
+    grid-template-columns: minmax(0, 1fr) 34px auto;
 }
 
 /* Scene: every prompt unit as one row (label | chips) in chain order, edited in place
@@ -756,15 +794,14 @@ html, body {
     opacity: 1;
 }
 
+/* "+ Tag" wears the capsule frame (the theme paints the border colour) */
 .prompt-scene .tag-capsule-add {
     height: 23px;
-    padding: 0 9px 0 6px;
-    border-color: transparent;
+    padding: 0 10px 2px 7px;
+    border-style: solid;
+    border-radius: 12px;
     font-size: 11px;
-}
-
-.prompt-scene .tag-capsule-add:hover {
-    border-color: var(--saa-border-ctl, #474d5b);
+    line-height: 1.3;
 }
 
 /* the chip rows carry no footer ("n tags", weight tools) in the Scene: the ⋯ menu has them */
@@ -828,6 +865,12 @@ html, body {
     height: 18px;
     color: var(--saa-border-strong, #474d5b);
     cursor: grab;
+}
+
+/* the grip arms a native drag of the row; the global `-webkit-user-drag: none`
+   would otherwise swallow the draggable attribute */
+.prompt-scene .prompt-field[draggable="true"] {
+    -webkit-user-drag: element;
 }
 
 /* a pinned row keeps the grip's space so the chevrons line up */
@@ -1138,21 +1181,29 @@ html, body {
     display: none;
 }
 
-/* Regional block: settings on top, one box per side (green = first, orange = second) */
+/* Regional block: head (title · switch · split · Swap), a settings row, one box per
+   side (green = first, orange = second). Off = head only. */
 .scene-regional {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin: 6px 0;
-    padding: 8px 10px 10px;
+    gap: 4px;
+    margin: 4px 0;
+    padding: 4px 8px 6px;
     border: 1px solid var(--saa-warn, #e0a458);
     border-radius: 8px;
+}
+
+.scene-regional.is-off .scene-regional-body,
+.scene-regional.is-off .scene-regional-tools {
+    display: none;
 }
 
 .scene-regional-head {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    min-height: 24px;
+    flex-wrap: wrap;
 }
 
 .scene-regional-title {
@@ -1161,15 +1212,142 @@ html, body {
     color: var(--saa-warn, #e0a458);
 }
 
-.scene-regional-head .prompt-side-swap {
+/* the On / Off switch beside the title, its label hidden (the title says it) */
+.scene-regional-head .regional-condition-trigger-dummy {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+}
+
+.scene-regional-head .regional-condition-trigger-dummy [class$="-span"] {
+    display: none;
+}
+
+.scene-regional-tools {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Left / Right | Top / Bottom */
+.scene-split-seg {
+    display: inline-flex;
+    height: 22px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.scene-split-seg button {
+    padding: 0 8px;
+    border: none;
+    border-right: 1px solid var(--saa-border-ctl, #474d5b);
+    background: transparent;
+    color: var(--saa-muted2, #9aa0ad);
+    font: inherit;
+    font-size: 10.5px;
+    cursor: pointer;
+}
+
+.scene-split-seg button:last-child {
+    border-right: none;
+}
+
+.scene-split-seg button[aria-checked="true"] {
+    background: var(--saa-bg-hover, #2a2d36);
+    color: var(--saa-text, #e6e6e6);
+    font-weight: 600;
+}
+
+.scene-regional-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* settings row: split ratio · overlap as one-line sliders (the split dropdown is the seg above) */
+.scene-regional-settings .regional-condition-settings-1 {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0;
+    padding: 0 0 2px;
+    width: auto;
+}
+
+.scene-regional-settings .regional-condition-split {
+    display: none;
+}
+
+.scene-regional-settings .regional-condition-image-ratio,
+.scene-regional-settings .regional-condition-overlap-ratio {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.scene-regional-settings [class^="mySlider-regional-condition-"][class*="-row"] {
+    display: contents;
+}
+
+.scene-regional-settings [class^="mySlider-regional-condition-"][class*="-span"] {
+    order: 0;
+    font-size: 11px;
+    color: var(--saa-muted2, #9aa0ad);
+    white-space: nowrap;
+}
+
+.scene-regional-settings [class^="mySlider-regional-condition-"][class*="-bar"] {
+    order: 1;
+    flex: 1;
+    min-width: 60px;
+    margin: 0;
+}
+
+.scene-regional-settings [class^="mySlider-regional-condition-"][class*="-value"] {
+    order: 2;
+    width: 44px;
+    height: 22px;
+}
+
+/* side head: LEFT · character · area · emphasis · + Add field */
+.scene-side-head .regional-condition-side {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin-left: auto;
 }
 
-.scene-regional .regional-condition-container {
-    margin: 0;
-    padding: 0;
-    border: none;
-    background: transparent;
+/* the area list's "Left Area" header is the box's own name */
+.scene-side-head .regional-condition-side [class^="mydropdown-"][class$="-header"] {
+    display: none;
+}
+
+.scene-side-head .regional-condition-side > [class^="regional-condition-option"] {
+    width: 120px;
+}
+
+.scene-side-head .scene-add {
+    margin-left: 0;
+}
+
+/* drop hint: only while a row is dragged */
+.scene-drop-hint {
+    display: none;
+    margin: 2px 0 2px 32px;
+    padding: 3px 8px;
+    border: 1px dashed var(--saa-accent, #7fb0f5);
+    border-radius: 6px;
+    color: var(--saa-accent, #7fb0f5);
+    font-size: 11px;
+    background: rgba(127, 176, 245, 0.07);
+}
+
+.prompt-scene.is-row-dragging .scene-drop-hint {
+    display: block;
 }
 
 .scene-side {
@@ -1203,8 +1381,18 @@ html, body {
     color: var(--saa-warn, #e0a458);
 }
 
-.scene-side-head .prompt-side-character {
-    min-height: 22px;
+/* the region's character, chosen in the Characters card's side column */
+.scene-side-character {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+.scene-side-character.is-empty {
+    font-style: italic;
 }
 
 .scene-side-head .scene-add {

@@ -266,7 +266,10 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     // ---------------------------------------------------------------- helpers
     function fieldLabel() {
         const LANG = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language];
-        const short = LANG?.[`ui_field_${key}`];
+        // inside a Regional box the box names the side: "Positive (right)" reads "Positive"
+        const boxed = Boolean(view.closest?.('.scene-side'));
+        const labelKey = boxed && /^(positive|negative)_(left|right)$/.test(key) ? key.split('_')[0] : key;
+        const short = LANG?.[`ui_field_${labelKey}`];
         if (typeof short === 'string' && short) return short;
         return textbox.placeholder || textbox.title || key;
     }

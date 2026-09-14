@@ -174,15 +174,18 @@ test('the Scene holds a Regional block with a LEFT / RIGHT box each (swap, chara
     assert.match(manager, /box\.className = `scene-side is-\$\{side\}`;/);
     // swap = one undo step through the settings transaction
     assert.match(manager, /runEditTransaction\(\{ source: 'regional-swap', sections: \['prompt', 'generation'\] \}, mutate\)/);
-    assert.match(manager, /list\.updateDefaults\(keys\[1\], keys\[0\]\);/, 'one slot per side, an OC may sit on either');
-    // character rows open the Characters card's picker for that slot
-    assert.match(manager, /sideCharacterTriggers\(side\)\[0\]\?\.click\(\)/);
+    // Swap flips the slots' side column; the regional list follows through the event
+    assert.match(manager, /if \(patch\.character_slots\) globalThis\.characterList\?\.setSlots\?\.\(SETTINGS\.character_slots\);/);
+    assert.match(manager, /document\.dispatchEvent\(new CustomEvent\('saa:regional-characters-changed'\)\);/);
+    // each box names the slot whose side column picked it ("name (Characters · L)")
+    assert.match(manager, /const slot = regionalSlots\(SETTINGS\.character_slots\)\[side\];/);
+    assert.match(manager, /text\('ui_scene_side_character', '\{0\} \(Characters · \{1\}\)'\)/);
     // a custom row dragged into a box takes that side (both when dropped outside)
     assert.match(manager, /if \(side === 'both'\) delete custom\.side; else custom\.side = side;/);
     assert.match(manager, /negative_left: '\.prompt-negative-left',\s*negative_right: '\.prompt-negative-right',/);
     for (const theme of ['html/index_dark.css', 'html/index_light.css']) {
         const css = read(theme);
-        for (const cls of ['.prompt-side-swap', '.prompt-side-character']) {
+        for (const cls of ['.prompt-side-swap', '.scene-side-character', '.character-selection-side']) {
             assert.match(css, new RegExp(cls.replace(/[.]/g, '\\.')), `${theme} styles ${cls}`);
         }
         assert.match(css, /\.regional-condition-swap \{ display: none !important; \}/);

@@ -60,6 +60,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     regional_option_right: 'default',
     // 'left-right' | 'top-bottom' (regionalSides.js SPLITS)
     regional_split: 'left-right',
+    // generation settings remembered per model type (scripts/shared/modelTypeSettings.js)
+    model_type_generation: {},
     character_left: 'None',
     character_right: 'None',
 
@@ -229,7 +231,8 @@ export const SECTION_KEYS = Object.freeze({
         'model_filter', 'model_filter_keyword', 'model_filter_keyword_diffusion',
         'model_path_comfyui', 'model_path_webui', 'image_save_path_comfyui', 'image_save_path_webui', 'image_save_embed_character_name',
         'webui_auth', 'webui_auth_enable',
-        'api_model_type', 'api_model_file_vpred', 'thumb_select', 'thumb_select_list',
+        // the per-type generation store sits beside the type: neither is an undo step
+        'api_model_type', 'model_type_generation', 'api_model_file_vpred', 'thumb_select', 'thumb_select_list',
         'api_vae_sdxl_model', 'api_vae_sdxl_override', 'api_vae_unet_model', 'api_model_file_diffusion_weight_dtype',
         'api_model_file_text_encoder', 'api_model_file_text_encoder_type', 'api_model_file_text_encoder_device',
         'ai_local_addr', 'ai_local_model_mode', 'ai_local_timeout', 'ai_local_temp', 'ai_local_n_predict', 'ai_refine_system_prompt',
@@ -334,6 +337,8 @@ function coerce(key, value, defaultValue) {
                 // the cast alias (Diffusion prompt rows, scripts/shared/castMembers.js)
                 const alias = typeof slot.alias === 'string' ? slot.alias.trim().slice(0, 20) : '';
                 if (alias !== '') result.alias = alias;
+                // the region the slot is drawn in while Regional is on (scripts/shared/characterSides.js)
+                if (slot.side === 'left' || slot.side === 'right') result.side = slot.side;
                 return result;
             });
         return slots.length ? slots : clone(defaultValue);

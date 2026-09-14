@@ -24,8 +24,12 @@ test('a capsule plan write-back during a settings reload cannot restore the prev
 test('the Regional switch re-lays the Scene out and refreshes the Final prompt', () => {
     const manager = read('scripts/renderer/components/promptFieldManager.js');
     // side fields that are not laid out (Regional off) stay in the DOM, hidden by their inline display
-    assert.match(manager, /if \(placed\.has\(id\)\) continue;\s*const container = prepare\(id\);\s*if \(container\) ordered\.push\(container\);/);
-    assert.match(manager, /if \(!regional && group\?\.parentElement\) group\.remove\(\);/);
+    assert.match(manager, /if \(placed\.has\(id\)\) continue;\s*const container = prepare\(id\);\s*if \(container\) extraNodes\.push\(container\);/);
+    // every container is located before a box or the Scene is re-synced (a sync drops what it no longer lists)
+    assert.match(manager, /const boxNodes = \{ left: boxes\.left\.map\(prepare\)\.filter\(Boolean\), right: boxes\.right\.map\(prepare\)\.filter\(Boolean\) \};/);
+    assert.match(manager, /ordered\.push\(\.\.\.extraNodes\);/);
+    // the Regional block leaves the Scene only when the layout has no place for it (Diffusion)
+    assert.match(manager, /if \(group\?\.parentElement && !ordered\.includes\(group\)\) group\.remove\(\);/);
     const callbacks = read('scripts/renderer/callbacks.js');
     assert.match(callbacks, /globalThis\.prompt\.fieldManager\?\.refresh\?\.\(\);\s*\/\/[^\n]*\n\s*globalThis\.prompt\.tagCapsuleFields\?\.refreshFinalPrompt\?\.\(\);/);
     const language = read('scripts/renderer/language.js');

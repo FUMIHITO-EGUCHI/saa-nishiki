@@ -1,4 +1,5 @@
-import { callback_api_model_type, callback_regional_condition } from './callbacks.js';
+import { callback_api_model_type, callback_regional_condition, syncRegionalCharacters } from './callbacks.js';
+import { migrateSlotSides } from '../shared/characterSides.js';
 import { hiresCalculate } from './tools/hiresCalculation.js';
 import { splitLabel } from '../shared/regionalSides.js';
 
@@ -224,6 +225,8 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
         globalThis.prompt.positive.setTitle(LANG.regional_api_prompt);
     }
     globalThis.prompt.exclude.setTitle(LANG.prompt_ban);
+    // the Scene shortens the side rows' titles inside the Regional boxes and re-renders its own strings
+    globalThis.prompt.fieldManager?.updateLanguage?.();
     globalThis.prompt.tagCapsuleFields?.updateLanguage?.();
     globalThis.prompt.autoResize.setTitle(LANG.ptompt_textbox_autoresize);
     globalThis.prompt.fontSize.setTitle(LANG.ptompt_textbox_fontsize);
@@ -323,10 +326,11 @@ export function updateSettings() {
     globalThis.generate.webui_auth_enable.updateDefaults(SETTINGS.webui_auth_enable);
     globalThis.generate.queueAutostart.setValue(SETTINGS.generate_auto_start);
 
+    // settings / presets from before the side column keep their regional characters as slot sides
+    SETTINGS.character_slots = migrateSlotSides(SETTINGS.character_slots, SETTINGS.character_left, SETTINGS.character_right,
+        { weights: [SETTINGS.weights4dropdownlist?.[7], SETTINGS.weights4dropdownlist?.[8]] });
     globalThis.characterList.setSlots(SETTINGS.character_slots);
-    globalThis.characterListRegional.updateDefaults(SETTINGS.character_left, SETTINGS.character_right, 'None', 'None');
-    globalThis.characterListRegional.setTextValue(0, SETTINGS.weights4dropdownlist[7]);
-    globalThis.characterListRegional.setTextValue(1, SETTINGS.weights4dropdownlist[8]);
+    syncRegionalCharacters();
     
     globalThis.generate.tag_assist.setValue(SETTINGS.tag_assist);
     globalThis.generate.wildcard_random.setValue(SETTINGS.wildcard_random);

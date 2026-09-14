@@ -5,6 +5,7 @@ import { createSelectionModal } from './selectionModal.js';
 import { normalizeSearchText, normalizeSelectionKey } from './selectionModalLogic.js';
 import { originalKey } from '../../shared/characterKeys.js';
 import { normalizeAlias } from '../../shared/castMembers.js';
+import { SLOT_SIDES, assignSlotSide, slotSide, slotSideLabels } from '../../shared/characterSides.js';
 import { characterWorkSearchTerms, characterWorkTitles } from '../../shared/characterWorks.js';
 
 function splitLabels(value, count) {
@@ -208,6 +209,8 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
     let weights = Array(dropdownCount).fill('1.0');
     // cast alias per slot (the "@alias" prompt row and Action reference, Diffusion only)
     const aliases = Array(dropdownCount).fill('');
+    // region per slot while Regional is on: 'left' | 'right' | 'both' (scripts/shared/characterSides.js)
+    const sides = Array(dropdownCount).fill('both');
     let activeIndex = 0;
     const fields = [];
     const thumbPreview = createCharacterThumbPreview();
@@ -251,6 +254,22 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         paintTrigger(field.trigger, selected, valueOnly);
         field.trigger.setAttribute('aria-label', labels[index]);
         field.weight.value = weights[index];
+        paintSide(index);
+    }
+
+    // the side column: L / R / · (T / B / · under a top-bottom split), one checked
+    function paintSide(index) {
+        const field = fields[index];
+        if (!field?.side) return;
+        const sideText = slotSideLabels(globalThis.globalSettings?.regional_split);
+        const hint = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.ui_character_side
+            ?? 'Region for this character while Regional is on: {0} / {1} / · (not in a region)';
+        field.side.title = hint.replace('{0}', sideText.left).replace('{1}', sideText.right);
+        for (const value of SLOT_SIDES) {
+            const button = field.sideButtons[value];
+            button.textContent = sideText[value];
+            button.setAttribute('aria-checked', String(sides[index] === value));
+        }
     }
 
     for (let index = 0; index < dropdownCount; index++) {
@@ -279,11 +298,32 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         alias.maxLength = 20;
         alias.placeholder = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.cast_alias_placeholder ?? '@alias';
         alias.setAttribute('aria-label', `${labels[index]} alias`);
-        // one row per slot: alias | character | weight (the alias shows for the cast only)
-        controls.append(alias, trigger, weight);
+        const side = document.createElement('div');
+        side.className = 'character-selection-side';
+        side.setAttribute('role', 'radiogroup');
+        const sideButtons = {};
+        for (const value of SLOT_SIDES) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.side = value;
+            button.setAttribute('role', 'radio');
+            button.setAttribute('aria-checked', String(value === 'both'));
+            button.addEventListener('click', () => {
+                if (sides[index] === value) return;
+                // one slot per region: L / R moves away from the slot that had it
+                const next = assignSlotSide(sides.map(current => ({ side: current })), index, value).map(slotSide);
+                next.forEach((current, position) => { sides[position] = current; paintSide(position); });
+                if (typeof callback === 'function') callback(index, committed.map(option => option?.key || 'None'));
+            });
+            side.appendChild(button);
+            sideButtons[value] = button;
+        }
+        // one row per slot: alias | character | weight | side
+        // (the alias shows for the cast only, the side column while Regional is on)
+        controls.append(alias, trigger, weight, side);
         fieldElement.append(label, controls);
         grid.appendChild(fieldElement);
-        fields.push({ trigger, weight, alias, label, options: [] });
+        fields.push({ trigger, weight, alias, side, sideButtons, label, options: [], settledWeight: '1.0' });
 
         alias.addEventListener('change', event => {
             aliases[index] = normalizeAlias(event.target.value);
@@ -320,6 +360,11 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
             event.target.value = value.toFixed(1);
             weights[index] = event.target.value;
             previousWeight = event.target.value;
+            // a changed weight reaches the regional list and the stored slots through the callback
+            if (fields[index].settledWeight !== event.target.value) {
+                fields[index].settledWeight = event.target.value;
+                if (typeof callback === 'function') callback(index, committed.map(option => option?.key || 'None'));
+            }
         });
     }
 
@@ -356,7 +401,10 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         setTextValue(index, value) {
             const parsed = Number.parseFloat(value) || 1;
             weights[index] = parsed === 1 ? '1.0' : String(parsed);
-            if (fields[index]) fields[index].weight.value = weights[index];
+            if (fields[index]) {
+                fields[index].weight.value = weights[index];
+                fields[index].settledWeight = weights[index];
+            }
         },
         getAlias(index) {
             return aliases[index] ?? '';
@@ -364,6 +412,17 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         setAlias(index, value) {
             aliases[index] = normalizeAlias(value);
             if (fields[index]) fields[index].alias.value = aliases[index];
+        },
+        getSide(index) {
+            return sides[index] ?? 'both';
+        },
+        setSide(index, value) {
+            sides[index] = slotSide({ side: value });
+            paintSide(index);
+        },
+        // the column's letters follow the split (L / R or T / B)
+        refreshSideLabels() {
+            fields.forEach((_, index) => paintSide(index));
         },
         setValueOnly(trigger) {
             valueOnly = Boolean(trigger);
@@ -434,7 +493,7 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         container.appendChild(row);
     }
 
-    function build(keys = [], weights = [], valueOnly = null, aliases = []) {
+    function build(keys = [], weights = [], valueOnly = null, aliases = [], sides = []) {
         const previousValueOnly = valueOnly ?? control?.isValueOnly?.() ?? (globalThis.globalSettings?.language === 'en-US');
         control = createCharacterControl({
             containerId,
@@ -448,6 +507,7 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         control.updateDefaults(...defaults);
         for (let index = 0; index < count; index++) control.setTextValue(index, weights[index] ?? 1);
         for (let index = 0; index < count; index++) control.setAlias(index, aliases[index] ?? '');
+        for (let index = 0; index < count; index++) control.setSide(index, sides[index] ?? 'both');
         renderSlotButtons();
     }
 
@@ -463,16 +523,21 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         return control ? Array.from({ length: count }, (_, index) => control.getAlias(index)) : [];
     }
 
+    function currentSides() {
+        return control ? Array.from({ length: count }, (_, index) => control.getSide(index)) : [];
+    }
+
     function setSlotCount(next) {
         const clamped = Math.max(minSlots, Math.min(maxSlots, next));
         if (clamped === count) return;
         const keys = currentKeys().slice(0, Math.min(count, clamped));
         const weights = currentWeights().slice(0, Math.min(count, clamped));
         const aliases = currentAliases().slice(0, Math.min(count, clamped));
+        const sides = currentSides().slice(0, Math.min(count, clamped));
         count = clamped;
         build([...keys, ...Array(Math.max(0, count - keys.length)).fill('None')].slice(0, count),
             [...weights, ...Array(Math.max(0, count - weights.length)).fill(1)].slice(0, count),
-            null, aliases);
+            null, aliases, sides);
         onSlotsChanged?.();
         if (typeof callback === 'function') callback(0, control.getKey());
     }
@@ -484,12 +549,15 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
             const slot = { key: control?.getKey()[index] ?? 'None', weight: control?.getTextValue(index) ?? 1 };
             const alias = control?.getAlias(index) ?? '';
             if (alias !== '') slot.alias = alias;
+            const side = control?.getSide(index) ?? 'both';
+            if (side !== 'both') slot.side = side;
             return slot;
         }),
         setSlots(slots) {
             const list = Array.isArray(slots) && slots.length ? slots.slice(0, maxSlots) : [{ key: 'None', weight: 1 }];
             count = Math.max(minSlots, list.length);
-            build(list.map(slot => slot?.key ?? 'None'), list.map(slot => slot?.weight ?? 1), null, list.map(slot => slot?.alias ?? ''));
+            build(list.map(slot => slot?.key ?? 'None'), list.map(slot => slot?.weight ?? 1), null,
+                list.map(slot => slot?.alias ?? ''), list.map(slot => slot?.side ?? 'both'));
         },
         addSlot: () => setSlotCount(count + 1),
         removeSlot: () => setSlotCount(count - 1),
@@ -497,13 +565,16 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         setOptions(data, originalData) {
             if (Array.isArray(data?.[0]) && Array.isArray(data?.[1])) charData = data;
             if (Array.isArray(originalData)) ocData = originalData;
-            build(currentKeys(), currentWeights(), null, currentAliases());
+            build(currentKeys(), currentWeights(), null, currentAliases(), currentSides());
             return api;
         },
         updateDefaults(...defaults) {
             control.updateDefaults(...defaults);
             return api;
         },
+        getSide: index => control.getSide(index),
+        setSide: (index, value) => control.setSide(index, value),
+        refreshSideLabels: () => control.refreshSideLabels(),
         getKey: () => control.getKey(),
         getValue: () => control.getValue(),
         getTextValue: index => control.getTextValue(index),

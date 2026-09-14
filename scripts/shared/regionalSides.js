@@ -11,6 +11,7 @@
 // With Regional off the side is ignored and the chain is the single ordered list.
 
 import { STRUCTURAL_UNITS, normalizeCustomFields } from './promptFieldOrder.js';
+import { swapSlotSides } from './characterSides.js';
 
 export const SIDES = Object.freeze(['both', 'left', 'right']);
 
@@ -114,6 +115,8 @@ export function swapSidesPatch(settings = {}) {
         patch[left] = clone(settings[right]);
         patch[right] = clone(settings[left]);
     }
+    // the Characters slots change region with their side column
+    if (Array.isArray(settings.character_slots)) patch.character_slots = swapSlotSides(settings.character_slots);
     if (Array.isArray(settings.prompt_custom_fields)) {
         patch.prompt_custom_fields = normalizeCustomFields(settings.prompt_custom_fields).map(field => {
             const side = normalizeSide(field.side);
