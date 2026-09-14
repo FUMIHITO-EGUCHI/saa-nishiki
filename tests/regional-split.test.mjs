@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { SPLITS, normalizeSplit, sideLabel, splitFromLabel, splitLabel } from '../scripts/shared/regionalSides.js';
 import { DEFAULT_SETTINGS, SECTION_KEYS, normalizeSection } from '../scripts/shared/settingsSections.js';
 import { summarizeRegional } from '../scripts/renderer/tools/pipelineSummary.js';
-import { REFINE_SYSTEM_PROMPT } from '../scripts/aiPromptRefiner.js';
+import { LEGACY_V2_REFINE_SYSTEM_PROMPT, REFINE_SYSTEM_PROMPT, resolveRefineSystemPrompt } from '../scripts/aiPromptRefiner.js';
 
 const projectRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = relativePath => fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
@@ -55,4 +55,13 @@ test('both ComfyUI regional builders and Forge Couple honour the split', () => {
 test('Refine keeps an action sentence instead of turning it into tags', () => {
     assert.match(REFINE_SYSTEM_PROMPT, /one plain English sentence/i);
     assert.match(REFINE_SYSTEM_PROMPT, /never split into tags/i);
+});
+
+test('a stored schema 2 default, with or without the action-sentence rule, migrates to the current prompt', () => {
+    assert.equal(resolveRefineSystemPrompt(LEGACY_V2_REFINE_SYSTEM_PROMPT), REFINE_SYSTEM_PROMPT);
+    const withoutRule = LEGACY_V2_REFINE_SYSTEM_PROMPT.split('\n').filter(line => !line.startsWith('11. An editable field')).join('\n');
+    assert.notEqual(withoutRule, LEGACY_V2_REFINE_SYSTEM_PROMPT);
+    assert.equal(resolveRefineSystemPrompt(withoutRule), REFINE_SYSTEM_PROMPT);
+    // a hand-edited prompt stays
+    assert.equal(resolveRefineSystemPrompt(`${withoutRule}\nMy own rule.`), `${withoutRule}\nMy own rule.`);
 });

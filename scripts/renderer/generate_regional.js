@@ -8,6 +8,7 @@ import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { filterPrompts } from './tools/promptFilter.js';
 import { asFragment, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
 import { normalizeSplit, sideOrder } from '../shared/regionalSides.js';
+import { composeRegionalNegatives } from '../shared/negativeComposition.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue } from './tools/promptBatchExpansion.js';
 import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
 import { removeAiPromptMarker } from '../aiPromptRefiner.js';
@@ -216,16 +217,19 @@ export function getNegativePrompts({ negative_tags_left = '', negative_tags_righ
         negative_right: readPromptValue('negative_right'),
     };
     for (const custom of getCustomFieldTexts('negative')) texts[custom.id] = custom.text;
-    const parts = side => sideOrder(order, side, customs).map(id => String(texts[id] ?? '').trim()).filter(Boolean);
-    const both = parts('both');
-    const leftOnly = parts('left').filter(part => !both.includes(part));
-    const rightOnly = parts('right').filter(part => !both.includes(part));
-    const join = list => list.filter(Boolean).join(', ').trim();
-    return {
-        left: join([...both, ...leftOnly, negative_tags_left]),
-        right: join([...both, ...rightOnly, negative_tags_right]),
-        merged: join([...both, ...leftOnly, ...rightOnly, negative_tags_left, negative_tags_right]),
+    // the chains and their texts also go to Refine, which rebuilds the same sides
+    const chains = {
+        both: sideOrder(order, 'both', customs),
+        left: sideOrder(order, 'left', customs),
+        right: sideOrder(order, 'right', customs),
     };
+    const composed = composeRegionalNegatives({
+        chains,
+        texts,
+        characterLeft: negative_tags_left,
+        characterRight: negative_tags_right,
+    });
+    return { ...composed, chains, texts };
 }
 
 async function createCharacters(index, seeds) {
@@ -485,6 +489,10 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
             leftSeed: randomSeed,
             rightSeed: randomSeedr,
             characterNegative: [negative_tags_left, negative_tags_right].filter(Boolean).join(', '),
+            characterNegativeLeft: negative_tags_left,
+            characterNegativeRight: negative_tags_right,
+            // Refine rebuilds each side's negative around these units
+            negative: { chains: negatives.chains, texts: negatives.texts },
         };
         thumbImage = thumb;
         charactersName = characters;         
@@ -675,6 +683,8 @@ export async function generateRegionalImage(dataPack){
                             positive: removeAiPromptMarker(createPromptResult.positivePromptLeft, REPLACE_AI_MARK),
                             positiveRight: removeAiPromptMarker(createPromptResult.positivePromptRight, REPLACE_AI_MARK),
                             negative: createPromptResult.negativePrompt,
+                            negativeLeft: createPromptResult.negativePromptLeft,
+                            negativeRight: createPromptResult.negativePromptRight,
                         } : null,
                         temperature: globalThis.ai.local_temp.getValue(),
                         n_predict:globalThis.ai.local_n_predict.getValue(),

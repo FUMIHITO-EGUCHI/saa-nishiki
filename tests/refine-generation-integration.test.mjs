@@ -33,6 +33,20 @@ test('normal and regional fixed context stays separate for V2 prompt recompositi
   assert.match(regional, /leftSeed: randomSeed,[\s\S]*?rightSeed: randomSeedr,[\s\S]*?characterNegative: \[negative_tags_left, negative_tags_right\]/);
 });
 
+test('the negative units reach Refine and the rebuilt side negatives reach the backend', () => {
+  const normal = read('scripts/renderer/generate.js');
+  assert.match(normal, /negative: \{ chain: negativeOrder, texts: negativeTexts \},/);
+
+  const regional = read('scripts/renderer/generate_regional.js');
+  assert.match(regional, /characterNegativeLeft: negative_tags_left,[\s\S]*?characterNegativeRight: negative_tags_right,/);
+  assert.match(regional, /negative: \{ chains: negatives\.chains, texts: negatives\.texts \},/);
+  assert.match(regional, /negativeLeft: createPromptResult\.negativePromptLeft,[\s\S]*?negativeRight: createPromptResult\.negativePromptRight,/, 'the model sees each rendered side negative');
+
+  // ComfyUI masks a negative per side, so a rebuilt one has to replace it
+  assert.match(normal, /generateData\.negative_left = promptResult\.negativeLeft;/);
+  assert.match(normal, /generateData\.negative_right = promptResult\.negativeRight;/);
+});
+
 test('main process forwards structured editor and generation context only to the Ollama adapter', () => {
   const source = read('scripts/main/remoteAI_backend.js');
   assert.match(source, /const useOllama = isOllamaChatUrl\(apiUrl\);/);

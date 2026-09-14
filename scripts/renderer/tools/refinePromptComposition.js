@@ -1,5 +1,6 @@
 import { filterPrompts } from './promptFilter.js';
 import { applyPlanWeights, planWeightEntries } from './promptBatchExpansion.js';
+import { composeNegativeChain, composeRegionalNegatives } from '../../shared/negativeComposition.js';
 
 const identityResolver = async value => value;
 
@@ -27,6 +28,12 @@ function mergeNegative(editorNegative, characterNegative) {
     return joinPromptParts([editorNegative, characterNegative]);
 }
 
+// The negative side fields are null when the model answered with schema 2, which knows
+// nothing about them; the generated text of those units is then kept as it was.
+function planSideNegative(value, entries) {
+    return typeof value === 'string' ? applyPlanWeights(value, entries) : null;
+}
+
 export function applyRefinePlanWeights(editorFields = {}, weights = {}) {
     const byField = planWeightEntries(weights);
     return {
@@ -34,7 +41,20 @@ export function applyRefinePlanWeights(editorFields = {}, weights = {}) {
         positive: applyPlanWeights(editorFields.positive ?? '', byField.positive ?? []),
         positiveRight: applyPlanWeights(editorFields.positiveRight ?? '', byField.positive_right ?? []),
         negative: applyPlanWeights(editorFields.negative ?? '', byField.negative ?? []),
+        negativeLeft: planSideNegative(editorFields.negativeLeft, byField.negative_left ?? []),
+        negativeRight: planSideNegative(editorFields.negativeRight, byField.negative_right ?? []),
     };
+}
+
+// The negative chain is rebuilt like the positive one: the editable Negative fields
+// replace their units, every other unit - custom negative fields included - keeps the
+// text generation gave it.
+function negativeUnitTexts(fixedContext, editorFields) {
+    const texts = { ...(fixedContext.negative?.texts ?? {}) };
+    texts.negative = editorFields.negative ?? '';
+    if (typeof editorFields.negativeLeft === 'string') texts.negative_left = editorFields.negativeLeft;
+    if (typeof editorFields.negativeRight === 'string') texts.negative_right = editorFields.negativeRight;
+    return texts;
 }
 
 // A chain is the ordered {id, text} units generation assembled for one prompt
@@ -76,10 +96,19 @@ export async function composeNormalRefinePrompt({
     ], fixedContext.seed, resolveComponent);
     const rawPositive = joinPromptParts(parts);
     const { positivePrompt } = filterPrompts(rawPositive, rawPositive, fixedContext.exclude ?? '');
+    const negativeChain = fixedContext.negative?.chain;
     return {
         positive: appendSlotLora(positivePrompt, fixedContext.slotLora),
         positiveRight: '',
-        negative: mergeNegative(editorFields.negative, fixedContext.characterNegative),
+        // without a negative chain (older queue items) only the editable Negative and the
+        // character negatives are known
+        negative: Array.isArray(negativeChain)
+            ? composeNegativeChain({
+                chain: negativeChain,
+                texts: negativeUnitTexts(fixedContext, editorFields),
+                characterNegative: fixedContext.characterNegative,
+            })
+            : mergeNegative(editorFields.negative, fixedContext.characterNegative),
     };
 }
 
@@ -105,6 +134,24 @@ async function composeRegionalSide(editorFields, fixedContext, sideName, resolve
     return filterPrompts(rawPositive, rawPositive, fixedContext.exclude ?? '').positivePrompt;
 }
 
+// Regional negatives: the shared Negative and "both" custom fields go to both sides,
+// Negative (left / right) and the side custom fields to theirs, each side's character
+// negatives last. `negative` is the merged one, for backends without regional negatives.
+function composeRegionalNegativeSides(editorFields, fixedContext) {
+    const chains = fixedContext.negative?.chains;
+    if (!chains) {
+        // older queue items carry no negative chain: one merged negative for every side
+        const merged = mergeNegative(editorFields.negative, fixedContext.characterNegative);
+        return { left: merged, right: merged, merged };
+    }
+    return composeRegionalNegatives({
+        chains,
+        texts: negativeUnitTexts(fixedContext, editorFields),
+        characterLeft: fixedContext.characterNegativeLeft ?? '',
+        characterRight: fixedContext.characterNegativeRight ?? '',
+    });
+}
+
 export async function composeRegionalRefinePrompt({
     editorFields = {},
     fixedContext = {},
@@ -112,10 +159,13 @@ export async function composeRegionalRefinePrompt({
 } = {}) {
     const left = await composeRegionalSide(editorFields, fixedContext, 'left', resolveComponent);
     const right = await composeRegionalSide(editorFields, fixedContext, 'right', resolveComponent);
+    const negatives = composeRegionalNegativeSides(editorFields, fixedContext);
     return {
         positive: appendSlotLora(left, fixedContext.slotLora),
         positiveRight: right,
-        negative: mergeNegative(editorFields.negative, fixedContext.characterNegative),
+        negative: negatives.merged,
+        negativeLeft: negatives.left,
+        negativeRight: negatives.right,
     };
 }
 
@@ -124,5 +174,7 @@ export function mapRegionalBackendPrompts(prompts, swap = false) {
         positiveLeft: swap ? prompts.positiveRight : prompts.positive,
         positiveRight: swap ? prompts.positive : prompts.positiveRight,
         negative: prompts.negative,
+        negativeLeft: swap ? prompts.negativeRight : prompts.negativeLeft,
+        negativeRight: swap ? prompts.negativeLeft : prompts.negativeRight,
     };
 }

@@ -61,6 +61,7 @@ Nishiki では、日本語タグ翻訳、カスタム欄とプリセットを持
 
 ## AI プロンプトリファイナー
 上流のリモート / ローカル `llama.cpp` AI プロンプトに加えて、[Ollama](https://ollama.com/) を使う **Refine** モードを追加しました。Refine は各バッチの 1 枚目を生成する前に、構造化リクエスト 1 回でプロンプト全体を書き直し、結果を欄ごとにエディタへ適用します。Refine の編集は履歴に記録され、Undo できます。タグの中にある英文の動作文（Regional Condition の「誰が誰に何をするか」を参照）は、タグに分解されず文のまま保たれます。
+`Regional Condition` が有効なときは左右両方を書き直します。対象は Common、Positive、Positive (right)、Negative、および左右別の Negative (left / right) です。キャラクター、Views、JSON スロット、Wildcards、スロット LoRA など生成時に付与される内容はそのまま維持され、書き直された欄の周りに再度組み込まれます。
 AI の結果は生成のたびにポップアップするのではなく、**Info パネルの AI タブ** に表示されます。
 
 ## 高速生成モード

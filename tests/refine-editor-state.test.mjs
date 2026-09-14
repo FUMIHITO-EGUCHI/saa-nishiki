@@ -56,6 +56,20 @@ test('editor snapshot revision covers fields, plans, batches, mode and queued AI
   assert.equal(hasRefineEditorConflict(snapshot, changedRole), true);
 });
 
+test('the per-side negatives are snapshotted only while Regional is on', () => {
+  const sides = { negativeLeft: 'harsh shadow', negativeRight: 'lens flare' };
+
+  const normal = createRefineEditorSnapshot(input({ fields: { ...input().fields, ...sides } }));
+  assert.equal(normal.fields.negativeLeft, '');
+  assert.equal(normal.fields.negativeRight, '');
+  assert.equal(normal.revision, createRefineEditorSnapshot(input()).revision, 'unused side text never moves the revision');
+
+  const regional = createRefineEditorSnapshot(input({ mode: 'regional', fields: { ...input().fields, ...sides } }));
+  assert.equal(regional.fields.negativeLeft, 'harsh shadow');
+  assert.equal(regional.fields.negativeRight, 'lens flare');
+  assert.equal(hasRefineEditorConflict(regional, createRefineEditorSnapshot(input({ mode: 'regional' }))), true);
+});
+
 test('snapshot canonicalization is stable across object key order and detached from mutable input', () => {
   const mutable = input();
   const snapshot = createRefineEditorSnapshot(mutable);

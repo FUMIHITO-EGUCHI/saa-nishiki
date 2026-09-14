@@ -58,6 +58,7 @@ Nishiki 新增了日语标签翻译、带自定义字段与预设的胶囊式提
 
 ## AI 提示词重写器
 在上游的远程 / 本地 `llama.cpp` AI 提示词之外，Nishiki 新增了基于 [Ollama](https://ollama.com/) 的 **重写（Refine）** 模式。重写会在每个批量的第一张图之前，用一次结构化请求改写整段提示词，并逐字段应用到编辑器。重写产生的编辑会记录到编辑历史中，可以撤销。
+启用 `Regional Condition` 时，重写会同时改写左右两侧：Common、Positive、Positive (right)、Negative 以及左右各自的 Negative (left / right)。角色、Views、JSON 槽位、Wildcards、槽位 LoRA 等生成时追加的内容保持不变，并在改写后的字段周围重新组合。
 AI 结果显示在 **Info 面板的 AI 标签页** 中，不再每次生成后弹窗。
 
 ## 快速生成模式

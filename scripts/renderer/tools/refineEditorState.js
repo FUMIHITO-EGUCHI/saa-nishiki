@@ -1,9 +1,11 @@
-const FIELD_KEYS = Object.freeze(['common', 'positive', 'positiveRight', 'negative', 'exclude']);
+const FIELD_KEYS = Object.freeze(['common', 'positive', 'positiveRight', 'negative', 'negativeLeft', 'negativeRight', 'exclude']);
 const SETTINGS_KEY_BY_FIELD = Object.freeze({
     common: 'common',
     positive: 'positive',
     positiveRight: 'positive_right',
     negative: 'negative',
+    negativeLeft: 'negative_left',
+    negativeRight: 'negative_right',
     exclude: 'exclude',
 });
 
@@ -29,8 +31,15 @@ function stableStringify(value) {
     return JSON.stringify(value);
 }
 
-function normalizeFields(fields = {}) {
-    return Object.fromEntries(FIELD_KEYS.map(key => [key, String(fields[key] ?? '')]));
+// Negative (left / right) only exist while Regional is on; outside it their stored text
+// is not part of the prompt, so Refine neither sees it nor may rewrite it.
+const REGIONAL_ONLY_KEYS = new Set(['negativeLeft', 'negativeRight']);
+
+function normalizeFields(fields = {}, mode = 'normal') {
+    return Object.fromEntries(FIELD_KEYS.map(key => [
+        key,
+        mode !== 'regional' && REGIONAL_ONLY_KEYS.has(key) ? '' : String(fields[key] ?? ''),
+    ]));
 }
 
 function normalizeKeyedJson(values = {}, fallback) {
@@ -38,9 +47,10 @@ function normalizeKeyedJson(values = {}, fallback) {
 }
 
 export function createRefineEditorSnapshot({ mode = 'normal', fields = {}, plans = {}, batches = {}, ai = {} } = {}) {
+    const normalizedMode = mode === 'regional' ? 'regional' : 'normal';
     const content = {
-        mode: mode === 'regional' ? 'regional' : 'normal',
-        fields: normalizeFields(fields),
+        mode: normalizedMode,
+        fields: normalizeFields(fields, normalizedMode),
         plans: normalizeKeyedJson(plans, []),
         batches: normalizeKeyedJson(batches, { enabled: false, count: 4 }),
         ai: {
@@ -84,6 +94,8 @@ export function snapshotFieldsForPromptOverride(snapshot) {
         positive: snapshot?.fields?.positive ?? '',
         positive_right: snapshot?.fields?.positiveRight ?? '',
         negative: snapshot?.fields?.negative ?? '',
+        negative_left: snapshot?.fields?.negativeLeft ?? '',
+        negative_right: snapshot?.fields?.negativeRight ?? '',
         exclude: snapshot?.fields?.exclude ?? '',
     });
 }
