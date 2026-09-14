@@ -14,7 +14,9 @@ function text(key, fallback) {
     return typeof value === 'string' && value ? value : fallback;
 }
 
-// One line for the status span from an action result / state reply.
+// One line for the status span from an action result / state reply. The pill
+// beside it already says running / not running, so a plain state reply adds
+// nothing; only progress, an action's outcome or an error is worth a line.
 export function describeComfyProcess(reply, t = text) {
     if (!reply) return t('ui_comfy_proc_unknown', 'not checked');
     if (reply.phase && reply.phase !== 'idle') {
@@ -23,8 +25,8 @@ export function describeComfyProcess(reply, t = text) {
         return verb;
     }
     if (reply.ok === false) return reply.message || t('ui_comfy_proc_failed', 'failed');
-    if (reply.message) return reply.message;
-    return reply.running ? t('ui_comfy_proc_running', 'running') : t('ui_comfy_proc_down', 'not running');
+    if (reply.action && reply.action !== 'state' && reply.message) return reply.message;
+    return '';
 }
 
 export function setupComfyProcessControl() {
