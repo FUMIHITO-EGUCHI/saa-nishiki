@@ -1,5 +1,7 @@
-// L2: per-tag weight popover (Fixed | Plan). Anchored to a chip, fixed-position,
-// 336px wide, focus-trapped. Nothing is written until Apply.
+// L2: per-tag popover (Fixed | Plan | Related). Anchored to a chip, fixed-position,
+// 336px wide, focus-trapped. The weight tabs write nothing until Apply; the Related
+// tab lists the offline co-occurrence dictionary's neighbours of the tag (with their
+// translations) and adds / replaces through the field's callbacks as they are clicked.
 import {
     WEIGHT_PRESETS,
     adjustWeight,
@@ -8,17 +10,28 @@ import {
     createFixedWeightPlan,
     formatTagWeight,
     isVariablePlan,
+    normalizeTagName,
     normalizeWeightPlan,
     roundWeight,
     weightWarning,
 } from './tagCapsuleLogic.js';
 import { createIcon } from './tagCapsuleChip.js';
 import { tagText } from './tagUiText.js';
+import { TAG_ALIASES_EVENT, aliasFor, ensureAliases } from '../tagAliasClient.js';
 
 const POPOVER_WIDTH = 336;
 const VIEWPORT_MARGIN = 8;
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 const MODES = ['increment', 'decrement', 'random'];
+const TABS = ['fixed', 'plan', 'related'];
+
+// The tab the popover opens on next time: 'weight' (Fixed or Plan, whichever the
+// capsule's plan calls for) or 'related'. Remembered for the session.
+let lastTabKind = 'weight';
+
+function displayTag(tag) {
+    return String(tag ?? '').replaceAll('_', ' ');
+}
 
 function el(tag, className, text = '') {
     const node = document.createElement(tag);
@@ -52,10 +65,14 @@ export function createWeightPopover({ text = tagText } = {}) {
     root.setAttribute('aria-modal', 'false');
     root.tabIndex = -1;
 
-    // ---- header
+    // ---- header: the tag on the first line, its translation on the second
     const head = el('div', 'tag-weight-popover-head');
     const title = el('span', 'tag-weight-popover-title');
     title.id = 'tag-weight-popover-title';
+    const titleName = el('span', 'tag-weight-popover-title-name');
+    const titleAlias = el('span', 'tag-weight-popover-title-alias');
+    titleAlias.hidden = true;
+    title.append(titleName, titleAlias);
     root.setAttribute('aria-labelledby', title.id);
     const closeButton = el('button', 'tag-weight-popover-close');
     closeButton.type = 'button';
@@ -74,8 +91,13 @@ export function createWeightPopover({ text = tagText } = {}) {
     planTab.type = 'button';
     planTab.setAttribute('role', 'tab');
     planTab.dataset.tab = 'plan';
-    tabs.append(fixedTab, planTab);
+    const relatedTab = el('button', 'tag-weight-popover-tab');
+    relatedTab.type = 'button';
+    relatedTab.setAttribute('role', 'tab');
+    relatedTab.dataset.tab = 'related';
+    tabs.append(fixedTab, planTab, relatedTab);
     root.appendChild(tabs);
+    const tabButtons = { fixed: fixedTab, plan: planTab, related: relatedTab };
 
     // ---- fixed panel
     const fixedPanel = el('div', 'tag-weight-popover-body');
@@ -152,15 +174,20 @@ export function createWeightPopover({ text = tagText } = {}) {
     const planStepLabel = el('span', 'tag-weight-label');
     const planStepInput = numberInput('tag-weight-number', 0.01, 'Step');
     planStepField.append(planStepLabel, planStepInput);
-    // "÷ batch count": step derived from the run's batch count so min → max lands exactly
+    rangeRow.append(minField, maxField, planStepField);
+    planPanel.appendChild(rangeRow);
+    // "÷ batch count": step derived from the run's batch count so min → max lands
+    // exactly. Its own row under the three inputs (inside the step column it made that
+    // column taller and pushed the Min / Max boxes out of line), and only for the
+    // stepped modes: a random draw has no step to derive.
+    const autoStepRow = el('div', 'tag-weight-row tag-weight-autostep-row');
     const autoStepLabel = el('label', 'tag-weight-toggle tag-weight-autostep');
     const autoStepInput = el('input', 'tag-weight-switch');
     autoStepInput.type = 'checkbox';
     const autoStepText = el('span', 'tag-weight-toggle-text');
     autoStepLabel.append(autoStepInput, autoStepText);
-    planStepField.append(autoStepLabel);
-    rangeRow.append(minField, maxField, planStepField);
-    planPanel.appendChild(rangeRow);
+    autoStepRow.appendChild(autoStepLabel);
+    planPanel.appendChild(autoStepRow);
 
     const seedField = el('div', 'tag-weight-field tag-weight-seed');
     const seedLabel = el('span', 'tag-weight-label');
@@ -179,6 +206,12 @@ export function createWeightPopover({ text = tagText } = {}) {
     seedField.append(seedLabel, seedRow);
     planPanel.appendChild(seedField);
     root.appendChild(planPanel);
+
+    // ---- related panel: neighbours of the tag from the co-occurrence dictionary
+    const relatedPanel = el('div', 'tag-weight-popover-body tag-weight-related');
+    relatedPanel.setAttribute('role', 'tabpanel');
+    relatedPanel.hidden = true;
+    root.appendChild(relatedPanel);
 
     // ---- footer
     const foot = el('div', 'tag-weight-popover-foot');
@@ -201,11 +234,14 @@ export function createWeightPopover({ text = tagText } = {}) {
     let fixedStep = 0.05;
     let planDraft = normalizeWeightPlan({ mode: 'increment', min: 1, max: 1.3, step: 0.05, seed: 0 });
     let followSeed = true;
+    let relatedToken = 0;      // an answer for an earlier tag is dropped
+    let relatedResult = null;  // the last answer, re-rendered when aliases arrive
 
     function applyText() {
         closeButton.setAttribute('aria-label', text('tag_ui_close'));
         fixedTab.textContent = text('tag_ui_tab_fixed');
         planTab.textContent = text('tag_ui_tab_plan');
+        relatedTab.textContent = text('tag_ui_tab_related');
         weightLabel.textContent = text('tag_ui_weight');
         stepLabel.textContent = text('tag_ui_step');
         presetLabel.textContent = text('tag_ui_presets');
@@ -270,8 +306,10 @@ export function createWeightPopover({ text = tagText } = {}) {
         minInput.value = formatTagWeight(planDraft.min);
         maxInput.value = formatTagWeight(planDraft.max);
         planStepInput.value = formatTagWeight(planDraft.step);
-        autoStepInput.checked = planDraft.autoStep === true;
-        planStepInput.disabled = planDraft.autoStep === true;
+        // a random draw has no step to derive from the batch count
+        autoStepRow.hidden = planDraft.mode === 'random';
+        autoStepInput.checked = planDraft.autoStep === true && planDraft.mode !== 'random';
+        planStepInput.disabled = autoStepInput.checked;
         const warn = weightWarning(planDraft);
         minInput.classList.toggle('is-warn', warn && planDraft.min < 0.5);
         maxInput.classList.toggle('is-warn', warn && planDraft.max > 1.5);
@@ -284,21 +322,132 @@ export function createWeightPopover({ text = tagText } = {}) {
     }
 
     function setTab(tab) {
-        activeTab = tab === 'plan' ? 'plan' : 'fixed';
-        const fixedOn = activeTab === 'fixed';
-        fixedTab.setAttribute('aria-selected', fixedOn ? 'true' : 'false');
-        planTab.setAttribute('aria-selected', fixedOn ? 'false' : 'true');
-        fixedTab.tabIndex = fixedOn ? 0 : -1;
-        planTab.tabIndex = fixedOn ? -1 : 0;
-        fixedPanel.hidden = !fixedOn;
-        planPanel.hidden = fixedOn;
-        if (fixedOn) {
+        activeTab = TABS.includes(tab) ? tab : 'fixed';
+        lastTabKind = activeTab === 'related' ? 'related' : 'weight';
+        for (const [name, button] of Object.entries(tabButtons)) {
+            const on = name === activeTab;
+            button.setAttribute('aria-selected', on ? 'true' : 'false');
+            button.tabIndex = on ? 0 : -1;
+        }
+        fixedPanel.hidden = activeTab !== 'fixed';
+        planPanel.hidden = activeTab !== 'plan';
+        relatedPanel.hidden = activeTab !== 'related';
+        // the weight tabs apply on Apply; Related writes as it goes, so it only closes
+        applyButton.hidden = activeTab === 'related';
+        cancelButton.textContent = activeTab === 'related' ? text('tag_ui_close') : text('tag_ui_cancel');
+        if (activeTab === 'fixed') {
             renderFixed();
             hint.textContent = text('tag_ui_hint_fixed');
-        } else {
+        } else if (activeTab === 'plan') {
             renderPlan();
+        } else {
+            hint.textContent = text('tag_ui_related_hint');
+            loadRelated();
         }
     }
+
+    // ---- related tab
+    function relatedChip(item, present) {
+        const tag = displayTag(item.tag);
+        const button = el('button', 'tag-weight-related-chip');
+        button.type = 'button';
+        button.dataset.tag = tag;
+        const known = present.has(normalizeTagName(tag));
+        button.classList.toggle('is-present', known);
+        button.disabled = known;
+        button.appendChild(el('span', 'tag-weight-related-mark', known ? '✓' : '+'));
+        button.appendChild(el('span', 'tag-weight-related-name', tag));
+        const alias = el('span', 'tag-weight-related-alias');
+        alias.dataset.tag = tag;
+        const translation = aliasFor(tag);
+        alias.textContent = translation;
+        alias.hidden = !translation;
+        button.appendChild(alias);
+        if (Number.isFinite(item.score)) button.title = `${tag} · ${item.score}`;
+        return button;
+    }
+
+    function renderRelated() {
+        relatedPanel.replaceChildren();
+        const result = relatedResult;
+        if (!result) {
+            relatedPanel.appendChild(el('span', 'tag-weight-related-empty', text('tag_ui_related_loading')));
+            return;
+        }
+        const present = typeof session?.presentTags === 'function' ? session.presentTags() : new Set();
+        const groups = [
+            { label: text('tag_ui_related_cooccur'), items: result.related ?? [] },
+            { label: text('tag_ui_related_family', displayTag(result.familyWord ?? '')), items: result.family ?? [] },
+        ];
+        let shown = 0;
+        for (const group of groups) {
+            if (group.items.length === 0) continue;
+            const block = el('div', 'tag-weight-related-group');
+            block.appendChild(el('span', 'tag-weight-related-label', group.label));
+            const row = el('div', 'tag-weight-related-row');
+            for (const item of group.items) {
+                row.appendChild(relatedChip(item, present));
+                shown += 1;
+            }
+            block.appendChild(row);
+            relatedPanel.appendChild(block);
+        }
+        if (shown === 0) relatedPanel.appendChild(el('span', 'tag-weight-related-empty', text('tag_ui_related_none')));
+        ensureAliases([...relatedPanel.querySelectorAll('.tag-weight-related-alias')].map(node => node.dataset.tag));
+    }
+
+    async function loadRelated() {
+        const value = session?.capsule?.value ?? '';
+        const loader = session?.fetchRelated;
+        const token = ++relatedToken;
+        relatedResult = null;
+        renderRelated();
+        if (typeof loader !== 'function' || !value) {
+            relatedResult = { related: [], family: [] };
+            renderRelated();
+            return;
+        }
+        let result = null;
+        try { result = await loader(value); } catch (error) { console.warn('[weightPopover] related tags failed:', error); }
+        if (token !== relatedToken || !session) return;
+        relatedResult = result ?? { related: [], family: [] };
+        renderRelated();
+        position();
+    }
+
+    // a late alias answer fills the blanks in place (header line and chips)
+    function onAliasesUpdated() {
+        if (!session) return;
+        applyTitleAlias();
+        for (const node of relatedPanel.querySelectorAll('.tag-weight-related-alias')) {
+            const translation = aliasFor(node.dataset.tag);
+            node.textContent = translation;
+            node.hidden = !translation;
+        }
+    }
+    document.addEventListener(TAG_ALIASES_EVENT, onAliasesUpdated);
+
+    function applyTitleAlias() {
+        const translation = aliasFor(session?.capsule?.value ?? '');
+        titleAlias.textContent = translation;
+        titleAlias.hidden = !translation;
+    }
+
+    relatedPanel.addEventListener('click', event => {
+        const button = event.target.closest('.tag-weight-related-chip');
+        if (!button || button.disabled || !session) return;
+        const tag = button.dataset.tag;
+        const replace = event.shiftKey;
+        session.onPick?.(tag, { replace });
+        if (replace) {
+            // the anchor chip is a different capsule now: nothing to keep the popover on
+            close({ apply: false });
+            return;
+        }
+        button.disabled = true;
+        button.classList.add('is-present');
+        button.querySelector('.tag-weight-related-mark').textContent = '✓';
+    });
 
     function position() {
         const anchor = session?.anchor;
@@ -325,6 +474,7 @@ export function createWeightPopover({ text = tagText } = {}) {
         if (!session) return;
         const current = session;
         session = null;
+        relatedToken += 1;   // a related-tags answer still in flight is dropped
         root.hidden = true;
         document.removeEventListener('pointerdown', onOutsidePointer, true);
         document.removeEventListener('scroll', onScroll, true);
@@ -378,7 +528,7 @@ export function createWeightPopover({ text = tagText } = {}) {
             trapTab(event);
             return;
         }
-        if (event.key === 'Enter' && event.target.tagName !== 'BUTTON') {
+        if (event.key === 'Enter' && event.target.tagName !== 'BUTTON' && activeTab !== 'related') {
             event.preventDefault();
             close({ apply: true });
         }
@@ -483,15 +633,22 @@ export function createWeightPopover({ text = tagText } = {}) {
         modeButtons[next].focus();
     });
 
-    fixedTab.addEventListener('click', () => { setTab('fixed'); position(); weightInput.focus(); });
-    planTab.addEventListener('click', () => { setTab('plan'); position(); modeButtons[MODES.indexOf(planDraft.mode)]?.focus(); });
+    function focusTabContent() {
+        if (activeTab === 'fixed') weightInput.focus();
+        else if (activeTab === 'plan') modeButtons[MODES.indexOf(planDraft.mode)]?.focus();
+        else relatedPanel.querySelector('.tag-weight-related-chip:not(:disabled)')?.focus();
+    }
+    fixedTab.addEventListener('click', () => { setTab('fixed'); position(); focusTabContent(); });
+    planTab.addEventListener('click', () => { setTab('plan'); position(); focusTabContent(); });
+    relatedTab.addEventListener('click', () => { setTab('related'); position(); focusTabContent(); });
     tabs.addEventListener('keydown', event => {
         if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
         event.preventDefault();
-        const next = activeTab === 'fixed' ? 'plan' : 'fixed';
+        const index = TABS.indexOf(activeTab);
+        const next = TABS[(index + (event.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length];
         setTab(next);
         position();
-        (next === 'fixed' ? fixedTab : planTab).focus();
+        tabButtons[next].focus();
     });
 
     closeButton.addEventListener('click', () => close({ apply: false }));
@@ -501,14 +658,22 @@ export function createWeightPopover({ text = tagText } = {}) {
     applyText();
 
     return {
-        open({ anchor, capsule, generationSeed = 0, fallbackFocus = null, onApply = null, onClose = null } = {}) {
+        // `tab`: 'fixed' | 'plan' | 'related' to force one; otherwise the kind used last
+        // time (Related stays Related; a weight tab is Fixed or Plan by the capsule's plan).
+        // `fetchRelated(value)`, `presentTags()` and `onPick(tag, { replace })` feed the
+        // Related tab; without a loader that tab is hidden.
+        open({ anchor, capsule, generationSeed = 0, fallbackFocus = null, onApply = null, onClose = null,
+            tab = null, fetchRelated = null, presentTags = null, onPick = null } = {}) {
             if (session) close({ apply: false });
             applyText();
             const plan = normalizeWeightPlan(capsule?.weightPlan);
-            session = { anchor, capsule, generationSeed, fallbackFocus, onApply, onClose };
-            title.textContent = text('tag_ui_weight_for', capsule?.value ?? '');
-            title.title = capsule?.value ?? '';
-            root.setAttribute('aria-label', text('tag_ui_weight_for', capsule?.value ?? ''));
+            session = { anchor, capsule, generationSeed, fallbackFocus, onApply, onClose, fetchRelated, presentTags, onPick };
+            const value = capsule?.value ?? '';
+            titleName.textContent = value;
+            title.title = value;
+            applyTitleAlias();
+            ensureAliases([value]);
+            root.setAttribute('aria-label', value);
             if (isVariablePlan(plan)) {
                 planDraft = plan;
                 followSeed = plan.seed === 0;
@@ -519,8 +684,13 @@ export function createWeightPopover({ text = tagText } = {}) {
                 followSeed = true;
             }
             fixedStep = 0.05;
+            const hasRelated = typeof fetchRelated === 'function';
+            relatedTab.hidden = !hasRelated;
+            const weightTab = isVariablePlan(plan) ? 'plan' : 'fixed';
+            let initial = TABS.includes(tab) ? tab : (lastTabKind === 'related' ? 'related' : weightTab);
+            if (initial === 'related' && !hasRelated) initial = weightTab;
             root.hidden = false;
-            setTab(isVariablePlan(plan) ? 'plan' : 'fixed');
+            setTab(initial);
             position();
             document.addEventListener('pointerdown', onOutsidePointer, true);
             document.addEventListener('scroll', onScroll, true);
@@ -531,8 +701,10 @@ export function createWeightPopover({ text = tagText } = {}) {
                 if (activeTab === 'fixed') {
                     weightInput.focus();
                     weightInput.select();
-                } else {
+                } else if (activeTab === 'plan') {
                     modeButtons[MODES.indexOf(planDraft.mode)]?.focus();
+                } else {
+                    (relatedPanel.querySelector('.tag-weight-related-chip:not(:disabled)') ?? relatedTab).focus();
                 }
             });
         },

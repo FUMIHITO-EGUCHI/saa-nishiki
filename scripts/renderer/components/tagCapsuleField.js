@@ -3,6 +3,7 @@
 // derived view and variable plans live in a per-field sidecar (id → plan).
 import {
     DEFAULT_BATCH,
+    assignCapsuleIds,
     capsuleStats,
     collectPlans,
     excludedTagSet,
@@ -225,20 +226,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     chips.appendChild(addSlot);
     view.appendChild(chips);
 
-    // Related-tag strip: fed by the offline co-occurrence dictionary for the focused chip.
-    const suggest = el('div', 'tag-capsule-suggest');
-    suggest.hidden = true;
-    const suggestHead = el('div', 'tag-capsule-suggest-head');
-    const suggestTitle = el('span', 'tag-capsule-suggest-title');
-    const suggestClose = el('button', 'tag-capsule-suggest-close');
-    suggestClose.type = 'button';
-    suggestClose.tabIndex = -1;
-    suggestClose.appendChild(createIcon('close', 11));
-    suggestHead.append(suggestTitle, suggestClose);
-    const suggestBody = el('div', 'tag-capsule-suggest-body');
-    suggest.append(suggestHead, suggestBody);
-    view.appendChild(suggest);
-
     const footer = el('div', 'tag-capsule-footer');
     const stats = el('div', 'tag-capsule-stats');
     const statTags = el('span', 'tag-capsule-stat');
@@ -292,8 +279,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         batchButtonText.textContent = text('tag_ui_batch_weights');
         suggestButton.title = text('tag_ui_related_toggle');
         suggestButton.setAttribute('aria-label', text('tag_ui_related_toggle'));
-        suggestClose.title = text('tag_ui_close');
-        suggestClose.setAttribute('aria-label', text('tag_ui_close'));
         chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
         renderFooter();
         renderBadge();
@@ -337,99 +322,17 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         onChange?.(api);
     }
 
-    // ---------------------------------------------------------------- related-tag panel
-    // A floating panel under the field (CSS: absolute, it never changes the field's
-    // height). It opens only on request — the footer spark button, the context menu's
-    // "Related tags…", Ctrl+R on a chip — and closes on its × button, Escape, a click
-    // anywhere outside it, or leaving capsule view. (An older build auto-opened it on
-    // chip focus and remembered that under localStorage 'saa.tagSuggest'; that key is
-    // simply ignored now.)
-    let suggestFor = '';
-    let suggestToken = 0;
-    let suggestTimer = 0;
-
-    function hideSuggestions() {
-        suggestFor = '';
-        suggestToken += 1;
-        suggest.hidden = true;
-        suggestBody.replaceChildren();
-        suggestButton.classList.remove('is-on');
+    // ---------------------------------------------------------------- related tags
+    // Related tags live in the chip popover's Related tab (weightPopover.js). This
+    // opens it there for a chip: the footer spark button, the context menu's "Related
+    // tags…" and Ctrl+R on a chip all land here. (Earlier builds drew a panel under
+    // the field, and before that opened it on chip focus; both are gone.)
+    function openRelated(index) {
+        if (typeof fetchRelated !== 'function' || capsules.length === 0) return;
+        const at = index >= 0 && index < capsules.length ? index : 0;
+        openPopover(at, { tab: 'related' });
     }
-    function onDocumentPointerDown(event) {
-        if (suggest.hidden) return;
-        if (suggest.contains(event.target) || suggestButton.contains(event.target)) return;
-        hideSuggestions();
-    }
-    document.addEventListener('pointerdown', onDocumentPointerDown, true);
-
-    function displayTag(tag) {
-        return String(tag ?? '').replaceAll('_', ' ');
-    }
-
-    function renderSuggestions(capsule, result) {
-        const present = new Set(capsules.map(item => normalizeTagName(item.value)));
-        const groups = [
-            { label: text('tag_ui_related_cooccur'), items: result?.related ?? [] },
-            { label: text('tag_ui_related_family', displayTag(result?.familyWord ?? '')), items: result?.family ?? [] },
-        ];
-        suggestTitle.textContent = text('tag_ui_related_title', capsule.value);
-        suggestBody.replaceChildren();
-        let shown = 0;
-        for (const group of groups) {
-            const items = group.items.filter(item => !present.has(normalizeTagName(displayTag(item.tag))));
-            if (items.length === 0) continue;
-            const row = el('div', 'tag-capsule-suggest-row');
-            row.appendChild(el('span', 'tag-capsule-suggest-label', group.label));
-            for (const item of items) {
-                const button = el('button', 'tag-capsule-suggest-chip', displayTag(item.tag));
-                button.type = 'button';
-                button.tabIndex = -1;
-                button.dataset.tag = displayTag(item.tag);
-                if (Number.isFinite(item.score)) button.title = `${displayTag(item.tag)} · ${item.score}`;
-                row.appendChild(button);
-                shown += 1;
-            }
-            suggestBody.appendChild(row);
-        }
-        if (shown === 0) suggestBody.appendChild(el('span', 'tag-capsule-suggest-empty', text('tag_ui_related_none')));
-        suggest.hidden = false;
-    }
-
-    async function showSuggestions(index) {
-        if (typeof fetchRelated !== 'function') return;
-        const capsule = capsules[index];
-        if (!capsule) return;
-        if (suggestFor === capsule.value && !suggest.hidden) return;
-        suggestFor = capsule.value;
-        const token = ++suggestToken;
-        suggestTitle.textContent = text('tag_ui_related_title', capsule.value);
-        suggestBody.replaceChildren(el('span', 'tag-capsule-suggest-empty', text('tag_ui_related_loading')));
-        suggest.hidden = false;
-        suggestButton.classList.add('is-on');
-        let result = null;
-        try { result = await fetchRelated(capsule.value); } catch (error) { console.warn('[tagCapsuleField] related tags failed:', error); }
-        if (token !== suggestToken) return;
-        renderSuggestions(capsule, result);
-    }
-
-    suggestBody.addEventListener('click', event => {
-        const button = event.target.closest('.tag-capsule-suggest-chip');
-        if (!button) return;
-        const sourceIndex = capsules.findIndex(item => item.value === suggestFor);
-        const at = sourceIndex >= 0 ? sourceIndex + 1 : capsules.length;
-        const next = insertCapsules(capsules, [button.dataset.tag], at);
-        if (next === capsules) return;
-        commitCapsules(next);
-        button.remove();
-        focusChip(at);
-    });
-    suggestClose.addEventListener('click', () => hideSuggestions());
-    // the spark button opens the panel for the focused chip (the first one when none is) and closes it again
-    suggestButton.addEventListener('click', () => {
-        if (!suggest.hidden) { hideSuggestions(); return; }
-        if (capsules.length === 0) return;
-        showSuggestions(focusIndex < capsules.length ? focusIndex : 0);
-    });
+    suggestButton.addEventListener('click', () => openRelated(focusIndex < capsules.length ? focusIndex : 0));
 
     function renderBadge() {
         const { variable } = capsuleStats(capsules);
@@ -493,8 +396,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         }
         renderFooter();
         renderBadge();
-        // the strip follows a chip; once that chip is gone the strip goes too
-        if (suggestFor && !capsules.some(item => item.value === suggestFor)) hideSuggestions();
     }
 
     function focusChip(index, { fallbackToAdd = true } = {}) {
@@ -530,7 +431,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             if (focus) focusChip(0);
         } else {
             getWeightPopover().close();
-            hideSuggestions();
             writeCurrentText();
             mode = 'string';
             relativeContainer.hidden = false;
@@ -566,7 +466,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         return id ? capsules.findIndex(capsule => capsule.id === id) : -1;
     }
 
-    function openPopover(index) {
+    function openPopover(index, { tab = null } = {}) {
         const capsule = capsules[index];
         const anchor = chipAt(index);
         if (!capsule || !anchor) return;
@@ -575,9 +475,25 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             capsule,
             generationSeed: Math.max(0, getGenerationSeed()),
             fallbackFocus: capsuleButton,
+            tab,
             onApply: plan => {
                 commitCapsules(setCapsulePlan(capsules, capsule.id, plan));
                 focusChip(index);
+            },
+            // Related tab: the dictionary's neighbours of this chip's tag
+            fetchRelated: typeof fetchRelated === 'function' ? fetchRelated : null,
+            presentTags: () => new Set(capsules.map(item => normalizeTagName(item.value))),
+            onPick: (tag, { replace = false } = {}) => {
+                const at = capsules.findIndex(item => item.id === capsule.id);
+                if (replace && at >= 0) {
+                    // the picked tag takes this chip's place, weight plan and all
+                    const next = assignCapsuleIds(capsules.map((item, i) => (i === at ? { ...item, value: tag } : item)));
+                    commitCapsules(next);
+                    focusChip(at);
+                    return;
+                }
+                const next = insertCapsules(capsules, [tag], at >= 0 ? at + 1 : capsules.length);
+                if (next !== capsules) commitCapsules(next);
             },
         });
     }
@@ -632,15 +548,10 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         if (event.isComposing || event.keyCode === 229) return;
         const onAdd = event.target === addButton;
         const state = { index: onAdd ? capsules.length : focusIndex, count: capsules.length };
-        // the related-tag panel: Ctrl+R opens it for the focused chip, Escape closes it
+        // Ctrl+R opens the chip popover on its Related tab for the focused chip
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r' && !onAdd) {
             event.preventDefault();
-            showSuggestions(focusIndex);
-            return;
-        }
-        if (event.key === 'Escape' && !suggest.hidden) {
-            event.preventDefault();
-            hideSuggestions();
+            openRelated(focusIndex);
             return;
         }
         // selection keys first: Ctrl+A selects every chip, Escape drops the selection,
@@ -872,9 +783,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         document.removeEventListener(TAG_ALIASES_EVENT, onDictionaryEvent);
         document.removeEventListener(FAVORITE_TAGS_CHANGED_EVENT, onFavoritesChanged);
         titleObserver.disconnect();
-        document.removeEventListener('pointerdown', onDocumentPointerDown, true);
-        clearTimeout(suggestTimer);
-        suggestToken += 1;   // an in-flight related-tags answer is ignored
     }
 
     // ---------------------------------------------------------------- init
@@ -950,7 +858,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         },
         showRelated: id => {
             const index = capsules.findIndex(capsule => capsule.id === id);
-            if (index >= 0) showSuggestions(index);
+            if (index >= 0) openRelated(index);
         },
         dispose,
     };

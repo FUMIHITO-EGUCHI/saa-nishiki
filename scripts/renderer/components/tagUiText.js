@@ -26,6 +26,8 @@ export const TAG_UI_DEFAULTS = Object.freeze({
     tag_ui_weight_for: 'Weight · {0}',
     tag_ui_tab_fixed: 'Fixed',
     tag_ui_tab_plan: 'Plan (batch)',
+    tag_ui_tab_related: 'Related',
+    tag_ui_related_hint: 'Click adds · Shift+click replaces this tag',
     tag_ui_weight: 'Weight',
     tag_ui_step: 'Step',
     tag_ui_presets: 'Presets',

@@ -90,17 +90,30 @@ test('renderer, preload, web socket API and main process are wired for related t
     assert.match(read('scripts/webserver/back/wsService.js'), /'tagRelated': \(params = \[\]\)=> getRelatedTags\(\.\.\.params\)/);
     assert.match(read('main.js'), /setupTagRelatedBackend\(\)/);
     assert.match(read('scripts/renderer.js'), /fetchRelated: value => fetchRelatedTags\(value\)/);
+    // related tags live in the chip popover's Related tab; the field only opens it there
     const field = read('scripts/renderer/components/tagCapsuleField.js');
-    assert.match(field, /tag-capsule-suggest-chip/);
-    assert.doesNotMatch(field, /scheduleSuggestions\(/, 'the panel never opens on chip focus by itself');
-    assert.match(field, /showRelated: id =>/);
-    assert.match(field, /event\.key\.toLowerCase\(\) === 'r' && !onAdd/, 'Ctrl+R opens the panel for the focused chip');
-    assert.match(field, /document\.addEventListener\('pointerdown', onDocumentPointerDown, true\)/, 'a click outside closes it');
+    assert.doesNotMatch(field, /tag-capsule-suggest-chip|tag-capsule-suggest-body|scheduleSuggestions\(/, 'no in-field panel, nothing opens on chip focus');
+    assert.match(field, /function openRelated\(index\)/);
+    assert.match(field, /openPopover\(at, \{ tab: 'related' \}\)/, 'the spark button, Ctrl+R and the context menu all open the popover on Related');
+    assert.match(field, /showRelated: id =>[\s\S]*?openRelated\(index\)/);
+    assert.match(field, /event\.key\.toLowerCase\(\) === 'r' && !onAdd/, 'Ctrl+R opens it for the focused chip');
+    assert.match(field, /fetchRelated: typeof fetchRelated === 'function' \? fetchRelated : null,/, 'the field hands the popover the loader');
+    assert.match(field, /onPick: \(tag, \{ replace = false \} = \{\}\) =>/, 'click adds, Shift+click replaces');
+    const popover = read('scripts/renderer/components/weightPopover.js');
+    assert.match(popover, /relatedTab\.dataset\.tab = 'related'/);
+    assert.match(popover, /tag-weight-related-chip/);
+    assert.match(popover, /button\.classList\.toggle\('is-present', known\)/, 'tags already in the field are marked and inert');
+    assert.match(popover, /const replace = event\.shiftKey;/);
+    assert.match(popover, /let lastTabKind = 'weight';/, 'the tab kind is remembered for the next open');
+    assert.match(popover, /aliasFor\(tag\)/, 'each suggestion carries its translation');
     for (const file of ['html/index_dark.css', 'html/index_light.css']) {
-        assert.match(read(file), /\.tag-capsule-suggest \{[^}]*position: absolute;/, `${file}: the panel floats instead of pushing the field taller`);
+        const css = read(file);
+        assert.match(css, /\.tag-weight-related \{[^}]*max-height: 220px;/, `${file}: the Related tab scrolls inside the popover`);
+        assert.match(css, /\.tag-weight-related-chip\.is-present \{/, `${file}: present tags dimmed`);
+        assert.doesNotMatch(css, /\.tag-capsule-suggest \{/, `${file}: the old in-field panel is gone`);
     }
     const language = JSON.parse(read('data/language.json'));
-    for (const key of ['tag_ui_related_title', 'tag_ui_related_cooccur', 'tag_ui_related_family', 'tag_ui_related_none', 'tag_ui_related_toggle']) {
+    for (const key of ['tag_ui_related_title', 'tag_ui_related_cooccur', 'tag_ui_related_family', 'tag_ui_related_none', 'tag_ui_related_toggle', 'tag_ui_tab_related', 'tag_ui_related_hint']) {
         assert.equal(typeof language['en-US'][key], 'string', `${key} en`);
         assert.equal(typeof language['zh-CN'][key], 'string', `${key} zh`);
     }

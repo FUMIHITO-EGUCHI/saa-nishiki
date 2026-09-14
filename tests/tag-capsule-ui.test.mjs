@@ -88,6 +88,14 @@ test('weight popover is 336px, fixed-position, focus-trapped, and only writes on
   assert.match(popover, /WEIGHT_PRESETS/);
   assert.match(popover, /tag_ui_follow_seed/);
   assert.doesNotMatch(popover, /candidates?List|tag-weight-cands/, 'no candidate column in the plan tab');
+  // three tabs; the "÷ batch count" switch sits in its own row under Min / Max / Step
+  // (so the three inputs stay level) and is hidden for a random draw
+  assert.match(popover, /const TABS = \['fixed', 'plan', 'related'\]/);
+  assert.match(popover, /autoStepRow\.hidden = planDraft\.mode === 'random'/, 'no batch-count switch in Random');
+  assert.match(popover, /const autoStepRow = el\('div', 'tag-weight-row tag-weight-autostep-row'\)/);
+  assert.doesNotMatch(popover, /planStepField\.append\(autoStepLabel\)/, 'the switch no longer lives inside the step column');
+  assert.match(popover, /applyButton\.hidden = activeTab === 'related'/, 'Related closes, it does not Apply');
+  assert.match(popover, /titleName\.textContent = value;/, 'the header is the tag itself, the translation under it');
 });
 
 test('batch dialog reuses the selection-modal skeleton and previews terminal / random rows', () => {

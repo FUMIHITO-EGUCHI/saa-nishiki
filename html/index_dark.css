@@ -1074,8 +1074,13 @@ body {
 
 .tag-capsule-chip.is-up { border-color: #4e7a48; }
 /* translation of the tag (tagAliasClient.js), muted, after the name */
-.tag-capsule-chip-alias { flex: 0 1 auto; min-width: 0; max-width: 120px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; opacity: 0.65; }
-.tag-capsule-chip-alias[hidden] { display: none; }
+/* shown only while the chip is hovered or focused (C2): the row keeps its density,
+   the popover header carries the translation the rest of the time */
+.tag-capsule-chip-alias { display: none; flex: 0 1 auto; min-width: 0; max-width: 120px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; opacity: 0.65; }
+.tag-capsule-chip:hover .tag-capsule-chip-alias,
+.tag-capsule-chip:focus .tag-capsule-chip-alias,
+.tag-capsule-chip:focus-visible .tag-capsule-chip-alias { display: inline; }
+.tag-capsule-chip-alias[hidden] { display: none !important; }
 .tag-capsule-chip.is-up .tag-capsule-chip-weight { color: #9ee493; }
 .tag-capsule-chip.is-down { border-color: #7a5c3a; }
 .tag-capsule-chip.is-down .tag-capsule-chip-weight { color: #e9b27a; }
@@ -1121,8 +1126,10 @@ body {
     justify-content: center;
     width: 22px;
     height: 100%;
-    margin-right: -3px;
+    margin-right: 1px;
+    border-right: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 12px 0 0 12px;
+    background: rgba(77, 163, 255, 0.14); /* the tinted segment IS the hit area */
     cursor: pointer;
 }
 .tag-capsule-chip-toggle::before {
@@ -1134,9 +1141,10 @@ body {
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35) inset;
     transition: transform .1s ease;
 }
-.tag-capsule-chip-toggle:hover { background: rgba(77, 163, 255, 0.18); }
+.tag-capsule-chip-toggle:hover { background: rgba(77, 163, 255, 0.30); }
 .tag-capsule-chip-toggle:hover::before { transform: scale(1.25); }
 .tag-capsule-chip.is-disabled { opacity: 0.5; }
+.tag-capsule-chip.is-disabled .tag-capsule-chip-toggle { background: rgba(255, 255, 255, 0.06); }
 .tag-capsule-chip.is-disabled .tag-capsule-chip-toggle::before { background: #666; }
 /* insertion point while a chip is dragged over the row */
 .tag-capsule-drop-marker { display: inline-block; flex: 0 0 auto; width: 2px; height: 22px; margin: 0 -1px; border-radius: 1px; background: #4da3ff; }
@@ -1272,14 +1280,28 @@ body {
 .tag-weight-popover-head { border-bottom: 1px solid #555; }
 .tag-weight-popover-foot { border-top: 1px solid #555; }
 
+/* two lines: the tag, then its translation (tagAliasClient.js) */
 .tag-weight-popover-title {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
     min-width: 0;
+}
+.tag-weight-popover-title-name {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: 13px;
     font-weight: 600;
 }
+.tag-weight-popover-title-alias {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    color: #bbb;
+}
+.tag-weight-popover-title-alias[hidden] { display: none; }
 
 .tag-weight-popover-close {
     display: inline-flex;
@@ -2350,45 +2372,24 @@ body {
 .prompt-preset-button .preset-icon { width: 13px; height: 13px; }
 .prompt-preset-button:hover .preset-icon { background: var(--saa-text); }
 
-/* Related-tag strip under the chip row (offline co-occurrence dictionary) */
-/* floating panel under the field: it overlays what follows instead of pushing it down */
-.tag-capsule-view { position: relative; }
-.tag-capsule-suggest {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 100%;
-    z-index: 30;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-height: 200px;
-    overflow: auto;
-    padding: 5px 7px;
-    border: 1px dashed #4a4a55;
-    border-radius: 6px;
-    background: #1f1f24;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
-}
-.tag-capsule-suggest[hidden] { display: none; }
-.tag-capsule-suggest-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.tag-capsule-suggest-title { font-size: 11px; color: #bbb; }
-.tag-capsule-suggest-close {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 18px; height: 18px; padding: 0; border: none; border-radius: 4px;
-    background: transparent; color: #999; cursor: pointer;
-}
-.tag-capsule-suggest-close:hover { background: #33333a; color: #eee; }
-.tag-capsule-suggest-body { display: flex; flex-direction: column; gap: 3px; }
-.tag-capsule-suggest-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
-.tag-capsule-suggest-label { font-size: 11px; color: #8ec5ff; margin-right: 2px; white-space: nowrap; }
-.tag-capsule-suggest-chip {
-    display: inline-flex; align-items: center; height: 20px; padding: 0 8px;
-    border: 1px solid #4a4a55; border-radius: 10px; background: #2a2a2f; color: #ddd;
+/* Related tags: the chip popover's third tab (weightPopover.js), fed by the offline
+   co-occurrence dictionary. Each chip: "+ tag translation"; a tag already in the
+   field shows "✓" and is dimmed. */
+.tag-weight-related { max-height: 220px; overflow: auto; gap: 8px; }
+.tag-weight-related-group { display: flex; flex-direction: column; gap: 4px; }
+.tag-weight-related-label { font-size: 11px; color: #8ec5ff; white-space: nowrap; }
+.tag-weight-related-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.tag-weight-related-chip {
+    display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px 0 6px;
+    border: 1px solid #4a4a55; border-radius: 11px; background: #2a2a2f; color: #ddd;
     font: inherit; font-size: 11px; line-height: 1; white-space: nowrap; cursor: pointer;
 }
-.tag-capsule-suggest-chip:hover { background: #393941; border-color: #8ec5ff; color: #fff; }
-.tag-capsule-suggest-empty { font-size: 11px; color: #888; }
+.tag-weight-related-chip:hover:not(:disabled) { background: #393941; border-color: #8ec5ff; color: #fff; }
+.tag-weight-related-chip.is-present { opacity: 0.45; border-style: dashed; cursor: default; }
+.tag-weight-related-mark { color: #8ec5ff; }
+.tag-weight-related-alias { max-width: 110px; overflow: hidden; text-overflow: ellipsis; font-size: 10px; opacity: 0.65; }
+.tag-weight-related-alias[hidden] { display: none; }
+.tag-weight-related-empty { font-size: 11px; color: #888; }
 .tag-capsule-footer-tools { display: flex; align-items: center; gap: 6px; }
 .tag-capsule-suggest-toggle {
     display: inline-flex; align-items: center; justify-content: center;
