@@ -307,7 +307,7 @@ export const sharedBodyHTML = `
                 </div>
               </div>
               <div class="run-param run-param-size">
-                <span class="run-param-label" data-ui-text="ui_run_size">Size</span>
+                <span class="run-param-label" id="run-size-label"><span data-ui-text="ui_run_size">Size</span> <span class="run-param-range" id="run-size-range" title="Size range for the current model type (Settings > Model)"></span></span>
                 <div class="run-param-controls">
                   <div class="generate-width run-number"></div>
                   <span class="run-param-x">×</span>
@@ -541,6 +541,7 @@ export const sharedBodyHTML = `
                   <div class="settings-grid">
                     <div class="vae-sdxl"></div>
                     <div class="vae-override ui-switch"></div>
+                    <div class="size-limit-checkpoint"></div>
                   </div>
                 </div>
                 <div class="settings-group" data-when-model-type="Diffusion">
@@ -551,6 +552,7 @@ export const sharedBodyHTML = `
                     <div class="text-encoder"></div>
                     <div class="text-encoder-type"></div>
                     <div class="text-encoder-device"></div>
+                    <div class="size-limit-diffusion"></div>
                   </div>
                 </div>
               </section>

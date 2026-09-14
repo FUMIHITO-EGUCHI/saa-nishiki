@@ -5,6 +5,8 @@
 // Everything here only rearranges / decorates components that renderer.js already
 // created; generation logic and settings keys are untouched.
 import { setupRunProgress } from './components/runProgress.js';
+import { SLIDER_RANGE_EVENT } from './components/mySlider.js';
+import { applySizeRange } from './callbacks.js';
 import { setupStatusPills } from './components/statusPills.js';
 import { AI_MODES, applyAiMode, deriveAiMode, describeAiStatus } from './components/aiModeLogic.js';
 import { PROSE_SCOPES, normalizeProseScope } from '../shared/prosePrompt.js';
@@ -404,6 +406,18 @@ function setupRunBar() {
             return result;
         };
         gallery.__uiShellWrapped = true;
+    }
+
+    // Size range: the width / height boxes report an out-of-range typed value
+    // (mySlider.js SLIDER_RANGE_EVENT); the label turns red while either box is over.
+    const sizeLabel = document.getElementById('run-size-label');
+    const sizeBoxes = [...bar.querySelectorAll('.run-param-size .run-number')];
+    const overBoxes = new Set();
+    for (const box of sizeBoxes) {
+        box.addEventListener(SLIDER_RANGE_EVENT, event => {
+            if (event.detail?.over) overBoxes.add(box); else overBoxes.delete(box);
+            sizeLabel?.classList.toggle('is-over', overBoxes.size > 0);
+        });
     }
 
     // Batch menu: wraps the existing Batch (Random) / Batch (Last) buttons.
@@ -890,6 +904,7 @@ export function setupUiShell() {
 
     // A preset was applied to a section (settingsPersistence.js): redraw everything derived from globalSettings.
     shell.refreshFromSettings = () => {
+        applySizeRange(); // a preset may change the model type or its size limit
         shell.pipeline?.refresh?.();
         shell.aiCard?.render?.();
         shell.proseCard?.render?.();

@@ -42,6 +42,8 @@ import { installSettingsProxy, setupSettingsPersistence } from './renderer/setti
 import { setupEditHistoryUi } from './renderer/editHistoryUi.js';
 import { get_prompt_textBox_Heights, set_prompt_textBox_Heights } from './renderer/components/componentsManager.js';
 import { hiresCalculate } from './renderer/tools/hiresCalculation.js';
+import { SIZE_HARD_MAX, SIZE_MIN, SIZE_STEP } from './shared/sizeLimits.js';
+import { applySizeRange } from './renderer/callbacks.js';
 
 function afterDOMinit() {
     (async () => {
@@ -96,7 +98,15 @@ export async function setupHeader(SETTINGS, FILES, LANG){
         vpred:  mySimpleList('model-vpred', LANG.vpred, [LANG.vpred_auto, LANG.vpred_on, LANG.vpred_on_zsnr, LANG.vpred_off], 
             (index, value) => { globalThis.globalSettings.api_model_file_vpred = value; }, 5, false, true),
         thumb_select: mySimpleList('thumb-select', LANG.thumb_select, SETTINGS.thumb_select_list,
-            callback_thumb_select, 5, false, true)
+            callback_thumb_select, 5, false, true),
+
+        // upper bound of the run bar's Size boxes per model type (scripts/shared/sizeLimits.js)
+        size_limit_checkpoint: setupSlider('size-limit-checkpoint', LANG.size_limit_checkpoint,
+            {min:SIZE_MIN, max:SIZE_HARD_MAX, step:64, defaultValue:SETTINGS.size_limit_checkpoint},
+            (value) => { globalThis.globalSettings.size_limit_checkpoint = value; applySizeRange(); }),
+        size_limit_diffusion: setupSlider('size-limit-diffusion', LANG.size_limit_diffusion,
+            {min:SIZE_MIN, max:SIZE_HARD_MAX, step:64, defaultValue:SETTINGS.size_limit_diffusion},
+            (value) => { globalThis.globalSettings.size_limit_diffusion = value; applySizeRange(); }),
     }
     globalThis.dropdownList.languageList.updateDefaults(LANG.language);
     globalThis.dropdownList.vpred.updateDefaults(SETTINGS.api_model_file_vpred);
@@ -190,8 +200,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         seed: setupSlider('generate-random-seed', LANG.random_seed, {min:-1, max:4294967295, step:1, defaultValue:SETTINGS.random_seed}, (value) =>{globalThis.globalSettings.random_seed = value;}),
         cfg: setupSlider('generate-cfg', LANG.cfg, {min:0, max:20, step:0.01, defaultValue:SETTINGS.cfg}, (value) =>{globalThis.globalSettings.cfg = value;}),
         step: setupSlider('generate-step', LANG.step, {min:1, max:100, step:1, defaultValue:SETTINGS.step}, (value) =>{globalThis.globalSettings.step = value;}),
-        width: setupSlider('generate-width', LANG.width, {min:512, max:2048, step:8, defaultValue:SETTINGS.width}, (value) =>{globalThis.globalSettings.width = value; hiresCalculate(); }),
-        height: setupSlider('generate-height', LANG.height, {min:512, max:2048, step:8, defaultValue:SETTINGS.height}, (value) =>{globalThis.globalSettings.height = value; hiresCalculate(); }),
+        // the effective range narrows to the model type's limit (applySizeRange, callbacks.js)
+        width: setupSlider('generate-width', LANG.width, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.width}, (value) =>{globalThis.globalSettings.width = value; hiresCalculate(); }),
+        height: setupSlider('generate-height', LANG.height, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.height}, (value) =>{globalThis.globalSettings.height = value; hiresCalculate(); }),
         batch: setupSlider('generate-batch', LANG.batch, {min:1, max:2038, step:1, defaultValue:SETTINGS.batch}, (value) =>{globalThis.globalSettings.batch = value;}),
         hifix: setupCheckbox('generate-hires-fix', LANG.api_hf_enable, SETTINGS.api_hf_enable, true, (value) => { globalThis.globalSettings.api_hf_enable = value; hiresCalculate(); }),
         refiner: setupCheckbox('generate-refiner', LANG.api_refiner_enable, SETTINGS.api_refiner_enable, true, (value) => { globalThis.globalSettings.api_refiner_enable = value; }),

@@ -1,4 +1,4 @@
-import { callback_api_model_type, callback_regional_condition, syncRegionalCharacters } from './callbacks.js';
+import { applySizeRange, callback_api_model_type, callback_regional_condition, syncRegionalCharacters } from './callbacks.js';
 import { migrateSlotSides } from '../shared/characterSides.js';
 import { hiresCalculate } from './tools/hiresCalculation.js';
 import { splitLabel } from '../shared/regionalSides.js';
@@ -70,6 +70,8 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.dropdownList.vae_unet.setTitle(LANG.api_difussion_vae_model);
     globalThis.dropdownList.vae_sdxl.setTitle(LANG.api_ckpt_vae_model);
     globalThis.dropdownList.vae_sdxl_override.setTitle(LANG.api_vae_sdxl_override);
+    globalThis.dropdownList.size_limit_checkpoint?.setTitle(LANG.size_limit_checkpoint);
+    globalThis.dropdownList.size_limit_diffusion?.setTitle(LANG.size_limit_diffusion);
 
     globalThis.dropdownList.diffusion_model_weight_dtype.setTitle(LANG.api_diffusion_model_weight_dtype);
     globalThis.dropdownList.textencoder.setTitle(LANG.api_text_encoder);
@@ -377,6 +379,8 @@ export function updateSettings() {
     globalThis.dropdownList.vae_unet.updateDefaults(SETTINGS.api_vae_unet_model);
     globalThis.dropdownList.vae_sdxl.updateDefaults(SETTINGS.api_vae_sdxl_model);
     globalThis.dropdownList.vae_sdxl_override.setValue(SETTINGS.api_vae_sdxl_override);
+    globalThis.dropdownList.size_limit_checkpoint?.setValue(SETTINGS.size_limit_checkpoint);
+    globalThis.dropdownList.size_limit_diffusion?.setValue(SETTINGS.size_limit_diffusion);
     globalThis.dropdownList.diffusion_model_weight_dtype.updateDefaults(SETTINGS.api_model_file_diffusion_weight_dtype);
     globalThis.dropdownList.textencoder.updateDefaults(SETTINGS.api_model_file_text_encoder);
     globalThis.dropdownList.textencoder_type.updateDefaults(SETTINGS.api_model_file_text_encoder_type);
@@ -389,6 +393,7 @@ export function updateSettings() {
     globalThis.generate.step.setValue(SETTINGS.step);
     globalThis.generate.width.setValue(SETTINGS.width);
     globalThis.generate.height.setValue(SETTINGS.height);
+    applySizeRange(); // narrows the boxes to the model type's range (may clamp the stored size)
     globalThis.generate.batch.setValue(SETTINGS.batch);    
     globalThis.generate.landscape.setValue(SETTINGS.api_image_landscape);
     globalThis.generate.scrollToLatest.setValue(SETTINGS.scroll_to_last);

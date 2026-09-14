@@ -2388,3 +2388,17 @@ body {
 .tag-capsule-chip.is-selected.is-dragging { opacity: 0.35; }
 .tag-capsule-chips.is-drop-target { outline: 1px dashed var(--saa-accent); }
 
+/* Size range (scripts/shared/sizeLimits.js): the label shows the model type's range,
+   a typed value outside it turns the box and the label red, confirming snaps it back
+   to the bound with a short red flash. */
+.run-param-range { color: var(--saa-muted); font-family: Consolas, "Cascadia Mono", "Courier New", monospace; font-size: 11px; }
+.run-param-label.is-over, .run-param-label.is-over .run-param-range { color: var(--saa-danger); }
+.run-number [class^="mySlider-"][class*="-value"].is-over { border-color: var(--saa-danger); box-shadow: 0 0 0 1px rgba(229, 72, 77, 0.35); }
+.run-number [class^="mySlider-"][class*="-value"].is-over:focus-visible { outline: none; }
+.run-number [class^="mySlider-"][class*="-value"].is-clamped { animation: saa-clamp-flash 1.2s ease-out forwards; }
+@keyframes saa-clamp-flash {
+    0%, 70% { border-color: var(--saa-danger); box-shadow: 0 0 0 1px rgba(229, 72, 77, 0.35); }
+    100% { border-color: var(--saa-border-ctl); box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) { .run-number [class^="mySlider-"][class*="-value"].is-clamped { animation-duration: 0.01s; } }
+

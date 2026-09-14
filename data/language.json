@@ -253,6 +253,8 @@
         "model_filter_keyword_diffusion": "Diffusion Model filter (Set to * to disable this filter)",
         "search_modelinsubfolder": "Search model subfolder",
 
+        "size_limit_checkpoint": "Max size per side (Checkpoint)",
+        "size_limit_diffusion": "Max size per side (Diffusion)",
         "api_hf_enable": "Enable Hires Fix",
         "api_hf_scale": "Upscale by",
         "api_hf_denoise": "Denoising",
@@ -1006,6 +1008,8 @@
         "model_filter_keyword_diffusion": "Diffusion 模型名称过滤规则 (设置为 * 表示关闭此过滤)",
         "search_modelinsubfolder": "搜索模型文件夹子目录",
 
+        "size_limit_checkpoint": "单边最大尺寸 (Checkpoint)",
+        "size_limit_diffusion": "单边最大尺寸 (Diffusion)",
         "api_hf_enable": "启用高清修复",
         "api_hf_scale": "放大倍率",
         "api_hf_denoise": "降噪强度",

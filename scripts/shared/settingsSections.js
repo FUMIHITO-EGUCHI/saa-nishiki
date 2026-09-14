@@ -62,6 +62,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     regional_split: 'left-right',
     // generation settings remembered per model type (scripts/shared/modelTypeSettings.js)
     model_type_generation: {},
+    // upper bound of the Size boxes per model type (scripts/shared/sizeLimits.js)
+    size_limit_checkpoint: 1536,
+    size_limit_diffusion: 2048,
     character_left: 'None',
     character_right: 'None',
 
@@ -232,7 +235,7 @@ export const SECTION_KEYS = Object.freeze({
         'model_path_comfyui', 'model_path_webui', 'image_save_path_comfyui', 'image_save_path_webui', 'image_save_embed_character_name',
         'webui_auth', 'webui_auth_enable',
         // the per-type generation store sits beside the type: neither is an undo step
-        'api_model_type', 'model_type_generation', 'api_model_file_vpred', 'thumb_select', 'thumb_select_list',
+        'api_model_type', 'model_type_generation', 'size_limit_checkpoint', 'size_limit_diffusion', 'api_model_file_vpred', 'thumb_select', 'thumb_select_list',
         'api_vae_sdxl_model', 'api_vae_sdxl_override', 'api_vae_unet_model', 'api_model_file_diffusion_weight_dtype',
         'api_model_file_text_encoder', 'api_model_file_text_encoder_type', 'api_model_file_text_encoder_device',
         'ai_local_addr', 'ai_local_model_mode', 'ai_local_timeout', 'ai_local_temp', 'ai_local_n_predict', 'ai_refine_system_prompt',

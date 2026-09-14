@@ -16,6 +16,7 @@ import { TAG_DICTIONARY_EVENT } from './components/tagDictionaryStatus.js';
 import { migrateSlotSides, regionalSlots } from '../shared/characterSides.js';
 import { clearedPromptPatch } from '../shared/promptReset.js';
 import { generationFor, rememberGeneration } from '../shared/modelTypeSettings.js';
+import { formatSizeRange, sizeRangeFor } from '../shared/sizeLimits.js';
 
 export async function callback_api_model_select(index, selectedValue) {
     const value = selectedValue[0];    
@@ -54,6 +55,23 @@ export function clearPromptContents() {
     const persistence = globalThis.settingsPersistence;
     if (persistence?.runEditTransaction) return persistence.runEditTransaction({ source: 'model-type-clear', sections: ['prompt'] }, mutate);
     return mutate();
+}
+
+// Narrows the run bar's Size boxes to the model type's range (scripts/shared/sizeLimits.js)
+// and writes it beside the label. A width / height the new range no longer holds is
+// pulled to the bound by the slider itself (with the red flash).
+export function applySizeRange() {
+    const SETTINGS = globalThis.globalSettings ?? {};
+    const generate = globalThis.generate ?? {};
+    const range = sizeRangeFor(SETTINGS);
+    generate.width?.setRange?.(range);
+    generate.height?.setRange?.(range);
+    const label = document.getElementById('run-size-range');
+    if (label) {
+        const text = formatSizeRange(range);
+        if (label.textContent !== text) label.textContent = text;
+    }
+    return range;
 }
 
 // Writes a set of generation settings (scripts/shared/modelTypeSettings.js
@@ -101,10 +119,14 @@ async function applyModelType(value, previous, { clearPrompts }) {
     globalThis.globalSettings.api_model_type = value;
     // each type keeps its own sampler / steps / CFG / size / Hires / Regional: store the ones
     // being left, bring back the ones stored for the type entered (Anima defaults the first time)
-    if (previous && previous !== value) {
-        SETTINGS.model_type_generation = rememberGeneration(SETTINGS.model_type_generation, previous, SETTINGS);
-        applyGenerationSettings(generationFor(SETTINGS.model_type_generation, value, SETTINGS));
-    }
+    const switching = Boolean(previous) && previous !== value;
+    // store the size being left before the range moves (the range clamp must not
+    // rewrite the other type's remembered size) ...
+    if (switching) SETTINGS.model_type_generation = rememberGeneration(SETTINGS.model_type_generation, previous, SETTINGS);
+    // ... then the Size boxes follow the type entered, so the size stored for it is
+    // judged against its own range, not the range of the type left
+    applySizeRange();
+    if (switching) applyGenerationSettings(generationFor(SETTINGS.model_type_generation, value, SETTINGS));
 
     if (value === 'Checkpoint') {
         globalThis.dropdownList.model.setValue(LANG.api_model_file_select, globalThis.cachedFiles.modelList);
