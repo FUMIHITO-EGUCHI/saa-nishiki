@@ -1,6 +1,7 @@
 import { decodeThumb } from './customThumbGallery.js';
 import { currentLocalLlmEndpoint, getAiPromptResult, isStructuredRefineRequest } from './remoteAI.js';
 import { from_renderer_generate_updatePreview } from './generate_backend.js';
+import { jsonSlotFragment } from '../shared/jsonSlotPrompt.js';
 import { seartGenerateRegional } from './generate_regional.js';
 import { startGenerateMiraITU } from './generate_miraITU.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
@@ -381,8 +382,8 @@ function getCustomJSON(loop = -1) {
     for (const [prompt, strength, , method] of jsonSlots) {
         if (method === 'Off') continue;
 
-        const trimmedPrompt = prompt.replaceAll('\\', '\\\\').replaceAll('(', String.raw`\(`).replaceAll(')', String.raw`\)`).replaceAll(':', ' ');
-        let finalPrompt = Number.parseFloat(strength) === 1 ? `${trimmedPrompt}, ` : `(${trimmedPrompt}:${strength}), `;
+        const finalPrompt = jsonSlotFragment(prompt, strength);
+        if (finalPrompt === '') continue; // a blank slot used to leave ", ," behind
 
         if (method === 'BOP') BeforeOfPrompts += finalPrompt;
         else if (method === 'BOC') BeforeOfCharacter += finalPrompt;

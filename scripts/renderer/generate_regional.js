@@ -1,4 +1,5 @@
 import { decodeThumb } from './customThumbGallery.js';
+import { jsonSlotFragment } from '../shared/jsonSlotPrompt.js';
 import { generateRandomSeed, getTagAssist, getLoRAs, replaceWildcardsAsync, getRandomIndex, formatCharacterInfo, formatOriginalCharacterInfo,
     getViewTags, createHiFix, createRefiner, extractHostPort, checkVpred, extractAPISecure,
     createControlNet, createADetailer, toggleQueueColor, startQueue, REPLACE_AI_MARK,
@@ -31,16 +32,14 @@ function getCustomJSON(loop=-1){
     
     const jsonSlots = globalThis.jsonlist.getValues(loop);
 
-    for(const {prompt, strength, regional, method} of jsonSlots) {
+    // a slot row is an array (myJsonSlot.js getValue), not an object: the object
+    // destructuring here left every field undefined and threw on the first slot
+    for(const [prompt, strength, regional, method] of jsonSlots) {
         if(method === 'Off')
             continue;
 
-        const trimmedPrompt = prompt.replaceAll('\\', '\\\\').replaceAll('(', String.raw`\(`).replaceAll(')', String.raw`\)`).replaceAll(':', ' ');
-        let finalPrompt;
-        if (Number.parseFloat(strength) === 1)
-            finalPrompt = `${trimmedPrompt}, `;
-        else
-            finalPrompt = `(${trimmedPrompt}:${strength}), `;
+        const finalPrompt = jsonSlotFragment(prompt, strength);
+        if (finalPrompt === '') continue; // a blank slot used to leave ", ," behind
 
 
         if(regional == 'Both') {
