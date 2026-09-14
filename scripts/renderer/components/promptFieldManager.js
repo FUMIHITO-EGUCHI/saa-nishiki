@@ -1087,9 +1087,18 @@ export function setupPromptFieldManager() {
             if (sequenceNodes[index]) ordered.push(sequenceNodes[index]);
         });
         ordered.push(...extraNodes);
-        if (group?.parentElement && !ordered.includes(group)) group.remove();
+        // The Regional block stays in the DOM while the layout leaves it out (cast mode):
+        // its controls are the Characters card's regional sliders / dropdowns, which
+        // renderer.js sets up by document query. A detached block made them unreachable,
+        // updateLanguage threw on the missing control and init stopped half way (no
+        // presets, no persistence) whenever SAA started in Diffusion.
+        if (group) {
+            const shown = ordered.includes(group);
+            group.hidden = !shown;
+            if (!shown) ordered.push(group);
+        }
         syncChildren(host, ordered);
-        if (group && ordered.includes(group)) renderGroupText();
+        if (group && !group.hidden) renderGroupText();
         addFooter.querySelector('.scene-add-button').textContent = text('ui_scene_add_field', '+ Add field');
         for (const button of group?.querySelectorAll('.scene-add-button.is-side') ?? []) button.textContent = text('ui_scene_add_field', '+ Add field');
         applyRowStates();

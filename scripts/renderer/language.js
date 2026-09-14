@@ -150,12 +150,13 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     globalThis.generate.regionalCondition.setTitle(LANG.regional_condition);
     globalThis.generate.regionalCondition_dummy.setTitle(LANG.regional_condition);
-    globalThis.regional.overlap_ratio.setTitle(LANG.regional_overlap_ratio);
-    globalThis.regional.image_ratio.setTitle(LANG.regional_image_ratio);
-    globalThis.regional.str_left.setTitle(LANG.regional_strength || LANG.regional_str_left);
-    globalThis.regional.str_right.setTitle(LANG.regional_strength || LANG.regional_str_right);
-    globalThis.regional.option_left.setTitle(LANG.regional_option_left);
-    globalThis.regional.option_right.setTitle(LANG.regional_option_right);
+    // a missing regional control must not stop the language pass (init would end here)
+    globalThis.regional.overlap_ratio?.setTitle(LANG.regional_overlap_ratio);
+    globalThis.regional.image_ratio?.setTitle(LANG.regional_image_ratio);
+    globalThis.regional.str_left?.setTitle(LANG.regional_strength || LANG.regional_str_left);
+    globalThis.regional.str_right?.setTitle(LANG.regional_strength || LANG.regional_str_right);
+    globalThis.regional.option_left?.setTitle(LANG.regional_option_left);
+    globalThis.regional.option_right?.setTitle(LANG.regional_option_right);
     globalThis.regional.split?.setTitle(LANG.regional_split);
 
     globalThis.generate.seed.setTitle(LANG.random_seed);
@@ -315,12 +316,12 @@ export function updateSettings() {
 
     globalThis.generate.regionalCondition.setValue(SETTINGS.regional_condition);
     globalThis.generate.regionalCondition_dummy.setValue(SETTINGS.regional_condition);
-    globalThis.regional.overlap_ratio.setValue(SETTINGS.regional_overlap_ratio);
-    globalThis.regional.image_ratio.setValue(SETTINGS.regional_image_ratio);
-    globalThis.regional.str_left.setValue(SETTINGS.regional_str_left);
-    globalThis.regional.str_right.setValue(SETTINGS.regional_str_right);
-    globalThis.regional.option_left.updateDefaults(SETTINGS.regional_option_left);
-    globalThis.regional.option_right.updateDefaults(SETTINGS.regional_option_right);
+    globalThis.regional.overlap_ratio?.setValue(SETTINGS.regional_overlap_ratio);
+    globalThis.regional.image_ratio?.setValue(SETTINGS.regional_image_ratio);
+    globalThis.regional.str_left?.setValue(SETTINGS.regional_str_left);
+    globalThis.regional.str_right?.setValue(SETTINGS.regional_str_right);
+    globalThis.regional.option_left?.updateDefaults(SETTINGS.regional_option_left);
+    globalThis.regional.option_right?.updateDefaults(SETTINGS.regional_option_right);
     globalThis.regional.split?.updateDefaults?.(splitLabel(SETTINGS.regional_split));
     // loaded settings may carry the other split; the side labels follow
     document.dispatchEvent(new CustomEvent('saa:regional-split-changed'));

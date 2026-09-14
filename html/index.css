@@ -1237,6 +1237,8 @@ html, body {
 
 /* Regional block: head (title · switch · split · Swap), a settings row, one box per
    side (green = first, orange = second). Off = head only. */
+/* kept in the DOM but out of the layout while the cast (Diffusion) Scene has no Regional block */
+.scene-regional[hidden] { display: none !important; }
 .scene-regional {
     display: flex;
     flex-direction: column;

@@ -36,6 +36,18 @@ test('a character key the current pack cannot resolve survives the prompt autosa
     assert.match(control, /pending\[activeIndex\] = '';/, 'a pick clears the pending key');
 });
 
+test('the Scene keeps the Regional block in the DOM (hidden) when the cast layout leaves it out', () => {
+    // its controls are set up by document query after the first layout; a detached block
+    // left them undefined and updateLanguage threw, ending init before the presets mounted
+    const manager = read('scripts/renderer/components/promptFieldManager.js');
+    assert.match(manager, /const shown = ordered\.includes\(group\);\s*group\.hidden = !shown;\s*if \(!shown\) ordered\.push\(group\);/);
+    assert.equal(manager.includes('if (group?.parentElement && !ordered.includes(group)) group.remove();'), false);
+    assert.match(read('html/index.css'), /\.scene-regional\[hidden\] \{ display: none !important; \}/);
+    const language = read('scripts/renderer/language.js');
+    assert.match(language, /globalThis\.regional\.overlap_ratio\?\.setTitle/);
+    assert.match(language, /globalThis\.regional\.option_right\?\.updateDefaults/);
+});
+
 test('applying the model type refreshes the settings modal conditions', () => {
     const callbacks = read('scripts/renderer/callbacks.js');
     assert.match(callbacks, /globalThis\.uiShell\?\.settingsConditions\?\.\(\);/);
