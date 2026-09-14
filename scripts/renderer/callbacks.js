@@ -175,6 +175,9 @@ async function applyModelType(value, previous, { clearPrompts }) {
     globalThis.uiShell?.modelTypeUi?.render?.();
     globalThis.uiShell?.proseCard?.render?.();
     globalThis.prompt?.fieldManager?.refresh?.();
+    // the settings modal's Checkpoint / Diffusion groups follow the type at once (they used
+    // to be re-evaluated only when the modal was next opened)
+    globalThis.uiShell?.settingsConditions?.();
     // a real switch (not the boot-time apply of the stored type) starts the other model with an empty Scene
     if (clearPrompts && previous && previous !== value) clearPromptContents();
 }

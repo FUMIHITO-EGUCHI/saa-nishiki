@@ -60,7 +60,9 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     const LANG = globalThis.cachedFiles.language[globalThis.globalSettings.language];
 
     // Header 
-    if (globalThis.globalSettings.api_model_type === 'Stable Diffusion') {
+    // the type values are 'Checkpoint' | 'Diffusion' (a stale type name tested here used to
+    // leave the dropdown titled "Diffusion Model" in Checkpoint mode)
+    if (globalThis.globalSettings.api_model_type === 'Checkpoint') {
         globalThis.dropdownList.model.setTitle(LANG.api_model_file_select);
     } else {
         globalThis.dropdownList.model.setTitle(LANG.api_diffusion_model);
@@ -379,10 +381,12 @@ export function updateSettings() {
         }
     }
 
-    if (globalThis.globalSettings.api_model_type === 'Stable Diffusion') {
+    // The dropdown still holds the checkpoint list here (renderer.js seeds it with modelList);
+    // applyModelType (callbacks.js, called at the end of this function) swaps in the diffusion
+    // list and restores api_model_file_diffusion_select. A stale type-name test used to push
+    // the diffusion file name into the checkpoint list, which fell back to its first entry.
+    if (globalThis.globalSettings.api_model_type === 'Checkpoint') {
         globalThis.dropdownList.model.updateDefaults(SETTINGS.api_model_file_select);
-    } else {
-        globalThis.dropdownList.model.updateDefaults(SETTINGS.api_model_file_diffusion_select);
     }
     globalThis.dropdownList.model_type.updateDefaults(SETTINGS.api_model_type);
     globalThis.dropdownList.vae_unet.updateDefaults(SETTINGS.api_vae_unet_model);

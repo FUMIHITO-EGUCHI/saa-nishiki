@@ -206,6 +206,9 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
     let valueOnly = globalThis.globalSettings?.language === 'en-US';
     let allOptions = makeOptions([[], []], []);
     let committed = Array(dropdownCount).fill(null);
+    // a stored key the current character pack (thumb_select) does not carry: shown as None,
+    // but kept so the next prompt-section autosave does not overwrite it with 'None'
+    const pending = Array(dropdownCount).fill('');
     let weights = Array(dropdownCount).fill('1.0');
     // cast alias per slot (the "@alias" prompt row and Action reference, Diffusion only)
     const aliases = Array(dropdownCount).fill('');
@@ -239,6 +242,7 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
             const selectedOption = selected[0] || findOption(field.options, 'none');
             if (!selectedOption) return;
             committed[activeIndex] = selectedOption;
+            pending[activeIndex] = ''; // a pick replaces whatever the pack could not resolve
             paintTrigger(field.trigger, selectedOption, valueOnly);
             if (typeof callback === 'function') callback(activeIndex, committed.map(option => option?.key || 'None'));
         },
@@ -382,7 +386,9 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         updateDefaults(...defaults) {
             const values = Array.isArray(defaults[0]) ? defaults[0] : defaults;
             fields.forEach((_, index) => {
-                const option = findOption(fields[index].options, values[index] || 'None');
+                const wanted = values[index] || 'None';
+                const option = findOption(fields[index].options, wanted);
+                pending[index] = (option || wanted === 'None') ? '' : String(wanted);
                 committed[index] = option || findOption(fields[index].options, 'None');
                 renderField(index);
             });
@@ -390,6 +396,10 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         },
         getKey() {
             return committed.map(option => option?.key || 'None');
+        },
+        // the stored key behind a slot that resolved to None ('' when it resolved)
+        getPendingKey(index) {
+            return pending[index] ?? '';
         },
         getValue() {
             const values = committed.map(option => option?.value || 'none');
@@ -546,7 +556,11 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         // ---- variable-slot surface ----
         getSlotCount: () => count,
         getSlots: () => Array.from({ length: count }, (_, index) => {
-            const slot = { key: control?.getKey()[index] ?? 'None', weight: control?.getTextValue(index) ?? 1 };
+            // a key the current pack could not resolve is persisted as stored, not as 'None'
+            // (settingsPersistence.js collects these on every prompt autosave)
+            const resolved = control?.getKey()[index] ?? 'None';
+            const key = resolved === 'None' ? (control?.getPendingKey?.(index) || 'None') : resolved;
+            const slot = { key, weight: control?.getTextValue(index) ?? 1 };
             const alias = control?.getAlias(index) ?? '';
             if (alias !== '') slot.alias = alias;
             const side = control?.getSide(index) ?? 'both';

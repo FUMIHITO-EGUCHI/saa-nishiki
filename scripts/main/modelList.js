@@ -744,9 +744,13 @@ function setupModelList(settings) {
         settings.search_modelinsubfolder
     );
 
+    // same filter arguments as a reload (updateModelAndLoRAList), so the boot list and
+    // the reloaded list hold the same entries and the stored selection resolves either way
     updateDiffusionModelList(
         settings.model_path_comfyui,
-        settings.search_modelinsubfolder
+        settings.search_modelinsubfolder,
+        settings.model_filter_keyword_diffusion,
+        settings.model_filter
     );
 
     updateTextEncoderList(
