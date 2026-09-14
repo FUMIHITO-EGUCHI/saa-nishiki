@@ -113,7 +113,8 @@ async function runComfyUI(apiInterface, generateData){
         if(generateData.taggerOptions.prebakeDryRun) {
             tag = `by MiraITU: ${generateData.seed}\n`;
         }
-        globalThis.mainGallery.appendImageData(image, `${generateData.seed}`, tag, keepGallery, globalThis.globalSettings.scroll_to_last);
+        // null: no txt2img info lookup by seed (customGallery.js); the file's own parameters are shown
+        globalThis.mainGallery.appendImageData(image, `${generateData.seed}`, tag, keepGallery, globalThis.globalSettings.scroll_to_last, null);
     }
 
     const SETTINGS = globalThis.globalSettings;

@@ -181,7 +181,16 @@ export function setupGallery(containerId) {
         images.push(base64);
         seeds.push(seed);
         tags.push(tagsString || '');
-        infos.push(typeof info === 'string' ? info : '');
+        // The run's own info (BBCode, generate.js) is keyed by seed while the image is
+        // in flight; every arrival path (IPC, ComfyUI websocket, regional) lands here, so
+        // the lookup lives here rather than in each caller. Without it the Info panel
+        // falls back to the file's raw parameter text once the selection syncs.
+        // `null` opts out of the lookup (MiraITU output shares the seed box with a
+        // txt2img run but is a different image): the embedded parameters are shown.
+        let ownInfo = '';
+        if (typeof info === 'string' && info !== '') ownInfo = info;
+        else if (info !== null) ownInfo = globalThis.generate?.infoBySeed?.get?.(String(seed)) ?? '';
+        infos.push(ownInfo);
 
         if (seeds.length !== tags.length || images.length !== seeds.length) {
             console.warn('[appendImageData] Mismatch: images:', images.length, 'seeds:', seeds.length, 'tags:', tags.length);
