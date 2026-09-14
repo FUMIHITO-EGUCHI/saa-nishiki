@@ -92,9 +92,13 @@ test('renderer, preload, web socket API and main process are wired for related t
     assert.match(read('scripts/renderer.js'), /fetchRelated: value => fetchRelatedTags\(value\)/);
     const field = read('scripts/renderer/components/tagCapsuleField.js');
     assert.match(field, /tag-capsule-suggest-chip/);
-    assert.match(field, /scheduleSuggestions\(index\)/, 'the strip follows chip focus');
+    assert.doesNotMatch(field, /scheduleSuggestions\(/, 'the panel never opens on chip focus by itself');
     assert.match(field, /showRelated: id =>/);
-    assert.match(field, /localStorage\.getItem\(SUGGEST_STORAGE_KEY\)/, 'toggle is remembered');
+    assert.match(field, /event\.key\.toLowerCase\(\) === 'r' && !onAdd/, 'Ctrl+R opens the panel for the focused chip');
+    assert.match(field, /document\.addEventListener\('pointerdown', onDocumentPointerDown, true\)/, 'a click outside closes it');
+    for (const file of ['html/index_dark.css', 'html/index_light.css']) {
+        assert.match(read(file), /\.tag-capsule-suggest \{[^}]*position: absolute;/, `${file}: the panel floats instead of pushing the field taller`);
+    }
     const language = JSON.parse(read('data/language.json'));
     for (const key of ['tag_ui_related_title', 'tag_ui_related_cooccur', 'tag_ui_related_family', 'tag_ui_related_none', 'tag_ui_related_toggle']) {
         assert.equal(typeof language['en-US'][key], 'string', `${key} en`);

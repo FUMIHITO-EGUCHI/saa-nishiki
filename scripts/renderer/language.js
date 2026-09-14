@@ -111,7 +111,12 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     };
     document.querySelectorAll('[data-settings-page-label]').forEach(label => {
         const text = settingsPageLabels[label.dataset.settingsPageLabel];
-        if (text) {
+        if (!text) return;
+        // a page heading may carry an info icon after its text: only the text node changes
+        const textNode = label.firstChild;
+        if (textNode && textNode.nodeType === Node.TEXT_NODE && label.childElementCount > 0) {
+            textNode.textContent = text;
+        } else {
             label.textContent = text;
         }
     });
@@ -165,6 +170,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     globalThis.generate.landscape.setTitle(LANG.api_image_landscape);
     globalThis.generate.tag_assist.setTitle(LANG.tag_assist);
+    globalThis.generate.tag_chip_alias?.setTitle(LANG.tag_chip_alias);
     globalThis.generate.wildcard_random.setTitle(LANG.wildcard_random);
     
     globalThis.generate.sampler.setTitle(LANG.api_model_sampler);
@@ -337,6 +343,7 @@ export function updateSettings() {
     syncRegionalCharacters();
     
     globalThis.generate.tag_assist.setValue(SETTINGS.tag_assist);
+    globalThis.generate.tag_chip_alias?.setValue(SETTINGS.tag_chip_alias !== false);
     globalThis.generate.wildcard_random.setValue(SETTINGS.wildcard_random);
 
     globalThis.viewList.updateDefaults(SETTINGS.view_angle, SETTINGS.view_camera);

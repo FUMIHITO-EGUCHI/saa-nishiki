@@ -20,7 +20,7 @@ import { getModelList, getModelListAll, getVAEList, getDiffusionModelList, getTe
     getLoRAList, getImageTaggerModels, updateModelAndLoRAList, getControlNetList,
     getUpscalerList, getADetailerList, getONNXList } from '../../main/modelList.js';
 import { updateWildcards, loadWildcard } from '../../main/wildCards.js';
-import { tagReload, tagGet } from '../../main/tagAutoComplete_backend.js';
+import { tagReload, tagGet, getTagAliases } from '../../main/tagAutoComplete_backend.js';
 import { getRelatedTags, hasRelatedDictionary } from '../../main/tagRelated_backend.js';
 import { runComfyUI, runComfyUI_Regional, runComfyUI_ControlNet, runComfyUI_MiraITU, 
     openWsComfyUI, closeWsComfyUI, cancelComfyUI, python_runComfyUI } from '../../main/generate_backend_comfyui.js';
@@ -465,6 +465,7 @@ const methodHandlers = {
   // tag auto complete
   'tagReload': (params = [])=> tagReload(...params),
   'tagGet': (params = [])=> tagGet(...params),
+  'tagAliases': (params = [])=> getTagAliases(...params),
   'tagRelated': (params = [])=> getRelatedTags(...params),
   'tagRelatedAvailable': ()=> hasRelatedDictionary(),
 

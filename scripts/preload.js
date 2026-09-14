@@ -126,6 +126,8 @@ contextBridge.exposeInMainWorld('api', {
   tagReload: async (language) => ipcRenderer.invoke('tag-reload', language),
   tagGet: async (text, options) => ipcRenderer.invoke('tag-get-suggestions', text, options),
   tagLookup: async (keys) => ipcRenderer.invoke('tag-lookup', keys),
+  // translations for the chips' alias line: { loaded, aliases: { value: alias } }
+  tagAliases: async (tags) => ipcRenderer.invoke('tag-aliases', tags),
   tagRelated: async (tag, options) => ipcRenderer.invoke('tag-related', tag, options),
   tagRelatedAvailable: async () => ipcRenderer.invoke('tag-related-available'),
   // AI

@@ -103,7 +103,7 @@ export const sharedBodyHTML = `
             <section class="ui-card characters-card" aria-label="Characters and views">
               <div class="ui-card-head">
                 <span class="ui-card-title" data-ui-text="ui_characters_title">Characters &amp; Views</span>
-                <span class="ui-card-sub" data-ui-text="ui_characters_sub">Characters (incl. OC) · Angle / Camera</span>
+                <span class="ui-card-sub" data-ui-text="ui_characters_sub">Characters (incl. OC) · weight per slot</span>
                 <div class="ui-card-tools">
                   <div class="regional-condition-trigger-dummy ui-switch"></div>
                 </div>
@@ -142,7 +142,7 @@ export const sharedBodyHTML = `
             <section class="ui-card prompts-card" id="prompt-text-container" aria-label="Prompts">
               <div class="ui-card-head">
                 <span class="ui-card-title" data-ui-text="ui_prompts_title">Prompts</span>
-                <span class="ui-card-sub" data-ui-text="ui_prompts_sub">Common → Background / Style → Character → Positive · Exclude applies to all</span>
+                <span class="ui-card-sub" data-ui-text="ui_prompts_sub">Common → View → Background / Style → Character → Positive · Exclude applies to all</span>
                 <div class="ui-card-tools">
                   <span class="preset-host" data-preset-host="prompt"></span>
                 </div>
@@ -437,7 +437,7 @@ export const sharedBodyHTML = `
                   </div>
                 </div>
                 <div class="settings-group">
-                  <div class="settings-group-title" data-ui-text="ui_settings_output_group">Output</div>
+                  <div class="settings-group-title" data-ui-text="ui_settings_output_group">Output</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_output_note">Save path: a folder under the backend's output directory (%date expands to today's date). Character name in folder prefix: the selected characters' names go in front of the output folder prefix.</span></span>
                   <div class="settings-grid">
                     <div class="system-settings-api-comfyui-image-save-path" data-when-api="ComfyUI"></div>
                     <div class="system-settings-api-webui-image-save-path" data-when-api="WebUI"></div>
@@ -452,7 +452,7 @@ export const sharedBodyHTML = `
                   </div>
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">
-                  <div class="settings-group-title" data-ui-text="ui_comfy_proc_title">ComfyUI process</div>
+                  <div class="settings-group-title" data-ui-text="ui_comfy_proc_title">ComfyUI process</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_comfy_proc_note">Launch command: a start script (.ps1 / .cmd) or python main.py with its arguments. Start runs it and waits for the backend on the ComfyUI address above (loopback only); with Start ComfyUI with SAA on, it also runs at launch when the backend does not answer. Stop unloads the models, then ends whatever holds that port.</span></span>
                   <!-- Start / stop / restart of the local backend (scripts/renderer/comfyProcessControl.js);
                        hidden in the browser build, which has no process to talk to. -->
                   <div class="comfy-proc-panel">
@@ -469,17 +469,16 @@ export const sharedBodyHTML = `
                         <button type="button" class="pod-btn pod-btn-danger comfy-proc-stop" data-ui-text="ui_comfy_stop">Stop</button>
                       </div>
                     </div>
-                    <p class="settings-note" data-ui-text="ui_comfy_proc_note">Start runs the launch command and waits for the backend on the ComfyUI address above (loopback only). Stop unloads the models, then ends whatever holds that port. Hires fix, LoRA and models are untouched.</p>
                   </div>
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">
-                  <div class="settings-group-title">Runpod pod over SSH</div>
+                  <div class="settings-group-title">Runpod pod over SSH</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_pod_ssh_note">Generation and the LLM run on the pod over one SSH session. Images stream over SSH and are saved locally only; nothing is written to the pod's disks. The API address above is ignored while this is on. Start / Stop need a Runpod API key (used for start / stop only) and never terminate the pod. SSH target: podid-user@ssh.runpod.io. SSH private key: empty = ~/.ssh/id_ed25519. Pod id: empty = taken from the SSH target.</span></span>
                   <!-- One state-driven panel (scripts/renderer/podControl.js): the pill reports
                        the pod, and an action is only rendered while it applies. -->
                   <div class="pod-panel">
                     <div class="pod-panel-head">
                       <span class="pod-panel-title" data-ui-text="ui_pod_panel_title">Runpod pod</span>
-                      <span class="pod-panel-sub" data-ui-text="ui_pod_panel_sub">generation and the LLM run on the pod over one SSH session</span>
+                      <span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_pod_panel_sub">generation and the LLM run on the pod over one SSH session</span></span>
                       <div class="system-settings-api-pod-ssh-enable ui-switch pod-panel-switch"></div>
                     </div>
                     <div class="pod-panel-body">
@@ -533,10 +532,9 @@ export const sharedBodyHTML = `
                     </div>
                   </div>
                   <p class="settings-note system-settings-api-pod-result"></p>
-                  <p class="settings-note" data-ui-text="ui_settings_pod_ssh_note">Images stream over SSH and are saved locally only; nothing is written to the pod's disks. The API address above is ignored while this is on. Start / Stop need a Runpod API key and never terminate the pod.</p>
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">
-                  <div class="settings-group-title" data-ui-text="ui_settings_fast_group">Fast generation</div>
+                  <div class="settings-group-title" data-ui-text="ui_settings_fast_group">Fast generation</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_fast_note">Applies a step-distillation LoRA (DMD2 / Hyper-SD / Lightning / LCM) and overrides steps, CFG, sampler and scheduler for the base, Hires fix and ADetailer passes. Works on the local ComfyUI and on the pod.</span></span>
                   <div class="settings-grid">
                     <div class="system-settings-api-fast-enable ui-switch"></div>
                     <div class="system-settings-api-fast-lora"></div>
@@ -546,7 +544,6 @@ export const sharedBodyHTML = `
                     <div class="system-settings-api-fast-sampler"></div>
                     <div class="system-settings-api-fast-scheduler"></div>
                   </div>
-                  <p class="settings-note" data-ui-text="ui_settings_fast_note">Applies a step-distillation LoRA (DMD2 / Hyper-SD / Lightning / LCM) and overrides steps, CFG, sampler and scheduler for the base, Hires fix and ADetailer passes. Works on the local ComfyUI and on the pod.</p>
                 </div>
               </section>
 
@@ -579,16 +576,15 @@ export const sharedBodyHTML = `
               </section>
 
               <section id="settings-page-ai" class="settings-modal-page" role="tabpanel" data-settings-page-content="ai" aria-labelledby="settings-page-ai-title" tabindex="0" hidden>
-                <h2 id="settings-page-ai-title" data-settings-page-label="ai">AI</h2>
-                <p class="settings-note" data-ui-text="ui_settings_ai_note">Mode (Off / Expand / Refine) and role are on the AI card of the prompt panel.</p>
+                <h2 id="settings-page-ai-title" data-settings-page-label="ai">AI<span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_ai_note">Mode (Off / Expand / Refine) and role are on the AI card of the prompt panel.</span></span></h2>
                 <div class="settings-group" data-when-ai="Local">
-                  <div class="settings-group-title">Local (Ollama / llama.cpp)</div>
+                  <div class="settings-group-title">Local (Ollama / llama.cpp)</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_ai_local_note">Endpoint: an Ollama /api/chat or llama.cpp server URL. Prompt mode: Expand grows the prompt, Refine edits the existing prompts and weights.</span></span>
                   <div class="settings-grid">
                     <div class="system-settings-ai-local-address"></div>
                   </div>
                 </div>
                 <div class="settings-group" data-when-ai="Pod">
-                  <div class="settings-group-title">Runpod pod (Ollama)</div>
+                  <div class="settings-group-title">Runpod pod (Ollama)</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_pod_llm_note">The model list comes from the pod itself. Download fetches the named model into the pod's workspace (minutes); Unload frees the GPU, and image generation unloads the model by itself. Keep-alive: 10m, 1h, or 0 = unload after each call. The endpoint (https://{pod}-11434.proxy.runpod.net) and auth (Bearer token or user:pass) below are only used when Pod SSH is not configured.</span></span>
                   <!-- The model row IS the model list: listing is not an action, and Download /
                        Unload only appear in the state that calls for them. -->
                   <div class="pod-panel pod-llm-panel">
@@ -605,7 +601,7 @@ export const sharedBodyHTML = `
                       </div>
                       <div class="pod-row pod-row-llm-keep">
                         <span class="pod-row-label"></span>
-                        <span class="pod-llm-hint" data-ui-text="ui_pod_llm_hint">unloaded automatically before each image generation</span>
+                        <span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_pod_llm_hint">unloaded automatically before each image generation</span></span>
                         <div class="system-settings-ai-pod-keep-alive pod-llm-keep"></div>
                       </div>
                     </div>
@@ -618,7 +614,6 @@ export const sharedBodyHTML = `
                       <div class="system-settings-ai-pod-auth"></div>
                     </div>
                   </div>
-                  <p class="settings-note" data-ui-text="ui_settings_pod_llm_note">The model list comes from the pod itself. Download fetches the named model into the pod's workspace (minutes); Unload frees the GPU. The address and auth below are only used when Pod SSH is not configured.</p>
                 </div>
                 <div class="settings-group" data-when-ai="Local|Pod">
                   <div class="settings-group-title">Model &amp; sampling</div>
@@ -652,21 +647,21 @@ export const sharedBodyHTML = `
                 <div class="settings-grid">
                   <div class="generate-tag-assist ui-switch"></div>
                   <div class="generate-wildcard-random ui-switch"></div>
+                  <div class="system-settings-tag-chip-alias ui-switch"></div>
                 </div>
               </section>
 
               <section id="settings-page-lists" class="settings-modal-page" role="tabpanel" data-settings-page-content="lists" aria-labelledby="settings-page-lists-title" tabindex="0" hidden>
-                <h2 id="settings-page-lists-title" data-settings-page-label="lists">Lists</h2>
+                <h2 id="settings-page-lists-title" data-settings-page-label="lists">Lists<span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_lists_settings_note">Add, override or hide entries of the character / original character / angle / camera lists. Upstream data stays read-only; your edits are saved as a diff (settings/user_lists.json) and can be exported / imported.</span></span></h2>
                 <div class="settings-grid">
                   <button id="list-manager-open" type="button" class="settings-action-button">
                     <span data-ui-text="ui_lists_open_settings">Open list manager…</span>
                   </button>
                 </div>
-                <p class="settings-note" data-ui-text="ui_lists_settings_note">Add, override or hide entries of the character / original character / angle / camera lists. Upstream data stays read-only; your edits are saved as a diff (settings/user_lists.json) and can be exported / imported.</p>
               </section>
 
               <section id="settings-page-advanced" class="settings-modal-page" role="tabpanel" data-settings-page-content="advanced" aria-labelledby="settings-page-advanced-title" tabindex="0" hidden>
-                <h2 id="settings-page-advanced-title" data-settings-page-label="advanced">Advanced</h2>
+                <h2 id="settings-page-advanced-title" data-settings-page-label="advanced">Advanced<span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_advanced_note">Settings are saved automatically (settings/app.json, state.json). Presets live in settings/presets/&lt;section&gt;/. SAAC web service and the CDP debug port are configured outside this window (app.json / SAA_CDP_PORT).</span></span></h2>
                 <div class="settings-grid">
                   <div class="global-refresh">
                     <button id="settings-open-folder" type="button" title="Open settings folder" class="settings-action-button">
@@ -678,7 +673,6 @@ export const sharedBodyHTML = `
                     </button>
                   </div>
                 </div>
-                <p class="settings-note" data-ui-text="ui_settings_advanced_note">Settings are saved automatically (settings/app.json, state.json). Presets live in settings/presets/&lt;section&gt;/. SAAC web service and the CDP debug port are configured outside this window (app.json / SAA_CDP_PORT).</p>
               </section>
             </main>
           </div>

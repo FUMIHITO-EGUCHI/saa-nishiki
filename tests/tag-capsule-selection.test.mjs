@@ -59,7 +59,10 @@ test('the chip row keeps a selection: Ctrl/Shift+click, Ctrl+A, Escape, Delete, 
     assert.match(field, /event\.key\.toLowerCase\(\) === 'a' && !onAdd/, 'Ctrl+A selects every chip');
     assert.match(field, /event\.key === 'Escape' && selectedIds\.size > 0/);
     assert.match(field, /selectedIds\.size > 1 && selectedIds\.has\(capsules\[focusIndex\]\?\.id\)/, 'Delete removes the selection');
-    assert.match(field, /moveCapsules\(capsules, selectionIds\(\), target < 0 \? capsules\.length : target\)/, 'a selected chip drags the block');
+    assert.match(field, /moveCapsules\(capsules, selectionIds\(\), insertAt\)/, 'a selected chip drags the block to the insertion point');
+    assert.match(field, /function insertionIndexAt\(x, y\)/, 'the drop point comes from the pointer, not the chip dropped on');
+    assert.match(field, /className: 'tag-capsule-drop-marker'/, 'a marker shows where the drop lands');
+    assert.match(field, /source: 'capsule-drag', sections: \['prompt'\]/, 'a drop is one undo step');
     assert.match(field, /chip\.classList\.toggle\('is-selected', selectedIds\.has\(capsules\[index\]\?\.id\)\)/);
     for (const name of ['getSelectedIds: selectionIds', 'setSelection,', 'clearSelection,', 'removeIds: ids =>', 'setDisabledFor: (ids, disabled) =>']) {
         assert.ok(field.includes(name), `field api exposes ${name}`);
@@ -72,7 +75,10 @@ test('the chip row keeps a selection: Ctrl/Shift+click, Ctrl+A, Escape, Delete, 
 test('the enable dot, the disabled look, the selection and the editor blocks are styled in both themes', () => {
     for (const file of ['html/index_dark.css', 'html/index_light.css']) {
         const css = read(file);
-        assert.match(css, /\.tag-capsule-chip-toggle \{[^}]*width: 9px;[^}]*height: 9px;/, `${file}: dot size`);
+        // the whole left end of the chip is the toggle; the dot inside it shows the state
+        assert.match(css, /\.tag-capsule-chip-toggle \{[^}]*width: 22px;[^}]*height: 100%;/, `${file}: toggle block`);
+        assert.match(css, /\.tag-capsule-chip-toggle::before \{[^}]*width: 9px;[^}]*height: 9px;/, `${file}: dot size`);
+        assert.match(css, /\.tag-capsule-drop-marker \{/, `${file}: drop marker`);
         assert.match(css, /\.tag-capsule-chip\.is-disabled \{[^}]*opacity: 0\.5;/, `${file}: disabled chip`);
         assert.match(css, /\.tag-capsule-chip\.is-disabled \.tag-capsule-chip-name \{[^}]*line-through/, `${file}: struck name`);
         assert.equal((css.match(/^\.tag-capsule-chip-toggle \{/gm) ?? []).length, 1, `${file}: one dot rule`);

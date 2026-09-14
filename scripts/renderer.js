@@ -212,6 +212,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
 
         landscape: setupCheckbox('generate-landscape', LANG.api_image_landscape, SETTINGS.api_image_landscape, true, (value) =>{globalThis.globalSettings.api_image_landscape = value;}),
         tag_assist: setupCheckbox('generate-tag-assist', LANG.tag_assist, SETTINGS.tag_assist, true, (value) =>{ globalThis.globalSettings.tag_assist = value; }),
+        // translation on the chips (Settings > Prompt editing); the fields re-render through the alias event
+        tag_chip_alias: setupCheckbox('system-settings-tag-chip-alias', LANG.tag_chip_alias, SETTINGS.tag_chip_alias !== false, true,
+            (value) => { globalThis.globalSettings.tag_chip_alias = value; document.dispatchEvent(new CustomEvent('saa:tag-aliases-updated')); }),
         wildcard_random: setupCheckbox('generate-wildcard-random', LANG.wildcard_random, SETTINGS.wildcard_random, true, (value) =>{ globalThis.globalSettings.wildcard_random = value; }),
         sampler: mySimpleList('generate-sampler', LANG.api_model_sampler, ['Auto'], (index, value) =>{ globalThis.globalSettings.api_model_sampler = value; }, 20, false, false),
         scheduler: mySimpleList('generate-scheduler', LANG.api_model_scheduler, ['Auto'], (index, value) =>{ globalThis.globalSettings.api_model_scheduler = value; }, 20, false, false),

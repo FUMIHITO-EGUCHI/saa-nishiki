@@ -1037,7 +1037,7 @@ body {
     gap: 4px;
     max-width: 260px;
     height: 24px;
-    padding: 0 6px 0 9px;
+    padding: 0 6px 0 0; /* the toggle block supplies the left inset */
     border: 1px solid #666;
     border-radius: 12px;
     background: #2a2a2f;
@@ -1073,6 +1073,9 @@ body {
 }
 
 .tag-capsule-chip.is-up { border-color: #4e7a48; }
+/* translation of the tag (tagAliasClient.js), muted, after the name */
+.tag-capsule-chip-alias { flex: 0 1 auto; min-width: 0; max-width: 120px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; opacity: 0.65; }
+.tag-capsule-chip-alias[hidden] { display: none; }
 .tag-capsule-chip.is-up .tag-capsule-chip-weight { color: #9ee493; }
 .tag-capsule-chip.is-down { border-color: #7a5c3a; }
 .tag-capsule-chip.is-down .tag-capsule-chip-weight { color: #e9b27a; }
@@ -1109,19 +1112,34 @@ body {
     color: #eee;
 }
 
-/* one-touch enable/disable dot at the chip's left edge */
+/* one-touch enable/disable: the whole left end of the chip is the button (22px wide,
+   full height); the 9px dot inside it shows the state */
 .tag-capsule-chip-toggle {
     flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 100%;
+    margin-right: -3px;
+    border-radius: 12px 0 0 12px;
+    cursor: pointer;
+}
+.tag-capsule-chip-toggle::before {
+    content: "";
     width: 9px;
     height: 9px;
     border-radius: 50%;
     background: #4da3ff;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35) inset;
-    cursor: pointer;
+    transition: transform .1s ease;
 }
-.tag-capsule-chip-toggle:hover { transform: scale(1.25); }
+.tag-capsule-chip-toggle:hover { background: rgba(77, 163, 255, 0.18); }
+.tag-capsule-chip-toggle:hover::before { transform: scale(1.25); }
 .tag-capsule-chip.is-disabled { opacity: 0.5; }
-.tag-capsule-chip.is-disabled .tag-capsule-chip-toggle { background: #666; }
+.tag-capsule-chip.is-disabled .tag-capsule-chip-toggle::before { background: #666; }
+/* insertion point while a chip is dragged over the row */
+.tag-capsule-drop-marker { display: inline-block; flex: 0 0 auto; width: 2px; height: 22px; margin: 0 -1px; border-radius: 1px; background: #4da3ff; }
 .tag-capsule-chip.is-disabled .tag-capsule-chip-name { text-decoration: line-through; }
 
 .tag-capsule-add-slot {
@@ -1946,7 +1964,7 @@ body {
 .status-pill.fast-toggle[hidden] { display: none; }
 
 /* ---- characters & views ---- */
-.characters-card .dropdown-character, .characters-card .dropdown-character-regional { display: flex; background: transparent; border: none; padding: 0; margin: 0; }
+.characters-card .dropdown-character, .characters-card .dropdown-character-regional { display: flex; flex-direction: column; background: transparent; border: none; padding: 0; margin: 0; }
 .characters-card .dropdown-character-regional { border: none !important; }
 .characters-card .dropdown-view { margin: 6px 0 0; padding: 6px 0 0; border-top: 1px dashed var(--saa-border); }
 .characters-card .view-labels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 2px 0 0; }
@@ -2281,9 +2299,12 @@ body {
 
 /* Settings grid alignment: even rows, centered switches, more air */
 .settings-grid { gap: 12px 20px; }
-.settings-grid > .ui-switch { align-self: center; min-height: 28px; }
+/* a switch is only as wide as its label + knob: a grid item would otherwise stretch
+   across the whole column and every pixel of that empty stretch would toggle it */
+.settings-grid > .ui-switch, .pipeline-card .pipe-grid > .ui-switch { align-self: center; justify-self: start; min-height: 28px; }
+.ui-switch [class^="myCheckbox-"][class*="-span"] { cursor: pointer; }
 .settings-group { margin-top: 16px; }
-.settings-group-title { margin-bottom: 8px; }
+.settings-group-title { display: inline-block; vertical-align: middle; margin-bottom: 8px; } /* inline so the (i) icon follows on the same line */
 
 /* Large modal view for the AI / refine prompt in the info panel */
 .ai-result-panel { position: relative; }
@@ -2330,15 +2351,26 @@ body {
 .prompt-preset-button:hover .preset-icon { background: var(--saa-text); }
 
 /* Related-tag strip under the chip row (offline co-occurrence dictionary) */
+/* floating panel under the field: it overlays what follows instead of pushing it down */
+.tag-capsule-view { position: relative; }
 .tag-capsule-suggest {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    z-index: 30;
     display: flex;
     flex-direction: column;
     gap: 4px;
+    max-height: 200px;
+    overflow: auto;
     padding: 5px 7px;
     border: 1px dashed #4a4a55;
     border-radius: 6px;
     background: #1f1f24;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
 }
+.tag-capsule-suggest[hidden] { display: none; }
 .tag-capsule-suggest-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .tag-capsule-suggest-title { font-size: 11px; color: #bbb; }
 .tag-capsule-suggest-close {

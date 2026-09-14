@@ -59,7 +59,7 @@ test('submenus render as an in-place accordion (the menu box clips flyouts)', ()
 test('cross-field drag-and-drop carries its own MIME type and Ctrl/Alt copies', () => {
     assert.match(field, /CAPSULE_MIME = 'application\/x-saa-capsule'/);
     assert.match(field, /event\.dataTransfer\.effectAllowed = 'copyMove'/);
-    assert.match(field, /onExternalDrop\?\.\(payload, at, \{ copy: event\.ctrlKey \|\| event\.altKey \}\)/);
+    assert.match(field, /onExternalDrop\?\.\(payload, insertAt, \{ copy: event\.ctrlKey \|\| event\.altKey \}\)/);
     assert.match(field, /onExternalDrop: \(payload, at, \{ copy \}\) => set\.transfer\(payload\.field, Array\.isArray\(payload\.ids\) && payload\.ids\.length > 1 \? payload\.ids : payload\.id, key, \{ at, copy \}\)/);
     assert.match(field, /JSON\.stringify\(\{ field: key, id: capsules\[dragIndex\]\?\.id \?\? '', ids \}\)/, 'the payload lists every selected capsule');
 });

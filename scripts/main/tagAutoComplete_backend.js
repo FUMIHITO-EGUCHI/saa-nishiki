@@ -3,6 +3,7 @@ import path from 'node:path';
 import * as fs from 'node:fs';
 import { getWildcardsList } from './wildCards.js';
 import { escapeHtml, parseTranslationLine, shouldSkipArtistTranslation } from './tagTranslation.js';
+import { aliasMapFor } from '../shared/tagAliases.js';
 import {
     createTagFilterMatcher,
     getCategoryForPrompt,
@@ -391,6 +392,10 @@ async function setupTagAutoCompleteBackend(language = 'en-US'){
             return tagLookup(keys);
         });
 
+        ipcMain.handle('tag-aliases', async (event, tags) => {
+            return getTagAliases(tags);
+        });
+
         return tagBackend.dataLoaded;
     }
 
@@ -411,8 +416,20 @@ function tagLookup(keys) {
     return { loaded: true, known: list.filter(key => tagKeySet.has(key)) };
 }
 
+// Translation of each tag (the chips' alias line): { value: alias } from the merged
+// aliases of the loaded dictionary, '' when unknown or untranslated. `loaded: false`
+// while no tag file is loaded so the renderer does not cache blanks.
+let tagEntryMap = null;
+export function getTagAliases(tags) {
+    if (!tagBackend.dataLoaded) return { loaded: false, aliases: {} };
+    tagEntryMap ??= new Map(tagBackend.prompts.map(entry => [String(entry.prompt).toLocaleLowerCase(), entry]));
+    const list = Array.isArray(tags) ? tags.filter(tag => typeof tag === 'string').slice(0, 2000) : [];
+    return { loaded: true, aliases: aliasMapFor(tagEntryMap, list) };
+}
+
 async function tagReload(language = activeLanguage){
     tagKeySet = null;
+    tagEntryMap = null;
     tagBackend.prompts = [];
     tagBackend.lastCustomPrompt = "";
     tagBackend.previousCustomPrompt = "";

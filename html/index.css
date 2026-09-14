@@ -286,6 +286,50 @@ html, body {
     font-size: 1.05rem;
 }
 
+/* Settings help lives behind an (i) icon: the text shows on hover / keyboard focus
+   instead of sitting under every group. The icon follows a group title or a page
+   heading; the note text is what applyUiText fills (data-ui-text on the inner span). */
+.settings-info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    vertical-align: middle;
+    color: var(--saa-muted);
+    cursor: help;
+    font-size: 0;
+    line-height: 1;
+}
+.settings-info:hover, .settings-info:focus-visible { color: var(--saa-accent); }
+.settings-info:focus-visible { outline: 2px solid var(--saa-accent); outline-offset: 2px; border-radius: 50%; }
+.settings-info-text {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 100%;
+    z-index: 20;
+    min-width: 240px;
+    max-width: 360px;
+    margin-top: 4px;
+    padding: 6px 8px;
+    border: 1px solid var(--saa-border);
+    border-radius: 6px;
+    background: var(--saa-bg-panel);
+    color: var(--saa-text);
+    font-size: 11.5px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1.4;
+    white-space: normal;
+    box-shadow: 0 4px 12px var(--saa-shadow);
+}
+.settings-info:hover .settings-info-text,
+.settings-info:focus .settings-info-text,
+.settings-info:focus-within .settings-info-text { display: block; }
+/* a group title sits on one line with its icon; the grid below starts a new line */
+.settings-group-title + .settings-info { margin-bottom: 8px; }
+
 .settings-modal-page-content {
     width: 100%;
 }
@@ -545,7 +589,15 @@ html, body {
 }
 
 /* Character and tag selection modals */
-.character-selection-grid {
+/* The slot grid does not depend on the slot count: the container also carries a
+   mydropdown-container-<count> class, but only 1 / 2 / 4 have rules, so 3 / 5 / 6
+   slots used to fall back to block layout and stack. Two columns, any count. */
+.character-selection-grid,
+.characters-card .dropdown-character .character-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
     align-items: end;
 }
 
@@ -768,7 +820,7 @@ html, body {
 /* Segoe UI sits low in a 1-line box: a hair of bottom padding centres the text optically */
 .prompt-scene .tag-capsule-chip {
     height: 23px;
-    padding: 0 10px 2px 9px;
+    padding: 0 10px 2px 0; /* the toggle block supplies the left inset */
     border-radius: 12px;
     line-height: 1.3;
 }
@@ -783,14 +835,16 @@ html, body {
     padding: 0 10px;
 }
 
-.prompt-scene .tag-capsule-chip-toggle {
-    width: 6px;
-    height: 6px;
+/* the Scene's chips are a touch shorter: the toggle block keeps its full-height
+   hit area, only the dot inside it shrinks and fades until hovered */
+.prompt-scene .tag-capsule-chip-toggle::before {
+    width: 7px;
+    height: 7px;
     opacity: 0.55;
 }
 
-.prompt-scene .tag-capsule-chip:hover .tag-capsule-chip-toggle,
-.prompt-scene .tag-capsule-chip.is-disabled .tag-capsule-chip-toggle {
+.prompt-scene .tag-capsule-chip:hover .tag-capsule-chip-toggle::before,
+.prompt-scene .tag-capsule-chip.is-disabled .tag-capsule-chip-toggle::before {
     opacity: 1;
 }
 

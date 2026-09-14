@@ -48,6 +48,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     character2: 'None',
     character3: 'None',
     tag_assist: true,
+    // translation of each tag on its chip (scripts/renderer/tagAliasClient.js)
+    tag_chip_alias: true,
     wildcard_random: false,
 
     regional_condition: false,
@@ -246,7 +248,7 @@ export const SECTION_KEYS = Object.freeze({
         'ai_local_addr', 'ai_local_model_mode', 'ai_local_timeout', 'ai_local_temp', 'ai_local_n_predict', 'ai_refine_system_prompt',
         'ai_pod_addr', 'ai_pod_share_host', 'ai_pod_auth', 'ai_pod_model', 'ai_pod_keep_alive',
         'remote_ai_base_url', 'remote_ai_model', 'remote_ai_api_key', 'remote_ai_timeout',
-        'tag_assist', 'wildcard_random',
+        'tag_assist', 'tag_chip_alias', 'wildcard_random',
         'keep_gallery', 'scroll_to_last', 'generate_auto_start',
         'fav_characters',
         'fav_tags',
