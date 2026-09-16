@@ -38,7 +38,6 @@ import { getBatchWeightDialog } from './batchWeightDialog.js';
 import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
 import { tagText } from './tagUiText.js';
 import { TAG_DICTIONARY_EVENT, tagStatus } from './tagDictionaryStatus.js';
-import { TAG_ALIASES_EVENT, aliasFor, ensureAliases } from '../tagAliasClient.js';
 import { customFieldExtras, isCustomFieldId, normalizeCustomFields, normalizeOrder, setCustomFieldExtras } from '../../shared/promptFieldOrder.js';
 import { sideOrder } from '../../shared/regionalSides.js';
 import { castEnabled, isCastFieldId } from '../../shared/castMembers.js';
@@ -76,7 +75,8 @@ function setTextboxValue(textboxControl, textbox, value, guard) {
     guard(true);
     try {
         textboxControl.setValue(value);
-        textbox.dispatchEvent(new Event('input', { bubbles: true }));
+        // the chips wrote this text; tagAutoComplete.js must not answer it with suggestions
+        textbox.dispatchEvent(new CustomEvent('input', { bubbles: true, detail: { source: 'capsules' } }));
     } finally {
         guard(false);
     }
@@ -375,8 +375,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     // dictionary answers arrive after the first paint; the chips are re-marked then
     const onDictionaryEvent = () => { if (mode === 'capsule') render(); };
     document.addEventListener(TAG_DICTIONARY_EVENT, onDictionaryEvent);
-    // translations arrive after the first paint (tagAliasClient.js) and repaint the chips
-    document.addEventListener(TAG_ALIASES_EVENT, onDictionaryEvent);
 
     function render() {
         if (mode === 'capsule') {
@@ -386,9 +384,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
                 trailing: addSlot,
                 isFavorite: value => isFavoriteTag(favGroupForKey(key), value),
                 tagStatus,
-                tagAlias: aliasFor,
             });
-            ensureAliases(capsules.map(capsule => capsule.value));
             chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
             updateRoving();
             pruneSelection();
@@ -780,7 +776,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         if (disposed) return;
         disposed = true;
         document.removeEventListener(TAG_DICTIONARY_EVENT, onDictionaryEvent);
-        document.removeEventListener(TAG_ALIASES_EVENT, onDictionaryEvent);
         document.removeEventListener(FAVORITE_TAGS_CHANGED_EVENT, onFavoritesChanged);
         titleObserver.disconnect();
     }

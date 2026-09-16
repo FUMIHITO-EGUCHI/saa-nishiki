@@ -1072,14 +1072,6 @@ body {
 }
 
 .tag-capsule-chip.is-up { border-color: #8fb98a; }
-/* translation of the tag (tagAliasClient.js), muted, after the name */
-/* shown only while the chip is hovered or focused (C2): the row keeps its density,
-   the popover header carries the translation the rest of the time */
-.tag-capsule-chip-alias { display: none; flex: 0 1 auto; min-width: 0; max-width: 120px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; opacity: 0.65; }
-.tag-capsule-chip:hover .tag-capsule-chip-alias,
-.tag-capsule-chip:focus .tag-capsule-chip-alias,
-.tag-capsule-chip:focus-visible .tag-capsule-chip-alias { display: inline; }
-.tag-capsule-chip-alias[hidden] { display: none !important; }
 .tag-capsule-chip.is-up .tag-capsule-chip-weight { color: #397c36; }
 .tag-capsule-chip.is-down { border-color: #d9b48f; }
 .tag-capsule-chip.is-down .tag-capsule-chip-weight { color: #b0651f; }

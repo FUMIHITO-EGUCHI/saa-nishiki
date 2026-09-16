@@ -93,7 +93,7 @@ export function modeIconName(mode) {
 export function chipSignature(capsule, options = {}) {
     const plan = normalizeWeightPlan(capsule.weightPlan);
     return [capsule.id, capsule.value, plan.mode, plan.min, plan.max, plan.step, plan.seed,
-        options.excluded ? 1 : 0, options.favorite ? 1 : 0, capsule.disabled ? 1 : 0, options.status ?? '', options.alias ?? ''].join('|');
+        options.excluded ? 1 : 0, options.favorite ? 1 : 0, capsule.disabled ? 1 : 0, options.status ?? ''].join('|');
 }
 
 export function createChip(capsule, options = {}) {
@@ -122,12 +122,6 @@ export function createChip(capsule, options = {}) {
     name.className = 'tag-capsule-chip-name';
     chip.appendChild(name);
 
-    // translation of the tag (tagAliasClient.js), muted, after the name
-    const alias = document.createElement('span');
-    alias.className = 'tag-capsule-chip-alias';
-    alias.hidden = true;
-    chip.appendChild(alias);
-
     const weight = document.createElement('span');
     weight.className = 'tag-capsule-chip-weight';
     chip.appendChild(weight);
@@ -138,25 +132,19 @@ export function createChip(capsule, options = {}) {
     remove.appendChild(createIcon('close', 12));
     chip.appendChild(remove);
 
-    updateChip(chip, capsule, { text, excluded, favorite, status, alias: options.alias ?? '' });
+    updateChip(chip, capsule, { text, excluded, favorite, status });
     return chip;
 }
 
 export function updateChip(chip, capsule, options = {}) {
-    const { text, excluded = false, favorite = false, status = '', alias = '' } = options;
+    const { text, excluded = false, favorite = false, status = '' } = options;
     const plan = normalizeWeightPlan(capsule.weightPlan);
     const kind = chipKind(plan);
     const description = describePlan(plan);
     const modeIcon = modeIconName(plan.mode);
 
     chip.dataset.capsuleId = capsule.id;
-    chip.dataset.signature = chipSignature(capsule, { excluded, favorite, status, alias });
-    const aliasMark = chip.querySelector('.tag-capsule-chip-alias');
-    if (aliasMark) {
-        aliasMark.textContent = alias;
-        aliasMark.title = alias;
-        aliasMark.hidden = !alias;
-    }
+    chip.dataset.signature = chipSignature(capsule, { excluded, favorite, status });
     // dictionary marks (tagDictionaryStatus.js): a value no tag matches, or a sentence
     chip.classList.toggle('is-unknown', status === 'unknown');
     chip.classList.toggle('is-sentence', status === 'sentence');
@@ -201,7 +189,7 @@ export function updateChip(chip, capsule, options = {}) {
 // Keyed diff: reuses chip elements by capsule id, re-renders only changed ones,
 // and keeps `trailing` (the add-tag slot) as the last child.
 export function renderChips(container, capsules, options = {}) {
-    const { text, excludedSet = new Set(), trailing = null, isFavorite = null, tagStatus = null, tagAlias = null } = options;
+    const { text, excludedSet = new Set(), trailing = null, isFavorite = null, tagStatus = null } = options;
     const existing = new Map();
     for (const child of container.querySelectorAll(':scope > .tag-capsule-chip')) {
         existing.set(child.dataset.capsuleId, child);
@@ -212,13 +200,12 @@ export function renderChips(container, capsules, options = {}) {
         const excluded = excludedSet.has(String(capsule.value ?? '').trim().replaceAll(/\s+/g, ' ').toLocaleLowerCase());
         const favorite = typeof isFavorite === 'function' && isFavorite(capsule.value);
         const status = typeof tagStatus === 'function' ? tagStatus(capsule.value) : '';
-        const alias = typeof tagAlias === 'function' ? tagAlias(capsule.value) : '';
         let chip = existing.get(capsule.id);
         if (chip) {
             existing.delete(capsule.id);
-            if (chip.dataset.signature !== chipSignature(capsule, { excluded, favorite, status, alias })) updateChip(chip, capsule, { text, excluded, favorite, status, alias });
+            if (chip.dataset.signature !== chipSignature(capsule, { excluded, favorite, status })) updateChip(chip, capsule, { text, excluded, favorite, status });
         } else {
-            chip = createChip(capsule, { text, excluded, favorite, status, alias });
+            chip = createChip(capsule, { text, excluded, favorite, status });
         }
         ordered.push(chip);
     }

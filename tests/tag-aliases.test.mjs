@@ -9,14 +9,19 @@ import { aliasKey, aliasMapFor, translationAlias } from '../scripts/shared/tagAl
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('the chip alias shows only while the chip is hovered or focused (C2); the popover header always shows it', () => {
+test('the chips carry no translation (neither at rest, on hover nor on focus); the popover header carries it', () => {
     for (const file of ['html/index_dark.css', 'html/index_light.css']) {
         const css = read(file);
-        assert.match(css, /\.tag-capsule-chip-alias \{ display: none;/, `${file}: hidden at rest`);
-        assert.match(css, /\.tag-capsule-chip:hover \.tag-capsule-chip-alias,\s*\.tag-capsule-chip:focus \.tag-capsule-chip-alias,\s*\.tag-capsule-chip:focus-visible \.tag-capsule-chip-alias \{ display: inline; \}/, `${file}: shown on hover / focus`);
+        assert.doesNotMatch(css, /tag-capsule-chip-alias/, `${file}: no chip alias rule`);
         assert.match(css, /\.tag-weight-popover-title-alias \{/, `${file}: translation line in the popover header`);
     }
+    assert.doesNotMatch(read('scripts/renderer/components/tagCapsuleChip.js'), /alias/i, 'the chip renders no translation');
     assert.match(read('scripts/renderer/components/weightPopover.js'), /function applyTitleAlias\(\)/);
+});
+
+test('text the chips write back is not answered with tag suggestions', () => {
+    assert.match(read('scripts/renderer/components/tagCapsuleField.js'), /new CustomEvent\('input', \{ bubbles: true, detail: \{ source: 'capsules' \} \}\)/);
+    assert.match(read('scripts/renderer/tagAutoComplete.js'), /event\?\.detail\?\.source === 'capsules'/);
 });
 
 test('the translation is the first non-ASCII alias, not the English synonym in front of it', () => {

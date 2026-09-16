@@ -220,7 +220,12 @@ export function setupSuggestionSystem() {
             if (item) applySuggestion(item.dataset.value);
         });
 
-        textbox.addEventListener('input', debounce(async () => {
+        textbox.addEventListener('input', debounce(async (event) => {
+            // text rewritten by the capsule field (chip toggle, weight, order): nothing was typed
+            if (event?.detail?.source === 'capsules') {
+                suggestionBox.style.display = 'none';
+                return;
+            }
             if (skipSuggestion) {
                 skipSuggestion = false;
                 return; 
