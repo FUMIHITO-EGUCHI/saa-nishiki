@@ -34,25 +34,47 @@ export function firstToken(command) {
 }
 
 // How to run the configured launch command:
-//   .ps1        -> powershell -NoProfile -ExecutionPolicy Bypass -File <script>  (rest as args)
+//   .ps1        -> Windows: cmd /c "powershell -NoProfile -ExecutionPolicy Bypass -Command & '<script>' <rest> ..."
+//                  elsewhere: pwsh -NoProfile -ExecutionPolicy Bypass -File <script> <rest>
 //   .cmd / .bat -> cmd /c "<command line>"
 //   anything else runs through the shell as typed (python.exe main.py --port ...).
-export function launchSpec(command, platform = process.platform) {
+//
+// The spawn is detached (ComfyUI must outlive SAA), which on Windows means the
+// child gets no console. powershell.exe / pwsh.exe started that way exit at once
+// with code 0 and print nothing, so cmd.exe hosts PowerShell instead; and since a
+// console-less PowerShell also drops its stdout, `options.log` names the file the
+// script's output is appended to (Out-File writes it as a file, which works).
+export function launchSpec(command, platform = process.platform, { log = '' } = {}) {
     const text = String(command ?? '').trim();
     if (!text) return null;
     const script = firstToken(text);
     const rest = text.slice(text.indexOf(script) + script.length).replace(/^"/, '').trim();
     const extension = (script.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
+    if (extension === 'ps1' && platform === 'win32') {
+        const call = `& '${psQuote(script)}'${rest ? ` ${rest}` : ''}`;
+        const tee = log ? ` *>&1 | Out-File -Append -Encoding utf8 -FilePath '${psQuote(log)}'` : '';
+        // no double quotes inside: the whole -Command "..." is one cmd.exe argument
+        const onError = log ? `$_ | Out-File -Append -Encoding utf8 -FilePath '${psQuote(log)}'; exit 1` : 'exit 1';
+        const inner = `try { ${call}${tee} } catch { ${onError} }; exit $LASTEXITCODE`;
+        const line = `powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${inner}"`;
+        // selfLogged: the caller must not hand the log to the child as stdout / stderr —
+        // Out-File cannot open a file another handle already has open for writing
+        return { file: 'cmd.exe', args: ['/d', '/s', '/c', `"${line}"`], shell: false, cwd: directoryOf(script), windowsVerbatimArguments: true, selfLogged: Boolean(log) };
+    }
     if (extension === 'ps1') {
-        const shell = platform === 'win32' ? 'powershell.exe' : 'pwsh';
         const args = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script];
         if (rest) args.push(...rest.split(/\s+/));
-        return { file: shell, args, shell: false, cwd: directoryOf(script) };
+        return { file: 'pwsh', args, shell: false, cwd: directoryOf(script) };
     }
     if (platform === 'win32' && (extension === 'cmd' || extension === 'bat')) {
         return { file: 'cmd.exe', args: ['/d', '/s', '/c', `"${text}"`], shell: false, cwd: directoryOf(script), windowsVerbatimArguments: true };
     }
     return { file: text, args: [], shell: true, cwd: directoryOf(script) };
+}
+
+// Inside a PowerShell single-quoted string only the quote itself needs escaping.
+function psQuote(text) {
+    return String(text ?? '').replaceAll("'", "''");
 }
 
 function directoryOf(file) {

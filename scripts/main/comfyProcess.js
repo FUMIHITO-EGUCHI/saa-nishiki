@@ -114,8 +114,9 @@ export async function startComfy(settings) {
 
     if ((await comfyHealth(port)).ok) return { ok: true, action: 'start', message: `already running on 127.0.0.1:${port}`, running: true };
 
-    const spec = launchSpec(command);
     const file = logFile();
+    // the log is passed on: a .ps1 on Windows writes its output there itself (see launchSpec)
+    const spec = launchSpec(command, process.platform, { log: file });
     setPhase('starting', `running ${command}`);
     console.log(CAT, 'start:', spec.file, spec.args.join(' '));
 
@@ -123,18 +124,22 @@ export async function startComfy(settings) {
     try {
         const out = fs.openSync(file, 'a');
         fs.writeSync(out, `\n===== ${new Date().toISOString()} start: ${command}\n`);
+        // a self-logging spec appends to the file itself, so it must not inherit our handle
+        if (spec.selfLogged) fs.closeSync(out);
         const child = spawn(spec.file, spec.args, {
             cwd: spec.cwd && fs.existsSync(spec.cwd) ? spec.cwd : undefined,
             shell: spec.shell,
             windowsHide: true,
             windowsVerbatimArguments: spec.windowsVerbatimArguments === true,
             detached: true,             // ComfyUI outlives SAA: closing the window must not kill a run
-            stdio: ['ignore', out, out],
+                                        // (on Windows a non-detached child dies with the app; a detached
+                                        // one has no console, which launchSpec works around for .ps1)
+            stdio: spec.selfLogged ? 'ignore' : ['ignore', out, out],
         });
         child.on('exit', (code, signal) => { exited = { code, signal }; });
         child.on('error', error => { exited = { code: -1, signal: null, error: error.message }; });
         child.unref();
-        fs.closeSync(out);
+        if (!spec.selfLogged) fs.closeSync(out);
     } catch (error) {
         setPhase('idle');
         return { ok: false, action: 'start', message: `launch failed: ${error?.message ?? error}` };
