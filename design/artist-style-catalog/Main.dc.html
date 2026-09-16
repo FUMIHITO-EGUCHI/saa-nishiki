@@ -1,0 +1,129 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+    .slot-trigger:hover { background: #393941 !important; }
+    .tool-btn:hover { background: #393941 !important; }
+  </style>
+</helmet>
+<div style="width: 640px; padding: 16px; background: #111111; box-sizing: border-box; color: #e8e8ea;">
+  <div style="display: flex; flex-direction: column; gap: 10px;">
+
+    <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border-bottom: 1px solid #3a3a40; box-sizing: border-box;">
+        <span style="font-weight: 600; font-size: 12.5px; white-space: nowrap;">Characters &amp; Views</span>
+        <span style="font-size: 11px; color: #9a9aa3;">Diffusion · cast</span>
+      </div>
+      <div style="padding: 8px 10px 10px;">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+          <div style="min-width: 0;">
+            <label style="display: block; margin-bottom: 4px; font-size: 11.5px; color: #bdbdc4;">Character 1</label>
+            <div style="display: grid; grid-template-columns: 64px minmax(0, 1fr) 40px; gap: 4px;">
+              <input value="@reimu" style="min-width: 0; min-height: 28px; padding: 3px 6px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #4da3ff; font: inherit; font-size: 12px; box-sizing: border-box;">
+              <button class="slot-trigger" style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 13px; text-align: left; overflow: hidden; cursor: pointer;"><span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">hakurei reimu</span></button>
+              <input value="1.00" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+            </div>
+          </div>
+          <div style="min-width: 0;">
+            <label style="display: block; margin-bottom: 4px; font-size: 11.5px; color: #bdbdc4;">Character 2</label>
+            <div style="display: grid; grid-template-columns: 64px minmax(0, 1fr) 40px; gap: 4px;">
+              <input value="@marisa" style="min-width: 0; min-height: 28px; padding: 3px 6px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #4da3ff; font: inherit; font-size: 12px; box-sizing: border-box;">
+              <button class="slot-trigger" style="display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 13px; text-align: left; overflow: hidden; cursor: pointer;"><span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">kirisame marisa</span></button>
+              <input value="1.00" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 4px; justify-content: flex-end; margin: 4px 0 0;">
+          <button style="min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font: inherit; font-size: 13px; line-height: 1; cursor: pointer;">+</button>
+          <button style="min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font: inherit; font-size: 13px; line-height: 1; cursor: pointer;">−</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border-bottom: 1px solid #3a3a40; box-sizing: border-box;">
+        <span style="font-weight: 600; font-size: 12.5px; white-space: nowrap; color: #e0c080;">Artist</span>
+        <span style="font-size: 11px; color: #9a9aa3;">Diffusion only · sent as @name · 1 recommended, 3 max</span>
+      </div>
+      <div style="padding: 8px 10px 10px;">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+          <div style="min-width: 0;">
+            <label style="display: block; margin-bottom: 4px; font-size: 11.5px; color: #bdbdc4;">Artist 1</label>
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 4px;">
+              <button class="slot-trigger" style="display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 13px; text-align: left; overflow: hidden; cursor: pointer;">
+<span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-weight: 600;">@</span>ciloranko</span>
+              </button>
+              <input value="1.00" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+            </div>
+          </div>
+          <div style="min-width: 0;">
+            <label style="display: block; margin-bottom: 4px; font-size: 11.5px; color: #bdbdc4;">Artist 2</label>
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 4px;">
+              <button class="slot-trigger" style="display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #77777f; font: inherit; font-size: 13px; text-align: left; overflow: hidden; cursor: pointer;">
+<span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">None</span>
+              </button>
+              <input value="1.00" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #77777f; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 4px; justify-content: flex-end; margin: 4px 0 0;">
+          <button style="min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font: inherit; font-size: 13px; line-height: 1; cursor: pointer;">+</button>
+          <button style="min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font: inherit; font-size: 13px; line-height: 1; cursor: pointer;">−</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border-bottom: 1px solid #3a3a40; box-sizing: border-box;">
+        <span style="font-weight: 600; font-size: 12.5px;">Prompts</span>
+        <span style="font-size: 11px; color: #9a9aa3;">unchanged · Style stays plain tags, no artist here</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 8px 10px 10px;">
+        <div style="display: grid; grid-template-columns: 136px minmax(0, 1fr) auto; column-gap: 12px; align-items: start;">
+          <div style="display: flex; align-items: center; gap: 5px; min-height: 26px; margin-top: 4px;">
+            <span style="width: 14px; height: 14px; border: 1px solid #4da3ff; border-radius: 50%; background: #4da3ff; box-shadow: inset 0 0 0 3px #1c1c20;"></span>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#bdbdc4" stroke-width="1.6" style="transform: rotate(90deg);"><path d="M6 3l5 5-5 5"></path></svg>
+            <span style="font-size: 12px; font-weight: 500; color: #969ca8;">Style</span>
+            <span style="font-size: 10px; color: #9a9aa3;">2</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 26px; margin: 2px 0; padding: 6px 8px; border: 1px solid #474d5b; border-radius: 6px; background: #16181d;">
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 23px; padding: 0 10px 2px 0; border: 1px solid #666; border-radius: 12px; background: #2a2a2f; font-size: 12px;"><i style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 100%; border-right: 1px solid rgba(255,255,255,0.10); border-radius: 12px 0 0 12px; background: rgba(77,163,255,0.14);"><b style="width: 7px; height: 7px; border-radius: 50%; background: #4da3ff; opacity: 0.55;"></b></i>pale color</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 23px; padding: 0 10px 2px 0; border: 1px solid #666; border-radius: 12px; background: #2a2a2f; font-size: 12px;"><i style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 100%; border-right: 1px solid rgba(255,255,255,0.10); border-radius: 12px 0 0 12px; background: rgba(77,163,255,0.14);"><b style="width: 7px; height: 7px; border-radius: 50%; background: #4da3ff; opacity: 0.55;"></b></i>soft lighting</span>
+            <span style="display: inline-flex; align-items: center; height: 23px; padding: 0 10px 2px 7px; border: 1px solid #4a4a52; border-radius: 12px; color: #9a9aa3; font-size: 11px;">+ Tag</span>
+          </div>
+          <div style="display: flex; gap: 5px; margin: 5px 4px 0 0; opacity: 0.35;"><span style="font-size: 12px; color: #bdbdc4;">⋯</span></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 136px minmax(0, 1fr) auto; column-gap: 12px; align-items: start;">
+          <div style="display: flex; align-items: center; gap: 5px; min-height: 26px; margin-top: 4px;">
+            <span style="width: 14px; height: 14px; border: 1px solid #4da3ff; border-radius: 50%; background: #4da3ff; box-shadow: inset 0 0 0 3px #1c1c20;"></span>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#bdbdc4" stroke-width="1.6" style="transform: rotate(90deg);"><path d="M6 3l5 5-5 5"></path></svg>
+            <span style="font-size: 12px; font-weight: 500; color: #e07070;">Negative</span>
+            <span style="font-size: 10px; color: #9a9aa3;">3 +3</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 26px; margin: 2px 0; padding: 6px 8px; border: 1px solid #474d5b; border-radius: 6px; background: #16181d;">
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 23px; padding: 0 10px 2px 0; border: 1px solid #666; border-radius: 12px; background: #2a2a2f; font-size: 12px;"><i style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 100%; border-right: 1px solid rgba(255,255,255,0.10); border-radius: 12px 0 0 12px; background: rgba(77,163,255,0.14);"><b style="width: 7px; height: 7px; border-radius: 50%; background: #4da3ff; opacity: 0.55;"></b></i>worst quality</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 23px; padding: 0 10px 2px 0; border: 1px solid #666; border-radius: 12px; background: #2a2a2f; font-size: 12px;"><i style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 100%; border-right: 1px solid rgba(255,255,255,0.10); border-radius: 12px 0 0 12px; background: rgba(77,163,255,0.14);"><b style="width: 7px; height: 7px; border-radius: 50%; background: #4da3ff; opacity: 0.55;"></b></i>low quality</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 23px; padding: 0 10px 2px 0; border: 1px solid #666; border-radius: 12px; background: #2a2a2f; font-size: 12px;"><i style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 100%; border-right: 1px solid rgba(255,255,255,0.10); border-radius: 12px 0 0 12px; background: rgba(77,163,255,0.14);"><b style="width: 7px; height: 7px; border-radius: 50%; background: #4da3ff; opacity: 0.55;"></b></i>lowres</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 23px; padding: 0 10px 2px 8px; border: 1px dashed #5a5a62; border-radius: 12px; color: #9a9aa3; font-size: 11px;">artist name</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 23px; padding: 0 10px 2px 8px; border: 1px dashed #5a5a62; border-radius: 12px; color: #9a9aa3; font-size: 11px;">signature</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 23px; padding: 0 10px 2px 8px; border: 1px dashed #5a5a62; border-radius: 12px; color: #9a9aa3; font-size: 11px;">watermark</span>
+            <span style="display: inline-flex; align-items: center; height: 23px; padding: 0 10px 2px 7px; border: 1px solid #4a4a52; border-radius: 12px; color: #9a9aa3; font-size: 11px;">+ Tag</span>
+          </div>
+          <div style="display: flex; gap: 5px; margin: 5px 4px 0 0; opacity: 0.35;"><span style="font-size: 12px; color: #bdbdc4;">⋯</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

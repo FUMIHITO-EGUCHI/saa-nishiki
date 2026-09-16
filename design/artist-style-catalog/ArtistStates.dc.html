@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #77bbff; }
+    .slot-trigger:hover { background: #393941 !important; }
+  </style>
+</helmet>
+<div style="width: 640px; padding: 16px; background: #111111; box-sizing: border-box; color: #e8e8ea;">
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #9a9aa3;">1 · EMPTY (ONE SLOT)</div>
+      <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; overflow: hidden;">
+        <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border-bottom: 1px solid #3a3a40; box-sizing: border-box;">
+          <span style="font-weight: 600; font-size: 12.5px; color: #e0c080;">Artist</span>
+          <span style="font-size: 11px; color: #9a9aa3;">Anima looks flat without one</span>
+        </div>
+        <div style="padding: 8px 10px 10px;">
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+            <div style="min-width: 0;">
+              <label style="display: block; margin-bottom: 4px; font-size: 11.5px; color: #bdbdc4;">Artist 1</label>
+              <div style="display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 4px;">
+                <button class="slot-trigger" style="display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #77777f; font: inherit; font-size: 13px; text-align: left; cursor: pointer;">
+                  <span style="flex: 1; min-width: 0;">None</span>
+                </button>
+                <input value="1.00" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #77777f; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 4px; justify-content: flex-end; margin: 6px 0 0;">
+            <button style="min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font: inherit; font-size: 13px; line-height: 1; cursor: pointer;">+</button>
+            <button style="min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #77777f; font: inherit; font-size: 13px; line-height: 1; cursor: pointer;">−</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #9a9aa3;">2 · THREE SLOTS (MAX) · WEIGHTED</div>
+      <div style="border: 1px solid #3a3a40; border-radius: 8px; background: #1c1c20; overflow: hidden;">
+        <div style="display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border-bottom: 1px solid #3a3a40; box-sizing: border-box;">
+          <span style="font-weight: 600; font-size: 12.5px; color: #e0c080;">Artist</span>
+          <span style="font-size: 11px; color: #ffb454;">3 artists blend · one is usually enough</span>
+        </div>
+        <div style="padding: 8px 10px 10px;">
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+            <div style="min-width: 0;">
+              <label style="display: block; margin-bottom: 4px; font-size: 11.5px; color: #bdbdc4;">Artist 1</label>
+              <div style="display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 4px;">
+                <button class="slot-trigger" style="display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 13px; text-align: left; overflow: hidden; cursor: pointer;">
+                  <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-weight: 600;">@</span>ciloranko</span>
+                </button>
+                <input value="1.20" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #4e7a48; border-radius: 5px; background: #222222; color: #9ee493; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+              </div>
+            </div>
+            <div style="min-width: 0;">
+              <label style="display: block; margin-bottom: 4px; font-size: 11.5px; color: #bdbdc4;">Artist 2</label>
+              <div style="display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 4px;">
+                <button class="slot-trigger" style="display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 13px; text-align: left; overflow: hidden; cursor: pointer;">
+                  <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-weight: 600;">@</span>nnn yryr</span>
+                </button>
+                <input value="0.80" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #7a5c3a; border-radius: 5px; background: #222222; color: #e9b27a; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+              </div>
+            </div>
+            <div style="min-width: 0;">
+              <label style="display: block; margin-bottom: 4px; font-size: 11.5px; color: #bdbdc4;">Artist 3</label>
+              <div style="display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 4px;">
+                <button class="slot-trigger" style="display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 4px 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 13px; text-align: left; overflow: hidden; cursor: pointer;">
+                  <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-weight: 600;">@</span>wlop</span>
+                </button>
+                <input value="1.00" style="min-width: 0; min-height: 28px; padding: 3px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-family: Consolas, 'Cascadia Mono', 'Courier New', monospace; font-size: 12px; text-align: center; box-sizing: border-box;">
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 4px; justify-content: flex-end; margin: 6px 0 0;">
+            <button style="min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #77777f; font: inherit; font-size: 13px; line-height: 1; cursor: pointer;">+</button>
+            <button style="min-width: 26px; min-height: 22px; padding: 0 6px; border: 1px solid #4a4a52; border-radius: 5px; background: #222226; color: #bdbdc4; font: inherit; font-size: 13px; line-height: 1; cursor: pointer;">−</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #9a9aa3;">3 · CHECKPOINT (ILLUSTRIOUS): CARD HIDDEN</div>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 14px 12px; border: 1px dashed #3a3a40; border-radius: 8px; background: #16181d; color: #77777f; font-size: 11.5px;">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#77777f" stroke-width="1.5"><path d="M2 8s2.5-4 6-4 6 4 6 4-2.5 4-6 4-6-4-6-4z"></path><path d="M2 2l12 12"></path></svg>
+        <span>The Artist card only exists for Diffusion. On Checkpoint it is hidden and its slots are kept for the next switch back.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
