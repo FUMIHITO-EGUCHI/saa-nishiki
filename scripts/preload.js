@@ -14,6 +14,7 @@ let okm = {
   mainGallery_appendImageData: null,
   customOverlay_updatePreview: null,
   customOverlay_progressBar: null,
+  customOverlay_status: null,
   rightClickMenu_spellCheck: null
 }
 
@@ -32,6 +33,11 @@ contextBridge.exposeInMainWorld('okm', {
     if (typeof callback === 'function') {
       okm.customOverlay_progressBar = callback;
     } 
+  },
+  setup_customOverlay_status: (callback) => {
+    if (typeof callback === 'function') {
+      okm.customOverlay_status = callback;
+    }
   },
   setup_rightClickMenu_spellCheck: (callback) => {
     if (typeof callback === 'function') {
@@ -52,7 +58,12 @@ const generateFunctions = {
   updateProgress(progress, totalProgress) {
     if(okm.customOverlay_progressBar)
       okm.customOverlay_progressBar(progress, totalProgress);
-  }, 
+  },
+  // a wait that is not sampling (a ComfyUI restart for fast-mode flags): { key, text, args } | null
+  updateStatus(status) {
+    if(okm.customOverlay_status)
+      okm.customOverlay_status(status);
+  },
   rightClickMenu_spellCheck(suggestions, word) {
     if(okm.rightClickMenu_spellCheck)
       okm.rightClickMenu_spellCheck(suggestions, word);

@@ -11,6 +11,8 @@ let MODELLIST_WEBUI = ['Default'];
 let MODELLIST_ALL_COMFYUI = MODELLIST_COMFYUI;
 let MODELLIST_ALL_WEBUI = MODELLIST_WEBUI;
 let LORALIST_COMFYUI = ['None'];
+// where LORALIST_COMFYUI came from: 'local' (folder scan) or the remote source ('pod' / 'https')
+let LORALIST_COMFYUI_SOURCE = 'local';
 let LORALIST_WEBUI = ['None'];
 let CONTROLNET_COMFYUI = ['None'];
 let CONTROLNET_WEBUI = ['None'];
@@ -305,6 +307,7 @@ function updateControlNetList(model_path_comfyui, model_path_webui, search_subfo
 
 function updateLoRAList(model_path_comfyui, model_path_webui, search_subfolder) {
     // --- ComfyUI ---
+    LORALIST_COMFYUI_SOURCE = 'local';
     const customComfyPaths = resolveCustomPaths(['comfyui'], 'lora');    
     if (customComfyPaths.length > 0) {
         LORALIST_COMFYUI = scanMultipleDirectories(customComfyPaths, search_subfolder, '.safetensors');
@@ -845,6 +848,11 @@ function getTextEncoderList(apiInterface) {
     }
 }
 
+// Which backend the ComfyUI LoRA list describes: 'local', 'pod' or 'https'.
+function getLoRAListSource() {
+    return LORALIST_COMFYUI_SOURCE;
+}
+
 function getLoRAList(apiInterface) {
     if (apiInterface === 'ComfyUI') {
         return LORALIST_COMFYUI;
@@ -930,7 +938,7 @@ const LATENT_UPSCALERS_REMOTE = ['Latent (nearest-exact)', 'Latent (bilinear)', 
 // The remote ComfyUI's own lists (issue #8) replace the local scan for the
 // ComfyUI interface; a null entry keeps the local list for that kind.
 // Returns the kinds that were applied.
-function applyRemoteModelLists(lists, { model_filter_keyword = '*', model_filter_keyword_diffusion = '*', model_filter = false } = {}) {
+function applyRemoteModelLists(lists, { model_filter_keyword = '*', model_filter_keyword_diffusion = '*', model_filter = false } = {}, source = 'remote') {
     const applied = [];
     const take = (value, fallback) => (Array.isArray(value) && value.length > 0 ? [...value] : fallback);
     if (Array.isArray(lists?.checkpoints)) {
@@ -939,7 +947,7 @@ function applyRemoteModelLists(lists, { model_filter_keyword = '*', model_filter
         if (MODELLIST_COMFYUI.length === 0) MODELLIST_COMFYUI = ['Default'];
         applied.push('checkpoints');
     }
-    if (Array.isArray(lists?.loras)) { LORALIST_COMFYUI = take(lists.loras, ['None']); applied.push('loras'); }
+    if (Array.isArray(lists?.loras)) { LORALIST_COMFYUI = take(lists.loras, ['None']); LORALIST_COMFYUI_SOURCE = source; applied.push('loras'); }
     if (Array.isArray(lists?.vae)) { VAE_COMFYUI = take(lists.vae, ['None']); applied.push('vae'); }
     if (Array.isArray(lists?.upscalers)) {
         UPSCALER_COMFYUI = lists.upscalers.length > 0 ? [...lists.upscalers, ...LATENT_UPSCALERS_REMOTE] : ['None', ...LATENT_UPSCALERS_REMOTE];
@@ -966,6 +974,7 @@ export {
     getDiffusionModelList,
     getTextEncoderList,
     getLoRAList,
+    getLoRAListSource,
     getControlNetList,
     getUpscalerList,
     getADetailerList,

@@ -1,4 +1,4 @@
-import { from_main_updateGallery, from_main_updatePreview, from_main_customOverlayProgress } from '../../renderer/generate_backend.js';
+import { from_main_updateGallery, from_main_updatePreview, from_main_customOverlayProgress, from_main_customOverlayStatus } from '../../renderer/generate_backend.js';
 import { showDialog } from '../../renderer/components/myDialog.js';
 
 function setHTMLTitle(title) {
@@ -57,6 +57,7 @@ export async function initWebSocket(reConnect = false) {
             registerCallback('updatePreview', from_main_updatePreview);
             registerCallback('appendImage', from_main_updateGallery);
             registerCallback('updateProgress', from_main_customOverlayProgress);
+            registerCallback('updateStatus', from_main_customOverlayStatus);
         }
         return true;
     } catch (error) {

@@ -68,6 +68,8 @@ The AI result is shown in the **AI tab of the Info panel** instead of a pop-up a
 Settings → Backend → **Fast generation** applies a step-distillation LoRA (DMD2 / Hyper-SD / Lightning / LCM) and overrides steps, CFG, sampler and scheduler for the base, Hires fix and ADetailer passes. Works on the local ComfyUI and on the pod.
 Measured on a RTX 4070 SUPER (600×1024, Hires 1.5x, ADetailer): 30 steps ≈ 29 s → DMD2 8 steps ≈ 16 s.
 
+The Diffusion (Anima) model type has its own set: the Anima Turbo LoRA v0.2 at 0.8, 8 steps, CFG 1.5, euler / simple, plus the ComfyUI flags `--use-sage-attention --fast`. Those flags are process-wide, so before a run that needs other flags SAA restarts the local ComfyUI through Settings → Backend → ComfyUI process → launch command (which has to pass extra arguments on to `main.py`). SAA only takes away flags it launched ComfyUI with itself. Measured on a RTX 4070 (832×1216, waiANIMA): 25 steps ≈ 17–19 s → Turbo 8 steps with both flags ≈ 4.8 s. `--fast` shifts colours and small details a little. The LoRA works on the pod too; the flags only on the local ComfyUI.
+
 ## Runpod pod target
 Register a Runpod pod (SSH target and key) in Settings and switch image generation between **GPU: Local** and **GPU: Pod** with the status pill in the toolbar. Generated images stream back over SSH and are saved locally only; nothing is written to the pod's disks. The pod can also serve the LLM features (AI prompt / refine). `https` / `wss` backends with authentication are supported for pod endpoints.
 The AI prompt / Refine requests go to an Ollama on the pod through the same SSH relay. Setup, the restore script for pod restarts and troubleshooting: [README_POD.md](README_POD.md).

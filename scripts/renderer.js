@@ -21,7 +21,7 @@ import { setupCollapsed, setupModelReloadToggle,
     setupFuctionKeys, setupSwapToggle, reloadFiles, doSwap } from './renderer/components/myCollapsed.js';
 import { setupTextbox, setupInfoBox } from './renderer/components/myTextbox.js';
 import { setupPromptFieldManager } from './renderer/components/promptFieldManager.js';
-import { from_main_updateGallery, from_main_updatePreview, from_main_customOverlayProgress } from './renderer/generate_backend.js';
+import { from_main_updateGallery, from_main_updatePreview, from_main_customOverlayProgress, from_main_customOverlayStatus } from './renderer/generate_backend.js';
 import { setupLoRA } from './renderer/slots/myLoRASlot.js';
 import { setupControlNet } from './renderer/slots/myControlNetSlot.js';
 import { setupJsonSlot } from './renderer/slots/myJsonSlot.js';
@@ -60,6 +60,7 @@ function afterDOMinit() {
         globalThis.okm.setup_mainGallery_appendImageData(from_main_updateGallery);
         globalThis.okm.setup_customOverlay_updatePreview(from_main_updatePreview);
         globalThis.okm.setup_customOverlay_progressBar(from_main_customOverlayProgress);
+        globalThis.okm.setup_customOverlay_status?.(from_main_customOverlayStatus);
         globalThis.okm.setup_rightClickMenu_spellCheck(addSpellCheckSuggestions);
         if (globalThis.initialized) {
             setNormal();
@@ -163,6 +164,15 @@ export async function setupLeftRight(SETTINGS, FILES, LANG) {
 function setFastSetting(key, value) {
     globalThis.globalSettings[key] = value;
     globalThis.settingsPersistence?.flush?.();
+}
+
+// A launch-flag field commits when it loses focus, not per keystroke: half a flag ("--f")
+// handed to the main process would restart ComfyUI with it if a run started meanwhile.
+function launchFlagsTextbox(containerId, title, key) {
+    const box = setupTextbox(containerId, title, { value: globalThis.globalSettings[key] ?? '', maxLines: 1 }, true, null);
+    const textarea = document.querySelector(`.myTextbox-${containerId}-textarea`);
+    textarea?.addEventListener('change', () => setFastSetting(key, textarea.value.trim()));
+    return box;
 }
 
 // A batch with a fixed seed and nothing else varying repeats the same image; ask first.
@@ -358,6 +368,26 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
             (index, value) => setFastSetting('api_fast_sampler', Array.isArray(value) ? value[0] : value), 20, false, true),
         api_fast_scheduler: mySimpleList('system-settings-api-fast-scheduler', LANG.api_fast_scheduler, ['sgm_uniform'],
             (index, value) => setFastSetting('api_fast_scheduler', Array.isArray(value) ? value[0] : value), 20, false, true),
+        // process-wide ComfyUI flags per fast set (scripts/shared/comfyLaunchArgs.js)
+        api_fast_comfy_args: launchFlagsTextbox('system-settings-api-fast-comfy-args', LANG.api_fast_comfy_args, 'api_fast_comfy_args'),
+        // Diffusion (Anima) fast set: Anima Turbo LoRA
+        api_fast_diff_lora: mySimpleList('system-settings-api-fast-diff-lora', LANG.api_fast_diff_lora,
+            ['None', ...(Array.isArray(FILES.loraList) ? FILES.loraList : [])],
+            (index, value) => setFastSetting('api_fast_diff_lora', Array.isArray(value) ? value[0] : value), 20, true, true),
+        api_fast_diff_lora_strength: setupSlider('system-settings-api-fast-diff-lora-strength', LANG.api_fast_diff_lora_strength,
+            {min:0, max:2, step:0.05, defaultValue:SETTINGS.api_fast_diff_lora_strength},
+            (value) => setFastSetting('api_fast_diff_lora_strength', value)),
+        api_fast_diff_steps: setupSlider('system-settings-api-fast-diff-steps', LANG.api_fast_diff_steps,
+            {min:1, max:30, step:1, defaultValue:SETTINGS.api_fast_diff_steps},
+            (value) => setFastSetting('api_fast_diff_steps', value)),
+        api_fast_diff_cfg: setupSlider('system-settings-api-fast-diff-cfg', LANG.api_fast_diff_cfg,
+            {min:0, max:5, step:0.1, defaultValue:SETTINGS.api_fast_diff_cfg},
+            (value) => setFastSetting('api_fast_diff_cfg', value)),
+        api_fast_diff_sampler: mySimpleList('system-settings-api-fast-diff-sampler', LANG.api_fast_diff_sampler, ['euler'],
+            (index, value) => setFastSetting('api_fast_diff_sampler', Array.isArray(value) ? value[0] : value), 20, false, true),
+        api_fast_diff_scheduler: mySimpleList('system-settings-api-fast-diff-scheduler', LANG.api_fast_diff_scheduler, ['simple'],
+            (index, value) => setFastSetting('api_fast_diff_scheduler', Array.isArray(value) ? value[0] : value), 20, false, true),
+        api_fast_diff_comfy_args: launchFlagsTextbox('system-settings-api-fast-diff-comfy-args', LANG.api_fast_diff_comfy_args, 'api_fast_diff_comfy_args'),
 
         model_filter:setupCheckbox('system-settings-api-fliter', LANG.model_filter, SETTINGS.model_filter,
             false, (value) => {

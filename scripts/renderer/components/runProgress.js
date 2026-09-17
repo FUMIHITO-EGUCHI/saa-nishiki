@@ -23,6 +23,17 @@ export function parseLoadingMessage(message) {
     };
 }
 
+// A main-process wait that is not sampling (a ComfyUI restart for fast-mode launch
+// flags) arrives as { key, text, args }: the language key's template, else the English
+// `text`, with {0}, {1} … filled from args. null / anything else → ''.
+export function formatBackendStatus(status, language = {}) {
+    if (!status || typeof status !== 'object') return '';
+    const own = language?.[status.key];
+    const template = typeof own === 'string' && own ? own : String(status.text ?? '');
+    const args = Array.isArray(status.args) ? status.args : [];
+    return template.replaceAll(/\{(\d+)\}/g, (match, index) => String(args[Number(index)] ?? ''));
+}
+
 export function formatElapsed(ms) {
     const seconds = Math.max(0, Math.floor(ms / 1000));
     if (seconds < 60) return `${seconds} s`;
@@ -63,7 +74,8 @@ export function setupRunProgress({ root, text = {} } = {}) {
 
     function tick() {
         const parsed = parseLoadingMessage(globalThis.generate?.loadingMessage);
-        title.textContent = parsed.label || (text.generating ?? 'Generating…');
+        // a backend wait (fast-mode ComfyUI restart) speaks over the queue label while it lasts
+        title.textContent = globalThis.generate?.backendStatus || parsed.label || (text.generating ?? 'Generating…');
         title.title = parsed.extra;
         timer.textContent = formatElapsed(Date.now() - startTime);
         const step = parsed.step ?? lastStep;
@@ -96,6 +108,7 @@ export function setupRunProgress({ root, text = {} } = {}) {
     function stop() {
         if (tickHandle) clearInterval(tickHandle);
         tickHandle = null;
+        if (globalThis.generate) globalThis.generate.backendStatus = ''; // a failed restart never sends its "done"
         progressRow.hidden = true;
         root.classList.remove('is-running');
     }

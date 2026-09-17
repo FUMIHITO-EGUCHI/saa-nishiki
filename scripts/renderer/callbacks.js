@@ -182,6 +182,7 @@ async function applyModelType(value, previous, { clearPrompts }) {
     document.body.classList.toggle('cast-mode', value !== 'Checkpoint');
     globalThis.uiShell?.modelTypeUi?.render?.();
     globalThis.uiShell?.proseCard?.render?.();
+    globalThis.uiShell?.fastToggle?.render?.(); // its tooltip names the type's fast set
     globalThis.prompt?.fieldManager?.refresh?.();
     // the settings modal's Checkpoint / Diffusion groups follow the type at once (they used
     // to be re-evaluated only when the modal was next opened)
@@ -247,6 +248,8 @@ export async function callback_api_interface(index, selectedValue){
     const fastLoras = ['None', ...(Array.isArray(globalThis.cachedFiles.loraList) ? globalThis.cachedFiles.loraList : [])];
     globalThis.generate.api_fast_lora?.setValue(LANG.api_fast_lora, fastLoras);
     globalThis.generate.api_fast_lora?.updateDefaults(fastLoras.includes(SETTINGS.api_fast_lora) ? SETTINGS.api_fast_lora : 'None');
+    globalThis.generate.api_fast_diff_lora?.setValue(LANG.api_fast_diff_lora, fastLoras);
+    globalThis.generate.api_fast_diff_lora?.updateDefaults(fastLoras.includes(SETTINGS.api_fast_diff_lora) ? SETTINGS.api_fast_diff_lora : 'None');
 }
 
 // The Scene swaps the regional characters as data; refresh the thumbs then.

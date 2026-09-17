@@ -2,7 +2,7 @@ import { updateLanguage, updateSettings, SAMPLER_COMFYUI, SCHEDULER_COMFYUI, SAM
 import { setupButtonOverlay, customCommonOverlay } from '../renderer/customOverlay.js';
 import { toggleButtons, showCancelButtons } from '../renderer/components/myButtons.js';
 import { doSwap } from '../renderer/components/myCollapsed.js';
-import { from_main_updateGallery, from_main_updatePreview, from_main_customOverlayProgress } from '../renderer/generate_backend.js';
+import { from_main_updateGallery, from_main_updatePreview, from_main_customOverlayProgress, from_main_customOverlayStatus } from '../renderer/generate_backend.js';
 import { setupLoRA } from '../renderer/slots/myLoRASlot.js';
 import { setupControlNet } from '../renderer/slots/myControlNetSlot.js';
 import { setupJsonSlot } from '../renderer/slots/myJsonSlot.js';
@@ -26,6 +26,7 @@ function afterDOMinit() {
             registerCallback('updatePreview', from_main_updatePreview);
             registerCallback('appendImage', from_main_updateGallery);
             registerCallback('updateProgress', from_main_customOverlayProgress);
+            registerCallback('updateStatus', from_main_customOverlayStatus);
             if (globalThis.initialized) {
                 setNormal();                
 

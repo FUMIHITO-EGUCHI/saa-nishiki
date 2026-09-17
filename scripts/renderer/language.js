@@ -205,6 +205,14 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.generate.api_fast_cfg.setTitle(LANG.api_fast_cfg);
     globalThis.generate.api_fast_sampler.setTitle(LANG.api_fast_sampler);
     globalThis.generate.api_fast_scheduler.setTitle(LANG.api_fast_scheduler);
+    globalThis.generate.api_fast_comfy_args?.setTitle(LANG.api_fast_comfy_args);
+    globalThis.generate.api_fast_diff_lora?.setTitle(LANG.api_fast_diff_lora);
+    globalThis.generate.api_fast_diff_lora_strength?.setTitle(LANG.api_fast_diff_lora_strength);
+    globalThis.generate.api_fast_diff_steps?.setTitle(LANG.api_fast_diff_steps);
+    globalThis.generate.api_fast_diff_cfg?.setTitle(LANG.api_fast_diff_cfg);
+    globalThis.generate.api_fast_diff_sampler?.setTitle(LANG.api_fast_diff_sampler);
+    globalThis.generate.api_fast_diff_scheduler?.setTitle(LANG.api_fast_diff_scheduler);
+    globalThis.generate.api_fast_diff_comfy_args?.setTitle(LANG.api_fast_diff_comfy_args);
 
     globalThis.generate.model_filter.setTitle(LANG.model_filter);    
     globalThis.generate.model_filter_keyword.setTitle(LANG.model_filter_keyword);
@@ -469,6 +477,16 @@ export function updateSettings() {
     globalThis.generate.api_fast_sampler.updateDefaults(SAMPLER_COMFYUI.includes(SETTINGS.api_fast_sampler) ? SETTINGS.api_fast_sampler : 'lcm');
     globalThis.generate.api_fast_scheduler.setValue(LANG.api_fast_scheduler, SCHEDULER_COMFYUI);
     globalThis.generate.api_fast_scheduler.updateDefaults(SCHEDULER_COMFYUI.includes(SETTINGS.api_fast_scheduler) ? SETTINGS.api_fast_scheduler : 'sgm_uniform');
+    globalThis.generate.api_fast_comfy_args?.setValue(SETTINGS.api_fast_comfy_args ?? '');
+    globalThis.generate.api_fast_diff_lora?.updateDefaults(SETTINGS.api_fast_diff_lora || 'None');
+    globalThis.generate.api_fast_diff_lora_strength?.setValue(SETTINGS.api_fast_diff_lora_strength);
+    globalThis.generate.api_fast_diff_steps?.setValue(SETTINGS.api_fast_diff_steps);
+    globalThis.generate.api_fast_diff_cfg?.setValue(SETTINGS.api_fast_diff_cfg);
+    globalThis.generate.api_fast_diff_sampler?.setValue(LANG.api_fast_diff_sampler, SAMPLER_COMFYUI);
+    globalThis.generate.api_fast_diff_sampler?.updateDefaults(SAMPLER_COMFYUI.includes(SETTINGS.api_fast_diff_sampler) ? SETTINGS.api_fast_diff_sampler : 'euler');
+    globalThis.generate.api_fast_diff_scheduler?.setValue(LANG.api_fast_diff_scheduler, SCHEDULER_COMFYUI);
+    globalThis.generate.api_fast_diff_scheduler?.updateDefaults(SCHEDULER_COMFYUI.includes(SETTINGS.api_fast_diff_scheduler) ? SETTINGS.api_fast_diff_scheduler : 'simple');
+    globalThis.generate.api_fast_diff_comfy_args?.setValue(SETTINGS.api_fast_diff_comfy_args ?? '');
 
     globalThis.generate.hifix.setValue(SETTINGS.api_hf_enable);
     globalThis.hifix.scale.setValue(SETTINGS.api_hf_scale);

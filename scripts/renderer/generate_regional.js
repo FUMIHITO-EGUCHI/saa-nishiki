@@ -842,7 +842,10 @@ async function runComfyUI(apiInterface, generateData){
             result = await globalThis.api.runComfyUI_Regional(generateData);
         }
 
-        if(result.startsWith('Error')){
+        if (result === 'Error: Cancelled') {
+            // cancelled before the prompt was queued (e.g. while ComfyUI waited to restart for fast-mode flags)
+            breakNow = true;
+        } else if(result.startsWith('Error')){
             ret = LANG.gr_error_creating_image.replace('{0}',result).replace('{1}', apiInterface);
             retCopy = result;
             breakNow = true;

@@ -26,6 +26,10 @@ export function describeComfyProcess(reply, t = text) {
     }
     if (reply.ok === false) return reply.message || t('ui_comfy_proc_failed', 'failed');
     if (reply.action && reply.action !== 'state' && reply.message) return reply.message;
+    // fast-mode launch flags the running backend has (comfyLaunchArgs.js)
+    if (reply.running === true && Array.isArray(reply.fastFlags) && reply.fastFlags.length > 0) {
+        return `${t('ui_comfy_proc_flags', 'flags:')} ${reply.fastFlags.join(' ')}`;
+    }
     return '';
 }
 

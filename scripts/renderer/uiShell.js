@@ -255,8 +255,8 @@ function setupProseCard() {
 
 // ------------------------------------------------------- model type (Diffusion) wording
 // With the Diffusion model type the Characters card is the Cast and the Prompts card the
-// Scene; the run bar offers the Anima sampling defaults. Regional / Fast / Refiner /
-// ControlNet are hidden through body.cast-mode (index.css).
+// Scene; the run bar offers the Anima sampling defaults. Regional / Refiner / ControlNet
+// are hidden through body.cast-mode (index.css); Fast stays (its own Diffusion set).
 function setupModelTypeUi() {
     const charactersTitle = document.querySelector('.characters-card [data-ui-text="ui_characters_title"]');
     const charactersSub = document.querySelector('.characters-card [data-ui-text="ui_characters_sub"]');
@@ -796,7 +796,8 @@ function setupGpuToggle(onChanged) {
 }
 
 // ------------------------------------------------------- fast mode toggle
-// One-touch switch for the distillation-LoRA fast mode (Backend settings page).
+// One-touch switch for fast mode (Backend settings page): a distillation LoRA on a
+// Checkpoint, the Anima Turbo LoRA plus ComfyUI launch flags on Diffusion.
 // Only meaningful for ComfyUI; hidden on other backends.
 function setupFastToggle() {
     const pillHost = document.getElementById('header-status');
@@ -815,7 +816,9 @@ function setupFastToggle() {
         const on = SETTINGS.api_fast_enable === true;
         label.textContent = on ? uiText('ui_fast_mode_on', 'Fast: On') : uiText('ui_fast_mode_off', 'Fast: Off');
         button.classList.toggle('is-on', on);
-        button.title = uiText('ui_fast_mode_tip', 'Toggle the distillation-LoRA fast generation mode (Backend settings)');
+        button.title = SETTINGS.api_model_type === 'Diffusion'
+            ? uiText('ui_fast_mode_tip_diffusion', 'Toggle fast mode · Diffusion: Anima Turbo LoRA and ComfyUI flags; the local ComfyUI restarts before the next run when the flags change (Backend settings)')
+            : uiText('ui_fast_mode_tip', 'Toggle fast mode · Checkpoint: distillation LoRA (Backend settings)');
     };
 
     button.addEventListener('click', async () => {

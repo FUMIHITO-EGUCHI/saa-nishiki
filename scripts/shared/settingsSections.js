@@ -205,6 +205,18 @@ export const DEFAULT_SETTINGS = Object.freeze({
     api_fast_cfg: 1,
     api_fast_sampler: 'lcm',
     api_fast_scheduler: 'sgm_uniform',
+    // ComfyUI launch flags for the Checkpoint fast mode (scripts/shared/comfyLaunchArgs.js)
+    api_fast_comfy_args: '',
+    // Diffusion (Anima) fast mode: Anima Turbo LoRA v0.2 values measured on waiANIMA
+    // (0.8 · 8 steps · CFG 1.5 · euler / simple) plus SageAttention and --fast, which
+    // are ComfyUI launch flags: SAA restarts a local backend that lacks them
+    api_fast_diff_lora: 'anima-turbo-lora-v0.2.safetensors',
+    api_fast_diff_lora_strength: 0.8,
+    api_fast_diff_steps: 8,
+    api_fast_diff_cfg: 1.5,
+    api_fast_diff_sampler: 'euler',
+    api_fast_diff_scheduler: 'simple',
+    api_fast_diff_comfy_args: '--use-sage-attention --fast',
 
     api_hf_enable: false,
     api_hf_scale: 1.5,
@@ -250,7 +262,8 @@ export const SECTION_KEYS = Object.freeze({
         'language', 'css_style', 'rightToleft', 'ptompt_textbox_autoresize', 'ptompt_textbox_fontsize', 'ptompt_textbox_heights',
         'api_interface', 'api_addr', 'api_preview_refresh_time', 'search_modelinsubfolder', 'comfy_launch_command', 'comfy_autostart',
         'api_pod_ssh_enable', 'api_pod_ssh_target', 'api_pod_ssh_key', 'api_pod_ssh_comfy_port', 'pod_image_save_dir', 'api_pod_runpod_api_key', 'api_pod_runpod_pod_id', 'api_pod_civitai_token',
-        'api_fast_enable', 'api_fast_lora', 'api_fast_lora_strength', 'api_fast_steps', 'api_fast_cfg', 'api_fast_sampler', 'api_fast_scheduler',
+        'api_fast_enable', 'api_fast_lora', 'api_fast_lora_strength', 'api_fast_steps', 'api_fast_cfg', 'api_fast_sampler', 'api_fast_scheduler', 'api_fast_comfy_args',
+        'api_fast_diff_lora', 'api_fast_diff_lora_strength', 'api_fast_diff_steps', 'api_fast_diff_cfg', 'api_fast_diff_sampler', 'api_fast_diff_scheduler', 'api_fast_diff_comfy_args',
         'model_filter', 'model_filter_keyword', 'model_filter_keyword_diffusion',
         'model_path_comfyui', 'model_path_webui', 'image_save_path_comfyui', 'image_save_path_webui', 'image_save_embed_character_name',
         'webui_auth', 'webui_auth_enable',

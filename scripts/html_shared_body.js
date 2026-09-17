@@ -544,15 +544,29 @@ export const sharedBodyHTML = `
                   <p class="settings-note system-settings-api-pod-result"></p>
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">
-                  <div class="settings-group-title" data-ui-text="ui_settings_fast_group">Fast generation</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_fast_note">Applies a step-distillation LoRA (DMD2 / Hyper-SD / Lightning / LCM) and overrides steps, CFG, sampler and scheduler for the base, Hires fix and ADetailer passes. Works on the local ComfyUI and on the pod.</span></span>
+                  <div class="settings-group-title" data-ui-text="ui_settings_fast_group">Fast generation</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_fast_note">One switch, a set of values per model type. A Checkpoint (SDXL) run applies a step-distillation LoRA (DMD2 / Hyper-SD / Lightning / LCM), a Diffusion (Anima) run the Anima Turbo LoRA; both override steps, CFG, sampler and scheduler for the base, Hires fix and ADetailer passes. ComfyUI flags (e.g. --use-sage-attention --fast) are process-wide: before a run that needs other flags, SAA restarts the local ComfyUI through the launch command, which has to pass extra arguments on to main.py. The LoRA works on the pod too; the flags only on the local ComfyUI.</span></span>
                   <div class="settings-grid">
                     <div class="system-settings-api-fast-enable ui-switch"></div>
+                  </div>
+                  <!-- each model type has its own fast set (scripts/shared/fastMode.js); the
+                       ComfyUI flags are launch flags (scripts/shared/comfyLaunchArgs.js) -->
+                  <div class="settings-grid" data-when-model-type="Checkpoint">
                     <div class="system-settings-api-fast-lora"></div>
                     <div class="system-settings-api-fast-lora-strength"></div>
                     <div class="system-settings-api-fast-steps"></div>
                     <div class="system-settings-api-fast-cfg"></div>
                     <div class="system-settings-api-fast-sampler"></div>
                     <div class="system-settings-api-fast-scheduler"></div>
+                    <div class="system-settings-api-fast-comfy-args"></div>
+                  </div>
+                  <div class="settings-grid" data-when-model-type="Diffusion">
+                    <div class="system-settings-api-fast-diff-lora"></div>
+                    <div class="system-settings-api-fast-diff-lora-strength"></div>
+                    <div class="system-settings-api-fast-diff-steps"></div>
+                    <div class="system-settings-api-fast-diff-cfg"></div>
+                    <div class="system-settings-api-fast-diff-sampler"></div>
+                    <div class="system-settings-api-fast-diff-scheduler"></div>
+                    <div class="system-settings-api-fast-diff-comfy-args"></div>
                   </div>
                 </div>
               </section>

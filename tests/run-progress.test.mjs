@@ -17,3 +17,22 @@ test('elapsed time formatting', () => {
   assert.equal(formatElapsed(102_000), '1 m 42 s');
   assert.equal(formatElapsed(-5), '0 s');
 });
+
+test('a backend wait reads from the language key, else the English template', async () => {
+    const { formatBackendStatus } = await import('../scripts/renderer/components/runProgress.js');
+    const status = { key: 'ui_fast_restart_status', text: 'Restarting ComfyUI with launch flags: {0}', args: ['--use-sage-attention --fast'] };
+    assert.equal(formatBackendStatus(status), 'Restarting ComfyUI with launch flags: --use-sage-attention --fast');
+    assert.equal(formatBackendStatus(status, { ui_fast_restart_status: '重启：{0}' }), '重启：--use-sage-attention --fast');
+    assert.equal(formatBackendStatus({ key: 'x', text: '{0} of {1}', args: [2] }), '2 of ');
+    assert.equal(formatBackendStatus(null), '');
+    assert.equal(formatBackendStatus('text'), '');
+});
+
+test('the ComfyUI process line names the fast-mode flags a running backend has', async () => {
+    const { describeComfyProcess } = await import('../scripts/renderer/comfyProcessControl.js');
+    const t = (key, fallback) => fallback;
+    assert.equal(describeComfyProcess({ ok: true, action: 'state', phase: 'idle', running: true, fastFlags: ['--use-sage-attention', '--fast'] }, t),
+        'flags: --use-sage-attention --fast');
+    assert.equal(describeComfyProcess({ ok: true, action: 'state', phase: 'idle', running: true, fastFlags: [] }, t), '');
+    assert.equal(describeComfyProcess({ ok: true, action: 'state', phase: 'idle', running: false, fastFlags: ['--fast'] }, t), '');
+});

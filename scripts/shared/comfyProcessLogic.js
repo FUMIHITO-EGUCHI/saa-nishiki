@@ -44,11 +44,18 @@ export function firstToken(command) {
 // with code 0 and print nothing, so cmd.exe hosts PowerShell instead; and since a
 // console-less PowerShell also drops its stdout, `options.log` names the file the
 // script's output is appended to (Out-File writes it as a file, which works).
-export function launchSpec(command, platform = process.platform, { log = '' } = {}) {
+//
+// `options.extraArgs` (fast-mode ComfyUI flags, comfyLaunchArgs.js) are appended to the
+// command line; a start script has to pass its own arguments on to main.py for them to
+// reach ComfyUI. They are dropped unless every token is shell-safe.
+export function launchSpec(command, platform = process.platform, { log = '', extraArgs = [] } = {}) {
     const text = String(command ?? '').trim();
     if (!text) return null;
     const script = firstToken(text);
-    const rest = text.slice(text.indexOf(script) + script.length).replace(/^"/, '').trim();
+    const extra = safeExtraArgs(extraArgs);
+    const given = text.slice(text.indexOf(script) + script.length).replace(/^"/, '').trim();
+    const rest = [given, ...extra].filter(Boolean).join(' ');
+    const commandLine = [text, ...extra].join(' ');
     const extension = (script.match(/\.([a-z0-9]+)$/i)?.[1] ?? '').toLowerCase();
     if (extension === 'ps1' && platform === 'win32') {
         const call = `& '${psQuote(script)}'${rest ? ` ${rest}` : ''}`;
@@ -67,9 +74,16 @@ export function launchSpec(command, platform = process.platform, { log = '' } = 
         return { file: 'pwsh', args, shell: false, cwd: directoryOf(script) };
     }
     if (platform === 'win32' && (extension === 'cmd' || extension === 'bat')) {
-        return { file: 'cmd.exe', args: ['/d', '/s', '/c', `"${text}"`], shell: false, cwd: directoryOf(script), windowsVerbatimArguments: true };
+        return { file: 'cmd.exe', args: ['/d', '/s', '/c', `"${commandLine}"`], shell: false, cwd: directoryOf(script), windowsVerbatimArguments: true };
     }
-    return { file: text, args: [], shell: true, cwd: directoryOf(script) };
+    return { file: commandLine, args: [], shell: true, cwd: directoryOf(script) };
+}
+
+const SAFE_EXTRA_ARG = /^[A-Za-z0-9_.:=/+-]+$/;
+
+function safeExtraArgs(extraArgs) {
+    const tokens = (Array.isArray(extraArgs) ? extraArgs : []).map(token => String(token ?? '')).filter(Boolean);
+    return tokens.every(token => SAFE_EXTRA_ARG.test(token)) ? tokens : [];
 }
 
 // Inside a PowerShell single-quoted string only the quote itself needs escaping.

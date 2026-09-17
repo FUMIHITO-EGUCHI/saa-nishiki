@@ -65,6 +65,8 @@ AI 结果显示在 **Info 面板的 AI 标签页** 中，不再每次生成后�
 设置 → Backend → **快速生成** 应用步数蒸馏 LoRA（DMD2 / Hyper-SD / Lightning / LCM），并覆盖基础、高清修复和 ADetailer 各阶段的步数、CFG、采样器与调度器。本地 ComfyUI 与 Pod 均适用。
 在 RTX 4070 SUPER 上实测（600×1024，Hires 1.5x，ADetailer）：30 步 ≈ 29 秒 → DMD2 8 步 ≈ 16 秒。
 
+Diffusion（Anima）模型类型有自己的一组设置：Anima Turbo LoRA v0.2（强度 0.8）、8 步、CFG 1.5、euler / simple，并加上 ComfyUI 启动参数 `--use-sage-attention --fast`。启动参数作用于整个进程，因此当生成需要不同的参数时，SAA 会在生成前通过 设置 → Backend → ComfyUI process 的启动命令重启本地 ComfyUI（启动命令须把额外参数传给 `main.py`）。SAA 只会去掉它自己启动时加上的参数。在 RTX 4070 上实测（832×1216，waiANIMA）：25 步 ≈ 17–19 秒 → Turbo 8 步 + 两个参数 ≈ 4.8 秒。`--fast` 会让颜色和细节略有变化。LoRA 在 Pod 上同样适用；启动参数仅适用于本地 ComfyUI。
+
 ## Runpod Pod 目标
 在设置中注册一个 Runpod Pod（SSH 目标与密钥），然后通过工具栏中的状态胶囊在 **GPU: Local** 与 **GPU: Pod** 之间切换图像生成目标。生成的图像通过 SSH 流式传回并仅保存在本地；不会写入 Pod 的磁盘。Pod 也可以承载 LLM 功能（AI 提示词 / 重写）。Pod 端点支持带认证的 `https` / `wss` 后端。
 AI 提示词 / 重写请求同样通过这条 SSH 中继发送到 Pod 上的 Ollama。安装、Pod 重启后的恢复脚本和故障排查见 [README_POD.md](README_POD.md)。

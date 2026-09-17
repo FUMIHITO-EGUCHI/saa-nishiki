@@ -68,6 +68,8 @@ AI の結果は生成のたびにポップアップするのではなく、**Inf
 設定 → Backend → **Fast generation** で、ステップ蒸留 LoRA（DMD2 / Hyper-SD / Lightning / LCM）を適用し、ベース・Hires fix・ADetailer 各パスの steps / CFG / sampler / scheduler を上書きします。ローカル ComfyUI と Pod の両方で動作します。
 RTX 4070 SUPER での実測（600×1024、Hires 1.5x、ADetailer あり）: 30 steps ≈ 29 秒 → DMD2 8 steps ≈ 16 秒。
 
+モデル種別 Diffusion（Anima）には専用の設定があります。Anima Turbo LoRA v0.2（強度 0.8）、8 steps、CFG 1.5、euler / simple に加えて、ComfyUI の起動フラグ `--use-sage-attention --fast` を使います。起動フラグはプロセス全体に効くため、違うフラグが必要な生成の前に、SAA が 設定 → Backend → ComfyUI process の起動コマンドでローカル ComfyUI を再起動します（起動コマンドは追加の引数を `main.py` に渡す必要があります）。SAA が外すのは、自分で付けて起動したフラグだけです。RTX 4070 での実測（832×1216、waiANIMA）: 25 steps ≈ 17〜19 秒 → Turbo 8 steps + 両フラグ ≈ 4.8 秒。`--fast` で色味と細部が少し変わります。LoRA は Pod でも効きますが、起動フラグはローカル ComfyUI だけです。
+
 ## Runpod Pod ターゲット
 設定で Runpod の Pod（SSH 接続先と鍵）を登録すると、ツールバーのステータスピルで画像生成先を **GPU: Local** と **GPU: Pod** の間で切り替えられます。生成画像は SSH 経由でストリーミングされてローカルにのみ保存され、Pod のディスクには何も書き込まれません。Pod は LLM 機能（AI プロンプト / Refine）のホストにもなれます。Pod のエンドポイントでは認証付きの `https` / `wss` バックエンドに対応しています。
 AI プロンプト / Refine のリクエストも同じ SSH リレー経由で Pod 上の Ollama に送られます。セットアップ、Pod 再起動時の復元スクリプト、トラブルシューティングは [README_POD.md](README_POD.md) を参照してください。

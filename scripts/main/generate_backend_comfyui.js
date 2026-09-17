@@ -12,7 +12,10 @@ import { backendAuthHeaders, httpApiUrl, wsApiUrl } from '../shared/backendAddre
 import { buildParametersText, embedPngParameters, findDiskWriterNodes, toWebsocketOutputWorkflow } from '../shared/podWorkflow.js';
 import { interruptPodWorkflow, isPodSshEnabled, runPodWorkflow } from './podSshTransport.js';
 import { getGlobalSettings } from './globalSettings.js';
-import { applyFastMode } from '../shared/fastMode.js';
+import { applyFastMode, isDiffusionGeneration, missingFastLora } from '../shared/fastMode.js';
+import { ensureComfyLaunchArgs } from './comfyProcess.js';
+import { getLoRAList, getLoRAListSource } from './modelList.js';
+import { remoteModelSource } from './remoteModelList.js';
 import { resolveUnionControlType } from '../shared/controlNetUnion.js';
 
 const CAT = '[ComfyUI]';
@@ -2586,6 +2589,38 @@ async function runComfyUI(generateData) {
   }
 }
 
+// Before a generation: the fast-mode LoRA has to exist on the backend (the text LoRA
+// loader skips a missing file silently, leaving a low-step run without its weights),
+// and a local ComfyUI has to run with the launch flags this run's fast set wants
+// (comfyProcess.js restarts it when they differ). Returns an error string that ends
+// the run — with the backend mutex released — or '' to go on.
+async function prepareFastModeRun(generateData, settings) {
+  // the list only counts when it describes the backend this run goes to (the pod's own
+  // list is fetched on demand; until then SAA holds the local scan)
+  const listMatchesBackend = getLoRAListSource() === (remoteModelSource(settings) ?? 'local');
+  const missing = listMatchesBackend ? missingFastLora(generateData, settings, getLoRAList('ComfyUI')) : '';
+  if (missing) {
+    setMutexBackendBusy(false);
+    return `Error: Fast mode LoRA "${missing}" is not in ComfyUI's LoRA list. Put it under models/loras and refresh the model lists, or pick another in Settings > Backend > Fast generation.`;
+  }
+  if (backendComfyUI.podEnabled()) return '';
+  const uuid = generateData.uuid;
+  const launch = await ensureComfyLaunchArgs(settings, {
+    diffusion: isDiffusionGeneration(generateData),
+    onStatus: status => sendToRenderer(uuid, 'updateStatus', status),
+    isCancelled: () => cancelMark,
+  });
+  if (!launch.ok) {
+    setMutexBackendBusy(false);
+    return launch.cancelled ? 'Error: Cancelled' : `Error: ${launch.message}`;
+  }
+  if (cancelMark) {
+    setMutexBackendBusy(false);
+    return 'Error: Cancelled';
+  }
+  return '';
+}
+
 async function runComfyUI_unguarded(generateData) {
   const isBusy = await getMutexBackendBusy();
   if (isBusy) {
@@ -2595,6 +2630,8 @@ async function runComfyUI_unguarded(generateData) {
   setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
 
+  const prepareError = await prepareFastModeRun(generateData, getGlobalSettings());
+  if (prepareError) return prepareError;
   generateData = applyFastMode(generateData, getGlobalSettings());
   let workflow;
   if (generateData.unet?.enable){
@@ -2631,6 +2668,8 @@ async function runComfyUI_Regional_unguarded(generateData) {
   setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
 
+  const prepareError = await prepareFastModeRun(generateData, getGlobalSettings());
+  if (prepareError) return prepareError;
   generateData = applyFastMode(generateData, getGlobalSettings());
   let workflow;
   if (generateData.unet?.enable) {
@@ -2752,6 +2791,8 @@ async function python_runComfyUI(generateData, isRegional=false, skeletonKey=fal
     generateData.vae = { vae_override: false, vae: 'None' };
   }
 
+  const prepareError = await prepareFastModeRun(generateData, getGlobalSettings());
+  if (prepareError) return prepareError;
   generateData = applyFastMode(generateData, getGlobalSettings());
   const workflow = isRegional ? backendComfyUI.createWorkflowRegional(generateData) : backendComfyUI.createWorkflow(generateData);
   backendComfyUI.timeout = TIMEOUT; // Reset timeout to TIMEOUT(5s) for normal workflow    
