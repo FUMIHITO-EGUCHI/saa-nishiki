@@ -8,6 +8,7 @@
 //   generation — run bar, checkpoint, Hires fix, Refiner, Regional.
 //   lora / adetailer / controlnet — pipeline slots.
 import { REFINE_SYSTEM_PROMPT } from '../aiPromptRefiner.js';
+import { normalizeArtistSlots } from './artistSlots.js';
 
 export const SCHEMA_VERSION = 1;
 
@@ -44,6 +45,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // Variable standard character slots (R4). character1-3 stay in the schema as the
     // migration source for pre-slot files and as read-only mirrors of slots 0-2.
     character_slots: [{ key: 'Random', weight: 1 }, { key: 'None', weight: 1 }, { key: 'None', weight: 1 }],
+    // Artist slots (Diffusion only): a Danbooru artist tag per slot, sent as "@name".
+    // scripts/shared/artistSlots.js owns the shape and the spelling.
+    artist_slots: [{ key: '', weight: 1 }],
+    // while an artist is set, generation appends "artist name, signature, watermark" to
+    // the negative prompt so the model does not sign the picture
+    artist_signature_guard: true,
     character1: 'Random',
     character2: 'None',
     character3: 'None',
@@ -64,6 +71,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     regional_split: 'left-right',
     // generation settings remembered per model type (scripts/shared/modelTypeSettings.js)
     model_type_generation: {},
+    // the Prompts card remembered per model type (scripts/shared/modelTypePrompts.js): a
+    // switch puts the other type's last prompts back instead of clearing the card
+    model_type_prompts: {},
     // upper bound of the Size boxes per model type (scripts/shared/sizeLimits.js)
     size_limit_checkpoint: 1536,
     size_limit_diffusion: 2048,
@@ -218,6 +228,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     controlnet_slot: [],
 
     fav_characters: [],
+    fav_artists: [],
+    // the artists picked most recently, newest first (the picker's opening list)
+    artist_recent: [],
     fav_tags: { positive: [], negative: [] },
 
     generate_auto_start: true,
@@ -242,7 +255,7 @@ export const SECTION_KEYS = Object.freeze({
         'model_path_comfyui', 'model_path_webui', 'image_save_path_comfyui', 'image_save_path_webui', 'image_save_embed_character_name',
         'webui_auth', 'webui_auth_enable',
         // the per-type generation store sits beside the type: neither is an undo step
-        'api_model_type', 'model_type_generation', 'size_limit_checkpoint', 'size_limit_diffusion', 'api_model_file_vpred', 'thumb_select', 'thumb_select_list',
+        'api_model_type', 'model_type_generation', 'model_type_prompts', 'size_limit_checkpoint', 'size_limit_diffusion', 'api_model_file_vpred', 'thumb_select', 'thumb_select_list',
         'api_vae_sdxl_model', 'api_vae_sdxl_override', 'api_vae_unet_model', 'api_model_file_diffusion_weight_dtype',
         'api_model_file_text_encoder', 'api_model_file_text_encoder_type', 'api_model_file_text_encoder_device',
         'ai_local_addr', 'ai_local_model_mode', 'ai_local_timeout', 'ai_local_temp', 'ai_local_n_predict', 'ai_refine_system_prompt',
@@ -251,11 +264,14 @@ export const SECTION_KEYS = Object.freeze({
         'tag_assist', 'tag_chip_alias', 'wildcard_random',
         'keep_gallery', 'scroll_to_last', 'generate_auto_start',
         'fav_characters',
+        'fav_artists',
+        'artist_recent',
         'fav_tags',
         'preset_current',
     ]),
     prompt: Object.freeze([
-        'character_slots', 'character1', 'character2', 'character3', 'character_left', 'character_right',
+        'character_slots', 'artist_slots', 'artist_signature_guard',
+        'character1', 'character2', 'character3', 'character_left', 'character_right',
         'view_angle', 'view_camera', 'view_background', 'view_style', 'weights4dropdownlist',
         'custom_prompt', 'api_prompt', 'api_prompt_right', 'api_neg_prompt', 'api_neg_prompt_left', 'api_neg_prompt_right',
         'prompt_background', 'prompt_style', 'ai_prompt', 'prompt_ban',
@@ -353,6 +369,7 @@ function coerce(key, value, defaultValue) {
             });
         return slots.length ? slots : clone(defaultValue);
     }
+    if (key === 'artist_slots') return normalizeArtistSlots(value);
     if (key === 'weights4dropdownlist') {
         if (!Array.isArray(value)) return clone(defaultValue);
         const numbers = defaultValue.map((fallback, index) => {

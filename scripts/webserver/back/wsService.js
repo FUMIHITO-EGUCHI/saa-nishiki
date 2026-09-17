@@ -22,6 +22,7 @@ import { getModelList, getModelListAll, getVAEList, getDiffusionModelList, getTe
 import { updateWildcards, loadWildcard } from '../../main/wildCards.js';
 import { tagReload, tagGet, getTagAliases } from '../../main/tagAutoComplete_backend.js';
 import { getRelatedTags, hasRelatedDictionary } from '../../main/tagRelated_backend.js';
+import { getArtistProfile, hasArtistProfiles, searchArtists } from '../../main/artist_backend.js';
 import { runComfyUI, runComfyUI_Regional, runComfyUI_ControlNet, runComfyUI_MiraITU, 
     openWsComfyUI, closeWsComfyUI, cancelComfyUI, python_runComfyUI } from '../../main/generate_backend_comfyui.js';
 import { runWebUI, runWebUI_Regional, cancelWebUI, startPollingWebUI, stopPollingWebUI, runWebUI_ControlNet, python_runWebUI,
@@ -468,6 +469,11 @@ const methodHandlers = {
   'tagAliases': (params = [])=> getTagAliases(...params),
   'tagRelated': (params = [])=> getRelatedTags(...params),
   'tagRelatedAvailable': ()=> hasRelatedDictionary(),
+
+  // artist card
+  'artistSearch': (params = [])=> searchArtists(...params),
+  'artistProfile': (params = [])=> getArtistProfile(...params),
+  'artistProfilesAvailable': ()=> hasArtistProfiles(),
 
   // AI
   'remoteAI': (params)=> remoteAI(...params),

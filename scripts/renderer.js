@@ -5,7 +5,9 @@ import { setupThumbOverlay, setupThumb } from './renderer/customThumbGallery.js'
 import { setupSuggestionSystem } from './renderer/tagAutoComplete.js';
 import { setupButtonOverlay, customCommonOverlay } from './renderer/customOverlay.js';
 import { myCharacterList, myRegionalCharacterList, myViewsList, myLanguageList, mySimpleList } from './renderer/components/myDropdown.js';
-import { callback_api_model_select, callback_api_model_type, callback_api_interface, 
+import { myArtistList } from './renderer/components/artistSelectionModal.js';
+import { callback_artistList_changed,
+    callback_api_model_select, callback_api_model_type, callback_api_interface, 
     callback_generate_start, callback_generate_skip, callback_generate_cancel,callback_keep_gallery,
     callback_regional_condition, callback_controlnet, callback_adetailer, callback_queue_autostart,
     callback_thumb_select, callback_ptompt_textbox_autoresize, callback_ptompt_textbox_fontsize
@@ -124,6 +126,7 @@ export async function setupHeader(SETTINGS, FILES, LANG){
     // Character and OC List
     globalThis.characterList = myCharacterList('dropdown-character', FILES.characterList, FILES.ocList);
     globalThis.characterListRegional = myRegionalCharacterList('dropdown-character-regional', FILES.characterList, FILES.ocList);    
+    globalThis.artistList = myArtistList('dropdown-artist', callback_artistList_changed);
     console.log('Thumbnail files loaded successfully.', FILES.characterListArray.length, 'characters available.');
 }
 

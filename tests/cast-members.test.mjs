@@ -50,25 +50,25 @@ test('syncCastFields adds a row per slot right after the characters block; a use
     const settings = {
         character_slots: [{ key: 'A', weight: 1, alias: '姫' }, { key: 'B', weight: 1 }],
         prompt_custom_fields: [{ id: 'cf_action1', name: 'Action', polarity: 'positive', text: 'x' }],
-        prompt_positive_order: ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive', 'cf_action1'],
+        prompt_positive_order: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive', 'cf_action1'],
     };
     const patch = syncCastFields(settings, LANG);
     assert.equal(patch.changed, true);
     assert.deepEqual(patch.prompt_custom_fields.map(field => [field.id, field.name]), [
         ['cf_action1', 'Action'], ['cf_cast1', '@姫'], ['cf_cast2', '@char2'],
     ]);
-    assert.deepEqual(patch.prompt_positive_order, ['common', 'views', 'background', 'style', 'ai', 'characters', 'cf_cast1', 'cf_cast2', 'positive', 'cf_action1']);
+    assert.deepEqual(patch.prompt_positive_order, ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'cf_cast1', 'cf_cast2', 'positive', 'cf_action1']);
 });
 
 test('without an Action field the fixed Action row is added at the end of the chain', () => {
     const settings = {
         character_slots: [{ key: 'A', weight: 1 }],
         prompt_custom_fields: [{ id: 'cf_extra', name: 'Extra', polarity: 'positive', text: '' }],
-        prompt_positive_order: ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive', 'cf_extra'],
+        prompt_positive_order: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive', 'cf_extra'],
     };
     const patch = syncCastFields(settings, LANG);
     assert.deepEqual(patch.prompt_custom_fields.map(field => field.id), ['cf_extra', 'cf_cast1', 'cf_action']);
-    assert.deepEqual(patch.prompt_positive_order, ['common', 'views', 'background', 'style', 'ai', 'characters', 'cf_cast1', 'positive', 'cf_extra', 'cf_action']);
+    assert.deepEqual(patch.prompt_positive_order, ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'cf_cast1', 'positive', 'cf_extra', 'cf_action']);
     const again = syncCastFields({ ...settings, ...patch }, LANG);
     assert.equal(again.changed, false);
     assert.ok(isDiffusionFieldId('cf_action') && isDiffusionFieldId('cf_cast3') && !isDiffusionFieldId('cf_extra'));
@@ -81,7 +81,7 @@ test('syncCastFields renames, keeps the text and the stored position, and drops 
             { id: 'cf_cast1', name: '@姫', polarity: 'positive', text: 'black hair, black suit' },
             { id: 'cf_cast2', name: '@char2', polarity: 'positive', text: 'blonde hair' },
         ],
-        prompt_positive_order: ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive', 'cf_cast1', 'cf_cast2'],
+        prompt_positive_order: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive', 'cf_cast1', 'cf_cast2'],
     };
     const patch = syncCastFields(settings, LANG);
     assert.equal(patch.changed, true);
@@ -89,7 +89,7 @@ test('syncCastFields renames, keeps the text and the stored position, and drops 
         { id: 'cf_cast1', name: '@執事', polarity: 'positive', text: 'black hair, black suit' },
         { id: 'cf_action', name: 'Action', polarity: 'positive', text: '' },
     ]);
-    assert.deepEqual(patch.prompt_positive_order, ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive', 'cf_cast1', 'cf_action']);
+    assert.deepEqual(patch.prompt_positive_order, ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive', 'cf_cast1', 'cf_action']);
     assert.equal(syncCastFields({ ...settings, ...patch }, LANG).changed, false, 'a second sync is a no-op');
 });
 
@@ -98,7 +98,7 @@ test('an alias change alone renames the row (and never mutates the stored fields
     const settings = {
         character_slots: [{ key: 'A', weight: 1, alias: '姫' }],
         prompt_custom_fields: stored,
-        prompt_positive_order: ['common', 'views', 'background', 'style', 'ai', 'characters', 'cf_cast1', 'positive'],
+        prompt_positive_order: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'cf_cast1', 'positive'],
     };
     const patch = syncCastFields(settings, LANG);
     assert.equal(patch.changed, true);

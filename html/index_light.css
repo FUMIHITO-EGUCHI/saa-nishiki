@@ -2426,3 +2426,11 @@ body {
 }
 @media (prefers-reduced-motion: reduce) { .run-number [class^="mySlider-"][class*="-value"].is-clamped { animation-duration: 0.01s; } }
 
+/* Artist card: the "@" and the profile panel follow the gold the View stripe uses */
+.artist-profile-panel { background: #fbfbfd; border-color: #c9c9d2; color: #26262c; }
+.artist-profile-title { color: #8a6d2f; }
+.artist-profile-tag { background: #ffffff; border-color: #c9c9d2; }
+.artist-profile-tag.is-match { background: rgba(40, 95, 143, 0.12); border-color: #285f8f; }
+.artist-profile-tag mark { color: #1d4e77; }
+.artist-profile-bar { background: #e2e2e8; }
+.artist-profile-bar i { background: #a9823f; }

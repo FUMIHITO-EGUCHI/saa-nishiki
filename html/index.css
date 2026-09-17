@@ -2176,3 +2176,164 @@ html, body {
 .pod-llm-model { flex: 1 1 260px; min-width: 200px; }
 .pod-llm-keep { width: 110px; flex: none; margin-left: auto; }
 .pod-llm-proxy { margin-bottom: 8px; }
+
+/* ---------------------------------------------------------------- Artist card
+   The Artist card (Diffusion only) reuses the character slot shapes; only the "@"
+   colouring, the picker's profile panel and its two-column dialog live here. */
+.artist-selection-grid {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.artist-selection-controls {
+    grid-template-columns: minmax(0, 1fr) 52px;
+}
+
+.artist-selection-trigger.is-empty {
+    color: var(--saa-placeholder, #77777f);
+}
+
+
+.artist-selection-body {
+    display: flex;
+    gap: 10px;
+    min-height: 0;
+    flex: 1 1 auto;
+    padding: 0 12px 10px;
+}
+
+.artist-selection-body .selection-modal-list {
+    flex: 1 1 auto;
+    margin: 0;
+}
+/* the picker: list on the left, the highlighted artist's profile on the right */
+.artist-selection-dialog .selection-modal-list {
+    min-width: 0;
+}
+
+.artist-selection-dialog .selection-modal-option-category {
+    flex: none;
+    padding: 0 6px;
+    border: 1px solid var(--saa-border-ctl, #4a4a52);
+    border-radius: 8px;
+    font-size: 0.68em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.artist-profile-panel {
+    flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 10px;
+    border: 1px solid var(--saa-border-ctl, #4a4a52);
+    border-radius: 5px;
+    overflow-y: auto;
+}
+
+.artist-profile-panel[hidden] {
+    display: none;
+}
+
+.artist-profile-head {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.artist-profile-title {
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+.artist-profile-posts {
+    margin-left: auto;
+    font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+    font-size: 0.72em;
+    opacity: 0.6;
+}
+
+.artist-profile-section {
+    font-size: 0.64em;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.65;
+}
+
+.artist-profile-section[hidden] {
+    display: none;
+}
+
+.artist-profile-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.artist-profile-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 21px;
+    padding: 0 8px;
+    border: 1px solid var(--saa-border-ctl, #4a4a52);
+    border-radius: 11px;
+    font-size: 0.76em;
+}
+
+.artist-profile-tag mark {
+    background: none;
+    color: inherit;
+    font-weight: 700;
+}
+
+.artist-profile-percent {
+    font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+    font-size: 0.66em;
+    opacity: 0.6;
+}
+
+.artist-profile-series {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.artist-profile-series-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78em;
+}
+
+.artist-profile-series-name {
+    flex: none;
+    width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.artist-profile-bar {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--saa-bar-track, #2c2c32);
+}
+
+.artist-profile-bar i {
+    display: block;
+    height: 100%;
+}
+
+.artist-profile-empty {
+    font-size: 0.74em;
+    opacity: 0.55;
+}
+
+.artist-profile-empty[hidden] {
+    display: none;
+}

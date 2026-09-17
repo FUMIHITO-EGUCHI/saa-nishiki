@@ -263,6 +263,7 @@ function setupModelTypeUi() {
     const promptsTitle = document.querySelector('.prompts-card [data-ui-text="ui_prompts_title"]');
     const promptsSub = document.querySelector('.prompts-card [data-ui-text="ui_prompts_sub"]');
     const defaults = document.getElementById('anima-defaults');
+    const artistCard = document.getElementById('artist-card');
 
     defaults?.addEventListener('click', () => {
         const SETTINGS = globalThis.globalSettings;
@@ -291,6 +292,8 @@ function setupModelTypeUi() {
         if (charactersSub) charactersSub.textContent = diffusion ? uiText('ui_cast_sub', 'alias · character · weight per slot') : uiText('ui_characters_sub', 'Characters (incl. OC) · weight per slot');
         if (promptsTitle) promptsTitle.textContent = diffusion ? uiText('ui_scene_title', 'Scene') : uiText('ui_prompts_title', 'Prompts');
         if (promptsSub) promptsSub.textContent = diffusion ? uiText('ui_scene_sub', 'Common → View → Background / Style → @cast rows → Positive → Action · Exclude applies to all') : uiText('ui_prompts_sub', 'Common → View → Background / Style → Character → Positive · Exclude applies to all');
+        // the Artist card is an Anima idea: a checkpoint reads a plain artist tag instead
+        if (artistCard) artistCard.hidden = !diffusion;
         if (defaults) {
             defaults.hidden = !diffusion;
             defaults.title = uiText('ui_anima_defaults_tip', 'er_sde · simple · 30 steps · CFG 4.5 · 1216 × 832 (orientation kept)');

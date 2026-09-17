@@ -38,16 +38,20 @@ test('custom fields keep their shape (name, side, polarity, batch, mute) and los
     assert.deepEqual(clearedPromptPatch({}).prompt_custom_fields, []);
 });
 
-test('a model type switch clears the Scene once, in one undo step, but not the boot-time or forced apply', () => {
+test('a model type switch swaps the Scene once, in one undo step, but not on the boot-time or forced apply', () => {
     const callbacks = read('scripts/renderer/callbacks.js');
     assert.match(callbacks, /export async function callback_api_model_type\(index, selectedValue, \{ clearPrompts = true \} = \{\}\)/);
     assert.match(callbacks, /const previous = SETTINGS\.api_model_type;/);
-    // the type itself is not undoable, so the whole switch (clear, settings swap) runs with history suspended
-    assert.match(callbacks, /if \(clearPrompts && previous && previous !== value\) clearPromptContents\(\);/);
+    // the type itself is not undoable, so the whole switch (swap, settings) runs with history suspended
+    assert.match(callbacks, /if \(clearPrompts && previous && previous !== value\) applyPromptsForModelType\(value\);/);
     assert.match(callbacks, /if \(previous && previous !== value && globalThis\.editHistory\?\.suspendRecording\) return globalThis\.editHistory\.suspendRecording\(run\);/);
     assert.match(callbacks, /callback_api_model_type\(0, \['Checkpoint'\], \{ clearPrompts: false \}\);/, 'the interface fallback keeps the prompts');
-    assert.match(callbacks, /runEditTransaction\(\{ source: 'model-type-clear', sections: \['prompt'\] \}, mutate\)/);
-    assert.match(callbacks, /Object\.assign\(SETTINGS, clearedPromptPatch\(SETTINGS\)\);/);
+    assert.match(callbacks, /runEditTransaction\(\{ source: 'model-type-prompts', sections: \['prompt'\] \}, mutate\)/);
+    // the card being left is stored before the one being entered is applied
+    assert.match(callbacks, /SETTINGS\.model_type_prompts = rememberPrompts\(SETTINGS\.model_type_prompts, previous, SETTINGS\);/);
+    assert.match(callbacks, /Object\.assign\(SETTINGS, promptsFor\(SETTINGS\.model_type_prompts, type, SETTINGS\)\);/);
+    // the slot controls hold their own copy, so they are pushed the restored values
+    assert.match(callbacks, /globalThis\.artistList\?\.setSlots\?\.\(SETTINGS\.artist_slots\);/);
     // the controls are re-synced the way a preset load does it
     assert.match(callbacks, /prompt\?\.fieldManager\?\.refresh\?\.\(\);\s*prompt\?\.tagCapsuleFields\?\.loadFromSettings\?\.\(SETTINGS\);/);
 });

@@ -139,6 +139,16 @@ export const sharedBodyHTML = `
               </div>
             </section>
 
+            <section class="ui-card artist-card" id="artist-card" aria-label="Artist" hidden>
+              <div class="ui-card-head">
+                <span class="ui-card-title" data-ui-text="ui_artist_title">Artist</span>
+                <span class="ui-card-sub" data-ui-text="ui_artist_sub">sent as @name · one is usually enough</span>
+              </div>
+              <div class="ui-card-body">
+                <div class="dropdown-artist" id="dropdown-artist"></div>
+              </div>
+            </section>
+
             <section class="ui-card prompts-card" id="prompt-text-container" aria-label="Prompts">
               <div class="ui-card-head">
                 <span class="ui-card-title" data-ui-text="ui_prompts_title">Prompts</span>

@@ -40,7 +40,7 @@ test('order normalization keeps known ids, appends missing units in default orde
   // user moved style before common and put the custom field first
   assert.deepEqual(
     normalizeOrder(['cf_face', 'style', 'common', 'bogus'], 'positive', customs),
-    ['cf_face', 'style', 'common', 'views', 'background', 'ai', 'characters', 'positive'],
+    ['cf_face', 'style', 'common', 'views', 'background', 'artist', 'ai', 'characters', 'positive'],
   );
   // empty stored order falls back to defaults with customs appended
   assert.deepEqual(

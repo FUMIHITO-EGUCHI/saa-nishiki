@@ -14,8 +14,8 @@ import { changeFontSize } from './components/myTextbox.js';
 import { set_prompt_textBox_Heights } from './components/componentsManager.js';
 import { TAG_DICTIONARY_EVENT } from './components/tagDictionaryStatus.js';
 import { migrateSlotSides, regionalSlots } from '../shared/characterSides.js';
-import { clearedPromptPatch } from '../shared/promptReset.js';
 import { generationFor, rememberGeneration } from '../shared/modelTypeSettings.js';
+import { promptsFor, rememberPrompts } from '../shared/modelTypePrompts.js';
 import { formatSizeRange, sizeRangeFor } from '../shared/sizeLimits.js';
 
 export async function callback_api_model_select(index, selectedValue) {
@@ -32,10 +32,16 @@ export async function callback_api_model_select(index, selectedValue) {
 // Switching the model type empties the Scene: every prompt text, the View row and
 // the per-image weight plans - one undo step. The rows themselves (custom fields,
 // their names, sides, polarity, batch and mute state), presets and the AI card stay.
-export function clearPromptContents() {
+// Switching the model type puts the card the other type was last using back. A type never
+// visited has nothing stored, so it still starts from an empty card (promptsFor falls back
+// to the cleared patch). The slot controls are pushed the restored values too, since they
+// hold their own copy of the slots.
+export function applyPromptsForModelType(type) {
     const SETTINGS = globalThis.globalSettings;
     const mutate = () => {
-        Object.assign(SETTINGS, clearedPromptPatch(SETTINGS));
+        Object.assign(SETTINGS, promptsFor(SETTINGS.model_type_prompts, type, SETTINGS));
+        globalThis.characterList?.setSlots?.(SETTINGS.character_slots);
+        globalThis.artistList?.setSlots?.(SETTINGS.artist_slots);
         const prompt = globalThis.prompt;
         prompt?.common?.setValue?.(SETTINGS.custom_prompt);
         prompt?.positive?.setValue?.(SETTINGS.api_prompt);
@@ -53,7 +59,7 @@ export function clearPromptContents() {
         prompt?.tagCapsuleFields?.refreshFinalPrompt?.();
     };
     const persistence = globalThis.settingsPersistence;
-    if (persistence?.runEditTransaction) return persistence.runEditTransaction({ source: 'model-type-clear', sections: ['prompt'] }, mutate);
+    if (persistence?.runEditTransaction) return persistence.runEditTransaction({ source: 'model-type-prompts', sections: ['prompt'] }, mutate);
     return mutate();
 }
 
@@ -123,6 +129,8 @@ async function applyModelType(value, previous, { clearPrompts }) {
     // store the size being left before the range moves (the range clamp must not
     // rewrite the other type's remembered size) ...
     if (switching) SETTINGS.model_type_generation = rememberGeneration(SETTINGS.model_type_generation, previous, SETTINGS);
+    // the Prompts card is remembered the same way: the type being left keeps its own
+    if (switching) SETTINGS.model_type_prompts = rememberPrompts(SETTINGS.model_type_prompts, previous, SETTINGS);
     // ... then the Size boxes follow the type entered, so the size stored for it is
     // judged against its own range, not the range of the type left
     applySizeRange();
@@ -178,8 +186,9 @@ async function applyModelType(value, previous, { clearPrompts }) {
     // the settings modal's Checkpoint / Diffusion groups follow the type at once (they used
     // to be re-evaluated only when the modal was next opened)
     globalThis.uiShell?.settingsConditions?.();
-    // a real switch (not the boot-time apply of the stored type) starts the other model with an empty Scene
-    if (clearPrompts && previous && previous !== value) clearPromptContents();
+    // a real switch (not the boot-time apply of the stored type) brings back the card the
+    // type entered was last using, or an empty one the first time it is entered
+    if (clearPrompts && previous && previous !== value) applyPromptsForModelType(value);
 }
 
 export async function callback_api_interface(index, selectedValue){
@@ -445,6 +454,12 @@ export function callback_regional_condition(trigger, dummy = false, { refreshSce
     if (refreshScene) globalThis.prompt.fieldManager?.refresh?.();
     // the Final prompt preview gains / loses its right side with the switch
     globalThis.prompt.tagCapsuleFields?.refreshFinalPrompt?.();
+}
+
+// The Artist card changed a slot. The control has already written the slots through the
+// settings proxy, which marks the section dirty, so this only redraws the preview.
+export function callback_artistList_changed() {
+    globalThis.prompt?.tagCapsuleFields?.refreshFinalPrompt?.();
 }
 
 export function callback_controlnet(trigger)  {                

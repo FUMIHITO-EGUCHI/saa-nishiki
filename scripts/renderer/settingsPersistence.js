@@ -96,6 +96,8 @@ export function collectSection(section) {
             if (weights) raw.weights4dropdownlist = weights;
             const slots = globalThis.characterList?.getSlots?.();
             if (Array.isArray(slots) && slots.length) raw.character_slots = slots;
+            const artists = globalThis.artistList?.getSlots?.();
+            if (Array.isArray(artists) && artists.length) raw.artist_slots = artists;
         }
         if (section === 'app' && typeof hooks.getTextboxHeights === 'function' && globalThis.prompt) {
             const heights = hooks.getTextboxHeights();
@@ -249,7 +251,7 @@ function watchSlots() {
         for (const type of ['input', 'change', 'click']) container.addEventListener(type, mark);
         new MutationObserver(mark).observe(container, { childList: true, subtree: true });
     }
-    for (const selector of ['.dropdown-view', '.dropdown-character', '.dropdown-character-regional']) {
+    for (const selector of ['.dropdown-view', '.dropdown-character', '.dropdown-character-regional', '.dropdown-artist']) {
         const container = document.querySelector(selector);
         if (!container) continue;
         watchSectionInteraction(container, 'prompt', 'prompt-dropdown');

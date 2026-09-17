@@ -129,6 +129,8 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
             case 'views': return { text: views || '', color: viewColor };
             case 'background': return { text: asFragment(readViewPromptField('background', 'background', seed)), color: viewColor };
             case 'style': return { text: asFragment(readViewPromptField('style', 'style', seed)), color: viewColor };
+            // Regional only runs on a Checkpoint, where the Artist card does not exist
+            case 'artist': return { text: '', color: customColor };
             case 'ai': return { text: aiPrompt, color: aiColor };
             case 'characters': {
                 const [BOC, EOC, text] = side === 'left' ? [BOCL, EOCL, character_left] : [BOCR, EOCR, character_right];

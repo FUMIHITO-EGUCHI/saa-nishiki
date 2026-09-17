@@ -14,9 +14,12 @@ function unitTexts(chain, texts) {
     return (Array.isArray(chain) ? chain : []).map(id => clean(texts?.[id])).filter(Boolean);
 }
 
-export function composeNegativeChain({ chain = [], texts = {}, characterNegative = '' } = {}) {
-    return joinNegativeParts([...unitTexts(chain, texts), characterNegative]);
+export function composeNegativeChain({ chain = [], texts = {}, characterNegative = '', extra = '' } = {}) {
+    return joinNegativeParts([...unitTexts(chain, texts), characterNegative, extra]);
 }
+
+// `extra` is what generation adds without storing: today the signature guard that keeps
+// an Anima artist from signing the picture (scripts/shared/artistSlots.js).
 
 // A "both" unit is written into the left and the right prompt, so a side unit repeating
 // it is dropped from that side. `merged` is the single negative for backends without

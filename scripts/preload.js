@@ -130,6 +130,10 @@ contextBridge.exposeInMainWorld('api', {
   tagAliases: async (tags) => ipcRenderer.invoke('tag-aliases', tags),
   tagRelated: async (tag, options) => ipcRenderer.invoke('tag-related', tag, options),
   tagRelatedAvailable: async () => ipcRenderer.invoke('tag-related-available'),
+  // Artist card (Diffusion): name / profile-tag search and one artist's profile
+  artistSearch: async (query, options) => ipcRenderer.invoke('artist-search', query, options),
+  artistProfile: async (name) => ipcRenderer.invoke('artist-profile', name),
+  artistProfilesAvailable: async () => ipcRenderer.invoke('artist-profiles-available'),
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),

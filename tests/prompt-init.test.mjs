@@ -66,7 +66,7 @@ const FIELDS = [
 test('the Final prompt preview follows the single chain with Regional off', () => {
     const [row] = expandAll(FIELDS, 1, 1, {
         chain: {
-            positive: ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive', 'cf_both', 'cf_left', 'cf_right'],
+            positive: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive', 'cf_both', 'cf_left', 'cf_right'],
             positiveRight: null,
             negative: ['negative'],
         },
@@ -80,8 +80,8 @@ test('the Final prompt preview follows the single chain with Regional off', () =
 test('the Final prompt preview puts "both" units on both sides and side units on theirs', () => {
     const [row] = expandAll(FIELDS, 1, 1, {
         chain: {
-            positive: ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive', 'cf_both', 'cf_left'],
-            positiveRight: ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive_right', 'cf_both', 'cf_right'],
+            positive: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive', 'cf_both', 'cf_left'],
+            positiveRight: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive_right', 'cf_both', 'cf_right'],
             negative: ['negative', 'negative_left', 'negative_right'],
         },
     });

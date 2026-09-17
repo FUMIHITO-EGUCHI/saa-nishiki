@@ -2427,3 +2427,12 @@ body {
 }
 @media (prefers-reduced-motion: reduce) { .run-number [class^="mySlider-"][class*="-value"].is-clamped { animation-duration: 0.01s; } }
 
+/* Artist card: the "@" and the profile panel follow the gold the View stripe uses */
+.artist-selection-trigger { color: #eee; }
+.artist-profile-panel { background: #1c1c20; border-color: #555; color: #e8e8ea; }
+.artist-profile-title { color: #e0c080; }
+.artist-profile-tag { background: #222226; border-color: #5a5a62; }
+.artist-profile-tag.is-match { background: rgba(77, 163, 255, 0.18); border-color: #4da3ff; }
+.artist-profile-tag mark { color: #9ecbff; }
+.artist-profile-bar i { background: #c8a06a; }
+.selection-modal-option-category { color: #aaa; }

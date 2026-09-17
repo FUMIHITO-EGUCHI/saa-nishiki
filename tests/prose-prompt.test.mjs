@@ -98,6 +98,16 @@ test('the scope keeps view / background / style / positive as tags in common, or
     assert.equal(normalizeProseScope('nope'), 'cast');
 });
 
+test('the Artist unit stays a tag in common whatever the scope', () => {
+    const chain = [...CHAIN.slice(0, 4), { id: 'artist', text: '@ciloranko, (@wlop:0.8), ' }, ...CHAIN.slice(4)];
+    const base = { chain, characterTags: ['a, ', 'b, '], customFields: CUSTOMS };
+    for (const scope of ['all', 'scene', 'cast']) {
+        const fields = buildProseFields({ ...base, scope });
+        assert.ok(fields.common.startsWith('masterpiece, best quality, 2girls, @ciloranko, (@wlop:0.8)'), `${scope}: ${fields.common}`);
+        assert.ok(!fields.positive.includes('@'), `${scope}: the artist never reaches positive`);
+    }
+});
+
 test('without per-character tags the characters unit is one entry; the AI marker is never sent', () => {
     const fields = buildProseFields({ chain: CHAIN, customFields: CUSTOMS });
     assert.deepEqual(fields.characters, ['long blonde hair, blue eyes, white dress, short black hair, red eyes, black suit']);

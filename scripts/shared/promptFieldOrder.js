@@ -7,11 +7,11 @@
 // missing is appended in default order so old settings and partial data stay
 // valid, and unknown ids are dropped.
 
-export const POSITIVE_BUILTIN_ORDER = Object.freeze(['common', 'views', 'background', 'style', 'ai', 'characters', 'positive']);
+export const POSITIVE_BUILTIN_ORDER = Object.freeze(['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive']);
 export const NEGATIVE_BUILTIN_ORDER = Object.freeze(['negative']);
 
 // Fixed structural blocks that carry no user text of their own.
-export const STRUCTURAL_UNITS = Object.freeze(new Set(['views', 'ai', 'characters']));
+export const STRUCTURAL_UNITS = Object.freeze(new Set(['views', 'ai', 'artist', 'characters']));
 
 const CUSTOM_ID_PATTERN = /^cf_[a-z0-9]{1,32}$/;
 

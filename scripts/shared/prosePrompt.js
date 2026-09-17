@@ -91,7 +91,7 @@ export function buildProseFields({ chain = [], characterTags = [], customFields 
     const positiveParts = [unit('positive'), fragment(aiText)];
     const actionParts = [];
     for (const entry of chain) {
-        if (!entry?.id || ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive'].includes(entry.id)) continue;
+        if (!entry?.id || ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive'].includes(entry.id)) continue;
         if (castIds.has(entry.id)) continue;
         const text = fragment(entry.text);
         if (text === '') continue;
@@ -109,7 +109,8 @@ export function buildProseFields({ chain = [], characterTags = [], customFields 
         characters = plain.length > 0 ? plain : [unit('characters')].filter(Boolean);
     }
     const fields = {
-        common: unit('common'),
+        // an "@artist" is a style trigger the image model reads as a tag: never prose
+        common: [unit('common'), unit('artist')].filter(Boolean).join(', '),
         characters,
         view: unit('views'),
         background: unit('background'),

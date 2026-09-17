@@ -15,6 +15,7 @@ import { beginImageOverride, describeOverrideWeights, endImageOverride, getActiv
 import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
 import { isStructuredRefineFormat, removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
 import { composeNegativeChain } from '../shared/negativeComposition.js';
+import { artistPrompt, signatureGuard } from '../shared/artistSlots.js';
 import { applyProse, describeProse } from './prosePipeline.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { normalizeApiAddress } from '../shared/backendAddress.js';
@@ -495,6 +496,7 @@ function appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP, fieldUnits = n
     const characterColor = dark ? 'DeepSkyBlue' : 'MidnightBlue';
     const positiveColor = dark ? 'LawnGreen' : 'SeaGreen';
     const customColor = dark ? 'orchid' : 'DarkMagenta';
+    const artistColor = dark ? 'Goldenrod' : 'DarkGoldenrod';
 
     let common = readPromptValue('common');
     const positive = readPromptValue('positive');
@@ -519,12 +521,16 @@ function appendPrompts(characters, views, ai, BOP, BOC, EOC, EOP, fieldUnits = n
         }
     }
 
+    // the Artist card (Diffusion only) writes "@name" tokens; it has no textarea of its own
+    const artistText = artistPrompt(SETTINGS);
+
     const colored = (text, color) => (text ? `[color=${color}]${text}[/color]` : '');
     const units = {
         common: { text: common || '', colored: colored(common, commonColor) },
         views: { text: views || '', colored: colored(views, viewColor) },
         background: { text: fieldUnits?.background ?? '', colored: colored(fieldUnits?.background ?? '', viewColor) },
         style: { text: fieldUnits?.style ?? '', colored: colored(fieldUnits?.style ?? '', viewColor) },
+        artist: { text: asFragment(artistText), colored: colored(asFragment(artistText), artistColor) },
         ai: { text: aiPrompt, colored: colored(aiPrompt, aiColor) },
         characters: {
             text: `${BOC || ''}${characters || ''}${EOC || ''}`,
@@ -710,7 +716,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         const negativeOrder = normalizeOrder(globalThis.globalSettings.prompt_negative_order, 'negative', globalThis.globalSettings.prompt_custom_fields);
         const negativeTexts = { negative: readPromptValue('negative') };
         for (const custom of getCustomFieldTexts('negative')) negativeTexts[custom.id] = custom.text;
-        negativePrompt = composeNegativeChain({ chain: negativeOrder, texts: negativeTexts, characterNegative: negative_tags });
+        negativePrompt = composeNegativeChain({ chain: negativeOrder, texts: negativeTexts, characterNegative: negative_tags, extra: signatureGuard(globalThis.globalSettings) });
         refineContext = {
             ...promptRefineContext,
             seed: randomSeed,

@@ -53,6 +53,9 @@ export function createSelectionModal({
     onOpen = null,
     onClose = null,
     onOptionHover = null,
+    // fires whenever the highlighted row changes, by mouse or by keyboard, so a caller can
+    // bind a side panel to it (null when nothing is highlighted)
+    onActiveOption = null,
     onOptionLeave = null,
     loadOptions = null,
 } = {}) {
@@ -151,7 +154,7 @@ export function createSelectionModal({
     let requestGeneration = 0;
     let searchTimer = null;
     let favOnly = false;
-    let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, favorites: null };
+    let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, onActiveOption, favorites: null };
 
     function isFavoriteOption(option) {
         return Boolean(activeConfig.favorites?.isFavorite?.(optionKey(option)));
@@ -227,6 +230,7 @@ export function createSelectionModal({
 
     function updateActiveDescendant() {
         const item = visibleOptions[activeIndex];
+        activeConfig.onActiveOption?.(item ?? null);
         if (!item) {
             listbox.removeAttribute('aria-activedescendant');
             return;
@@ -487,6 +491,7 @@ export function createSelectionModal({
                 categories,
                 attributes,
                 onOptionHover,
+                onActiveOption,
                 onOptionLeave,
                 loadOptions: dynamicLoadOptions,
                 favorites: favorites && typeof favorites.isFavorite === 'function' ? favorites : null,

@@ -20,6 +20,9 @@ const BUILTIN_SIDES = Object.freeze({
     common: 'both',
     background: 'both',
     style: 'both',
+    // Regional is a Checkpoint feature and the Artist card a Diffusion one, so this only
+    // matters for the order list; an artist would apply to the whole image anyway.
+    artist: 'both',
     negative: 'both',
     positive: 'left',
     negative_left: 'left',
