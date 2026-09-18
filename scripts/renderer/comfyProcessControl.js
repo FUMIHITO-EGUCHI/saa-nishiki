@@ -20,7 +20,7 @@ function text(key, fallback) {
 export function describeComfyProcess(reply, t = text) {
     if (!reply) return t('ui_comfy_proc_unknown', 'not checked');
     if (reply.phase && reply.phase !== 'idle') {
-        const verb = reply.phase === 'starting' ? t('ui_comfy_proc_starting', 'starting…')
+        const verb = reply.phase === 'starting' || reply.phase === 'restarting' ? t('ui_comfy_proc_starting', 'starting…')
             : reply.phase === 'stopping' ? t('ui_comfy_proc_stopping', 'stopping…') : reply.phase;
         return verb;
     }
@@ -49,39 +49,93 @@ export function setupComfyProcessControl() {
     const status = panel.querySelector('.comfy-proc-status');
     const pill = panel.querySelector('.comfy-proc-pill');
     let busy = false;
+    let busyAction = '';
+    let repoll = null;
 
     function paint(reply) {
         if (status) status.textContent = describeComfyProcess(reply);
         const running = reply?.running === true;
+        // a start SAA runs by itself (autostart, a fast-mode restart) belongs to no click of
+        // this panel: the phase in the reply says it is under way, and Stop cancels it
+        const phaseBusy = typeof reply?.phase === 'string' && reply.phase !== 'idle';
+        const working = busy || phaseBusy;
         if (pill) {
             // status-pill states (index_*.css): default dot = ok, is-busy, is-off
-            pill.classList.toggle('is-busy', busy);
-            pill.classList.toggle('is-off', !running && !busy);
+            pill.classList.toggle('is-busy', working);
+            pill.classList.toggle('is-off', !running && !working);
             const label = pill.querySelector('span');
-            if (label) label.textContent = busy ? '…' : (running ? text('ui_comfy_proc_running', 'running') : text('ui_comfy_proc_down', 'not running'));
+            if (label) label.textContent = working ? '…' : (running ? text('ui_comfy_proc_running', 'running') : text('ui_comfy_proc_down', 'not running'));
         }
         for (const [name, button] of Object.entries(buttons)) {
             if (!button) continue;
-            button.disabled = busy;
+            // while a start or restart runs, Stop stays available: it cancels that start
+            button.disabled = working && !(name === 'stop' && busyAction !== 'stop');
             // start only when down, stop / restart only when up (unknown: everything stays available)
-            if (reply && typeof reply.running === 'boolean' && !busy) {
+            if (reply && typeof reply.running === 'boolean' && !working) {
                 if (name === 'start') button.disabled = running;
                 if (name === 'stop') button.disabled = !running;
             }
         }
+        // the row has no timer of its own; while the main process works, look again shortly
+        if (repoll) clearTimeout(repoll);
+        repoll = phaseBusy && !busy ? setTimeout(() => { repoll = null; refresh(); }, 2000) : null;
     }
 
-    async function act(action) {
-        if (busy) return;
+    // Stop / Restart would end jobs ComfyUI is running: ask before going on with { force: true }
+    async function confirmForce(action, reply) {
+        const { showDialog } = await import('./components/myDialog.js');
+        const message = text('ui_comfy_proc_confirm_busy', 'ComfyUI has {0} job(s) running or queued. Stop it anyway? That work is lost.')
+            .replace('{0}', String(reply.jobs ?? '?'));
+        const yesText = action === 'restart' ? text('ui_comfy_restart', 'Restart') : text('ui_comfy_stop', 'Stop');
+        return showDialog('confirm', { message, yesText, noText: text('ui_comfy_proc_keep', 'Keep running') });
+    }
+
+    // The port is held by something SAA cannot tell is ComfyUI (a hung one, or one started
+    // outside SAA): name the pid and the program, and end it only if the user says so.
+    async function confirmUnverified(action, reply) {
+        const { showDialog } = await import('./components/myDialog.js');
+        const holders = (reply.holders ?? []).map(holder => `pid ${holder.pid} (${holder.name})`).join(', ');
+        const message = text('ui_comfy_proc_confirm_unverified', 'The ComfyUI port is held by {0}, which does not answer as ComfyUI. End that process anyway?')
+            .replace('{0}', holders || '?');
+        const yesText = action === 'restart' ? text('ui_comfy_restart', 'Restart') : text('ui_comfy_stop', 'Stop');
+        return showDialog('confirm', { message, yesText, noText: text('ui_comfy_proc_leave', 'Leave it alone') });
+    }
+
+    async function act(action, { force = false, unverified = false } = {}) {
+        if (busy) {
+            // Stop during a start or restart: the main process cancels the start and ends its launcher
+            if (action !== 'stop' || busyAction === 'stop') return;
+            if (status) status.textContent = text('ui_comfy_proc_stopping', 'stopping…');
+            try {
+                const reply = await api({ action: 'stop', force: true });
+                if (!reply?.ok) console.warn(CAT, 'stop', reply?.message);
+                if (!busy) paint(reply);   // the start's own reply (cancelled) came first
+            } catch (error) {
+                console.warn(CAT, 'stop', error?.message ?? error);
+            }
+            globalThis.uiShell?.pills?.refresh?.();
+            return;
+        }
         busy = true;
+        busyAction = action;
         paint({ phase: action === 'stop' ? 'stopping' : 'starting', running: null });
         try {
-            const reply = await api({ action });
+            const reply = await api({ action, force, unverified });
             if (!reply?.ok) console.warn(CAT, action, reply?.message, reply?.log ?? '');
             busy = false;
+            busyAction = '';
             paint(reply);
+            if (reply?.needsConfirm && !force) {
+                if (await confirmForce(action, reply)) await act(action, { force: true, unverified });
+                return;
+            }
+            if (reply?.needsUnverified && !unverified) {
+                if (await confirmUnverified(action, reply)) await act(action, { force: true, unverified: true });
+                return;
+            }
         } catch (error) {
             busy = false;
+            busyAction = '';
             paint({ ok: false, message: error?.message ?? String(error) });
         }
         globalThis.uiShell?.pills?.refresh?.();
@@ -103,5 +157,6 @@ export function setupComfyProcessControl() {
     // the row lives on a settings page: refresh when that page is shown, not on a timer
     document.addEventListener('saa-settings-page', event => { if (event.detail?.page === 'backend') refresh(); });
     refresh();
-    return { refresh, act };
+    // `stop`: drop the pending re-poll (the tests, and anything that takes the row away)
+    return { refresh, act, stop: () => { if (repoll) clearTimeout(repoll); repoll = null; } };
 }

@@ -20,7 +20,7 @@ import { getModelList, getModelListAll, getVAEList, getDiffusionModelList, getTe
     getLoRAList, getImageTaggerModels, updateModelAndLoRAList, getControlNetList,
     getUpscalerList, getADetailerList, getONNXList } from '../../main/modelList.js';
 import { updateWildcards, loadWildcard } from '../../main/wildCards.js';
-import { tagReload, tagGet, getTagAliases } from '../../main/tagAutoComplete_backend.js';
+import { tagReload, tagGet, tagLookup, getTagAliases } from '../../main/tagAutoComplete_backend.js';
 import { getRelatedTags, hasRelatedDictionary } from '../../main/tagRelated_backend.js';
 import { getArtistProfile, hasArtistProfiles, searchArtists } from '../../main/artist_backend.js';
 import { runComfyUI, runComfyUI_Regional, runComfyUI_ControlNet, runComfyUI_MiraITU, 
@@ -286,9 +286,11 @@ function createWebSocketServer(server, useHttps) {
         console.log(CAT, `WebSocket${useHttps ? ' Secure' : ''} client connected`, clientIP);
 
         ws.on('message', async (message) => {
+            let id;   // the catch below answers with it, so it must outlive the try block
             try {
                 const data = JSON.parse(message);
-                const { id, type, uuid } = data;
+                const { type, uuid } = data;
+                id = data?.id;
 
                 // Sanitize input
                 if (typeof data !== 'object' || data === null) {
@@ -466,6 +468,8 @@ const methodHandlers = {
   // tag auto complete
   'tagReload': (params = [])=> tagReload(...params),
   'tagGet': (params = [])=> tagGet(...params),
+  // a client that sends no params must not make the spread throw (the keys are checked there)
+  'tagLookup': (params)=> tagLookup(Array.isArray(params) ? params[0] : null),
   'tagAliases': (params = [])=> getTagAliases(...params),
   'tagRelated': (params = [])=> getRelatedTags(...params),
   'tagRelatedAvailable': ()=> hasRelatedDictionary(),
@@ -512,8 +516,8 @@ const methodHandlers = {
   },
 
   // comfyui
-  'runComfyUI': (params)=> runComfyUI(...params),
-  'runComfyUI_Regional': (params)=> runComfyUI_Regional(...params),
+  'runComfyUI': (params)=> runComfyUI(params?.[0], { remote: true }),
+  'runComfyUI_Regional': (params)=> runComfyUI_Regional(params?.[0], { remote: true }),
   'runComfyUI_ControlNet': (params)=> runComfyUI_ControlNet(...params),
   'runComfyUI_MiraITU': (params)=> runComfyUI_MiraITU(...params),
   'openWsComfyUI': (params)=> openWsComfyUI(...params),

@@ -154,7 +154,23 @@
         "ui_comfy_proc_stopping": "stopping…",
         "ui_comfy_proc_unknown": "not checked",
         "ui_comfy_proc_failed": "failed",
-        "ui_comfy_proc_note": "Launch command: a start script (.ps1 / .cmd) or python main.py with its arguments. Start runs it and waits for the backend on the ComfyUI address above (loopback only); with Start ComfyUI with SAA on, it also runs at launch when the backend does not answer. Stop unloads the models, then ends whatever holds that port.",
+        "ui_comfy_proc_confirm_busy": "ComfyUI has {0} job(s) running or queued. Stop it anyway? That work is lost.",
+        "ui_comfy_proc_keep": "Keep running",
+
+        "ui_comfy_proc_confirm_unverified": "The ComfyUI port is held by {0}, which does not answer as ComfyUI. End that process anyway?",
+
+        "ui_comfy_proc_leave": "Leave it alone",
+
+        "ui_comfy_approve_title": "ComfyUI launch command",
+
+        "ui_comfy_approve_message": "Run this ComfyUI launch command?",
+
+        "ui_comfy_approve_detail": "{0}\n\nSAA runs it for Start, Restart and \"Start ComfyUI with SAA\", and asks once for each new command. Allow it only if you set this command yourself.",
+
+        "ui_comfy_approve_run": "Run",
+
+        "ui_comfy_approve_cancel": "Cancel",
+        "ui_comfy_proc_note": "Launch command: a start script (.ps1 / .cmd; a path with spaces in double quotes) or python with the full path of main.py and its arguments. SAA asks once before it runs a new command. Start runs it and waits for the backend on the ComfyUI address above (loopback only); with Start ComfyUI with SAA on, it also runs at launch when the backend does not answer. Stop (also during a start) unloads the models, then ends the ComfyUI holding that port; a program that does not answer as ComfyUI is only ended after SAA asks about it by name.",
         "ui_pod_start": "Start pod",
         "ui_pod_stop": "Stop pod",
         "ui_pod_bootstrap": "Run bootstrap",
@@ -256,6 +272,13 @@
         "ai_prose_kept_tags": "tags sent as written",
         "ai_prose_fail": "no paragraph came back from the LLM",
         "ai_prose_fail_non_english": "the paragraph still contained non-English text",
+        "ai_prose_fail_invalid": "the reply was cut off or was not the JSON asked for",
+        "ai_prose_fail_truncated": "the reply stopped at the token limit (n_predict)",
+        "ai_prose_fail_refusal": "the LLM declined to write it",
+        "ai_prose_fail_refs": "the paragraph still named a character by \"@n\"",
+        "ai_prose_fail_no_fields": "the last run left no fields to write from",
+        "ai_prose_not_retried": "not asked again in this run",
+        "ai_prose_unknown_refs": "unknown cast references",
         "generate_prose": "Writing the prompt as a paragraph…",
         "system_settings": "Settings",
         "image_info": "Image Info Reader",
@@ -713,6 +736,7 @@
         "ui_fast_mode_tip": "Toggle fast mode · Checkpoint: distillation LoRA (Backend settings)",
         "ui_fast_mode_tip_diffusion": "Toggle fast mode · Diffusion: Anima Turbo LoRA and ComfyUI flags; the local ComfyUI restarts before the next run when the flags change (Backend settings)",
         "ui_fast_restart_status": "Restarting ComfyUI with launch flags: {0}",
+        "ui_fast_restart_plain": "Restarting ComfyUI without its launch flags",
         "ui_fast_restart_wait": "ComfyUI busy ({0} job(s)) · waiting to restart it with launch flags: {1}",
         "ui_settings_general": "General",
         "ui_settings_backend": "Backend",
@@ -936,7 +960,23 @@
         "ui_comfy_proc_stopping": "停止中…",
         "ui_comfy_proc_unknown": "未检查",
         "ui_comfy_proc_failed": "失败",
-        "ui_comfy_proc_note": "启动命令：启动脚本（.ps1 / .cmd）或带参数的 python main.py。启动会执行该命令并等待上方 ComfyUI 地址（仅限本机回环地址）响应；开启“随 SAA 启动 ComfyUI”后，SAA 启动时若后端无响应也会执行。停止会先卸载模型，再结束占用该端口的进程。",
+        "ui_comfy_proc_confirm_busy": "ComfyUI 有 {0} 个任务正在运行或排队。仍要停止吗？这些任务将丢失。",
+        "ui_comfy_proc_keep": "继续运行",
+
+        "ui_comfy_proc_confirm_unverified": "ComfyUI 端口被 {0} 占用，但它不以 ComfyUI 身份响应。仍要结束该进程吗？",
+
+        "ui_comfy_proc_leave": "保持不动",
+
+        "ui_comfy_approve_title": "ComfyUI 启动命令",
+
+        "ui_comfy_approve_message": "要运行这条 ComfyUI 启动命令吗？",
+
+        "ui_comfy_approve_detail": "{0}\n\n启动、重启和“随 SAA 启动 ComfyUI”都会运行它，每条新命令只询问一次。只有这条命令是你自己设置的才允许运行。",
+
+        "ui_comfy_approve_run": "运行",
+
+        "ui_comfy_approve_cancel": "取消",
+        "ui_comfy_proc_note": "启动命令：启动脚本（.ps1 / .cmd；路径含空格时用双引号括起）或带参数的 python 加 main.py 的完整路径。首次运行新命令前 SAA 会询问一次。启动会执行该命令并等待上方 ComfyUI 地址（仅限本机回环地址）响应；开启“随 SAA 启动 ComfyUI”后，SAA 启动时若后端无响应也会执行。停止（启动过程中也可）会先卸载模型，再结束占用该端口的 ComfyUI；不以 ComfyUI 身份响应的程序只有在 SAA 询问并确认后才会被结束。",
         "ui_pod_start": "启动Pod",
         "ui_pod_stop": "停止Pod",
         "ui_pod_bootstrap": "运行bootstrap",
@@ -1053,6 +1093,13 @@
         "ai_prose_kept_tags": "已按原样发送标签",
         "ai_prose_fail": "LLM 没有返回段落",
         "ai_prose_fail_non_english": "段落中仍含有非英文文字",
+        "ai_prose_fail_invalid": "回复被截断，或不是要求的 JSON",
+        "ai_prose_fail_truncated": "回复在令牌上限（n_predict）处中断",
+        "ai_prose_fail_refusal": "LLM 拒绝了改写",
+        "ai_prose_fail_refs": "段落中仍用 \"@n\" 指代角色",
+        "ai_prose_fail_no_fields": "上一次运行没有留下可改写的字段",
+        "ai_prose_not_retried": "本次运行不再重试",
+        "ai_prose_unknown_refs": "未知的角色引用",
         "generate_prose": "正在把提示词改写为段落……",
         "system_settings": "设置",
         "image_info": "读取图片信息",
@@ -1510,6 +1557,7 @@
         "ui_fast_mode_tip": "切换快速模式 · Checkpoint：蒸馏LoRA（后端设置）",
         "ui_fast_mode_tip_diffusion": "切换快速模式 · Diffusion：Anima Turbo LoRA 与 ComfyUI 启动参数；参数变化时，下次生成前会重启本地 ComfyUI（后端设置）",
         "ui_fast_restart_status": "以启动参数重启 ComfyUI：{0}",
+        "ui_fast_restart_plain": "重启 ComfyUI（不带启动参数）",
         "ui_fast_restart_wait": "ComfyUI 忙碌中（{0} 个任务）· 等待后以启动参数重启：{1}",
         "ui_settings_general": "常规",
         "ui_settings_backend": "后端",

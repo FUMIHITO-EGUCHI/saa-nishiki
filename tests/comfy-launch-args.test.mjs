@@ -47,6 +47,18 @@ test('each route wants its own flags, and none with fast mode off', () => {
         'flags stay managed with fast mode off, so they can be taken away');
 });
 
+test('a caller that names no route gets the Checkpoint set, and both sets stay managed', () => {
+    // the route is an option: without it the Checkpoint fast set applies, never the Diffusion one
+    const both = { api_fast_enable: true, api_fast_comfy_args: '--cache-none --reserve-vram 1.0', api_fast_diff_comfy_args: '--use-sage-attention --fast' };
+    assert.deepEqual(desiredLaunchArgs(both), ['--cache-none', '--reserve-vram', '1.0']);
+    assert.deepEqual(desiredLaunchArgs(both, {}), ['--cache-none', '--reserve-vram', '1.0']);
+    assert.deepEqual(desiredLaunchArgs({ ...both, api_fast_enable: false }), []);
+    assert.deepEqual(invalidLaunchArgs(both), []);
+    assert.deepEqual(invalidLaunchArgs({ ...both, api_fast_comfy_args: '--cache-none > out' }), ['>']);
+    // managedLaunchFlags walks both sets: a flag only one of them carries is SAA's to take away
+    assert.deepEqual([...managedLaunchFlags(both)].sort(), ['--cache-none', '--fast', '--reserve-vram', '--use-sage-attention']);
+});
+
 test('a plain process lacks the Diffusion fast flags', () => {
     const result = compareLaunchArgs(BASE_ARGV, ['--use-sage-attention', '--fast'], managedLaunchFlags(SETTINGS));
     assert.deepEqual(result, { match: false, missing: ['--use-sage-attention', '--fast'], unwanted: [] });
@@ -77,10 +89,12 @@ test('a flag with other values counts as missing', () => {
 test('launch flags reach every kind of launch command', () => {
     const extraArgs = ['--use-sage-attention', '--fast'];
     const ps1 = launchSpec('C:\\wai-stack\\start-comfy.ps1', 'win32', { log: 'C:\\logs\\comfy-launch.log', extraArgs });
-    assert.match(ps1.args[3], /& 'C:\\wai-stack\\start-comfy\.ps1' --use-sage-attention --fast \*>&1/);
+    // the .ps1 call goes to PowerShell base64-encoded (-EncodedCommand); spec.script is what it decodes to
+    assert.equal(Buffer.from(ps1.args[3].match(/-EncodedCommand (\S+)"$/)[1], 'base64').toString('utf16le'), ps1.script);
+    assert.match(ps1.script, /& 'C:\\wai-stack\\start-comfy\.ps1' --use-sage-attention --fast\n\} \*>&1/);
 
     const ps1Args = launchSpec('"C:\\my stack\\start-comfy.ps1" -Port 8189', 'win32', { extraArgs });
-    assert.match(ps1Args.args[3], /& 'C:\\my stack\\start-comfy\.ps1' -Port 8189 --use-sage-attention --fast/);
+    assert.match(ps1Args.script, /& 'C:\\my stack\\start-comfy\.ps1' -Port 8189 --use-sage-attention --fast/);
 
     const posix = launchSpec('/opt/wai/start-comfy.ps1', 'linux', { extraArgs });
     assert.deepEqual(posix.args.slice(-2), extraArgs);
@@ -114,4 +128,24 @@ test('every name imported from comfyProcess.js is exported there (electron-bound
             assert.match(source, new RegExp(`export (async )?function ${name}[(]`), `${file} imports ${name}`);
         }
     }
+});
+
+test('only a run from the SAA window itself may restart the local ComfyUI for its flags', async () => {
+    const fs = await import('node:fs');
+    const read = file => fs.readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+    const backend = read('scripts/main/generate_backend_comfyui.js');
+    // the call path decides, not the uuid in the message a client sent
+    assert.match(backend, /ensureComfyLaunchArgs\(settings, \{[^}]*\n\s*remote,/, 'prepareFastModeRun is told by its caller');
+    assert.doesNotMatch(backend, /remote: uuid/, 'never read out of the generation data');
+    assert.match(backend, /prepareFastModeRun\(generateData, getGlobalSettings\(\), true\);/, 'a Python client run is remote');
+    assert.equal(backend.match(/async function runComfyUI(?:_Regional)?\(generateData, \{ remote = false \} = \{\}\)/g)?.length, 2,
+        'the IPC handlers get the local default');
+    const service = read('scripts/webserver/back/wsService.js');
+    for (const method of ['runComfyUI', 'runComfyUI_Regional']) {
+        assert.match(service, new RegExp(`'${method}': \\(params\\)=> ${method}\\(params\\?\\.\\[0], \\{ remote: true \\}\\)`), `${method} over the websocket is remote`);
+    }
+    const source = read('scripts/main/comfyProcess.js');
+    const remoteCheck = source.indexOf('if (remote) {');
+    assert.ok(remoteCheck > 0, 'ensureComfyLaunchArgs checks remote');
+    assert.ok(remoteCheck < source.indexOf('await restartComfy(settings, { extraArgs: desired'), 'before it restarts anything');
 });
