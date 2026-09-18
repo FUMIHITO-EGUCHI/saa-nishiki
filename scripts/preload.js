@@ -108,7 +108,7 @@ contextBridge.exposeInMainWorld('api', {
   getCachedFiles: async () => ipcRenderer.invoke('get-cached-files'),
   updateCachedCharacterThumb: async (thumbSelect) => ipcRenderer.invoke('update-cached-character-thumb', thumbSelect),
   // downloadFiles
-  downloadURL: async () => ipcRenderer.invoke('download-url', url, filePath),
+  downloadURL: async (url, filePath) => ipcRenderer.invoke('download-url', url, filePath),
   // modelList
   updateModelList: async (args) => ipcRenderer.invoke('update-model-list', args),
   // remote ComfyUI (pod relay / HTTPS) model lists via /object_info; { open } dials the pod when true
