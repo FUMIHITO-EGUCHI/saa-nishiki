@@ -52,7 +52,9 @@ function loadJSONFile(filePath) {
   try {
     console.log(CAT, 'Loading JSON file:', filePath);
     const jsonContent = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(jsonContent);
+    // JSON.parse refuses a byte order mark; the shipped data files carry one and a
+    // hand-edited file saved on Windows may too
+    return JSON.parse(jsonContent.replace(/^\uFEFF/, ''));
   } catch (error) {
     console.error(CAT, 'Error loading JSON file:', error);
     throw new Error(`Failed to load JSON file: ${error.message}`);

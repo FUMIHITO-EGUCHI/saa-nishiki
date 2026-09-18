@@ -17,6 +17,12 @@ let upscalersModelList = 'none';
 function findControlNetModelByName(name) {
   const cleanName = path.basename(name, '.safetensors');
   
+  // no list came back from the backend ('none'): fall back instead of throwing
+  // on a string, which used to take the whole generation down with it
+  if (!Array.isArray(contronNetModelHashList)) {
+    return 'none';
+  }
+
   const matchedModel = contronNetModelHashList.find(model => {
     const modelName = model.split(' [')[0];
     return modelName === cleanName;
@@ -94,7 +100,7 @@ function applyADetailer(payload, adetailer) {
         aDetailerArg['ad_mask_filter_method'] = slot.mask_filter_method;
         // Mask Preprocessing
         aDetailerArg['ad_dilate_erode'] = slot.dilate_erode;
-        aDetailerArg['ad_mask_merge_invert'] = slot.ask_merge_invert;
+        aDetailerArg['ad_mask_merge_invert'] = slot.mask_merge_invert;
         // Inpainting
         aDetailerArg['ad_mask_blur'] = slot.mask_blur;
         aDetailerArg['ad_denoising_strength'] = slot.denoise;                    
@@ -271,7 +277,7 @@ class WebUI {
         }
         
         if (unet?.enable) {
-            override_settings["sd_model_checkpoint"] = vae.model; 
+            override_settings["sd_model_checkpoint"] = unet.model; 
             override_settings["forge_additional_modules"] = [unet.clip_model, unet.vae_model];
         }
 
@@ -489,7 +495,7 @@ class WebUI {
                 }
             }
 
-            if (hifix.enable){
+            if (hifix?.enable){
                 payload = {
                     ...payload,
                     "enable_hr": true,
@@ -510,7 +516,7 @@ class WebUI {
                 }
             }
 
-            if (refiner.enable && model !== refiner.model) {
+            if (refiner?.enable && model !== refiner?.model) {
                 payload = {
                     ...payload,
                     "refiner_checkpoint": refiner.model,
@@ -650,9 +656,12 @@ class WebUI {
 
                         if (Math.abs(progress - this.lastProgress) >= 0.05 && progress !== 0) {
                             this.lastProgress = progress;
+                            // live previews off in the backend: current_image is null, and a
+                            // "base64,null" preview only replaces the last one with a broken image
                             const image = jsonData.current_image;
-                            const previewData = `data:image/png;base64,${image}`;
-                            sendToRenderer(this.uuid, `updatePreview`, previewData);
+                            if (image) {
+                                sendToRenderer(this.uuid, `updatePreview`, `data:image/png;base64,${image}`);
+                            }
                             sendToRenderer(this.uuid, `updateProgress`, `${Math.floor(progress*100)}`, '100%');
                         }
                     } catch (error) {
@@ -923,7 +932,11 @@ async function updateAdModelList(generateData) {
 async function updateUpscalerModelList(generateData) {
     // update Upscaler Model List 
     const jsonData = await getListFromBAckend(generateData, httpApiUrl(generateData.addr, 'sdapi/v1/upscalers'));
-    if (typeof jsonData === 'string') {
+    // 'none' from a failed GET, or anything a proxy answered with that is not a list:
+    // filtering it would throw where nothing catches it, and the generation would be
+    // left holding the backend lock
+    if (!Array.isArray(jsonData)) {
+        console.error(CAT, 'Invalid upscalers list from GET');
         upscalersModelList = 'none';
         return upscalersModelList;
     } 
@@ -1003,12 +1016,20 @@ async function runWebUI(generateData){
             }
 
             const jsonData =  JSON.parse(imageData);
+            const image = jsonData?.images?.[0];
+            if (!image) {
+                // an interrupted run answers 200 with an empty list: an error, not an
+                // image source of "undefined" the renderer cannot tell apart
+                console.error(CAT, 'Error: No image from backend');
+                return 'Error: No image from backend';
+            }
             sendToRenderer(backendWebUI.uuid, `updateProgress`, `100`, '100%');
-            const image = jsonData.images[0];
-            // parameters info
+            // the parameters info of the reply is not read: save_images and
+            // directories_filename_pattern have the backend write the file itself
             console.log(CAT, 'Image retrieved from WebUI run, sending to renderer');
             return `data:image/png;base64,${image}`;
         } catch (error) {            
+            setMutexBackendBusy(false); // the run threw before it could release the lock
             console.error(CAT, 'Image not found or invalid:', error);
             return `Error: Image not found or invalid: ${error}`;
         }
@@ -1057,12 +1078,18 @@ async function runWebUI_Regional(generateData){
             }
 
             const jsonData =  JSON.parse(imageData);
+            const image = jsonData?.images?.[0];
+            if (!image) {
+                console.error(CAT, 'Error: No image from backend');
+                return 'Error: No image from backend';
+            }
             sendToRenderer(backendWebUI.uuid, `updateProgress`, `100`, '100%');
-            const image = jsonData.images[0];
-            // parameters info
+            // the parameters info of the reply is not read: save_images and
+            // directories_filename_pattern have the backend write the file itself
             console.log(CAT, 'Image retrieved from WebUI Regional run, sending to renderer');
             return `data:image/png;base64,${image}`;
         } catch (error) {            
+            setMutexBackendBusy(false); // the run threw before it could release the lock
             console.error(CAT, 'Image not found or invalid:', error);
             return `Error: Image not found or invalid: ${error}`;
         }

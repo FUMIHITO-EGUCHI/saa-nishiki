@@ -49,8 +49,8 @@ test('both ComfyUI regional builders and Forge Couple honour the split', async (
     // the ComfyUI builders load electron; their one split line is checked in the source
     const comfy = read('scripts/main/generate_backend_comfyui.js');
     assert.equal(comfy.match(/inputs\.Colum_first = regional\.split !== 'top-bottom'/g)?.length, 2);
-    // Forge Couple: the backend sends forgeCoupleMapping(regional); columns or rows by the split
-    assert.match(read('scripts/main/generate_backend_webui.js'), /const mapping = forgeCoupleMapping\(regional\);/);
+    // Forge Couple: the mapping the WebUI backend really sends is read off the request in
+    // tests/webui-generation.test.mjs; here it is the mapping itself, columns or rows by the split
     const { forgeCoupleMapping } = await import('../scripts/shared/regionalGeneration.js');
     const regional = { ratio: '0.6,0.4', str_left: 1.2, str_right: '0.8' };
     assert.deepEqual(forgeCoupleMapping({ ...regional, split: 'left-right' }), [[0, 0.6, 0, 1, 1.2], [0.4, 1, 0, 1, 0.8]]);
