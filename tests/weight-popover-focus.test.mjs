@@ -48,7 +48,6 @@ async function openRelatedPopover(document) {
     const popover = createWeightPopover({ text: (key, ...rest) => [key, ...rest].join(' ') });
     const anchor = document.createElement('button');
     document.body.appendChild(anchor);
-    anchor.isConnected = true;
     const picked = [];
     popover.open({
         anchor,
@@ -97,6 +96,33 @@ test('Ctrl+R while the popover is open never reaches the window menu, wherever t
         assert.equal(keydown(document, document.body, 'r'), false, 'a plain "r" is typing');
         popover.close();
         assert.equal(keydown(document, document.body, 'r', { ctrlKey: true }), false, 'a closed popover consumes nothing');
+    }, GLOBALS);
+});
+
+test('the Related tab writes as it goes: it has no Apply, and its Cancel reads "close"', async () => {
+    await withFakeDom(async document => {
+        const { popover } = await openRelatedPopover(document);
+        const apply = popover.element.querySelector('.tag-weight-button-primary');
+        const cancel = popover.element.querySelector('.tag-weight-button:not(.tag-weight-button-primary)');
+        assert.equal(apply.hidden, true, 'a picked tag is already in the field');
+        assert.equal(cancel.textContent, 'tag_ui_close');
+        // a weight tab brings Apply back, and the same button is Cancel again
+        popover.element.querySelectorAll('.tag-weight-popover-tab')[0].click();
+        assert.equal(apply.hidden, false);
+        assert.equal(cancel.textContent, 'tag_ui_cancel');
+    }, GLOBALS);
+});
+
+test('with Apply out of the way the focus ring ends at Cancel, not at a button nobody can see', async () => {
+    await withFakeDom(async document => {
+        const { popover } = await openRelatedPopover(document);
+        const root = popover.element;
+        const closeButton = root.querySelector('.tag-weight-popover-close');
+        const cancel = root.querySelector('.tag-weight-button:not(.tag-weight-button-primary)');
+        assert.equal(root.querySelector('.tag-weight-button-primary').hidden, true);
+        cancel.focus();
+        assert.equal(keydown(document, cancel, 'Tab'), true, 'Cancel is the last control the ring has here');
+        assert.equal(document.activeElement, closeButton);
     }, GLOBALS);
 });
 

@@ -133,7 +133,7 @@ export function setupRunProgress({ root, text = {} } = {}) {
 
     const sync = () => {
         const loading = document.getElementById('cg-loading-overlay');
-        if (loading && !tickHandle) start();
+        if (loading) start();   // start() is the one gate on a second ticker
         if (!loading && tickHandle) stop();
         const error = document.getElementById('cg-error-overlay');
         if (error) {

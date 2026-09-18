@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { startQueue } from '../scripts/renderer/generate.js';
-import { callback_generate_cancel, setQueueAutoStart } from '../scripts/renderer/callbacks.js';
+import { callback_generate_cancel, callback_generate_skip, callback_generate_start, setQueueAutoStart } from '../scripts/renderer/callbacks.js';
 import { setupQueue } from '../scripts/renderer/slots/myQueueSlot.js';
 import { createRefineRunController, recordRefineRunCandidate } from '../scripts/renderer/tools/refineRunState.js';
 import { createFakeDocument } from './helpers/fakeDom.mjs';
@@ -47,7 +47,15 @@ const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 // backend(name, call) answers runComfyUI / runComfyUI_Regional for the job `name`
 function setup(backend) {
     const state = { runs: [], errors: [], runBarRefreshes: 0, clickable: [] };
-    const button = name => ({ setClickable: value => state.clickable.push([name, value]), setTitle() {} });
+    // The buttons keep the clickable state they were last given: a run that leaves Generate
+    // clickable is a second click away from a double start, which is what state.enabled() reads.
+    const button = name => ({
+        clickable: true,
+        setClickable(value) { this.clickable = value; state.clickable.push([name, value]); },
+        setTitle() {},
+    });
+    state.enabled = () => Object.fromEntries(['single', 'batch', 'same', 'skip', 'cancel']
+        .map(name => [name, globalThis.generate[`generate_${name}`].clickable]));
     globalThis.inBrowser = false;
     globalThis.inGenerating = false;
     globalThis.globalSettings = { language: 'en-US', generate_auto_start: true, css_style: 'dark', api_model_type: 'Checkpoint', scroll_to_last: false };
@@ -183,6 +191,49 @@ test('Cancel with nothing running closes the overlay without an error and leaves
     assert.deepEqual(state.errors, [], 'no "cancel" error overlay');
     assert.deepEqual(state.clickable.filter(([name]) => ['single', 'batch', 'same'].includes(name)), [],
         'a new click cannot reset cancelClicked while the cancelled click is still building prompts');
+});
+
+// ------------------------------------------------------------- the buttons of a running click
+test('a generate click switches Generate / Batch / Same off for as long as the run lasts', async () => {
+    const state = setup(() => QUEUED);
+    // generateImage reads the backend address before anything else; an unconfigured backend
+    // throws there, which is the path the "never leave the buttons disabled" finally exists for.
+    globalThis.generate.api_address = { getValue() { throw new Error('backend not set'); } };
+    const running = callback_generate_start('normal');
+    // the click is in flight: a second Create Image / Batch / Same would be a double start
+    assert.deepEqual(state.enabled(), { single: false, batch: false, same: false, skip: true, cancel: true },
+        'the three generate buttons are off and Skip / Cancel are on while the run lasts');
+    await running;
+    assert.deepEqual(state.enabled(), { single: true, batch: true, same: true, skip: true, cancel: true },
+        'a failed run gives the generate buttons back');
+    assert.equal(state.errors.length, 1, 'the failure is reported once');
+    assert.equal(globalThis.inGenerating, false);
+});
+
+test('Skip switches the Skip button off so a second click cannot skip the next job as well', () => {
+    const state = setup(() => QUEUED);
+    globalThis.queueManager.attach('', job('A1'));
+    globalThis.queueManager.attach('', job('B1'));
+    callback_generate_skip();
+    assert.equal(state.enabled().skip, false, 'Skip is spent until the next job arms it again');
+    assert.equal(globalThis.generate.skipClicked, true);
+    assert.equal(globalThis.queueManager.getSlotsCount(), 1, 'only the jobs behind the running one are dropped');
+    assert.equal(globalThis.globalSettings.generate_auto_start, true, 'the auto-start setting is put back afterwards');
+});
+
+test('Cancel switches both Skip and Cancel off and asks the backend to stop once', async () => {
+    const state = setup(() => QUEUED);
+    globalThis.inGenerating = true;   // an image is at the backend, so the cancel goes out
+    globalThis.generate.nowAPI = 'ComfyUI';
+    let cancels = 0;
+    globalThis.api.cancelComfyUI = async () => { cancels += 1; };
+    globalThis.queueManager.attach('', job('A1'));
+    await callback_generate_cancel();
+    assert.equal(state.enabled().skip, false, 'Skip cannot be pressed on a run that is already stopping');
+    assert.equal(state.enabled().cancel, false, 'nor can Cancel a second time');
+    assert.equal(globalThis.generate.cancelClicked, true);
+    assert.equal(cancels, 1);
+    assert.equal(globalThis.queueManager.getSlotsCount(), 0);
 });
 
 // ---------------------------------------------------------------- the real queue rows

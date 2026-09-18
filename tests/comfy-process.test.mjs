@@ -24,6 +24,8 @@ const stub = {
     busy: false,        // SAA's generation mutex
     onKill: null,
     onSpawn: null,
+    execCalls: [],      // { file, options } per execFile, to see what the module asked for
+    killReply: null,    // what the fake taskkill answers with, when a test wants a failure
 };
 globalThis.__comfyProcessStub = stub;
 
@@ -44,7 +46,8 @@ function netstatText(listeners) {
         })].join('\r\n');
 }
 
-stub.exec = (file, args) => {
+stub.exec = (file, args, options) => {
+    stub.execCalls.push({ file, options });
     if (file === 'netstat') return { stdout: netstatText(stub.listeners) };
     if (file === 'tasklist') {
         // tasklist /FI "PID eq <pid>" /FO CSV /NH
@@ -56,7 +59,7 @@ stub.exec = (file, args) => {
         const pid = Number(args[1]);
         stub.killed.push(pid);
         stub.onKill?.(pid);
-        return { stdout: 'SUCCESS' };
+        return stub.killReply ?? { stdout: 'SUCCESS' };
     }
     throw new Error(`the test does not run ${file}`);
 };
@@ -84,7 +87,7 @@ const STUBS = {
         const stub = globalThis.__comfyProcessStub;
         export function execFile(file, args, options, callback) {
             let result;
-            try { result = stub.exec(file, args); } catch (error) { result = { error }; }
+            try { result = stub.exec(file, args, options); } catch (error) { result = { error }; }
             setImmediate(() => callback(result.error ?? null, result.stdout ?? '', result.stderr ?? ''));
         }
         export function spawn(file, args, options) { return stub.spawn(file, args, options); }`,
@@ -179,7 +182,7 @@ function approve(command) {
 }
 
 function reset() {
-    Object.assign(stub, { listeners: [], killed: [], spawned: [], dialogs: 0, dialogResponse: 0, dialogDelay: 0, processNames: {}, busy: false, onKill: null, onSpawn: null });
+    Object.assign(stub, { listeners: [], killed: [], spawned: [], dialogs: 0, dialogResponse: 0, dialogDelay: 0, processNames: {}, busy: false, onKill: null, onSpawn: null, execCalls: [], killReply: null });
     for (const file of ['comfy-launch-args.json', 'comfy-launch-approved.json']) fs.rmSync(path.join(stub.userData, file), { force: true });
     fs.rmSync(path.join(stub.userData, 'logs'), { recursive: true, force: true });
 }
@@ -541,6 +544,84 @@ test("a web client's run does not restart ComfyUI for its flags", opts, async ()
     } finally {
         await comfy.close();
     }
+});
+
+test('no address, no processes to look for: nothing is run at all', opts, async () => {
+    reset();
+    for (const target of [null, undefined]) {
+        assert.deepEqual(await comfyProcess.listenerPids(target), []);
+    }
+    assert.deepEqual(stub.execCalls, [], 'netstat is not run without an address to look up');
+    // and the same the other way round: the settings decide, not a leftover address
+    const stopped = await comfyProcess.stopComfy({ api_addr: '192.168.0.21:8188' });
+    assert.equal(stopped.ok, false);
+    assert.match(stopped.message, /not a loopback address/);
+    assert.deepEqual(stub.execCalls, []);
+});
+
+test('every helper process is run without a console window of its own', opts, async () => {
+    reset();
+    const port = await freePort();
+    const comfy = await fakeComfy(port);
+    stub.listeners = [{ pid: 90_100_071, host: '127.0.0.1', port }, { pid: 90_100_072, host: '0.0.0.0', port }];
+    stub.processNames[90_100_072] = 'python.exe';
+    killEnds(90_100_071, comfy);
+    try {
+        // a stop that looks the listeners up (netstat), names one (tasklist) and ends one (taskkill)
+        await comfyProcess.stopComfy(settingsFor(port));
+        const files = new Set(stub.execCalls.map(call => call.file));
+        assert.deepEqual([...files].sort(), ['netstat', 'taskkill']);
+        for (const call of stub.execCalls) {
+            assert.equal(call.options?.windowsHide, true, `${call.file} would flash a console window`);
+        }
+        // netstat -ano on a busy machine is long: its output must not be cut off, or a
+        // listener of ours would be missed and the backend left running
+        const netstat = stub.execCalls.find(call => call.file === 'netstat');
+        assert.ok(netstat.options.maxBuffer >= 64 * 1024 * 1024, `maxBuffer ${netstat.options.maxBuffer}`);
+    } finally {
+        await comfy.close();
+    }
+});
+
+test('a taskkill that reports a failure is judged by the port, not by what it printed', opts, async () => {
+    reset();
+    const port = await freePort();
+    const comfy = await fakeComfy(port);
+    stub.listeners = [{ pid: 90_100_081, host: '127.0.0.1', port }];
+    // a Japanese Windows says its own "there is no such process", in its own code page: the
+    // stop is not decided on that line, it is decided on the port going quiet
+    stub.killReply = { error: new Error('Command failed: taskkill'), stderr: 'エラー: PID 90100081 のプロセスが見つかりませんでした。' };
+    killEnds(90_100_081, comfy);
+    try {
+        const stopped = await comfyProcess.stopComfy(settingsFor(port));
+        assert.equal(stopped.ok, true, stopped.message);
+        assert.deepEqual(stub.killed, [90_100_081]);
+    } finally {
+        await comfy.close();
+    }
+});
+
+test('the launch log is moved aside once it grows past its limit, and not a byte before', opts, async () => {
+    reset();
+    approve('C:\\wai-stack\\Start-Comfy.cmd');
+    const port = await freePort();
+    const log = path.join(stub.userData, 'logs', 'comfy-launch.log');
+    const previous = path.join(stub.userData, 'logs', 'comfy-launch.previous.log');
+    fs.mkdirSync(path.dirname(log), { recursive: true });
+    // the launcher gives up at once: this start is only here for the log it writes
+    stub.onSpawn = child => setImmediate(() => child.emit('exit', 1, null));
+    const limit = 4 * 1024 * 1024;
+
+    fs.writeFileSync(log, Buffer.alloc(limit));
+    await comfyProcess.startComfy(settingsFor(port));
+    assert.equal(fs.existsSync(previous), false, 'a log exactly at the limit is still the one in use');
+    assert.ok(fs.statSync(log).size > limit, 'and the launch was written to its end');
+
+    fs.writeFileSync(log, Buffer.alloc(limit + 1));
+    await comfyProcess.startComfy(settingsFor(port));
+    assert.equal(fs.existsSync(previous), true, 'one byte more and it is kept as the previous log');
+    assert.equal(fs.statSync(previous).size, limit + 1);
+    assert.ok(fs.statSync(log).size < 4096, `the launch starts a new log (${fs.statSync(log).size} bytes)`);
 });
 
 test('the panel is asked to confirm before Stop ends running jobs', opts, async () => {
