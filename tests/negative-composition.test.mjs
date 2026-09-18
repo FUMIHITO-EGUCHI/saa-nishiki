@@ -50,3 +50,16 @@ test('a side unit repeating a "both" unit is written once, not twice', () => {
   assert.equal(left, 'worst quality');
   assert.equal(merged, 'worst quality');
 });
+
+test('a unit\'s own edge commas never double the separator', () => {
+  assert.equal(
+    composeNegativeChain({ chain: ['negative', 'neg_custom'], texts: { negative: 'worst quality, ', neg_custom: ', jpeg artifacts,,' }, characterNegative: 'extra arms, ' }),
+    'worst quality, jpeg artifacts, extra arms',
+  );
+  // a side unit that only differs by a trailing comma is still the "both" unit
+  const { left } = composeRegionalNegatives({
+    chains: { both: ['negative'], left: ['negative', 'negative_left'], right: ['negative'] },
+    texts: { negative: 'worst quality', negative_left: 'worst quality, ' },
+  });
+  assert.equal(left, 'worst quality');
+});

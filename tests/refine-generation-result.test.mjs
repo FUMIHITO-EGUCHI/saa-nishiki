@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { resolveQueuedAiPrompt } from '../scripts/renderer/tools/refineGenerationResult.js';
+import { refineRequestContext, resolveQueuedAiPrompt } from '../scripts/renderer/tools/refineGenerationResult.js';
 
 const marker = '_|AI|_';
 
@@ -195,4 +195,130 @@ test('Expand retains marker replacement and per-image plan weights', async () =>
   });
   assert.equal(result.positive, '(detailed eyes:1.10), soft light');
   assert.equal(result.envelope, null);
+});
+
+const REGIONAL_CONTEXT = Object.freeze({
+  left: { chain: [{ id: 'common', text: 'masterpiece, ' }, { id: 'positive', text: 'left' }] },
+  right: { chain: [{ id: 'common', text: 'masterpiece, ' }, { id: 'positive_right', text: 'right' }] },
+  negative: {
+    chains: { both: ['negative'], left: ['negative', 'negative_left'], right: ['negative', 'negative_right'] },
+    texts: { negative: 'lowres', negative_left: 'hat', negative_right: 'glasses' },
+  },
+  characterNegativeLeft: 'ponytail',
+  characterNegativeRight: 'beard',
+});
+
+test('the queued context records the request schema and the muted fields', () => {
+  const settings = { prompt_field_muted: ['negative_left'] };
+  assert.equal(refineRequestContext(null, { structuredRefine: true, settings }), null, 'Run Same has no context');
+  const structured = refineRequestContext(REGIONAL_CONTEXT, { structuredRefine: true, refineSystemPrompt: '', settings });
+  assert.equal(structured.requestSchema, 3, 'an empty setting sends the default');
+  assert.deepEqual(structured.muted, ['negativeLeft']);
+  assert.equal(structured.negative, REGIONAL_CONTEXT.negative);
+  assert.equal(refineRequestContext(REGIONAL_CONTEXT, { structuredRefine: true, refineSystemPrompt: 'Return "schema_version": 2' }).requestSchema, 2);
+  assert.equal(refineRequestContext(REGIONAL_CONTEXT, { structuredRefine: false, refineSystemPrompt: '' }).requestSchema, 0, 'nothing structured went out');
+});
+
+test('a schema 3 answer to a schema 2 request keeps the generated side negatives', async () => {
+  const result = await resolveQueuedAiPrompt({
+    mode: 'Refine',
+    content: JSON.stringify({
+      schema_version: 3, common: '', positive: 'left', positive_right: 'right', negative: 'worst quality', negative_left: '', negative_right: '', changes: '',
+    }),
+    marker,
+    regional: true,
+    originalPrompts: { positive: 'old left', positiveRight: 'old right', negative: 'old negative' },
+    fixedContext: { ...REGIONAL_CONTEXT, requestSchema: 2, muted: [] },
+  });
+  assert.equal(result.envelope.format, 'v2');
+  assert.equal(result.negativeLeft, 'worst quality, hat, ponytail');
+  assert.equal(result.negativeRight, 'worst quality, glasses, beard');
+  assert.equal(result.editorFields.negativeLeft, null, 'nor may the editor apply empty them');
+});
+
+test('a structured request answered without schema_version keeps the original prompts', async () => {
+  const result = await resolveQueuedAiPrompt({
+    mode: 'Refine',
+    content: JSON.stringify({ common: '', positive: 'side only', positive_right: 'side only', negative: 'lowres', changes: '' }),
+    marker,
+    regional: true,
+    originalPrompts: { positive: 'full left', positiveRight: 'full right', negative: 'lowres, hat, glasses, ponytail, beard' },
+    fixedContext: { ...REGIONAL_CONTEXT, requestSchema: 3, muted: [] },
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.envelope.format, 'invalid');
+  assert.equal(result.positive, 'full left');
+  assert.equal(result.negativeLeft, undefined, 'the generated side negatives stay');
+});
+
+test('muted fields and switched-off tags stay out of a structured Refine result', async () => {
+  const result = await resolveQueuedAiPrompt({
+    mode: 'Refine',
+    content: JSON.stringify({
+      schema_version: 3,
+      common: 'masterpiece',
+      positive: 'left',
+      positive_right: 'right',
+      negative: 'lowres, ~bad hands',
+      negative_left: 'muted left text',
+      negative_right: 'glasses',
+      changes: '',
+    }),
+    marker,
+    regional: true,
+    originalPrompts: { positive: 'old left', positiveRight: 'old right', negative: 'old negative' },
+    fixedContext: {
+      ...REGIONAL_CONTEXT,
+      // Negative (left) was muted, so generation gave its unit no text
+      negative: { ...REGIONAL_CONTEXT.negative, texts: { ...REGIONAL_CONTEXT.negative.texts, negative_left: '' } },
+      requestSchema: 3,
+      muted: ['negativeLeft'],
+    },
+  });
+  assert.equal(result.envelope.format, 'v3');
+  assert.equal(result.negativeLeft, 'lowres, ponytail');
+  assert.equal(result.negativeRight, 'lowres, glasses, beard');
+  assert.doesNotMatch(result.negative, /muted left text|bad hands/);
+});
+
+test('a legacy Regional negative keeps each side\'s own tags on that side', async () => {
+  const legacy = await resolveQueuedAiPrompt({
+    mode: 'Refine',
+    content: JSON.stringify({ positive: 'full left', positive_right: 'full right', negative: 'lowres, hat, glasses, ponytail, beard, bad hands' }),
+    marker,
+    regional: true,
+    originalPrompts: { positive: 'old left', positiveRight: 'old right', negative: 'lowres, hat, glasses, ponytail, beard' },
+    fixedContext: { ...REGIONAL_CONTEXT, requestSchema: 0, muted: [] },
+  });
+  assert.equal(legacy.envelope.format, 'legacy');
+  assert.equal(legacy.negativeLeft, 'lowres, hat, ponytail, bad hands');
+  assert.equal(legacy.negativeRight, 'lowres, glasses, beard, bad hands');
+  assert.equal(legacy.negative, 'lowres, hat, glasses, ponytail, beard, bad hands', 'the merged negative is the answer itself');
+});
+test('an answer reused by the AI role "Last" keeps this run\'s Regional sides', async () => {
+  // what an earlier run outside Regional answered: every Regional-only field is empty
+  const content = JSON.stringify({
+    schema_version: 3, common: 'masterpiece', positive: '1girl', positive_right: '',
+    negative: 'worst quality', negative_left: '', negative_right: '', changes: '',
+  });
+  const options = {
+    mode: 'Refine',
+    content,
+    marker,
+    regional: true,
+    originalPrompts: { positive: 'old left', positiveRight: 'old right', negative: 'old negative' },
+    fixedContext: { ...REGIONAL_CONTEXT, requestSchema: 3, muted: [] },
+  };
+
+  const reused = await resolveQueuedAiPrompt({ ...options, reusedAnswer: true });
+  assert.equal(reused.envelope.format, 'v3');
+  assert.equal(reused.positive, 'masterpiece, 1girl');
+  assert.equal(reused.positiveRight, 'masterpiece, right', 'the right side keeps what generation made of it');
+  assert.equal(reused.negativeLeft, 'worst quality, hat, ponytail');
+  assert.equal(reused.negativeRight, 'worst quality, glasses, beard');
+
+  // this run's own answer empties them, as it always did
+  const fresh = await resolveQueuedAiPrompt(options);
+  assert.equal(fresh.positiveRight, 'masterpiece');
+  assert.equal(fresh.negativeLeft, 'worst quality, ponytail');
 });

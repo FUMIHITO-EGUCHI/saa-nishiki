@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applyRefineEditorPatch } from '../scripts/renderer/tools/refineEditorApplication.js';
+import { applyRefineEditorPatch, describeRefineCandidate } from '../scripts/renderer/tools/refineEditorApplication.js';
 import { createRefineEditorSnapshot } from '../scripts/renderer/tools/refineEditorState.js';
 
 function snapshot(positive = 'old positive') {
@@ -64,16 +64,17 @@ test('valid V2 patch updates all prompt stores as one batch and refreshes Final 
   });
 
   assert.equal(result.status, 'applied');
+  // Positive (right) is not part of a normal prompt, so a normal run leaves it alone
   assert.deepEqual(h.values, {
     common: 'new common',
     positive: 'new positive',
-    positive_right: 'new right',
+    positive_right: '',
     negative: 'new negative',
   });
   assert.deepEqual(h.settings, {
     custom_prompt: 'new common',
     api_prompt: 'new positive',
-    api_prompt_right: 'new right',
+    api_prompt_right: '',
     api_neg_prompt: 'new negative',
   });
   assert.deepEqual(h.calls, ['begin', 'end', 'refresh']);
@@ -186,4 +187,147 @@ test('conflict or non-V2 candidate never partially overwrites current editing wo
   });
   assert.equal(invalid.status, 'invalid');
   assert.deepEqual(h.values, before);
+});
+
+test('a normal run never writes the hidden Positive (right) text', () => {
+  const h = harness();
+  h.values.positive_right = 'kept for Regional';
+  h.settings.api_prompt_right = 'kept for Regional';
+  const result = applyRefineEditorPatch({
+    candidate: { ...candidate, editorFields: { ...candidate.editorFields, positiveRight: '' } },
+    snapshot: snapshot(),
+    currentSnapshot: snapshot(),
+    controls: h.controls,
+    settings: h.settings,
+    tagCapsuleFields: h.tagCapsuleFields,
+  });
+  assert.equal(result.status, 'applied');
+  assert.equal(h.values.positive_right, 'kept for Regional');
+  assert.equal(h.settings.api_prompt_right, 'kept for Regional');
+});
+
+function mutedRegionalSnapshot(fields = {}) {
+  return createRefineEditorSnapshot({
+    mode: 'regional',
+    fields: {
+      common: 'old common',
+      positive: 'old positive',
+      positiveRight: 'old right',
+      negative: 'old negative, ~bad hands',
+      negativeLeft: 'old left negative',
+      negativeRight: 'old right negative',
+      exclude: 'watermark',
+      ...fields,
+    },
+    muted: ['negativeLeft'],
+    ai: { interface: 'Local', role: 1, promptMode: 'Refine', instruction: 'refine' },
+  });
+}
+
+test('a muted field and switched-off tags survive an apply', () => {
+  const h = regionalHarness();
+  h.values.negative = 'old negative, ~bad hands';
+  h.settings.api_neg_prompt = h.values.negative;
+  const result = applyRefineEditorPatch({
+    candidate: {
+      format: 'v3',
+      validForEditorApply: true,
+      editorFields: {
+        ...candidate.editorFields,
+        negative: 'new negative, ~invented',
+        negativeLeft: '',
+        negativeRight: 'new right negative',
+      },
+    },
+    snapshot: mutedRegionalSnapshot(),
+    currentSnapshot: mutedRegionalSnapshot(),
+    controls: h.controls,
+    settings: h.settings,
+    tagCapsuleFields: h.tagCapsuleFields,
+  });
+
+  assert.equal(result.status, 'applied');
+  assert.equal(h.values.negative_left, 'old left negative', 'the muted field keeps its text');
+  assert.equal(h.settings.api_neg_prompt_left, 'old left negative');
+  // "~bad hands" sat behind "old negative", and stays behind the tags that replaced it
+  assert.equal(h.values.negative, 'new negative, ~bad hands', 'the switched-off tag stays, a "~" the model wrote does not');
+  assert.equal(h.settings.api_neg_prompt, 'new negative, ~bad hands');
+  assert.equal(h.values.negative_right, 'new right negative');
+});
+
+test('the pending summary lists exactly the fields an apply writes', () => {
+  const v3 = {
+    format: 'v3',
+    validForEditorApply: true,
+    changes: 'Moved the shadow.',
+    editorFields: { ...candidate.editorFields, negativeLeft: '', negativeRight: 'lens flare' },
+  };
+  assert.equal(describeRefineCandidate(v3, regionalSnapshot()), [
+    'Changes: Moved the shadow.',
+    'Common: new common',
+    'Positive: new positive',
+    'Positive Right: new right',
+    'Negative: new negative',
+    'Negative Left: ',
+    'Negative Right: lens flare',
+  ].join('\n'), 'an emptied side negative is listed, since the apply empties it');
+
+  assert.equal(describeRefineCandidate(v3, snapshot()), [
+    'Changes: Moved the shadow.',
+    'Common: new common',
+    'Positive: new positive',
+    'Negative: new negative',
+  ].join('\n'), 'outside Regional nothing Regional-only is listed');
+
+  assert.doesNotMatch(describeRefineCandidate(candidate, regionalSnapshot()), /Negative Left|Negative Right/, 'a schema 2 answer keeps the side negatives');
+
+  // a switched-off field is not written, and the panel says so instead of staying silent
+  const muted = describeRefineCandidate(v3, mutedRegionalSnapshot());
+  assert.doesNotMatch(muted, /^Negative Left:/m, 'a muted field is not written');
+  assert.match(muted, /^Switched off, kept as they are: Negative Left$/m);
+  assert.doesNotMatch(describeRefineCandidate(v3, regionalSnapshot()), /Switched off/, 'nothing muted, nothing to say');
+});
+test('a switched-off tag keeps its place and the panel shows the text the apply writes', () => {
+  const state = createRefineEditorSnapshot({
+    mode: 'normal',
+    fields: {
+      common: 'old common',
+      positive: 'girl, ~(red hair, blue eyes:1.2), smile, ~lowres',
+      positiveRight: '',
+      negative: 'old negative',
+      exclude: '',
+    },
+    ai: { interface: 'Local', role: 1, promptMode: 'Refine', instruction: 'refine' },
+  });
+  const answer = {
+    format: 'v3',
+    validForEditorApply: true,
+    changes: 'Reordered.',
+    editorFields: {
+      common: 'new common',
+      positive: 'girl, smile, looking at viewer, ~invented',
+      positiveRight: '',
+      negative: 'new negative',
+      negativeLeft: null,
+      negativeRight: null,
+    },
+  };
+  const h = harness();
+  h.values.positive = state.fields.positive;
+  const result = applyRefineEditorPatch({
+    candidate: answer,
+    snapshot: state,
+    currentSnapshot: state,
+    controls: h.controls,
+    settings: h.settings,
+    tagCapsuleFields: h.tagCapsuleFields,
+  });
+
+  assert.equal(result.status, 'applied');
+  // the group is one switched-off tag, back at its own place; the trailing one stays last
+  assert.equal(h.values.positive, 'girl, ~(red hair, blue eyes:1.2), smile, looking at viewer, ~lowres');
+  // the panel shows exactly that, not the raw answer
+  const text = describeRefineCandidate(answer, state);
+  assert.match(text, /^Positive: girl, ~\(red hair, blue eyes:1\.2\), smile, looking at viewer, ~lowres$/m);
+  assert.doesNotMatch(text, /~invented/);
 });

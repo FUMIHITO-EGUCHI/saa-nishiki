@@ -16,6 +16,8 @@ import {
     normalizePromptMode,
     parseRefineEnvelope,
     parseRefineResponse,
+    previousRefineSystemPromptDefaults,
+    refineRequestSchema,
     removeAiPromptMarker,
     renderAiPromptInfo,
     resolveRefineSystemPrompt,
@@ -159,9 +161,85 @@ test('Regional v3 output must carry every side field', () => {
         const { [missing]: _dropped, ...partial } = base;
         const result = parseRefineEnvelope(JSON.stringify(partial), { regional: true });
         assert.equal(result.format, 'invalid', `${missing} is required`);
-        assert.match(result.error, new RegExp(missing));
+        assert.equal(result.error, `${missing} is required for Regional Refine`);
     }
     assert.equal(parseRefineEnvelope(JSON.stringify(base), { regional: true }).format, 'v3');
+});
+
+test('outside Regional an answer may leave out the Regional-only fields', () => {
+    const base = { schema_version: 3, common: 'masterpiece', positive: 'portrait', negative: 'blurry', changes: '' };
+    for (const answer of [base, { ...base, positive_right: null, negative_left: null, negative_right: null }]) {
+        const result = parseRefineEnvelope(JSON.stringify(answer), { regional: false });
+        assert.equal(result.format, 'v3');
+        assert.deepEqual(result.editorFields, {
+            common: 'masterpiece',
+            positive: 'portrait',
+            positiveRight: '',
+            negative: 'blurry',
+            negativeLeft: null,
+            negativeRight: null,
+        });
+    }
+    // present ones must still be strings
+    assert.equal(parseRefineEnvelope(JSON.stringify({ ...base, negative_left: 3 }), { regional: false }).format, 'invalid');
+});
+
+test('an answer is read against the schema its request was built with', () => {
+    const v3 = {
+        schema_version: 3,
+        common: '',
+        positive: 'left',
+        positive_right: 'right',
+        negative: 'blurry',
+        negative_left: '',
+        negative_right: '',
+        changes: '',
+    };
+    // a schema 2 request never showed the side negatives, so a schema 3 answer cannot empty them
+    const downgraded = parseRefineEnvelope(JSON.stringify(v3), { regional: true, requestSchema: 2 });
+    assert.equal(downgraded.format, 'v2');
+    assert.equal(downgraded.editorFields.negativeLeft, null);
+    assert.equal(downgraded.editorFields.negativeRight, null);
+    assert.equal(parseRefineEnvelope(JSON.stringify(v3), { regional: true, requestSchema: 0 }).format, 'v2', 'nor did a legacy request');
+    assert.equal(parseRefineEnvelope(JSON.stringify(v3), { regional: true, requestSchema: 3 }).format, 'v3');
+
+    // a structured request is answered with editor fields; without schema_version they are
+    // not finished prompts
+    const { schema_version: _version, ...versionless } = v3;
+    for (const requestSchema of [2, 3]) {
+        const result = parseRefineEnvelope(JSON.stringify(versionless), { regional: true, requestSchema });
+        assert.equal(result.format, 'invalid');
+        assert.equal(result.error, 'Refine response has no schema_version');
+    }
+    // a legacy request (or an unknown one) still reads a versionless answer as legacy
+    const legacyOriginals = { positive: 'old', positiveRight: 'old right', negative: 'old' };
+    assert.equal(parseRefineEnvelope(JSON.stringify(versionless), { regional: true, requestSchema: 0, originalPrompts: legacyOriginals }).format, 'legacy');
+    assert.equal(parseRefineEnvelope(JSON.stringify(versionless), { regional: true, originalPrompts: legacyOriginals }).format, 'legacy');
+});
+
+test('the request schema is read from reworded and translated system prompts', () => {
+    assert.equal(refineRequestSchema(REFINE_SYSTEM_PROMPT), 3);
+    assert.equal(refineRequestSchema(''), 3, 'an empty setting sends the default');
+    assert.equal(refineRequestSchema(LEGACY_V2_REFINE_SYSTEM_PROMPT), 2);
+    for (const prompt of previousRefineSystemPromptDefaults()) {
+        assert.equal(refineRequestSchema(prompt), /"schema_version": 3/.test(prompt) ? 3 : 2);
+    }
+    const firstLine = 'numeric "schema_version": 3';
+    assert.equal(refineRequestSchema(REFINE_SYSTEM_PROMPT.replace(firstLine, 'schema_version set to the number 3')), 3);
+    assert.equal(refineRequestSchema(REFINE_SYSTEM_PROMPT.replace(firstLine, 'schema_version には数値 3 を入れる')), 3);
+    assert.equal(refineRequestSchema(REFINE_SYSTEM_PROMPT.replace(firstLine, 'schema_version は ３')), 3, 'full-width digit');
+    // the return-format line removed: only "verify that schema_version is numeric 3" is left
+    assert.equal(refineRequestSchema(REFINE_SYSTEM_PROMPT.split('\n').filter(line => !line.startsWith('Return exactly one JSON')).join('\n')), 3);
+    // the number may sit on the next line after the mention
+    assert.equal(refineRequestSchema('Return one JSON object with:\nschema_version:\n3\ncommon, positive, negative'), 3);
+    // a schema 3 prompt that also names the old format still asks for 3: the request is
+    // built from this same answer, so a schema 3 request answered with schema 2 is read as
+    // schema 2, while a schema 2 request never sees the per-side negatives at all
+    assert.equal(refineRequestSchema(`${REFINE_SYSTEM_PROMPT}\nNever answer with schema_version 2.`), 3);
+    assert.equal(refineRequestSchema(`${LEGACY_V2_REFINE_SYSTEM_PROMPT}\nMy own rule.`), 2, 'a customized schema 2 prompt stays schema 2');
+    // a mention without any number, or none at all
+    assert.equal(refineRequestSchema('Answer with schema_version and the fields.'), 2);
+    assert.equal(refineRequestSchema('My intentionally customized refine instructions.'), 0);
 });
 
 test('both structured schemas rebuild the editor, legacy output never does', () => {
@@ -435,4 +513,56 @@ test('Regional Refine info shows both final positive prompts', () => {
     assert.match(rendered, /Positive Left:\nleft final/);
     assert.match(rendered, /Positive Right:\nright final/);
     assert.match(rendered, /Negative:\nfinal negative/);
+});
+test('a switched-off field is named as locked instead of offered as an empty one', () => {
+    const editorFields = {
+        common: '',
+        positive: 'portrait',
+        positiveRight: '',
+        negative: 'blurry',
+        negativeLeft: '',
+        negativeRight: 'lens flare',
+        locked: ['common', 'negativeLeft'],
+    };
+    const v3 = JSON.parse(buildRefineV3UserContent({ instruction: 'x', editorFields, generationContext: {} }));
+    assert.deepEqual(v3.locked, ['common', 'negative_left']);
+    assert.equal(v3.editor.common, '', 'the field itself still goes out, empty');
+    // schema 2 sends no side negatives, so it names none as locked either
+    assert.deepEqual(JSON.parse(buildRefineV2UserContent({ instruction: 'x', editorFields, generationContext: {} })).locked, ['common']);
+    // nothing switched off: no locked key at all
+    const none = JSON.parse(buildRefineV3UserContent({ instruction: 'x', editorFields: { ...editorFields, locked: [] }, generationContext: {} }));
+    assert.equal(Object.hasOwn(none, 'locked'), false);
+    assert.equal(Object.hasOwn(JSON.parse(buildRefineV3UserContent({ instruction: 'x', editorFields: {}, generationContext: {} })), 'locked'), false);
+    // and the system prompt says what a locked field means
+    assert.match(REFINE_SYSTEM_PROMPT, /^14\. The user message may carry "locked"/m);
+    assert.match(REFINE_SYSTEM_PROMPT, /never move content into one/);
+});
+
+test('an answer reused from an earlier run cannot empty this run\'s Regional side fields', () => {
+    // what a run outside Regional answers: every side field is an empty string
+    const outside = {
+        schema_version: 3, common: 'masterpiece', positive: '1girl', positive_right: '',
+        negative: 'blurry', negative_left: '', negative_right: '', changes: '',
+    };
+    const reused = parseRefineEnvelope(JSON.stringify(outside), { regional: true, requestSchema: 3, reused: true });
+    assert.equal(reused.format, 'v3');
+    assert.deepEqual(reused.editorFields, {
+        common: 'masterpiece',
+        positive: '1girl',
+        positiveRight: null,
+        negative: 'blurry',
+        negativeLeft: null,
+        negativeRight: null,
+    }, 'null: the side fields keep what they have');
+    // a side field the reused answer does fill is an answer like any other
+    const filled = parseRefineEnvelope(JSON.stringify({ ...outside, positive_right: '1boy', negative_right: 'lens flare' }), { regional: true, requestSchema: 3, reused: true });
+    assert.equal(filled.editorFields.positiveRight, '1boy');
+    assert.equal(filled.editorFields.negativeRight, 'lens flare');
+    assert.equal(filled.editorFields.negativeLeft, null);
+    // this run's own answer may empty them
+    const fresh = parseRefineEnvelope(JSON.stringify(outside), { regional: true, requestSchema: 3 });
+    assert.equal(fresh.editorFields.positiveRight, '');
+    assert.equal(fresh.editorFields.negativeLeft, '');
+    // outside Regional a reused answer is read as before
+    assert.equal(parseRefineEnvelope(JSON.stringify(outside), { regional: false, reused: true }).editorFields.positiveRight, '');
 });

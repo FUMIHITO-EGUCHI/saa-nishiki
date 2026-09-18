@@ -1,3 +1,6 @@
+import { stripDisabledTags } from '../components/tagCapsuleLogic.js';
+import { isFieldMuted } from '../../shared/promptFieldOrder.js';
+
 const FIELD_KEYS = Object.freeze(['common', 'positive', 'positiveRight', 'negative', 'negativeLeft', 'negativeRight', 'exclude']);
 const SETTINGS_KEY_BY_FIELD = Object.freeze({
     common: 'common',
@@ -31,9 +34,9 @@ function stableStringify(value) {
     return JSON.stringify(value);
 }
 
-// Negative (left / right) only exist while Regional is on; outside it their stored text
-// is not part of the prompt, so Refine neither sees it nor may rewrite it.
-const REGIONAL_ONLY_KEYS = new Set(['negativeLeft', 'negativeRight']);
+// Positive (right) and Negative (left / right) only exist while Regional is on; outside it
+// their stored text is not part of the prompt, so Refine neither sees it nor may rewrite it.
+const REGIONAL_ONLY_KEYS = new Set(['positiveRight', 'negativeLeft', 'negativeRight']);
 
 function normalizeFields(fields = {}, mode = 'normal') {
     return Object.fromEntries(FIELD_KEYS.map(key => [
@@ -46,11 +49,23 @@ function normalizeKeyedJson(values = {}, fallback) {
     return Object.fromEntries(FIELD_KEYS.map(key => [key, cloneJsonValue(values[key] ?? fallback)]));
 }
 
-export function createRefineEditorSnapshot({ mode = 'normal', fields = {}, plans = {}, batches = {}, ai = {} } = {}) {
+// A muted field (the Scene row's switch) keeps its text but sends nothing, so Refine
+// neither sees nor rewrites it either.
+function normalizeMuted(muted, mode) {
+    const keys = new Set(Array.isArray(muted) ? muted : []);
+    return FIELD_KEYS.filter(key => keys.has(key) && !(mode !== 'regional' && REGIONAL_ONLY_KEYS.has(key)));
+}
+
+export function mutedRefineFields(settings = {}) {
+    return FIELD_KEYS.filter(field => isFieldMuted(settings, SETTINGS_KEY_BY_FIELD[field]));
+}
+
+export function createRefineEditorSnapshot({ mode = 'normal', fields = {}, muted = [], plans = {}, batches = {}, ai = {} } = {}) {
     const normalizedMode = mode === 'regional' ? 'regional' : 'normal';
     const content = {
         mode: normalizedMode,
         fields: normalizeFields(fields, normalizedMode),
+        muted: normalizeMuted(muted, normalizedMode),
         plans: normalizeKeyedJson(plans, []),
         batches: normalizeKeyedJson(batches, { enabled: false, count: 4 }),
         ai: {
@@ -85,7 +100,24 @@ export function captureRefineEditorSnapshot({ mode = 'normal', ai = {}, prompt, 
         plans[field] = storedSettings[`${settingsKey}_weight_plans`] ?? [];
         batches[field] = storedSettings[`${settingsKey}_batch`] ?? { enabled: false, count: 4 };
     }
-    return createRefineEditorSnapshot({ mode, fields, plans, batches, ai });
+    return createRefineEditorSnapshot({ mode, fields, muted: mutedRefineFields(storedSettings), plans, batches, ai });
+}
+
+// The editable fields a structured Refine request carries: only the text that reaches the
+// prompt. A muted field goes out empty and a switched-off "~tag" not at all; applying the
+// answer keeps both as they are (refineEditorApplication.js). `locked` names the muted
+// fields to the model, which would otherwise move content into an empty-looking field and
+// lose it: their answer is dropped in generation and in the editor alike (rule 14 of the
+// Refine system prompt, aiPromptRefiner.js). Exclude is no field of the request.
+export function refineRequestFields(snapshot) {
+    const muted = new Set(snapshot?.muted ?? []);
+    return Object.freeze({
+        ...Object.fromEntries(FIELD_KEYS.map(key => [
+            key,
+            muted.has(key) ? '' : stripDisabledTags(snapshot?.fields?.[key] ?? ''),
+        ])),
+        locked: Object.freeze(FIELD_KEYS.filter(key => key !== 'exclude' && muted.has(key))),
+    });
 }
 
 export function snapshotFieldsForPromptOverride(snapshot) {

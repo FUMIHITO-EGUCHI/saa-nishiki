@@ -112,6 +112,30 @@ test('a saved schema 2 system prompt still gets a schema 2 request', () => {
     assert.deepEqual(Object.keys(content.editor), ['common', 'positive', 'positive_right', 'negative']);
 });
 
+test('a customized system prompt picks its request schema from what it says', () => {
+    // no schema_version anywhere: the legacy request, even with editor fields at hand
+    const legacy = buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: 'custom legacy prompt' });
+    assert.deepEqual(JSON.parse(legacy.messages[1].content), {
+        instruction: '顔と目を強調する',
+        positive: 'masterpiece, portrait, city background',
+        negative: 'worst quality, blurry',
+    });
+
+    // a reworded schema 3 prompt still gets the side negatives
+    const reworded = REFINE_SYSTEM_PROMPT.replace('numeric "schema_version": 3', 'schema_version には数値 3 を入れる');
+    const v3 = JSON.parse(buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: reworded }).messages[1].content);
+    assert.equal(v3.schema_version, 3);
+    assert.equal(v3.editor.negative_left, 'harsh shadow');
+});
+
+test('a structured Refine answer is not cut off at the Expand-sized token limit', () => {
+    assert.equal(buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: REFINE_SYSTEM_PROMPT }).options.num_predict, 1536);
+    assert.equal(buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: REFINE_SYSTEM_PROMPT, n_predict: 4096 }).options.num_predict, 4096);
+    // Expand and the legacy request keep the user's limit
+    assert.equal(buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: 'custom legacy prompt' }).options.num_predict, 768);
+    assert.equal(buildOllamaChatRequest({ ...REFINE_REQUEST, promptMode: 'Expand', systemPrompt: 'system' }).options.num_predict, 768);
+});
+
 test('custom Refine without editor fields keeps the legacy generation-only request', () => {
     const request = buildOllamaChatRequest({
         promptMode: 'Refine',
@@ -140,4 +164,10 @@ test('Ollama chat responses are normalized to the SAA response shape', () => {
             choices: [{ message: { role: 'assistant', content: '1girl, portrait' } }],
         },
     );
+    const cut = normalizeOllamaChatResponse(JSON.stringify({
+        model: SMALL_MODEL,
+        message: { role: 'assistant', content: '{"prompt": "the girl with long' },
+        done_reason: 'length',
+    }));
+    assert.equal(cut.choices[0].finish_reason, 'length', 'an answer cut off at num_predict says so');
 });

@@ -4,7 +4,9 @@
 // negatives come last. Generation and AI Refine's recomposition both go through here
 // so the same units always produce the same text.
 
-const clean = value => String(value ?? '').trim();
+// a unit's own leading / trailing commas are dropped, so "worst quality, " never joins
+// into "worst quality,, extra arms"
+const clean = value => String(value ?? '').replace(/^[\s,]+|[\s,]+$/g, '');
 
 export function joinNegativeParts(parts) {
     return parts.map(clean).filter(Boolean).join(', ').trim();

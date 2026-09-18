@@ -5,6 +5,7 @@ import {
     buildRefineV2UserContent,
     buildRefineV3UserContent,
     normalizePromptMode,
+    refineRequestSchema,
 } from '../aiPromptRefiner.js';
 import { isOllamaChatUrl } from '../shared/ollamaUrl.js';
 import { PROSE_RESPONSE_FORMAT, PROSE_SYSTEM_PROMPT, isProseMode } from '../shared/prosePrompt.js';
@@ -41,13 +42,36 @@ export function resolveSaaOllamaModel({ mode = 'Auto', use = 'prompt' } = {}) {
 }
 
 // Which structured Refine schema the saved system prompt asks for. A customized prompt
-// that never mentions schema_version keeps the legacy generation-only request.
+// that never mentions schema_version keeps the legacy generation-only request. The
+// renderer reads the answer against the same schema (refineRequestContext).
 function structuredRefineVersion(systemPrompt) {
-    const text = String(systemPrompt ?? '');
-    const declared = /schema_version\D{0,4}(\d+)/i.exec(text);
-    const version = declared ? Number(declared[1]) : 0;
-    if (version === 2 || version === 3) return version;
-    return /schema_version/i.test(text) ? 2 : 0;
+    return refineRequestSchema(systemPrompt);
+}
+
+// A structured answer repeats every editable field (six with the Regional negatives) as
+// JSON; cut off at the Expand-sized default it is invalid and the Refine is lost. A
+// complete answer stops at its closing brace, so the floor only matters for long ones.
+const STRUCTURED_REFINE_MIN_PREDICT = 1536;
+
+// The same answer needs the time to write those tokens. On a CPU the large model runs at a
+// few tokens a second, so the AI card's timeout (10-300 s, meant for an Expand of a few
+// dozen tokens) can cut a Refine that was going to arrive - and a cut Refine loses the
+// whole edit, while a slow one only makes the user wait. A structured request therefore
+// gets at least this long, whatever the card says; everything else keeps the card's value.
+export const STRUCTURED_REFINE_MIN_TIMEOUT = 300000;
+
+/**
+ * How long to wait for one chat request. `timeout` is the AI card's value in ms; a
+ * structured Refine (editor fields plus generation context) is floored, as above.
+ * 0 / not a number means no limit, as it did before the limit was armed at all.
+ */
+export function resolveChatTimeout({ timeout, promptMode = 'Expand', editorFields = null, generationContext = null } = {}) {
+    const ms = Number(timeout);
+    if (!Number.isFinite(ms) || ms <= 0) return 0;
+    const structured = normalizePromptMode(promptMode) === PROMPT_MODE_REFINE
+        && editorFields && typeof editorFields === 'object'
+        && generationContext && typeof generationContext === 'object';
+    return structured ? Math.max(ms, STRUCTURED_REFINE_MIN_TIMEOUT) : ms;
 }
 
 function refineUserContent(version, { instruction, editorFields, generationContext, positive, negative, positiveRight }) {
@@ -131,7 +155,7 @@ export function buildOllamaChatRequest({
         temperature: safeTemperature,
         stream: false,
         think: false,
-        options: { num_predict: safePredict },
+        options: { num_predict: structuredVersion ? Math.max(safePredict, STRUCTURED_REFINE_MIN_PREDICT) : safePredict },
         keep_alive: 0,
     };
 
@@ -159,6 +183,8 @@ export function normalizeOllamaChatResponse(responseText) {
                 role: response.message.role || 'assistant',
                 content,
             },
+            // an answer cut off at num_predict, in the OpenAI form llama.cpp already reports
+            ...(response.done_reason === 'length' ? { finish_reason: 'length' } : {}),
         }],
     };
 }

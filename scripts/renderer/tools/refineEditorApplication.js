@@ -1,4 +1,5 @@
 import { isStructuredRefineFormat } from '../../aiPromptRefiner.js';
+import { DISABLED_TAG_MARKER, mapPromptTokens, splitPromptTokens, stripDisabledTags } from '../components/tagCapsuleLogic.js';
 import { hasRefineEditorConflict } from './refineEditorState.js';
 
 const FIELD_SPECS = Object.freeze([
@@ -16,22 +17,87 @@ const SIDE_NEGATIVE_SPECS = Object.freeze([
     ['negativeRight', 'negative_right', 'api_neg_prompt_right'],
 ]);
 
+const FIELD_LABELS = Object.freeze({
+    common: 'Common',
+    positive: 'Positive',
+    positiveRight: 'Positive Right',
+    negative: 'Negative',
+    negativeLeft: 'Negative Left',
+    negativeRight: 'Negative Right',
+});
+
+// Positive (right) is part of the prompt only while Regional is on, like the side
+// negatives. A muted field was sent empty and is not Refine's to rewrite. A Regional field
+// the answer left unanswered (null: a schema 2 answer, or one reused from a run outside
+// Regional) keeps what the editor holds. Without `controls` (the pending summary) the
+// fields are listed the same way an apply would write them.
 function patchSpecs(candidate, controls, snapshot) {
-    if (snapshot?.mode !== 'regional') return [...FIELD_SPECS];
-    return [...FIELD_SPECS, ...SIDE_NEGATIVE_SPECS.filter(([candidateKey, controlKey]) =>
-        typeof candidate?.editorFields?.[candidateKey] === 'string'
-        && typeof controls[controlKey]?.setValue === 'function')];
+    const muted = new Set(snapshot?.muted ?? []);
+    const answered = candidateKey => typeof candidate?.editorFields?.[candidateKey] === 'string';
+    const writable = controlKey => !controls || typeof controls[controlKey]?.setValue === 'function';
+    const specs = snapshot?.mode !== 'regional'
+        ? FIELD_SPECS.filter(([candidateKey]) => candidateKey !== 'positiveRight')
+        : [
+            ...FIELD_SPECS.filter(([candidateKey]) => candidateKey !== 'positiveRight' || answered('positiveRight')),
+            ...SIDE_NEGATIVE_SPECS.filter(([candidateKey, controlKey]) => answered(candidateKey) && writable(controlKey)),
+        ];
+    return specs.filter(([candidateKey]) => !muted.has(candidateKey));
 }
 
-function validatedPatch(candidate, specs) {
+// Refine only saw the tags that reach the prompt. The field's switched-off "~tag" capsules
+// stay in it, each back between the switched-on tags it sat between, so the chips keep
+// their order. One that sat behind every switched-on tag stays behind them, wherever the
+// model ended the field - an action sentence (rule 13) still ends it.
+function keepDisabledTags(value, before) {
+    // one tokenizer with the chips: a switched-off group ("~(red hair, blue eyes:1.2)")
+    // is one tag, not the "~(red hair" half of one
+    const tokens = splitPromptTokens(before);
+    const switchedOn = tokens.filter(token => !token.startsWith(DISABLED_TAG_MARKER)).length;
+    const pending = [];
+    let seen = 0;
+    for (const token of tokens) {
+        if (token.startsWith(DISABLED_TAG_MARKER)) pending.push({ token, after: seen });
+        else seen += 1;
+    }
+    const active = stripDisabledTags(value);
+    if (pending.length === 0) return active;
+    // `after` and the answer's tag index both count switched-on tags only
+    const inside = pending.filter(entry => entry.after < switchedOn);
+    const tail = pending.filter(entry => entry.after >= switchedOn).map(entry => entry.token);
+    const text = mapPromptTokens(active, (token, index) => {
+        const ahead = [];
+        while (inside.length > 0 && inside[0].after <= index) ahead.push(inside.shift().token);
+        return ahead.length > 0 ? `${ahead.join(', ')}, ${token}` : null;
+    });
+    // the model dropped tags the switched-off ones sat behind, or emptied the field
+    return [text, ...inside.map(entry => entry.token), ...tail].filter(Boolean).join(', ');
+}
+
+function validatedPatch(candidate, specs, snapshot) {
     if (!isStructuredRefineFormat(candidate?.format) || candidate.validForEditorApply !== true || !candidate.editorFields) return null;
     const patch = {};
     for (const [candidateKey, controlKey] of specs) {
         const value = candidate.editorFields[candidateKey];
         if (typeof value !== 'string') return null;
-        patch[controlKey] = value;
+        patch[controlKey] = keepDisabledTags(value, snapshot?.fields?.[candidateKey]);
     }
     return patch;
+}
+
+// The pending panel's text: the changes line, every field an apply would write - with the
+// switched-off tags it keeps and without a "~" the model invented, exactly as the apply
+// writes it, an emptied field included - and last the fields the apply leaves alone
+// because they are switched off.
+export function describeRefineCandidate(candidate, snapshot) {
+    const fields = candidate?.editorFields ?? {};
+    const written = patchSpecs(candidate, null, snapshot).map(([candidateKey]) =>
+        `${FIELD_LABELS[candidateKey]}: ${keepDisabledTags(fields[candidateKey] ?? '', snapshot?.fields?.[candidateKey])}`);
+    const locked = (snapshot?.muted ?? []).filter(key => FIELD_LABELS[key]).map(key => FIELD_LABELS[key]);
+    return [
+        candidate?.changes ? `Changes: ${candidate.changes}` : '',
+        ...written,
+        locked.length > 0 ? `Switched off, kept as they are: ${locked.join(', ')}` : '',
+    ].filter(Boolean).join('\n');
 }
 
 function planCount(tagCapsuleFields, specs) {
@@ -47,7 +113,7 @@ export function applyRefineEditorPatch({
     tagCapsuleFields = globalThis.prompt?.tagCapsuleFields ?? null,
 } = {}) {
     const specs = patchSpecs(candidate, controls, snapshot);
-    const patch = validatedPatch(candidate, specs);
+    const patch = validatedPatch(candidate, specs, snapshot);
     if (!patch) return { status: 'invalid', discardedPlans: 0 };
     if (hasRefineEditorConflict(snapshot, currentSnapshot)) return { status: 'conflict', discardedPlans: 0 };
 
