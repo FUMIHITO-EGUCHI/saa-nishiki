@@ -86,6 +86,61 @@ test('flushSync drains the queue synchronously for beforeunload', () => {
     assert.equal(autosave.flushSync(), true, 'nothing left is a success');
 });
 
+test('an explicit flush cancels the pending debounce instead of saving twice', async () => {
+    const { autosave, timers, saved } = harness();
+    autosave.enable();
+    autosave.markDirty('cfg');
+    assert.equal(timers.size(), 1, 'the debounce is running');
+
+    assert.equal(await autosave.flush(), true);
+    assert.equal(timers.size(), 0, 'the timer that would have saved the same sections is gone');
+    assert.equal(saved.length, 1);
+
+    await timers.run();
+    assert.equal(saved.length, 1, 'nothing fires afterwards');
+    assert.equal(autosave.saveCount(), 1);
+    assert.equal(await autosave.flush(), true, 'a flush with nothing pending is a success and saves nothing');
+    assert.equal(saved.length, 1);
+});
+
+test('the debounce is half a second unless the caller says otherwise', () => {
+    const delays = [];
+    const { autosave } = harness({ setTimer: (fn, ms) => { delays.push(ms); return 0; } });
+    autosave.enable();
+    autosave.markDirty('cfg');
+    autosave.markDirty('api_addr');
+    assert.deepEqual(delays, [500, 500], 'each edit restarts the same 500 ms window');
+
+    const custom = [];
+    const slow = harness({ debounceMs: 50, setTimer: (fn, ms) => { custom.push(ms); return 0; } });
+    slow.autosave.enable();
+    slow.autosave.markDirty('cfg');
+    assert.deepEqual(custom, [50]);
+});
+
+test('flushSync reports a failure as a failure', () => {
+    const errors = [];
+    const thrown = harness({ saveSync: () => { throw new Error('locked'); }, log: { error: (...parts) => errors.push(parts) } });
+    thrown.autosave.enable();
+    thrown.autosave.markDirty('cfg');
+    assert.equal(thrown.autosave.flushSync(), false, 'beforeunload must not be told the settings are safe');
+    assert.equal(thrown.autosave.saveCount(), 0);
+    assert.equal(errors.length, 1);
+
+    const refused = harness({ saveSync: () => false });
+    refused.autosave.enable();
+    refused.autosave.markDirty('cfg');
+    assert.equal(refused.autosave.flushSync(), false);
+    assert.equal(refused.autosave.saveCount(), 0);
+
+    // no synchronous save to call at all, and something still pending
+    const none = harness({ saveSync: null });
+    none.autosave.enable();
+    none.autosave.markDirty('cfg');
+    assert.equal(none.autosave.flushSync(), false);
+    assert.deepEqual(none.autosave.pending(), ['generation'], 'and the section stays dirty');
+});
+
 test('createSettingsProxy reports every string key written or deleted', () => {
     const seen = [];
     const raw = { cfg: 7 };
