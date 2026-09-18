@@ -178,6 +178,9 @@ class JsonSlotManager {
 
             const key = e.key;
             const value = input.value;
+            // a minus is only allowed as the first character; without this the guard below
+            // threw a ReferenceError on every "-" typed into a Strength box
+            const cursorPos = input.selectionStart;
 
             if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'].includes(key)) {
                 return;

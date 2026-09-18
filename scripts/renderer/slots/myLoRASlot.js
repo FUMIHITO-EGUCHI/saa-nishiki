@@ -544,7 +544,10 @@ class SlotManager {
                     loraFormat = `<lora:${loraName}:0:0>`;
                     break;
                 default:
-                    loraFormat = `<lora:${cleanLoraName}:0>`;
+                    // an enable value from an older or half-written settings row: off, like
+                    // OFF above. It named an undeclared cleanLoraName and threw here, which
+                    // took the whole settings load (slotsManager.flushSlots) with it.
+                    loraFormat = `<lora:${loraName}:0:0>`;
             }
     
             return loraFormat;

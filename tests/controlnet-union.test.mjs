@@ -15,6 +15,10 @@ import {
     normalizeControlType,
     resolveUnionControlType,
 } from '../scripts/shared/controlNetUnion.js';
+import { withFakeDom } from './helpers/fakeDom.mjs';
+
+// the textbox measures itself on a timer that outlives the fake document
+globalThis.getComputedStyle = () => ({ lineHeight: '20px' });
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n');
@@ -94,19 +98,45 @@ test('the ComfyUI workflow gets a SetUnionControlNetType node between the loader
     assert.match(apply, /"image": \[\s*`\$\{preprocessedIndex\}`,\s*0\s*\]/, 'the refiner reads the pre-processed image too');
 });
 
-test('the slot carries the control type at index 11 through UI, settings and generate data', () => {
-    const slot = read('scripts/renderer/slots/myControlNetSlot.js');
-    assert.match(slot, /control_type: this\.generateClassName\('slot-row-control-type'\)/);
-    assert.match(slot, /\[\.\.\.CONTROL_TYPE_OPTIONS\]/);
-    assert.match(slot, /rowValues\.push\(normalizeControlType\(controlTypeComponent\?\.getValue/);
-    assert.match(slot, /\[\.\.\.row\.slice\(0, 7\), null, null, null, null, normalizeControlType\(row\[11\]\)\]/, 'restored from controlnet_slot');
-    assert.match(slot, /control_type = CONTROL_TYPE_AUTO\n\s*\] of slotValues\)/, 'older 11-entry rows default to auto');
-    assert.match(read('scripts/renderer/settingsPersistence.js'), /row\[11\] \?\? 'auto'\]/);
-    const generate = read('scripts/renderer/generate.js');
-    assert.match(generate, /, , controlType\]/);
-    assert.match(generate, /controlType: normalizeControlType\(controlType\)/);
-    const buttons = read('scripts/renderer/components/imageInfoControlNet.js');
-    assert.equal((buttons.match(/CONTROL_TYPE_AUTO,\s+\/\/ control_type/g) ?? []).length, 2, 'Image Info adds slots with auto');
-    const language = JSON.parse(read('data/language.json'));
-    for (const locale of ['en-US', 'zh-CN']) assert.equal(typeof language[locale].api_controlnet_control_type, 'string', locale);
+// The trip a chosen control type makes: a slot row -> the saved settings -> the row
+// rebuilt from them -> the generate data the backend is given.
+test('a control type chosen on a row survives a settings round trip and reaches generate data', async () => {
+    await withFakeDom(async document => {
+        const models = ['controlnet-union-sdxl-1.0-promax.safetensors'];
+        globalThis.globalSettings = { language: 'en-US', css_style: 'dark', api_interface: 'ComfyUI', api_controlnet_enable: true };
+        globalThis.cachedFiles = { controlnetList: models, language: { 'en-US': {} } };
+        globalThis.generate = { api_interface: { getValue: () => 'ComfyUI' } };
+        globalThis.overlay = { custom: { createCustomOverlay() {} } };
+        globalThis.api = {};
+
+        const container = document.createElement('div');
+        container.className = 'add-controlnet-main';
+        document.body.appendChild(container);
+        const { setupControlNet } = await import('../scripts/renderer/slots/myControlNetSlot.js');
+        const { installSettingsProxy, collectSection } = await import('../scripts/renderer/settingsPersistence.js');
+        const manager = setupControlNet('add-controlnet-main');
+        globalThis.controlnet = manager;
+        installSettingsProxy(globalThis.globalSettings);
+
+        const parameters = ['DWPreprocessor', '1024', 'On', models[0], '0.8', '0', '1'];
+        manager.AddControlNetSlot([[...parameters, 'SRC', 'MAP', null, null, 'depth']]);
+        await new Promise(resolve => setTimeout(resolve, 0));
+        assert.equal(manager.getValues()[0][11], 'depth', 'the row reports it at index 11');
+
+        const saved = collectSection('controlnet').controlnet_slot;
+        assert.deepEqual(saved, [[...parameters, null, null, null, null, 'depth']], 'saved without the images');
+
+        manager.flush();   // as a settings load does
+        await new Promise(resolve => setTimeout(resolve, 0));
+        assert.equal(manager.getValues()[0][11], 'depth', 'and comes back on the rebuilt row');
+
+        const { createControlNet } = await import('../scripts/renderer/generate.js');
+        assert.equal(createControlNet()[0].controlType, 'depth', 'which is what the backend is told');
+
+        const language = JSON.parse(read('data/language.json'));
+        for (const locale of ['en-US', 'zh-CN']) assert.equal(typeof language[locale].api_controlnet_control_type, 'string', locale);
+    }, {
+        localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+        getComputedStyle: () => ({ lineHeight: '20px' }),
+    });
 });
