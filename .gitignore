@@ -45,3 +45,6 @@ settings/presets/
 
 # LLM batch reports (categorizeTags.mjs --report)
 reports/
+
+models/embeddings/*.safetensors
+models/embeddings/*.pt
