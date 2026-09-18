@@ -3,6 +3,13 @@ import { isOllamaChatUrl } from '../shared/ollamaUrl.js';
 import { resolveLlmEndpoint } from '../shared/llmEndpoint.js';
 let lastAIPromot = '';
 
+/**
+ * What `requestLocalAi({ rejectTruncated: true })` answers with when the reply stopped at
+ * n_predict: no text came through, but the caller can tell it from an empty answer and
+ * say so. The whole answer would have to be this line for a model to collide with it.
+ */
+export const AI_REPLY_CUT_OFF = '[SAA] the local reply was cut off at n_predict';
+
 // The Ollama / llama.cpp request target for the current ai_interface:
 // 'Pod' points at the Runpod pod endpoint (with its auth), anything else at
 // the local address.
@@ -94,6 +101,12 @@ async function localGenerateWithPrompt(aiOptions = null) {
         if (!content) {
             console.error('Content not found in local response:', parsedResult);
             return '';
+        }
+        // a caller that cannot use half an answer (the Prose paragraph) asks for none; it
+        // is told why, so the image info can say the reply was cut off rather than missing
+        if (options.rejectTruncated && parsedResult?.choices?.[0]?.finish_reason === 'length') {
+            console.error('Local AI response was cut off at n_predict');
+            return AI_REPLY_CUT_OFF;
         }
         // trim off <think>...</think>
         const final_result = content.replace(/<think>[\s\S]*<\/think>\s*/, '').trim();

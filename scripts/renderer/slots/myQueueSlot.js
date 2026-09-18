@@ -23,6 +23,14 @@ async function cancelGenerate(slotClass) {
     }
 }
 
+// The row's job is dropped: the steps that run before the backend (the AI request, the
+// Prose paragraph) have nothing to cancel there, so they watch this mark instead
+// (generate.js jobDropped()). The backend is asked to stop the same job as before.
+function markDropped(slotClass) {
+    const generateData = instanceQueueManager.getSlotValue(slotClass);
+    if (generateData?.queueManager) generateData.queueManager.dropped = true;
+}
+
 // eslint-disable-next-line sonarjs/cognitive-complexity
 async function deleteSlot(slotClass) {
     const index = instanceQueueManager.getSlots().indexOf(slotClass);
@@ -30,11 +38,14 @@ async function deleteSlot(slotClass) {
         instanceQueueManager.cancelFirst = true;
        
         if(globalThis.mainGallery.isLoading) {            
+            markDropped(slotClass);
             await cancelGenerate(slotClass);
         } else {
             instanceQueueManager.removeAt(0);
         }
-    } else if (instanceQueueManager.cancelFirst){
+    } else if (index === 0 && instanceQueueManager.cancelFirst){
+        // a second click on the same running row forces it out; a click on any other row
+        // removes that row, not this one (it used to delete the first row instead)
         instanceQueueManager.removeAt(0);
         instanceQueueManager.cancelFirst = false;    
     } else {
@@ -242,6 +253,22 @@ class QueueManager {
         const generateData = this.getSlotValue(nextSlotClass);
         this.removeAt(0);   // remove generated
         return generateData;
+    }
+
+    /**
+     * The job that just ran is done: drop its own row (wherever it sits now, and nothing
+     * when "−" already removed it) and hand back the next one. The queue loop used to pop
+     * the first row instead, which dropped an innocent job whenever the first row was no
+     * longer the job that ran (a second "−" click, a Cancel that cleared the queue before
+     * a new generate click queued something).
+     */
+    popJob(generateData) {
+        this.cancelFirst = false;
+        const slots = this.getSlots();
+        const index = slots.findIndex(slotClass => this.getSlotValue(slotClass) === generateData);
+        if (index >= 0) this.removeAt(index);
+        const rest = this.getSlots();
+        return (rest.length === 0) ? null : this.getSlotValue(rest[0]);
     }
     
     attach(jobID = '', generateData={}) {

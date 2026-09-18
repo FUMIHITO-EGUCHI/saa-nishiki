@@ -7,24 +7,25 @@ import { startGenerateMiraITU } from './generate_miraITU.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { setADetailerModelList } from './slots/myADetailerSlot.js';
 import { processRandomString } from './tools/nestedBraceParsing.js';
+import { createPromptMaterials } from './tools/promptMaterials.js';
 import { convertToMultipleOfNFloor, checkNumberInRange } from './tools/numbers.js';
 import { normalizeControlType } from '../shared/controlNetUnion.js';
 import { setQueueAutoStart } from './callbacks.js';
 import { filterPrompts } from './tools/promptFilter.js';
-import { beginImageOverride, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
+import { beginImageOverride, createPlanWeigher, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
 import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
 import { isStructuredRefineFormat, removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
 import { composeNegativeChain } from '../shared/negativeComposition.js';
 import { artistPrompt, signatureGuard } from '../shared/artistSlots.js';
-import { applyProse, describeProse } from './prosePipeline.js';
+import { applyProse, captureProseJob, describeProse } from './prosePipeline.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { normalizeApiAddress } from '../shared/backendAddress.js';
-import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
-import { resolveQueuedAiPrompt } from './tools/refineGenerationResult.js';
-import { applyRefineEditorPatch } from './tools/refineEditorApplication.js';
+import { captureRefineEditorSnapshot, refineRequestFields, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
+import { refineRequestContext, resolveQueuedAiPrompt } from './tools/refineGenerationResult.js';
+import { applyRefineEditorPatch, describeRefineCandidate } from './tools/refineEditorApplication.js';
 import { completeRefineRunItem, createRefineRunController, recordRefineRunCandidate } from './tools/refineRunState.js';
 import { asFragment, isFieldMuted, joinOrderedUnits, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
-import { castEnabled, isCastFieldId } from '../shared/castMembers.js';
+import { castEnabled, isDiffusionFieldId } from '../shared/castMembers.js';
 import { stripDisabledTags } from './components/tagCapsuleLogic.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
@@ -40,19 +41,6 @@ function currentAiRunSettings() {
         modelMode: globalThis.ai?.local_model_mode?.getValue?.() ?? 'Auto',
         apiUrl: currentLocalLlmEndpoint().apiUrl,
     };
-}
-
-function refineCandidateSummary(candidate) {
-    const fields = candidate?.editorFields ?? {};
-    return [
-        candidate?.changes ? `Changes: ${candidate.changes}` : '',
-        `Common: ${fields.common ?? ''}`,
-        `Positive: ${fields.positive ?? ''}`,
-        fields.positiveRight ? `Positive Right: ${fields.positiveRight}` : '',
-        `Negative: ${fields.negative ?? ''}`,
-        fields.negativeLeft ? `Negative Left: ${fields.negativeLeft}` : '',
-        fields.negativeRight ? `Negative Right: ${fields.negativeRight}` : '',
-    ].filter(Boolean).join('\n');
 }
 
 function presentRefineRunDecision(controller, decision) {
@@ -71,7 +59,7 @@ function presentRefineRunDecision(controller, decision) {
     if (autoResult?.status === 'applied') {
         globalThis.infoPanel?.showRefinePending?.({
             runId: controller.runId,
-            text: refineCandidateSummary(decision.candidate),
+            text: describeRefineCandidate(decision.candidate, controller.snapshot),
             status: autoResult.discardedPlans > 0
                 ? `Applied · ${autoResult.discardedPlans} incompatible Weight Plan(s) removed`
                 : 'Applied to prompt',
@@ -86,7 +74,7 @@ function presentRefineRunDecision(controller, decision) {
             : `Pending editor update · run ${decision.reason}`;
     globalThis.infoPanel?.showRefinePending?.({
         runId: controller.runId,
-        text: refineCandidateSummary(decision.candidate),
+        text: describeRefineCandidate(decision.candidate, controller.snapshot),
         status,
         canApply: true,
         onApply: apply,
@@ -227,8 +215,9 @@ export function getCustomFieldTexts(polarity) {
     const cast = castEnabled(SETTINGS);
     return fields
         .filter(field => field.polarity === polarity)
-        // the "@alias" rows belong to the Diffusion paragraph; a checkpoint never sees them
-        .filter(field => cast || !isCastFieldId(field.id))
+        // the "@alias" rows and the Action row belong to the Diffusion paragraph; a checkpoint
+        // never sees them (the Scene hides them there, so they could not be muted either)
+        .filter(field => cast || !isDiffusionFieldId(field.id))
         .map(field => ({ id: field.id, text: readCustomFieldValue(field) }));
 }
 
@@ -629,7 +618,10 @@ export function getLoRAs(apiInterface) {
 }
 
 
-export async function replaceWildcardsAsync(pos, seed) {
+// `materials` (optional, promptMaterials.js) remembers what each wildcard became for this
+// image, so the coloured copy and the Prose units read the same text the prompt was built
+// from - "wildcard random" would otherwise draw again for each of them.
+export async function replaceWildcardsAsync(pos, seed, materials = null) {
     const wildcardRegex = /__([a-zA-Z0-9_-]+)__/g;
 
     let random_seed = seed;   
@@ -642,14 +634,17 @@ export async function replaceWildcardsAsync(pos, seed) {
     }
     // replace each wildcard with its corresponding value
     for (const wildcardName of matches) {
-        if (globalThis.generate.wildcard_random.getValue()) {
-            random_seed = generateRandomSeed();
-        }
-        let replacement;
-        if (globalThis.inBrowser) {
-            replacement = await sendWebSocketMessage({ type: 'API', method: 'loadWildcard', params: [wildcardName, random_seed] }); 
-        } else {
-            replacement = await globalThis.api.loadWildcard(wildcardName, random_seed);
+        let replacement = materials?.wildcard?.(wildcardName);
+        if (replacement === undefined) {
+            if (globalThis.generate.wildcard_random.getValue()) {
+                random_seed = generateRandomSeed();
+            }
+            if (globalThis.inBrowser) {
+                replacement = await sendWebSocketMessage({ type: 'API', method: 'loadWildcard', params: [wildcardName, random_seed] }); 
+            } else {
+                replacement = await globalThis.api.loadWildcard(wildcardName, random_seed);
+            }
+            materials?.rememberWildcard?.(wildcardName, replacement);
         }
         pos = pos.replaceAll(new RegExp(`__${wildcardName}__`, 'g'), `${replacement}`);
     }
@@ -666,6 +661,8 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let charactersName = '';
     let img_prefix = '';
     let refineContext = null;
+    // the wildcard / "{a|b}" choices this image made, for whatever has to read the same text
+    let materials = null;
 
     if(runSame) {
         // Fixed slider seed is the seed (it used to stay -1 and fail ComfyUI validation);
@@ -697,11 +694,15 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         };
         let {pos, posc, lora, refineContext: promptRefineContext} = getPrompts(characters_tag, views, aiPromot, apiInterface, loop, fieldUnits);
                 
-        pos = await replaceWildcardsAsync(pos, randomSeed);
-        posc = await replaceWildcardsAsync(posc, randomSeed);
+        // What the wildcards and "{a|b}" choices became is this image's own material: the
+        // prompt records it, the coloured copy (and later the Prose units, which are the
+        // same text) replay it, so all three describe one picture.
+        materials = createPromptMaterials();
+        pos = await replaceWildcardsAsync(pos, randomSeed, materials);
+        pos = processRandomString(pos, materials);
 
-        pos = processRandomString(pos);
-        posc = processRandomString(posc);
+        posc = await replaceWildcardsAsync(posc, randomSeed, materials.replay());
+        posc = processRandomString(posc, materials);
 
         if(lora === ''){
             positivePrompt = pos;
@@ -722,15 +723,16 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
             seed: randomSeed,
             characterNegative: negative_tags,
             characterTags: character_tags,
-            // Refine rebuilds the negative around these units, exactly like the positive chain
-            negative: { chain: negativeOrder, texts: negativeTexts },
+            // Refine rebuilds the negative around these units, exactly like the positive chain,
+            // and adds what generation added without storing it
+            negative: { chain: negativeOrder, texts: negativeTexts, extra: signatureGuard(globalThis.globalSettings) },
         };
         thumbImage = thumb;
         charactersName = characters;
         img_prefix = image_prefix;
     }
 
-    return {finalInfo, randomSeed, positivePrompt, positivePromptColored, negativePrompt, thumbImage, charactersName, img_prefix, refineContext}
+    return {finalInfo, randomSeed, positivePrompt, positivePromptColored, negativePrompt, thumbImage, charactersName, img_prefix, refineContext, materials}
 }
 
 export function createHiFix(randomSeed, apiInterface, brownColor){
@@ -897,7 +899,8 @@ export function createADetailer(apiInterface) {
                 negative_prompt: ad_negative_prompt,
                 // Detection
                 confidence: checkNumberInRange(ad_confidence, 0, 1, 0.3, false),
-                mask_k: checkNumberInRange(ad_mask_k, 0, 10, true),
+                // "0 to disable" (api_adetailer_mask_k): the fallback is the default, the flag is returnInt
+                mask_k: checkNumberInRange(ad_mask_k, 0, 10, 0, true),
                 mask_filter_method: mask_filter,
                 // Mask Preprocessing
                 dilate_erode: convertToMultipleOfNFloor(ad_dilate_erode, 4),
@@ -1145,6 +1148,27 @@ export async function generateImage(dataPack){
         } finally {
             endImageOverride();
         }
+        // Prose (Diffusion) is decided now and travels with the job: its units get the tag
+        // prompt's Exclude, wildcards, random choices and weight plans (prosePipeline.js).
+        // The choices are the prompt's own (materials), replayed unit by unit, so the
+        // paragraph describes the picture this image is going to be.
+        const proseMaterials = createPromptResult.materials?.replay?.() ?? null;
+        // and the weight plans land on the row they were set on: one weigher for this
+        // image's chain, so the tag ordinals run on across the units instead of restarting
+        const proseWeigher = createPlanWeigher(imageOverride?.weights ?? {});
+        const proseJob = await captureProseJob({
+            settings: SETTINGS,
+            LANG,
+            refineContext: createPromptResult.refineContext,
+            runSame,
+            tagPrompt: createPromptResult.positivePrompt,
+            lastTagPrompt: globalThis.generate.lastPos,
+            run: refineRun.runId,
+            resolveText: async text => processRandomString(await replaceWildcardsAsync(
+                filterPrompts(text, text, createPromptResult.refineContext?.exclude ?? '').positivePrompt,
+                createPromptResult.randomSeed, proseMaterials), proseMaterials),
+            weighText: (text, field) => (field ? proseWeigher(text, field) : text),
+        });
         const landscape = globalThis.generate.landscape.getValue();
         const width = landscape?globalThis.generate.height.getValue():globalThis.generate.width.getValue();
         const height = landscape?globalThis.generate.width.getValue():globalThis.generate.height.getValue();
@@ -1201,7 +1225,7 @@ export async function generateImage(dataPack){
                         refineSystemPrompt: aiRunSettings.refineSystemPrompt,
                         existingPositive: removeAiPromptMarker(createPromptResult.positivePrompt, REPLACE_AI_MARK),
                         existingNegative: createPromptResult.negativePrompt,
-                        editorFields: structuredRefine ? refineSnapshot.fields : null,
+                        editorFields: structuredRefine ? refineRequestFields(refineSnapshot) : null,
                         generationContext: structuredRefine ? {
                             positive: removeAiPromptMarker(createPromptResult.positivePrompt, REPLACE_AI_MARK),
                             positiveRight: '',
@@ -1215,7 +1239,7 @@ export async function generateImage(dataPack){
                 id:createPromptResult.charactersName,
                 planWeights: imageOverride?.weights ?? null,
                 refineSnapshot,
-                refineContext: createPromptResult.refineContext,
+                refineContext: refineRequestContext(createPromptResult.refineContext, { structuredRefine, refineSystemPrompt: aiRunSettings.refineSystemPrompt, settings: SETTINGS }),
                 regionalSwap: false,
                 refineRun,
                 structuredRefine,
@@ -1270,6 +1294,13 @@ export async function generateImage(dataPack){
             finalInfo +=`\n`;
 
         generateData.queueManager.finalInfo = finalInfo;
+        generateData.queueManager.prose = proseJob;
+        // Cancel pressed while this image's prompt was being built: do not queue it.
+        // Skip means "drop the rest of this run", so an image whose prompt was still being
+        // built does not join the queue either (it used to sit there and run first on the
+        // next click, after the run it belonged to was skipped).
+        if(globalThis.generate.cancelClicked || globalThis.generate.skipClicked)
+            break;
         
         const nameList = generateData.queueManager.id.replaceAll('\n', ' | ');
         globalThis.queueManager.attach(
@@ -1337,6 +1368,8 @@ export async function startQueue(){
 
         // start generate        
         const queueManager = generateData.queueManager;        
+        // the row's "−" marks this job (myQueueSlot.js): the steps before the backend read it
+        globalThis.generate.runningJob = generateData;
         let result = '';
         if(queueManager.genType === 'normal') {
             globalThis.thumbGallery.append(queueManager.thumb);
@@ -1373,6 +1406,9 @@ export async function startQueue(){
                 regional: queueManager.isRegional,
                 regionalSwap: queueManager.regionalSwap,
                 allowStructured: queueManager.structuredRefine,
+                // the AI role "Last" hands this run the answer of an earlier one, which may
+                // have run in the other mode: its empty Regional side fields are no answer here
+                reusedAnswer: aiRequest.source === 'last-run',
                 fixedContext: queueManager.refineContext,
                 planWeights: queueManager.planWeights,
                 resolveComponent: async (value, seed) => processRandomString(await replaceWildcardsAsync(value, seed)),
@@ -1424,13 +1460,17 @@ export async function startQueue(){
                 // ComfyUI masks a negative per side; only a result that rebuilt them replaces them
                 if (typeof promptResult.negativeLeft === 'string') generateData.negative_left = promptResult.negativeLeft;
                 if (typeof promptResult.negativeRight === 'string') generateData.negative_right = promptResult.negativeRight;
-                result = await seartGenerateRegional(queueManager.apiInterface, generateData);
+                // Cancel pressed while the AI prompt was written, or "−" on this row: nothing
+                // has reached the backend, whose own cancel mark a new run would clear
+                result = (globalThis.generate.cancelClicked || jobDropped(generateData))
+                    ? { ret: 'success', retCopy: '', breakNow: globalThis.generate.cancelClicked === true, cancelled: true }
+                    : await seartGenerateRegional(queueManager.apiInterface, generateData);
             } else {
                 generateData.positive = promptResult.positive;
                 generateData.negative = promptResult.negative;
                 // Diffusion (Anima) with Prose on: the tags become one English paragraph
                 const prose = await applyProse(generateData, {
-                    refineContext: queueManager.refineContext,
+                    job: queueManager.prose,
                     aiMode: aiRequest.source === 'none' ? 'off' : promptMode,
                     aiText: aiPrompt,
                     LANG,
@@ -1446,7 +1486,13 @@ export async function startQueue(){
                         globalThis.infoPanel.showAiResult(prose.prompt, { focus: Boolean(globalThis.globalSettings.ai_prompt_preview) });
                     }
                 }
-                result = await seartGenerate(queueManager.apiInterface, generateData);
+                // Cancel pressed while the paragraph (or the AI prompt) was written: nothing has
+                // reached the backend, whose own cancel mark a new run would clear, so stop here.
+                // The Cancel button ends the run; a queue-row delete ("−" on this job) drops
+                // only this job and the loop goes on, as it does during sampling.
+                result = (prose?.cancelled || globalThis.generate.cancelClicked || jobDropped(generateData))
+                    ? { ret: 'success', retCopy: '', breakNow: globalThis.generate.cancelClicked === true, cancelled: true }
+                    : await seartGenerate(queueManager.apiInterface, generateData);
             }
         } else if(queueManager.genType === 'miraITU') {
             from_renderer_generate_updatePreview(`data:image/png;base64,${generateData.preview}`);
@@ -1463,9 +1509,12 @@ export async function startQueue(){
         // result
         ret = result.ret;
         retCopy = result.retCopy;
-        const refineDecision = result.breakNow
+        // A job that was cancelled or dropped ("−") produced no image: its Refine answer must
+        // not count as one of the run's images, or the last drop would auto-apply a candidate
+        // for a picture nobody saw.
+        const refineDecision = (result.breakNow || result.cancelled)
             ? completeRefineRunItem(queueManager.refineRun, {
-                reason: globalThis.generate.cancelClicked ? 'cancel' : globalThis.generate.skipClicked ? 'skip' : 'error',
+                reason: (globalThis.generate.cancelClicked || result.cancelled) ? 'cancel' : globalThis.generate.skipClicked ? 'skip' : 'error',
             })
             : completeRefineRunItem(queueManager.refineRun);
         presentRefineRunDecision(queueManager.refineRun, refineDecision);
@@ -1484,7 +1533,9 @@ export async function startQueue(){
             break;
         }
 
-        generateData = globalThis.queueManager.pop();
+        // remove the job that just ran, not whatever sits first now: "−" (twice, or on
+        // another row) and a Cancel followed by a new generate click move the rows around
+        generateData = globalThis.queueManager.popJob(generateData);
 
         if(!globalThis.globalSettings.generate_auto_start)
             break;
@@ -1499,42 +1550,51 @@ export async function startQueue(){
         globalThis.generate.autoStartDisabledByError = true;
         setQueueAutoStart(false);
     } finally {
+        globalThis.generate.runningJob = null;
         globalThis.mainGallery.hideLoading(ret, retCopy);
         if(globalThis.queueManager.getSlotsCount() === 0)
             globalThis.generate.showCancelButtons(false);
         globalThis.inGenerating = false;
     }
-    // A job attached while this loop was on its last item (a generate click during the
-    // final image, or during the paragraph step of another click) found inGenerating
-    // set and could not start its own loop; the loop above had already popped past it.
-    // Pick it up now instead of leaving it queued until the next click.
-    if (globalThis.globalSettings.generate_auto_start && !globalThis.generate.cancelClicked
-        && globalThis.queueManager.getSlotsCount() > 0) {
-        console.log('[Generate] Queue still holds', globalThis.queueManager.getSlotsCount(), 'job(s) attached during the run; starting them.');
-        await startQueue();
-    }
+    // No restart here: a job attached while an image runs is already taken by popJob()
+    // above. A job still queued now was left on purpose (Skip, an error, a Cancel), and
+    // restarting on it re-ran a deleted job or looped on a Skip until the stack overflowed.
+}
+
+/**
+ * The job the queue loop is running was dropped with its row's "−" button (the mark is set
+ * in slots/myQueueSlot.js). The backend's own cancel mark cannot carry this: every run
+ * clears it, so a drop during a step that runs before the backend (the AI request, the
+ * Prose paragraph) would be lost. Those steps watch this instead - with no argument it
+ * answers for the job running now, which is what a waiting step should ask.
+ */
+export function jobDropped(generateData = globalThis.generate?.runningJob) {
+    return generateData?.queueManager?.dropped === true;
 }
 
 async function seartGenerate(apiInterface, generateData){
     let ret = 'success';
     let retCopy = '';
     let breakNow = false;
+    let cancelled = false;
 
     if(apiInterface === 'ComfyUI') {
         const result = await runComfyUI(apiInterface, generateData);
         ret = result.ret;
         retCopy = result.retCopy;
         breakNow = result.breakNow
+        cancelled = result.cancelled === true;
     } else if(apiInterface === 'WebUI') {
         const result = await runWebUI(apiInterface, generateData);
         ret = result.ret;
         retCopy = result.retCopy;
         breakNow = result.breakNow
+        cancelled = result.cancelled === true;
     } else if(apiInterface === 'None') {
         console.warn('apiInterface', apiInterface);
     }
 
-    return {ret, retCopy, breakNow}
+    return {ret, retCopy, breakNow, cancelled}
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -1557,6 +1617,7 @@ async function runComfyUI(apiInterface, generateData){
     let ret = 'success';
     let retCopy = '';
     let breakNow = false;
+    let cancelled = false;   // no image was made: the caller must not count it as one
 
     try {
         let result;
@@ -1567,8 +1628,11 @@ async function runComfyUI(apiInterface, generateData){
         }
 
         if (result === 'Error: Cancelled') {
-            // cancelled before the prompt was queued (e.g. while ComfyUI waited to restart for fast-mode flags)
-            breakNow = true;
+            // cancelled before the prompt was queued (e.g. while ComfyUI waited to restart for fast-mode flags).
+            // The Cancel button stops the run; a queue-row delete ("−" on this job) drops only
+            // this job and the loop goes on, as it does for a cancel during sampling.
+            cancelled = true;
+            breakNow = globalThis.generate.cancelClicked === true;
         } else if(result.startsWith('Error')){
             ret = LANG.gr_error_creating_image.replace('{0}',result).replace('{1}', apiInterface);
             retCopy = result;
@@ -1585,10 +1649,12 @@ async function runComfyUI(apiInterface, generateData){
                     }
 
                     if (globalThis.generate.cancelClicked) {
+                        cancelled = true;
                         breakNow = true;
                     } else if(image.startsWith('Error')) {
                         if(image.endsWith('Cancelled')) {
                             console.log('Generate cancelled from queue manager');
+                            cancelled = true;
                         } else {
                             ret = LANG.gr_error_creating_image.replace('{0}',image).replace('{1}', apiInterface);
                             retCopy = image;
@@ -1620,7 +1686,7 @@ async function runComfyUI(apiInterface, generateData){
         breakNow = true;
     }
 
-    return {ret, retCopy, breakNow }
+    return {ret, retCopy, breakNow, cancelled }
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -1634,6 +1700,7 @@ async function runWebUI(apiInterface, generateData) {
     let ret = 'success';
     let retCopy = '';
     let breakNow = false;
+    let cancelled = false;   // no image was made: the caller must not count it as one
 
     try {
         let result;
@@ -1644,6 +1711,7 @@ async function runWebUI(apiInterface, generateData) {
         }        
         
         if(globalThis.generate.cancelClicked) {
+            cancelled = true;
             breakNow = true;
         } else {
             const typeResult = typeof result;
@@ -1651,6 +1719,7 @@ async function runWebUI(apiInterface, generateData) {
                 if(result.startsWith('Error')){
                     if(result.endsWith('Cancelled')) {
                         console.log('Generate cancelled from queue manager');
+                        cancelled = true;
                     } else {
                         ret = LANG.gr_error_creating_image.replace('{0}',result).replace('{1}', apiInterface)
                         retCopy = result;
@@ -1681,7 +1750,7 @@ async function runWebUI(apiInterface, generateData) {
         await updateADetailerModelList();
     }
     
-    return {ret, retCopy, breakNow }
+    return {ret, retCopy, breakNow, cancelled }
 }
 
 export async function updateADetailerModelList() {    

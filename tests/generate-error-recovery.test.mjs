@@ -27,7 +27,8 @@ test('ComfyUI run(): timeout / error handlers resolve instead of throwing on und
   assert.match(backend, /closeWS\(\)\{\n    const socket = this\.webSocket;\n    this\.webSocket = null;\n    if \(!socket\) return;/);
   assert.doesNotMatch(backend.slice(backend.indexOf('cancelGenerate() {'), backend.indexOf('async openWS(')), /resolve\(/, 'cancelGenerate has no promise to resolve');
   for (const name of ['runComfyUI', 'runComfyUI_Regional', 'runComfyUI_ControlNet', 'runComfyUI_MiraITU']) {
-    assert.match(backend, new RegExp(`async function ${name}\\(generateData\\) \\{\\n  try \\{\\n    return await ${name}_unguarded\\(generateData\\);`), `${name} is guarded`);
+    // the fast-mode runs also take where the run came from (remote), which they pass on
+    assert.match(backend, new RegExp(`async function ${name}\\(generateData(?:, \\{ remote = false \\} = \\{\\})?\\) \\{\\n  try \\{\\n    return await ${name}_unguarded\\(generateData(?:, remote)?\\);`), `${name} is guarded`);
     assert.match(backend, new RegExp(`${name} failed:', error\\);\\n    await setMutexBackendBusy\\(false\\);`), `${name} releases the mutex on throw`);
   }
 });
@@ -63,8 +64,9 @@ test('renderer queue and generate loops always clear the busy state and re-enabl
   const queue = generate.slice(generate.indexOf('export async function startQueue()'), generate.indexOf('async function seartGenerate('));
   assert.match(queue, /try \{\n    generateData = globalThis\.queueManager\.getFirstSlot\(\);/);
   assert.match(queue, /\} catch \(error\) \{[\s\S]*queueManager\.removeAll\(\);[\s\S]*setQueueAutoStart\(false\);[\s\S]*\} finally \{[\s\S]*hideLoading\(ret, retCopy\);[\s\S]*globalThis\.inGenerating = false;\n    \}\n/);
-  // a job attached while the loop was on its last item is started after the busy flag clears
-  assert.match(queue, /globalThis\.inGenerating = false;\n    \}\n[\s\S]*if \(globalThis\.globalSettings\.generate_auto_start && !globalThis\.generate\.cancelClicked\n\s*&& globalThis\.queueManager\.getSlotsCount\(\) > 0\) \{[\s\S]*await startQueue\(\);\n    \}\n\}/);
+  // the loop never restarts itself: a job left queued stays for the next click
+  // (behaviour: tests/queue-loop.test.mjs)
+  assert.doesNotMatch(queue.slice(queue.indexOf('{') + 1), /await startQueue\(\)/);
   // cancelling queued-only jobs clears the label and overlay that no loop would clear
   assert.match(callbacks, /callback_generate_cancel\(\) \{[\s\S]*if \(!globalThis\.inGenerating\) \{\n\s*globalThis\.generate\.loadingMessage = '';/);
 

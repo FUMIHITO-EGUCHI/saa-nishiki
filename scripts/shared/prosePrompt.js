@@ -81,8 +81,13 @@ function isActionField(field) {
  * With a cast (`cast` = the roster from castMembers.js) each character is one entry
  * `{ ref: "@n", tags }`: the slot's own tags followed by its "@alias" prompt row, and the
  * action's "@alias" references become "@n". Without a cast the entries are the slot tags.
+ *
+ * `jsonSlots` are the JSON slot texts the tag prompt wraps around the chain: `before`
+ * (BOP) opens common, `after` (EOP) closes positive, and `beforeCharacters` /
+ * `afterCharacters` (BOC / EOC) go to positive whenever the characters come from the
+ * slots rather than from the characters unit, which already holds them.
  */
-export function buildProseFields({ chain = [], characterTags = [], customFields = [], aiText = '', cast = [], scope = 'all' } = {}) {
+export function buildProseFields({ chain = [], characterTags = [], customFields = [], aiText = '', cast = [], scope = 'all', jsonSlots = {} } = {}) {
     const unit = id => fragment(chain.find(entry => entry?.id === id)?.text);
     const customs = Array.isArray(customFields) ? customFields : [];
     const actionIds = new Set(customs.filter(isActionField).map(field => field.id));
@@ -108,9 +113,14 @@ export function buildProseFields({ chain = [], characterTags = [], customFields 
         const plain = slotTags.map(fragment).filter(Boolean);
         characters = plain.length > 0 ? plain : [unit('characters')].filter(Boolean);
     }
+    const slots = jsonSlots && typeof jsonSlots === 'object' ? jsonSlots : {};
+    if (roster.length > 0 || slotTags.some(tags => fragment(tags) !== '')) {
+        positiveParts.push(fragment(slots.beforeCharacters), fragment(slots.afterCharacters));
+    }
+    positiveParts.push(fragment(slots.after));
     const fields = {
         // an "@artist" is a style trigger the image model reads as a tag: never prose
-        common: [unit('common'), unit('artist')].filter(Boolean).join(', '),
+        common: [fragment(slots.before), unit('common'), unit('artist')].filter(Boolean).join(', '),
         characters,
         view: unit('views'),
         background: unit('background'),
@@ -128,7 +138,8 @@ export function buildProseFields({ chain = [], characterTags = [], customFields 
 
 /**
  * The fallback when the assembled prompt was rewritten as a whole (AI Refine): the LLM
- * gets the finished tag list plus the action, with no per-character split.
+ * gets the finished tag list plus the action, with no per-character split. The list still
+ * holds the Action as written, so its "@alias" references become "@n" there too.
  */
 export function buildProseFieldsFromPositive(positive, { customFields = [], chain = [], cast = [] } = {}) {
     const structured = buildProseFields({ chain, customFields, cast });
@@ -138,7 +149,7 @@ export function buildProseFieldsFromPositive(positive, { customFields = [], chai
         view: '',
         background: '',
         style: '',
-        positive: fragment(splitLoraLines(positive).text),
+        positive: castReferences(fragment(splitLoraLines(positive).text), Array.isArray(cast) ? cast : []),
         action: structured.action,
     };
 }
@@ -147,9 +158,33 @@ export function buildProseUserContent(fields) {
     return JSON.stringify(fields, null, 2);
 }
 
-/** The cache key: the fields plus the instructions, so a changed prompt is not served stale. */
-export function proseCacheKey(fields) {
-    return JSON.stringify({ rules: PROSE_SYSTEM_PROMPT.length, fields });
+/**
+ * The cache key: the fields plus the instructions, so a changed prompt is not served stale,
+ * and the `target` (endpoint and model), so another model writes its own paragraph.
+ */
+export function proseCacheKey(fields, target = '') {
+    return JSON.stringify({ rules: PROSE_SYSTEM_PROMPT.length, target: String(target ?? ''), fields });
+}
+
+/** The text the rules tell the LLM to copy unchanged (common and the character entries). */
+export function proseVerbatimText(fields = {}) {
+    const characters = Array.isArray(fields?.characters) ? fields.characters : [];
+    return [fields?.common, ...characters.map(entry => (typeof entry === 'string' ? entry : entry?.tags))]
+        .filter(value => typeof value === 'string' && value !== '').join('\n');
+}
+
+// A character handle: "@" plus a slot number that is not part of a longer token, so
+// "@10" is one handle and never the handle "@1".
+const HANDLE = /@\d+(?![A-Za-z0-9_])/g;
+
+const handlesIn = text => [...String(text ?? '').matchAll(HANDLE)].map(match => match[0]);
+
+/** The "@n" handles the fields use (the character refs and any in the action). */
+export function proseRefs(fields = {}) {
+    const characters = Array.isArray(fields?.characters) ? fields.characters : [];
+    const refs = characters.map(entry => entry?.ref).filter(ref => typeof ref === 'string');
+    refs.push(...handlesIn(fields?.action));
+    return [...new Set(refs)];
 }
 
 /** LoRA lines ride below the tags; the paragraph replaces the tags, not them. */
@@ -165,28 +200,85 @@ export function composeProsePositive(prose, loraLines = []) {
     return loraLines.length > 0 ? `${paragraph}\n${loraLines.join('\n')}` : paragraph;
 }
 
-// CJK, kana, hangul and full-width forms: none of these survive the T5 tokenizer.
-const NON_ENGLISH = /[　-鿿가-힯＀-￯]/;
+// CJK (every plane), kana, hangul, full-width forms, and the other non-Latin scripts an LLM
+// falls back to (Cyrillic, Hebrew, Arabic, Devanagari, Thai): none of these survive the T5
+// tokenizer. Greek stays allowed ("μ's" is a tag).
+const NON_ENGLISH_CHAR = String.raw`[　-鿿가-힯＀-￯ᄀ-ᇿЀ-ԯ֐-׿؀-ۿऀ-ॿ฀-๿]|\p{Script=Han}`;
+const NON_ENGLISH = new RegExp(NON_ENGLISH_CHAR, 'u');
+const NON_ENGLISH_RUNS = new RegExp(`(?:${NON_ENGLISH_CHAR})+`, 'gu');
 
 export function hasNonEnglish(text) {
     return NON_ENGLISH.test(String(text ?? ''));
 }
 
+// An answer that declines instead of writing (plain-text endpoints have no schema).
+const REFUSAL = /^(?:i['’]m sorry|i am sorry|sorry[,.!]|i can(?:no|['’])t\b|i cannot\b|i won['’]t\b|i will not\b|as an ai\b)/i;
+
+/**
+ * The JSON object a reply carries, wherever the model put it: on its own, inside a code
+ * fence, or with a line of chat before or after it. Scans from the first "{", aware of
+ * strings and escapes; `complete` is false for an object that stops early (a reply cut
+ * off at n_predict), which is never a paragraph.
+ */
+function findJsonObject(text) {
+    const start = text.indexOf('{');
+    if (start < 0) return null;
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let index = start; index < text.length; index++) {
+        const char = text[index];
+        if (inString) {
+            if (escaped) escaped = false;
+            else if (char === '\\') escaped = true;
+            else if (char === '"') inString = false;
+            continue;
+        }
+        if (char === '"') inString = true;
+        else if (char === '{') depth++;
+        else if (char === '}' && --depth === 0) return { text: text.slice(start, index + 1), complete: true };
+    }
+    return { text: text.slice(start), complete: false };
+}
+
 /**
  * The paragraph out of an LLM reply: the JSON the schema asks for, or the raw text when
- * the model answered without it. `ok` is false for an empty answer or one that still
- * carries non-English characters.
+ * the model answered without it. `ok` is false, with a `reason`, for an answer that is
+ * empty; cut off (an unclosed <think>, or schema JSON that stops early); JSON that does
+ * not parse or has no string prompt; a refusal; non-English text that is not in
+ * `verbatim` (the text the LLM copies, which may carry it); or a handle from `refs`
+ * ("@1") that is not in `verbatim`.
  */
-export function parseProseResponse(content) {
+export function parseProseResponse(content, { verbatim = '', refs = [] } = {}) {
     let text = String(content ?? '').replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim();
     if (text === '') return { ok: false, reason: 'empty', prompt: '' };
-    try {
-        const parsed = JSON.parse(text);
-        if (parsed && typeof parsed === 'object' && typeof parsed.prompt === 'string') text = parsed.prompt.trim();
-    } catch {
-        // plain text answer
+    if (/<think>/i.test(text)) return { ok: false, reason: 'invalid', prompt: text };
+    const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(text);
+    if (fenced) text = fenced[1].trim();
+    const object = findJsonObject(text);
+    // an answer meant as the schema's JSON: it opens with the object, or names the field.
+    // A stray "{" inside a paragraph is not one, and is left as the text it is.
+    if (object && (text.startsWith('{') || /"prompt"\s*:/.test(object.text))) {
+        let parsed = null;
+        if (object.complete) {
+            try {
+                parsed = JSON.parse(object.text);
+            } catch {
+                // not the JSON that was asked for
+            }
+        }
+        if (!parsed || typeof parsed !== 'object' || typeof parsed.prompt !== 'string') return { ok: false, reason: 'invalid', prompt: text };
+        text = parsed.prompt.trim();
     }
     if (text === '') return { ok: false, reason: 'empty', prompt: '' };
-    if (hasNonEnglish(text)) return { ok: false, reason: 'non-english', prompt: text };
+    if (REFUSAL.test(text)) return { ok: false, reason: 'refusal', prompt: text };
+    const copied = String(verbatim ?? '');
+    const foreign = [...text.matchAll(NON_ENGLISH_RUNS)].map(match => match[0]).filter(run => !copied.includes(run));
+    if (foreign.length > 0) return { ok: false, reason: 'non-english', prompt: text };
+    const handles = new Set(refs);
+    // whole handles, not substrings: an artist token "@10" in common is not a copied "@1"
+    const copiedHandles = new Set(handlesIn(copied));
+    const leaked = handlesIn(text).filter(ref => handles.has(ref) && !copiedHandles.has(ref));
+    if (leaked.length > 0) return { ok: false, reason: 'refs', prompt: text };
     return { ok: true, reason: '', prompt: text };
 }

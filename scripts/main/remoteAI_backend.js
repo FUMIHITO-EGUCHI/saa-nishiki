@@ -3,12 +3,14 @@ import {
     buildOllamaChatRequest,
     isOllamaChatUrl,
     normalizeOllamaChatResponse,
+    resolveChatTimeout,
 } from './ollamaSaaAdapter.js';
 import { backendAuthHeaders } from '../shared/backendAddress.js';
 import { isPodSshChatUrl } from '../shared/llmEndpoint.js';
 import { podOllamaRequest } from './podSshTransport.js';
 import { normalizeKeepAlive } from '../shared/ollamaModels.js';
 import { getGlobalSettings } from './globalSettings.js';
+import { armRequestTimeout } from './requestTimeout.js';
 
 const CAT = '[ModelAPI]';
 
@@ -34,17 +36,28 @@ function requestRemote(options) {
             },
             timeout: timeout,
         });
-       
+
+
+        // net.request has no working timeout option or 'timeout' event (requestTimeout.js)
+        const clearRequestTimeout = armRequestTimeout({
+            timeout,
+            onTimeout: ms => {
+                console.error(`${CAT} Request timed out after ${ms}ms`);
+                resolve(`Error: Request timed out after ${ms}ms`);
+            },
+            abort: () => request.abort(),
+        });
 
         request.on('response', (response) => {
-            let responseData = ''            
+            let responseData = ''
             response.on('data', (chunk) => {
                 responseData += chunk
             })
             response.on('end', () => {
+                clearRequestTimeout();
                 if (response.statusCode !== 200) {
                     console.error(`${CAT} HTTP error: ${response.statusCode} - ${responseData}`);
-                    resolve(`Error: HTTP error: ${response.statusCode}`);
+                    return resolve(`Error: HTTP error: ${response.statusCode}`);
                 }
 
                 resolve(responseData);
@@ -52,6 +65,7 @@ function requestRemote(options) {
         })
 
         request.on('error', (error) => {
+            clearRequestTimeout();
             let ret = '';
             if (error.code === 'ECONNABORTED') {
                 console.error(`${CAT} Request timed out after ${timeout}ms`);
@@ -64,7 +78,7 @@ function requestRemote(options) {
         });
 
         request.on('timeout', () => {
-            req.destroy();
+            request.abort();
             console.error(`${CAT} Request timed out after ${timeout}ms`);
             resolve(`Error: Request timed out after ${timeout}ms`);
         });
@@ -97,6 +111,9 @@ function requestLocal(options) {
         } = options;
 
         const useOllama = isOllamaChatUrl(apiUrl);
+        // a structured Refine writes every field again and is floored above the AI card's
+        // timeout: cutting it loses the whole edit, waiting only costs time (ollamaSaaAdapter.js)
+        const requestTimeout = resolveChatTimeout({ timeout, promptMode, editorFields, generationContext });
         const requestBody = useOllama
             ? buildOllamaChatRequest({
                 mode: modelMode,
@@ -136,7 +153,8 @@ function requestLocal(options) {
                 ...(podModel ? { model: podModel } : {}),
                 keep_alive: normalizeKeepAlive(settings?.ai_pod_keep_alive, '10m'),
             };
-            podOllamaRequest({ settings, method: 'POST', path: '/api/chat', body: podBody, timeoutMs: timeout })
+            // no limit asked for: the relay keeps its own default rather than 0ms
+            podOllamaRequest({ settings, method: 'POST', path: '/api/chat', body: podBody, timeoutMs: requestTimeout || undefined })
                 .then(reply => {
                     if (!reply.ok) {
                         console.error(`${CAT} pod ollama: ${reply.message}`);
@@ -161,9 +179,20 @@ function requestLocal(options) {
                 'Content-Type': 'application/json',
                 ...backendAuthHeaders(apiAuth),
             },
-            timeout: timeout,
+            timeout: requestTimeout || undefined,
         });
        
+
+        // net.request has no working timeout option or 'timeout' event: a stalled local LLM
+        // would hold the queue forever, so the limit is armed here (requestTimeout.js)
+        const clearRequestTimeout = armRequestTimeout({
+            timeout: requestTimeout,
+            onTimeout: ms => {
+                console.error(`${CAT} Request timed out after ${ms}ms`);
+                resolve(`Error: Request timed out after ${ms}ms`);
+            },
+            abort: () => request.abort(),
+        });
 
         request.on('response', (response) => {
             let responseData = ''            
@@ -171,6 +200,7 @@ function requestLocal(options) {
                 responseData += chunk
             })
             response.on('end', () => {
+                clearRequestTimeout();
                 if (response.statusCode !== 200) {
                     console.error(`${CAT} HTTP error: ${response.statusCode} - ${responseData}`);
                     return resolve(`Error: HTTP error: ${response.statusCode}`);
@@ -190,6 +220,7 @@ function requestLocal(options) {
         })
 
         request.on('error', (error) => {
+            clearRequestTimeout();
             let ret = '';
             if (error.code === 'ECONNABORTED') {
                 console.error(`${CAT} Request timed out after ${timeout}ms`);

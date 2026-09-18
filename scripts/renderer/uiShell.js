@@ -138,10 +138,21 @@ function setupPipelineRows() {
     // uiShell.updateLanguage() -> refresh(), so no poll is needed.
     const DOCUMENT_EVENTS = ['saa-settings-applied', 'saa-edit-history-changed'];
     for (const type of DOCUMENT_EVENTS) document.addEventListener(type, debounced);
+    // Slots filled or cleared from outside the card (Image Info's Add ControlNet, a dropped or
+    // pasted JSON file, the API switch clearing ADetailer) and a row opened from outside
+    // (collapsedTabs.*.setCollapsed) raise none of those events: the row bodies are watched.
+    // refresh() writes only into the row heads and rows, never a body, so it cannot feed itself.
+    const bodyObserver = new MutationObserver(debounced);
+    for (const body of card.querySelectorAll('.pipe-row-body')) {
+        bodyObserver.observe(body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    }
     refresh();
     return {
         refresh,
-        destroy: () => { for (const type of DOCUMENT_EVENTS) document.removeEventListener(type, debounced); },
+        destroy: () => {
+            for (const type of DOCUMENT_EVENTS) document.removeEventListener(type, debounced);
+            bodyObserver.disconnect();
+        },
     };
 }
 
@@ -203,9 +214,14 @@ function setupProseCard() {
     }
 
     let syncing = false;
+    // the paragraph being edited: a newer one can arrive while the box has focus, and the
+    // keystrokes must stay with the paragraph they were typed into
+    let editingKey = null;
+    preview.addEventListener('focus', () => { editingKey = proseState().key ?? null; });
+    preview.addEventListener('blur', () => { editingKey = null; render(); });
     preview.addEventListener('input', () => {
         if (syncing) return;
-        setProseParagraph(preview.value);
+        setProseParagraph(preview.value, { key: editingKey ?? proseState().key });
     });
     revert?.addEventListener('click', () => revertProseParagraph());
     regenerate?.addEventListener('click', async () => {
