@@ -42,7 +42,8 @@ test('the main process routes the pod-ssh marker through podOllamaRequest and pr
     assert.match(transport, /session\.request\(\{ cmd: 'ollama', method, path, body, timeout: Math\.ceil\(timeoutMs \/ 1000\) \}, timeoutMs \+ 5000\)/);
     const backend = read('scripts/main/remoteAI_backend.js');
     assert.match(backend, /if \(isPodSshChatUrl\(apiUrl\)\) \{/);
-    assert.match(backend, /podOllamaRequest\(\{ settings, method: 'POST', path: '\/api\/chat', body: podBody, timeoutMs: timeout \}\)/);
+    assert.match(backend, /podOllamaRequest\(\{ settings, method: 'POST', path: '\/api\/chat', body: podBody, timeoutMs: requestTimeout \|\| undefined \}\)/,
+        'the relay gets the limit resolved for this request (a structured Refine is floored), or its own default');
     assert.match(backend, /normalizeOllamaChatResponse\(JSON\.stringify\(reply\.json\)\)/, 'same normalization as the HTTP path');
     const status = read('scripts/main/backendStatus.js');
     assert.match(status, /if \(settings\?\.ai_interface === 'Pod' && isPodSshLlm\(settings\)\) \{/);

@@ -46,10 +46,12 @@ test('generation resolves original characters by key, on any slot and either sid
     assert.match(regional, /for\(let index=0; index < 2; index\+\+\)/);
     assert.doesNotMatch(regional, /index === 2|index === 3/);
     const callbacks = read('scripts/renderer/callbacks.js');
-    assert.match(callbacks, /updateDefaults\(SETTINGS\.character_left, SETTINGS\.character_right\);/);
+    // the regional list mirrors the slots' side column (any slot, OC or not, may take a side)
+    assert.match(callbacks, /const \{ left, right \} = regionalSlots\(SETTINGS\.character_slots\);/);
+    assert.match(callbacks, /list\.updateDefaults\(SETTINGS\.character_left, SETTINGS\.character_right\);/);
     const manager = read('scripts/renderer/components/promptFieldManager.js');
-    assert.match(manager, /list\.updateDefaults\(keys\[1\], keys\[0\]\);/);
-    assert.match(manager, /trigger\.querySelector\('\.character-selection-oc-badge'\) \? `\$\{name\} \(OC\)` : name/, 'the Prompts card side row names an OC as "Name (OC)"');
+    assert.match(manager, /const slot = regionalSlots\(SETTINGS\.character_slots\)\[side\];/);
+    assert.match(manager, /if \(patch\.character_slots\) globalThis\.characterList\?\.setSlots\?\.\(SETTINGS\.character_slots\);/);
     const lang = JSON.parse(read('data/language.json'));
     for (const locale of ['en-US', 'zh-CN']) {
         assert.equal(lang[locale].regional_origina_character_left, undefined, `${locale}: OC side labels are gone`);
@@ -60,7 +62,7 @@ test('generation resolves original characters by key, on any slot and either sid
 test('regional strength is a number box beside the side area; ratio and overlap stay sliders', () => {
     const html = read('scripts/html_shared_body.js');
     assert.match(html, /<div class="regional-condition-side regional-condition-side-left">\n\s+<div class="regional-condition-option-left"><\/div>\n\s+<div class="regional-condition-strength-left run-number"><\/div>/);
-    assert.match(html, /<div class="regional-condition-settings-1">\n\s+<div class="regional-condition-image-ratio"><\/div>\n\s+<div class="regional-condition-overlap-ratio"><\/div>\n\s+<\/div>/);
+    assert.match(html, /<div class="regional-condition-settings-1">\n\s+<div class="regional-condition-split"><\/div>\n\s+<div class="regional-condition-image-ratio"><\/div>\n\s+<div class="regional-condition-overlap-ratio"><\/div>\n\s+<\/div>/);
     for (const css of ['html/index_dark.css', 'html/index_light.css']) {
         const text = read(css);
         assert.match(text, /\.characters-card \.regional-condition-settings-2 \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);

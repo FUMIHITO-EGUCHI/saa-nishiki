@@ -1,4 +1,5 @@
 import { customCommonOverlay } from './customOverlay.js';
+import { formatBackendStatus } from './components/runProgress.js';
 
 export function from_main_updateGallery(base64, seed, tagsString){
     const keepGallery = globalThis.generate.keepGallery.getValue();
@@ -27,6 +28,14 @@ export function from_main_updatePreview(base64){
             imgElement.onerror = null;
         };
     } 
+}
+
+// A wait in the main process that is not sampling (a ComfyUI restart for the fast-mode
+// launch flags): { key, text, args } or null when it is over. The run bar shows it.
+export function from_main_customOverlayStatus(status) {
+    if (!globalThis.generate) return;
+    const language = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language] ?? {};
+    globalThis.generate.backendStatus = formatBackendStatus(status, language);
 }
 
 export function from_main_customOverlayProgress(progress, totalProgress){

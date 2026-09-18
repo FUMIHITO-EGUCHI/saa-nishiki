@@ -129,8 +129,14 @@ test('remote models: relay object_info is limited to the loader nodes and the li
     assert.match(transport, /export async function podObjectInfo\(\{ settings, nodes, open = false/);
     assert.match(transport, /else if \(podSessionState\(\) !== 'connected'\) \{\n\s+return \{ ok: false, message: 'pod relay not connected' \};/, 'open:false never dials the pod');
     const modelList = read('scripts/main/modelList.js');
-    assert.match(modelList, /function applyRemoteModelLists\(lists, \{ model_filter_keyword = '\*', model_filter = false \} = \{\}\)/);
+    assert.match(modelList, /function applyRemoteModelLists\(lists, \{ model_filter_keyword = '\*', model_filter_keyword_diffusion = '\*', model_filter = false \} = \{\}, source = 'remote'\)/);
+    // the fast-mode LoRA check needs to know which backend the LoRA list describes
+    assert.match(modelList, /LORALIST_COMFYUI_SOURCE = source/);
+    assert.match(read('scripts/main/remoteModelList.js'), /applyRemoteModelLists\(lists, settings, reply\.source\)/);
     assert.match(modelList, /MODELLIST_COMFYUI = applyModelFilter\(lists\.checkpoints, model_filter_keyword, model_filter\);/);
+    // the pod's diffusion models (Anima, Flux) take the Diffusion keyword like the local
+    // scan does; the checkpoint keyword (e.g. "waiIllustriousSDXL") hid them all
+    assert.match(modelList, /applyModelFilter\(lists\.diffusion, model_filter_keyword_diffusion, model_filter\)/);
     assert.match(modelList, /CONTROLNET_COMFYUI = \['none', \.\.\.lists\.controlnet\]/);
     const remote = read('scripts/main/remoteModelList.js');
     assert.match(remote, /if \(!address \|\| loopbackOrigin\(address\)\) return null;/, 'loopback ComfyUI keeps the folder scan');

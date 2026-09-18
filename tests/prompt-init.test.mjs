@@ -21,24 +21,34 @@ test('a capsule plan write-back during a settings reload cannot restore the prev
     assert.ok(refreshAt > 0 && loadAt > refreshAt, 'the field set is synced before the capsule plans are reloaded');
 });
 
-test('Regional off falls back to Positive when a side field was selected, and refreshes the Final prompt', () => {
+test('the Regional switch re-lays the Scene out and refreshes the Final prompt', () => {
     const manager = read('scripts/renderer/components/promptFieldManager.js');
-    assert.match(manager, /if \(!isAvailable\(unitContainer\(selectedField\)\)\) selectedField = 'positive';/);
-    assert.match(manager, /renderEditorLists\(\); \/\/ the field editor, when open, follows/);
-    assert.match(manager, /if \(container !== target\) container\.querySelector\('\.prompt-side-badge'\)\?\.remove\(\);/, 'no stale side badge on other fields');
+    // side fields that are not laid out (Regional off) stay in the DOM, hidden by their inline display
+    assert.match(manager, /if \(placed\.has\(id\)\) continue;\s*const container = prepare\(id\);\s*if \(container\) extraNodes\.push\(container\);/);
+    // every container is located before a box or the Scene is re-synced (a sync drops what it no longer lists)
+    assert.match(manager, /const boxNodes = \{ left: boxes\.left\.map\(prepare\)\.filter\(Boolean\), right: boxes\.right\.map\(prepare\)\.filter\(Boolean\) \};/);
+    assert.match(manager, /ordered\.push\(\.\.\.extraNodes\);/);
+    // the Regional block stays in the DOM (hidden) when the layout has no place for it (Diffusion):
+    // its controls are looked up by document query, so a detached block broke init
+    assert.match(manager, /const shown = ordered\.includes\(group\);\s*group\.hidden = !shown;\s*if \(!shown\) ordered\.push\(group\);/);
     const callbacks = read('scripts/renderer/callbacks.js');
     assert.match(callbacks, /globalThis\.prompt\.fieldManager\?\.refresh\?\.\(\);\s*\/\/[^\n]*\n\s*globalThis\.prompt\.tagCapsuleFields\?\.refreshFinalPrompt\?\.\(\);/);
     const language = read('scripts/renderer/language.js');
     assert.match(language, /if \(globalThis\.globalSettings\.regional_condition\) \{\s*globalThis\.prompt\.common\.setTitle\(LANG\.regional_custom_prompt\);\s*globalThis\.prompt\.positive\.setTitle\(LANG\.regional_api_prompt\);/, 'a language switch keeps the Regional titles');
 });
 
-test('the field editor offers sides only while Regional is on', () => {
+test('sides are a Regional concept: a new field takes one only while Regional is on', () => {
     const manager = read('scripts/renderer/components/promptFieldManager.js');
-    assert.match(manager, /const regional = isRegional\(\);\s*const sideSelect = panel\.querySelector\('\.prompt-field-editor-side-select'\);\s*if \(sideSelect\) \{ sideSelect\.hidden = !regional;/);
-    assert.match(manager, /if \(sideNote\) sideNote\.hidden = !regional;/);
-    assert.match(manager, /if \(regional && !custom && !STRUCTURAL_UNITS\.has\(id\)\)/);
-    assert.match(manager, /if \(custom\) \{\s*if \(regional\) \{\s*\/\/ Both \/ Left \/ Right/);
-    assert.match(manager, /const side = isRegional\(\) \? normalizeSide\(panel\.querySelector\('\.prompt-field-editor-side-select'\)\?\.value\) : 'both';/);
+    assert.match(manager, /if \(isRegional\(\) && \(side === 'left' \|\| side === 'right'\)\) field\.side = side;/);
+    // a built-in keeps its side when dragged; a custom row takes the box it lands in
+    assert.match(manager, /function sideAllowed\(id, side\) \{\s*if \(!isRegional\(\)\) return true;\s*if \(customOf\(id\)\) return true;\s*return sideOf\(id, fields\) === side;/);
+    assert.match(manager, /if \(custom && isRegional\(\)\) \{\s*if \(side === 'both'\) delete custom\.side; else custom\.side = side;/);
+    // the rows the app owns - a cast row ("@alias" per character slot) and cf_action - get
+    // no rename / delete controls; a hand-made row named "Action" stays the user's own row
+    assert.match(manager, /function isFixed\(id\) \{\s*const custom = customOf\(id\);\s*return !custom \|\| isDiffusionFieldId\(custom\.id\);\s*\}/);
+    // the controls follow the row's current state (scene-behaviour.test.mjs exercises it)
+    assert.match(manager, /for \(const button of container\.querySelectorAll\('\.scene-polarity, \.scene-delete'\)\) button\.hidden = fixed;/);
+    assert.match(manager, /if \(!custom \|\| isFixed\(id\) \|\| !label \|\| label\.hidden\) return;/);
 });
 
 const caps = text => parsePromptToCapsules(text);
@@ -59,7 +69,7 @@ const FIELDS = [
 test('the Final prompt preview follows the single chain with Regional off', () => {
     const [row] = expandAll(FIELDS, 1, 1, {
         chain: {
-            positive: ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive', 'cf_both', 'cf_left', 'cf_right'],
+            positive: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive', 'cf_both', 'cf_left', 'cf_right'],
             positiveRight: null,
             negative: ['negative'],
         },
@@ -73,8 +83,8 @@ test('the Final prompt preview follows the single chain with Regional off', () =
 test('the Final prompt preview puts "both" units on both sides and side units on theirs', () => {
     const [row] = expandAll(FIELDS, 1, 1, {
         chain: {
-            positive: ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive', 'cf_both', 'cf_left'],
-            positiveRight: ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive_right', 'cf_both', 'cf_right'],
+            positive: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive', 'cf_both', 'cf_left'],
+            positiveRight: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive_right', 'cf_both', 'cf_right'],
             negative: ['negative', 'negative_left', 'negative_right'],
         },
     });

@@ -16,15 +16,17 @@ import { releaseComfyModels } from './scripts/main/comfyRelease.js';
 import { registerBackendStatus } from './scripts/main/backendStatus.js';
 import { registerRemoteModelList } from './scripts/main/remoteModelList.js';
 import { registerRunpodControl } from './scripts/main/runpodControl.js';
+import { autostartComfy, registerComfyProcess, setComfyDialogText } from './scripts/main/comfyProcess.js';
 import { setupDownloadFiles } from './scripts/main/downloadFiles.js';
 import { setupModelList } from './scripts/main/modelList.js';
 import { setupTagAutoCompleteBackend } from './scripts/main/tagAutoComplete_backend.js';
 import { setupTagRelatedBackend } from './scripts/main/tagRelated_backend.js';
+import { setupArtistBackend } from './scripts/main/artist_backend.js';
 import { setupModelApi } from './scripts/main/remoteAI_backend.js';
 import { setupGenerateBackendComfyUI, sendToRenderer } from './scripts/main/generate_backend_comfyui.js';
 import { stopPodSshSession } from './scripts/main/podSshTransport.js';
 import { setupGenerateBackendWebUI } from './scripts/main/generate_backend_webui.js';
-import { setupCachedFiles } from './scripts/main/cachedFiles.js';
+import { getCachedFiles, setupCachedFiles } from './scripts/main/cachedFiles.js';
 import { setupWildcardsHandlers } from './scripts/main/wildCards.js';
 import { setupTagger } from './scripts/main/imageTagger.js';
 
@@ -105,6 +107,8 @@ async function initializeApp() {
 
   const tacSuccess = await setupTagAutoCompleteBackend(SETTINGS.language);
   setupTagRelatedBackend();
+  // after the tag list: the artist index is built from it
+  setupArtistBackend();
   setupModelApi();
   setupGenerateBackendComfyUI();
   setupGenerateBackendWebUI();  
@@ -127,6 +131,16 @@ async function initializeApp() {
   registerBackendStatus(ipcMain, getGlobalSettings);
   registerRemoteModelList(ipcMain, getGlobalSettings);
   registerRunpodControl(ipcMain, getGlobalSettings);
+  // local ComfyUI start / stop / restart; brings the backend up with SAA when asked to.
+  // The launch command dialog is native, so it is handed the UI language strings itself.
+  setComfyDialogText(() => {
+    const languages = getCachedFiles().languages ?? {};
+    return languages[getGlobalSettings()?.language] ?? languages['en-US'] ?? {};
+  });
+  registerComfyProcess(ipcMain, getGlobalSettings);
+  setTimeout(() => {
+    autostartComfy(getGlobalSettings()).catch(error => console.warn('[ComfyProcess] autostart failed:', error?.message ?? error));
+  }, 1500);
 
   // IPC handlers for spellcheck
   ipcMain.handle('replace-misspelling', async (event, word) => {    

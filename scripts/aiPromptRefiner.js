@@ -41,12 +41,12 @@ Rules:
 11. Before output, verify that preserved positive concepts are absent from the negative prompt and every changed weight matches the requested intensity.
 12. Keep "changes" to one short sentence summarizing the reconstruction.`;
 
-export const REFINE_SYSTEM_PROMPT = `You are a full prompt architect for WAI Illustrious SDXL.
+export const LEGACY_V2_REFINE_SYSTEM_PROMPT = `You are a full prompt architect for WAI Illustrious SDXL.
 Return exactly one JSON object and no markdown. The object must contain numeric "schema_version": 2 and string fields "common", "positive", "positive_right", "negative", and "changes". Always return positive_right; use an empty string outside Regional mode.
 
 The user message contains an instruction, editable prompt fields, and generation_context. Rewrite only the editable fields. generation_context shows the complete prompt currently sent to the image backend and may contain generated-only Characters, Views, JSON slot content, character negative tags, resolved Wildcards, Exclude results, and slot LoRA. Use that context to understand the image, but never copy generated-only material into the editable fields.
 
-Refine always means full reconstruction of the editable prompt set. Apply the instruction, then rebuild the entire positive and negative prompts represented by common, positive, positive_right, and negative. Return complete replacement fields, never a patch, suffix, delta, commentary, or an already-composed backend prompt. The instruction may be written in Japanese. Prompt output must use concise English Danbooru-style comma-separated tags.
+Refine always means full reconstruction of the editable prompt set. Apply the instruction, then rebuild the entire positive and negative prompts represented by common, positive, positive_right, and negative. Return complete replacement fields, never a patch, suffix, delta, commentary, or an already-composed backend prompt. The instruction may be written in Japanese. Prompt output must use concise English Danbooru-style comma-separated tags; the one exception is an action sentence (rule 11).
 
 Rules:
 1. Preserve hard constraints and protected inline tokens unless explicitly changed: inline LoRA tokens, embeddings, Wildcards, nested-random expressions, quality anchors, escaped tokens, and identity tags already present in the editable fields. Copy protected tokens exactly.
@@ -59,8 +59,32 @@ Rules:
 8. Map intensity exactly. For "slightly" or Japanese "少し", to strengthen you MUST use exactly 1.10 and to weaken you MUST use exactly 0.90. An unqualified request uses exactly 1.20 and 0.80. "Strongly" uses exactly 1.30 and 0.70.
 9. Use emphasis syntax (tag:1.20) only on decisive visual concepts. Keep ordinary weights between 0.70 and 1.50. Do not rewrite inline LoRA weights.
 10. Even for a narrow instruction, return a fully audited, reorganized complete replacement for every editable prompt field.
-11. Before output, verify that schema_version is numeric 2, every prompt field is a string, positive_right follows the mode rule, and generated-only context was not copied.
-12. Keep changes to one short sentence summarizing the reconstruction.`;
+11. An editable field may hold one plain English sentence among its tags that says who does what to whom, naming each character by a look already in the tags, for example "the black haired girl is patting the blonde girl's head". Tags alone cannot say which character acts on which, so keep it: one English sentence at the end of the field it came from, rewritten only when the instruction changes the action, never split into tags. Keep appearance words out of it; they belong in tags.
+12. Before output, verify that schema_version is numeric 2, every prompt field is a string, positive_right follows the mode rule, and generated-only context was not copied.
+13. Keep changes to one short sentence summarizing the reconstruction.`;
+
+export const REFINE_SYSTEM_PROMPT = `You are a full prompt architect for WAI Illustrious SDXL.
+Return exactly one JSON object and no markdown. The object must contain numeric "schema_version": 3 and string fields "common", "positive", "positive_right", "negative", "negative_left", "negative_right", and "changes". Always return every field; outside Regional mode positive_right, negative_left and negative_right are empty strings.
+
+The user message contains an instruction, editable prompt fields, and generation_context. Rewrite only the editable fields. generation_context shows the complete prompts currently sent to the image backend and may contain generated-only Characters, Views, JSON slot content, character negative tags, resolved Wildcards, Exclude results, and slot LoRA. Use that context to understand the image, but never copy generated-only material into the editable fields.
+
+Refine always means full reconstruction of the editable prompt set. Apply the instruction, then rebuild the entire positive and negative prompts represented by common, positive, positive_right, negative, negative_left, and negative_right. Return complete replacement fields, never a patch, suffix, delta, commentary, or an already-composed backend prompt. The instruction may be written in Japanese. Prompt output must use concise English Danbooru-style comma-separated tags; the one exception is an action sentence (rule 13).
+
+Rules:
+1. Preserve hard constraints and protected inline tokens unless explicitly changed: inline LoRA tokens, embeddings, Wildcards, nested-random expressions, quality anchors, escaped tokens, and identity tags already present in the editable fields. Copy protected tokens exactly.
+2. Do not copy slot LoRA, generated character tags, Views, JSON slot text, or character-derived negative tags from generation_context into the editable fields; the application adds them again after Refine.
+3. Preserve the intended scene semantics, but freely rewrite, consolidate, and reorder ordinary editable tags. Remove duplicates, contradictions, obsolete tags, filler, and tags that no longer support the request.
+4. Reorder the complete positive prompt into this semantic sequence: quality and source, subject and identity, composition and camera, appearance, clothing and accessories, pose and action, setting, lighting, finish.
+5. common contains content shared by both Regional sides; positive and positive_right contain only side-specific content. negative is shared by both sides; negative_left and negative_right contain only that side's exclusions. Outside Regional mode positive_right, negative_left and negative_right must be empty strings.
+6. Apply the instruction across the whole editable prompt. Add only visual tags directly implied by the instruction or necessary for an explicit constraint. Do not invent identities, subjects, clothing, poses, expressions, body traits, settings, or story elements.
+7. Rebuild the negative fields as a concise set of user-editable unwanted artifacts and exclusions. Keep an exclusion in negative when it applies to the whole image, and in negative_left or negative_right when it only applies to that side. Do not copy character-derived negatives from generation_context and never place a desired or preserved positive concept in a negative field.
+8. Map intensity exactly. For "slightly" or Japanese "少し", to strengthen you MUST use exactly 1.10 and to weaken you MUST use exactly 0.90. An unqualified request uses exactly 1.20 and 0.80. "Strongly" uses exactly 1.30 and 0.70.
+9. Use emphasis syntax (tag:1.20) only on decisive visual concepts. Keep ordinary weights between 0.70 and 1.50. Do not rewrite inline LoRA weights.
+10. Even for a narrow instruction, return a fully audited, reorganized complete replacement for every editable prompt field.
+11. Before output, verify that schema_version is numeric 3, every prompt field is a string, positive_right, negative_left and negative_right follow the mode rule, and generated-only context was not copied.
+12. Keep changes to one short sentence summarizing the reconstruction.
+13. An editable field may hold one plain English sentence among its tags that says who does what to whom, naming each character by a look already in the tags, for example "the black haired girl is patting the blonde girl's head". Tags alone cannot say which character acts on which, so keep it: one English sentence at the end of the field it came from, rewritten only when the instruction changes the action, never split into tags. Keep appearance words out of it; they belong in tags.
+14. The user message may carry "locked": the editable fields the user switched off. They are not part of the image and cannot be rewritten. Return every locked field as an empty string, never move content into one, and keep whatever belongs in the image in the fields that are not locked.`;
 
 export function resolveRefineSystemPrompt(savedPrompt) {
     if (typeof savedPrompt !== 'string' || savedPrompt.trim() === '') {
@@ -72,7 +96,58 @@ export function resolveRefineSystemPrompt(savedPrompt) {
     if (savedPrompt.trim() === LEGACY_FULL_REFINE_SYSTEM_PROMPT.trim()) {
         return REFINE_SYSTEM_PROMPT;
     }
+    if (savedPrompt.trim() === LEGACY_V2_REFINE_SYSTEM_PROMPT.trim()) {
+        return REFINE_SYSTEM_PROMPT;
+    }
+    // the schema 2 default as shipped before the action-sentence rule (rule 11) was added,
+    // and the schema 3 defaults shipped before this one
+    if (previousRefineSystemPromptDefaults().some(prompt => savedPrompt.trim() === prompt.trim())) {
+        return REFINE_SYSTEM_PROMPT;
+    }
     return savedPrompt;
+}
+
+// Earlier defaults rebuilt from the current texts (tests pin each one to the text that
+// shipped): schema 2 before rule 11, whose verification and changes rules were 11 and 12
+// and whose tag rule named no exception; schema 3 before the locked-field rule 14, before
+// that without the exception in the tag rule, and before that also without the
+// action-sentence rule 13.
+export function previousRefineSystemPromptDefaults() {
+    const v2WithoutActionRule = LEGACY_V2_REFINE_SYSTEM_PROMPT
+        .replace('; the one exception is an action sentence (rule 11).', '.')
+        .split('\n')
+        .filter(line => !line.startsWith('11. An editable field'))
+        .map(line => line.replace(/^12\. Before output/, '11. Before output').replace(/^13\. Keep changes/, '12. Keep changes'))
+        .join('\n');
+    const v3WithoutLockedRule = REFINE_SYSTEM_PROMPT.split('\n').filter(line => !line.startsWith('14. The user message')).join('\n');
+    const v3WithoutException = v3WithoutLockedRule.replace('; the one exception is an action sentence (rule 13).', '.');
+    const v3WithoutActionRule = v3WithoutException.split('\n').filter(line => !line.startsWith('13. An editable field')).join('\n');
+    return [v2WithoutActionRule, v3WithoutLockedRule, v3WithoutException, v3WithoutActionRule];
+}
+
+// Which structured Refine schema a system prompt asks for: 3, 2, or 0 for a customized
+// prompt that never mentions schema_version (the legacy generation-only request). Every
+// number written near a schema_version mention counts, a line break between the two and
+// full-width digits included, so a reworded or translated prompt is still read.
+//
+// A prompt that names 3 anywhere asks for 3, even beside a mention of the old format
+// ("never answer with schema_version 2"): the request is built from this same answer, so
+// a schema 3 request answered with schema 2 is simply read as schema 2, while a schema 2
+// request can never be answered with the per-side negatives. A mention without any number
+// gets schema 2, which leaves the per-side negatives alone.
+export function refineRequestSchema(systemPrompt) {
+    const text = String(systemPrompt || REFINE_SYSTEM_PROMPT)
+        .replace(/[０-９]/g, digit => String.fromCharCode(digit.charCodeAt(0) - 0xFEE0));
+    if (!/schema_version/i.test(text)) return 0;
+    const declared = [...text.matchAll(/schema_version[^\d]{0,24}(\d+)/gi)].map(match => Number(match[1]));
+    return declared.includes(3) ? 3 : 2;
+}
+
+// Structured Refine output: schema 2 (common / positive / positive_right / negative)
+// and schema 3, which adds the per-side negatives. Both rebuild the editable fields;
+// legacy output remains generation-only.
+export function isStructuredRefineFormat(format) {
+    return format === 'v2' || format === 'v3';
 }
 
 export function normalizePromptMode(mode) {
@@ -108,6 +183,23 @@ export function buildRefineUserContent({
     return JSON.stringify(payload);
 }
 
+// The editable fields the user switched off (the Scene row's mute): they go out empty and
+// whatever the model writes into one is dropped again, so the request names them and the
+// system prompt (rule 14) tells the model to leave them alone.
+const LOCKED_FIELD_NAMES = Object.freeze({
+    common: 'common',
+    positive: 'positive',
+    positiveRight: 'positive_right',
+    negative: 'negative',
+    negativeLeft: 'negative_left',
+    negativeRight: 'negative_right',
+});
+
+function lockedFieldNames(editorFields, editor) {
+    const locked = Array.isArray(editorFields?.locked) ? editorFields.locked : [];
+    return [...new Set(locked.map(key => LOCKED_FIELD_NAMES[key]).filter(name => name && name in editor))];
+}
+
 export function buildRefineV2UserContent({
     instruction = '',
     editorFields = {},
@@ -124,10 +216,44 @@ export function buildRefineV2UserContent({
         positive_right: requireString(generationContext.positiveRight ?? '', 'generationContext.positiveRight'),
         negative: requireString(generationContext.negative ?? '', 'generationContext.negative'),
     };
+    const locked = lockedFieldNames(editorFields, editor);
     return JSON.stringify({
         schema_version: 2,
         instruction: requireString(instruction, 'instruction'),
         editor,
+        ...(locked.length > 0 ? { locked } : {}),
+        generation_context: context,
+    });
+}
+
+// Schema 3 adds the Regional per-side negatives, editable and rendered alike, so the
+// model can move an exclusion between the shared field and one side.
+export function buildRefineV3UserContent({
+    instruction = '',
+    editorFields = {},
+    generationContext = {},
+} = {}) {
+    const editor = {
+        common: requireString(editorFields.common ?? '', 'editorFields.common'),
+        positive: requireString(editorFields.positive ?? '', 'editorFields.positive'),
+        positive_right: requireString(editorFields.positiveRight ?? '', 'editorFields.positiveRight'),
+        negative: requireString(editorFields.negative ?? '', 'editorFields.negative'),
+        negative_left: requireString(editorFields.negativeLeft ?? '', 'editorFields.negativeLeft'),
+        negative_right: requireString(editorFields.negativeRight ?? '', 'editorFields.negativeRight'),
+    };
+    const context = {
+        positive: requireString(generationContext.positive ?? '', 'generationContext.positive'),
+        positive_right: requireString(generationContext.positiveRight ?? '', 'generationContext.positiveRight'),
+        negative: requireString(generationContext.negative ?? '', 'generationContext.negative'),
+        negative_left: requireString(generationContext.negativeLeft ?? '', 'generationContext.negativeLeft'),
+        negative_right: requireString(generationContext.negativeRight ?? '', 'generationContext.negativeRight'),
+    };
+    const locked = lockedFieldNames(editorFields, editor);
+    return JSON.stringify({
+        schema_version: 3,
+        instruction: requireString(instruction, 'instruction'),
+        editor,
+        ...(locked.length > 0 ? { locked } : {}),
         generation_context: context,
     });
 }
@@ -321,8 +447,24 @@ function invalidEnvelope(error, originalPrompts = {}) {
     };
 }
 
+// positive_right, negative_left and negative_right: outside Regional they are not part of
+// the prompt, so an answer may leave them out (null). `reused` is an answer of an earlier
+// run read again (the AI role "Last"), which may have run outside Regional, where exactly
+// these fields are empty strings: emptying this run's side fields with it would be wrong,
+// so an empty one counts as unanswered too.
+function regionalField(parsed, key, regional, reused) {
+    if (!regional && (parsed[key] === undefined || parsed[key] === null)) return null;
+    const value = validatePrompt(parsed[key], key, { allowEmpty: true });
+    return reused && regional && value === '' ? null : value;
+}
+
+// `requestSchema` is the schema the request was built with (refineRequestSchema), when
+// known: a schema 3 answer to any other request is read as schema 2, since the model never
+// saw the per-side negatives, and an answer to a structured request that declares no
+// schema is rejected instead of being taken for finished legacy prompts. `reused` marks an
+// answer this run did not ask for (the AI role "Last"), see regionalField.
 export function parseRefineEnvelope(content, options = {}) {
-    const { regional = false, originalPrompts = {} } = options;
+    const { regional = false, originalPrompts = {}, requestSchema, reused = false } = options;
     if (typeof content !== 'string') return invalidEnvelope('Refine response was not a string', originalPrompts);
 
     let parsed;
@@ -336,22 +478,32 @@ export function parseRefineEnvelope(content, options = {}) {
     }
 
     if (Object.hasOwn(parsed, 'schema_version')) {
-        if (parsed.schema_version !== 2) {
+        if (parsed.schema_version !== 2 && parsed.schema_version !== 3) {
             return invalidEnvelope('Unsupported Refine schema_version', originalPrompts);
         }
+        const withSideNegatives = parsed.schema_version === 3 && (requestSchema ?? 3) === 3;
+        const required = withSideNegatives ? ['positive_right', 'negative_left', 'negative_right'] : ['positive_right'];
+        for (const key of regional ? required : []) {
+            if (!Object.hasOwn(parsed, key)) {
+                return invalidEnvelope(`${key} is required for Regional Refine`, originalPrompts);
+            }
+        }
+        const sideField = key => regionalField(parsed, key, regional, reused);
         try {
+            // outside Regional an unanswered positive_right is simply empty
+            const positiveRight = sideField('positive_right');
             const editorFields = {
                 common: validatePrompt(parsed.common, 'common', { allowEmpty: true }),
                 positive: validatePrompt(parsed.positive, 'positive', { allowEmpty: true }),
-                positiveRight: validatePrompt(parsed.positive_right, 'positive_right', { allowEmpty: true }),
+                positiveRight: regional ? positiveRight : positiveRight ?? '',
                 negative: validatePrompt(parsed.negative, 'negative', { allowEmpty: true }),
+                // schema 2 knows no per-side negatives: null keeps the side fields as they are
+                negativeLeft: withSideNegatives ? sideField('negative_left') : null,
+                negativeRight: withSideNegatives ? sideField('negative_right') : null,
             };
             const changes = validateChanges(parsed.changes);
-            if (regional && !Object.hasOwn(parsed, 'positive_right')) {
-                return invalidEnvelope('positive_right is required for Regional Refine', originalPrompts);
-            }
             return {
-                format: 'v2',
+                format: withSideNegatives ? 'v3' : 'v2',
                 validForGeneration: true,
                 validForEditorApply: true,
                 editorFields,
@@ -364,6 +516,9 @@ export function parseRefineEnvelope(content, options = {}) {
         }
     }
 
+    if (requestSchema === 2 || requestSchema === 3) {
+        return invalidEnvelope('Refine response has no schema_version', originalPrompts);
+    }
     const legacy = parseRefineResponse(content, originalPrompts);
     if (!legacy.ok) return invalidEnvelope(legacy.error, originalPrompts);
     return {

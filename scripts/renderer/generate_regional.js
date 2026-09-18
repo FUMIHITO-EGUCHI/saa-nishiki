@@ -1,4 +1,6 @@
 import { decodeThumb } from './customThumbGallery.js';
+import { jsonSlotFragment } from '../shared/jsonSlotPrompt.js';
+import { appendPromptEnd, regionalRatio, singleLinePrompt } from '../shared/regionalGeneration.js';
 import { generateRandomSeed, getTagAssist, getLoRAs, replaceWildcardsAsync, getRandomIndex, formatCharacterInfo, formatOriginalCharacterInfo,
     getViewTags, createHiFix, createRefiner, extractHostPort, checkVpred, extractAPISecure,
     createControlNet, createADetailer, toggleQueueColor, startQueue, REPLACE_AI_MARK,
@@ -7,12 +9,14 @@ import { processRandomString } from './tools/nestedBraceParsing.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { filterPrompts } from './tools/promptFilter.js';
 import { asFragment, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
-import { sideOrder } from '../shared/regionalSides.js';
-import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue } from './tools/promptBatchExpansion.js';
+import { normalizeSplit, sideOrder } from '../shared/regionalSides.js';
+import { composeRegionalNegatives } from '../shared/negativeComposition.js';
+import { beginImageOverride, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
 import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
 import { removeAiPromptMarker } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
-import { captureRefineEditorSnapshot, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
+import { captureRefineEditorSnapshot, refineRequestFields, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
+import { refineRequestContext } from './tools/refineGenerationResult.js';
 import { createRefineRunController } from './tools/refineRunState.js';
 import { currentLocalLlmEndpoint, isStructuredRefineRequest } from './remoteAI.js';
 
@@ -30,16 +34,14 @@ function getCustomJSON(loop=-1){
     
     const jsonSlots = globalThis.jsonlist.getValues(loop);
 
-    for(const {prompt, strength, regional, method} of jsonSlots) {
+    // a slot row is an array (myJsonSlot.js getValue), not an object: the object
+    // destructuring here left every field undefined and threw on the first slot
+    for(const [prompt, strength, regional, method] of jsonSlots) {
         if(method === 'Off')
             continue;
 
-        const trimmedPrompt = prompt.replaceAll('\\', '\\\\').replaceAll('(', String.raw`\(`).replaceAll(')', String.raw`\)`).replaceAll(':', ' ');
-        let finalPrompt;
-        if (Number.parseFloat(strength) === 1)
-            finalPrompt = `${trimmedPrompt}, `;
-        else
-            finalPrompt = `(${trimmedPrompt}:${strength}), `;
+        const finalPrompt = jsonSlotFragment(prompt, strength);
+        if (finalPrompt === '') continue; // a blank slot used to leave ", ," behind
 
 
         if(regional == 'Both') {
@@ -100,7 +102,7 @@ function getCustomJSON(loop=-1){
     }
 }
 
-function getPrompts(character_left, character_right, views, ai='', apiInterface = 'None', loop=-1, seed=0){
+export function getPrompts(character_left, character_right, views, ai='', apiInterface = 'None', loop=-1, seed=0){
     const SETTINGS = globalThis.globalSettings;
     const dark = SETTINGS.css_style === 'dark';
     const commonColor = dark ? 'darkorange' : 'Sienna';
@@ -129,6 +131,8 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
             case 'views': return { text: views || '', color: viewColor };
             case 'background': return { text: asFragment(readViewPromptField('background', 'background', seed)), color: viewColor };
             case 'style': return { text: asFragment(readViewPromptField('style', 'style', seed)), color: viewColor };
+            // Regional only runs on a Checkpoint, where the Artist card does not exist
+            case 'artist': return { text: '', color: customColor };
             case 'ai': return { text: aiPrompt, color: aiColor };
             case 'characters': {
                 const [BOC, EOC, text] = side === 'left' ? [BOCL, EOCL, character_left] : [BOCR, EOCR, character_right];
@@ -157,10 +161,12 @@ function getPrompts(character_left, character_right, views, ai='', apiInterface 
     };
     const left = assemble('left');
     const right = assemble('right');
-    const tmpPositivePromptLeft = `${BOPL}${left.text}${EOPL}`.replaceAll(/\n+/g, '');
-    const tmpPositivePromptRight = `${BOPR}${right.text}${EOPR}`.replaceAll(/\n+/g, '');
-    const tmpPositivePromptLeftColored = `${BOPL}${left.coloredText}${EOPL}`.replaceAll(/\n+/g, '');
-    const tmpPositivePromptRightColored = `${BOPR}${right.coloredText}${EOPR}`.replaceAll(/\n+/g, '');
+    // an end-of-prompt JSON slot follows the side with a separator, and a newline separates
+    // tags instead of being dropped between them (scripts/shared/regionalGeneration.js)
+    const tmpPositivePromptLeft = singleLinePrompt(`${BOPL}${appendPromptEnd(left.text, EOPL)}`);
+    const tmpPositivePromptRight = singleLinePrompt(`${BOPR}${appendPromptEnd(right.text, EOPR)}`);
+    const tmpPositivePromptLeftColored = singleLinePrompt(`${BOPL}${appendPromptEnd(left.coloredText, EOPL)}`);
+    const tmpPositivePromptRightColored = singleLinePrompt(`${BOPR}${appendPromptEnd(right.coloredText, EOPR)}`);
 
     const {
         positivePrompt: positivePromptLeft,
@@ -216,16 +222,19 @@ export function getNegativePrompts({ negative_tags_left = '', negative_tags_righ
         negative_right: readPromptValue('negative_right'),
     };
     for (const custom of getCustomFieldTexts('negative')) texts[custom.id] = custom.text;
-    const parts = side => sideOrder(order, side, customs).map(id => String(texts[id] ?? '').trim()).filter(Boolean);
-    const both = parts('both');
-    const leftOnly = parts('left').filter(part => !both.includes(part));
-    const rightOnly = parts('right').filter(part => !both.includes(part));
-    const join = list => list.filter(Boolean).join(', ').trim();
-    return {
-        left: join([...both, ...leftOnly, negative_tags_left]),
-        right: join([...both, ...rightOnly, negative_tags_right]),
-        merged: join([...both, ...leftOnly, ...rightOnly, negative_tags_left, negative_tags_right]),
+    // the chains and their texts also go to Refine, which rebuilds the same sides
+    const chains = {
+        both: sideOrder(order, 'both', customs),
+        left: sideOrder(order, 'left', customs),
+        right: sideOrder(order, 'right', customs),
     };
+    const composed = composeRegionalNegatives({
+        chains,
+        texts,
+        characterLeft: negative_tags_left,
+        characterRight: negative_tags_right,
+    });
+    return { ...composed, chains, texts };
 }
 
 async function createCharacters(index, seeds) {
@@ -412,7 +421,7 @@ async function getCharacters(){
     }
 }
 
-async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
+export async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let finalInfo = ''
     let randomSeed = -1;
     let randomSeedr = -1;
@@ -429,10 +438,10 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let refineContext = null;
 
     if(runSame) {
-        let seed = globalThis.generate.seed.getValue();
-        if (seed === -1){
-            randomSeed = generateRandomSeed();
-        }
+        // a fixed slider seed is the seed (it stayed -1 and failed ComfyUI validation);
+        // a batch expansion override supplies seed + n − 1
+        const seed = overrideSeed(globalThis.generate.seed.getValue());
+        randomSeed = (seed === -1) ? generateRandomSeed() : seed;
         positivePromptLeft = globalThis.generate.lastPos;
         positivePromptLeftColored = globalThis.generate.lastPosColored;
         positivePromptRight = globalThis.generate.lastPosR;
@@ -442,6 +451,25 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         negativePromptRight = globalThis.generate.lastNegR ?? negativePrompt;
         charactersName = globalThis.generate.lastCharacter;
         img_prefix = globalThis.generate.lastImagePrefix;
+        // Batch (Last) keeps the previous prompts but still walks the weight plans, both
+        // sides and both side negatives (the standard path does the same in generate.js).
+        // Without this the batch sent the same prompt every time while the info line
+        // claimed a different weight per image.
+        const override = getActiveOverride();
+        if (override?.weights && Object.keys(override.weights).length > 0) {
+            const applied = reapplyPlanWeights({
+                positive: positivePromptLeft,
+                positiveRight: positivePromptRight,
+                negative: negativePrompt,
+                negativeLeft: negativePromptLeft,
+                negativeRight: negativePromptRight,
+            }, override.weights);
+            positivePromptLeft = applied.positive;
+            positivePromptRight = applied.positiveRight;
+            negativePrompt = applied.negative;
+            negativePromptLeft = applied.negativeLeft;
+            negativePromptRight = applied.negativeRight;
+        }
     } else {            
         const {thumb, character_left, character_right, information, seed, characters, negative_tags_left, negative_tags_right, image_prefix} = await getCharacters();
         randomSeed = seed;
@@ -485,6 +513,10 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
             leftSeed: randomSeed,
             rightSeed: randomSeedr,
             characterNegative: [negative_tags_left, negative_tags_right].filter(Boolean).join(', '),
+            characterNegativeLeft: negative_tags_left,
+            characterNegativeRight: negative_tags_right,
+            // Refine rebuilds each side's negative around these units
+            negative: { chains: negatives.chains, texts: negatives.texts },
         };
         thumbImage = thumb;
         charactersName = characters;         
@@ -498,29 +530,27 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     }
 }
 
-function createRegional(apiInterface) {
+export function createRegional(apiInterface) {
     const overlap_ratio = globalThis.regional.overlap_ratio.getValue();
     const image_ratio = globalThis.regional.image_ratio.getValue();
 
-    const a = image_ratio / 50;
-    const c = 2 - a;
-    const b = overlap_ratio / 100;
+    // one pair of regions for ComfyUI and WebUI alike (scripts/shared/regionalGeneration.js)
+    const ratio = regionalRatio(image_ratio, overlap_ratio, apiInterface);
 
-    let ratio =`${a},${(b===0)?0.01:b},${c}`;
-    if(apiInterface === 'WebUI') {
-        ratio =`${(a+b)/2},${(c-b)/2}`;
-    }
-            
     const str_left = globalThis.regional.str_left.getFloat();
     const str_right = globalThis.regional.str_right.getFloat();
 
     const option_left = globalThis.regional.option_left.getValue();
-    const option_right = globalThis.regional.option_right.getValue();    
+    const option_right = globalThis.regional.option_right.getValue();
+
+    // left / right = the first / second region; with 'top-bottom' that is top / bottom
+    const split = normalizeSplit(globalThis.globalSettings.regional_split);
+    const [first, second] = split === 'top-bottom' ? ['Top', 'Bottom'] : ['Left', 'Right'];
 
     const brownColor = (globalThis.globalSettings.css_style==='dark')?'BurlyWood':'Brown';
-    const info = `Regional Condition:\n\tOverlap Ratio: [[color=${brownColor}]${overlap_ratio}[/color]]\n\tImage Ratio: [[color=${brownColor}]${image_ratio}[/color]]\n\tLeft Str: [[color=${brownColor}]${str_left}[/color]]\tMask Area: [[color=${brownColor}]${option_left}[/color]]\n\tRight Str: [[color=${brownColor}]${str_right}[/color]]\tMask Area: [[color=${brownColor}]${option_right}[/color]]\n`;
+    const info = `Regional Condition:\n\tSplit: [[color=${brownColor}]${split}[/color]]\n\tOverlap Ratio: [[color=${brownColor}]${overlap_ratio}[/color]]\n\tImage Ratio: [[color=${brownColor}]${image_ratio}[/color]]\n\t${first} Str: [[color=${brownColor}]${str_left}[/color]]\tMask Area: [[color=${brownColor}]${option_left}[/color]]\n\t${second} Str: [[color=${brownColor}]${str_right}[/color]]\tMask Area: [[color=${brownColor}]${option_right}[/color]]\n`;
 
-    return {info, ratio, str_left, str_right, option_left, option_right};
+    return {info, ratio, split, str_left, str_right, option_left, option_right};
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -666,11 +696,13 @@ export async function generateRegionalImage(dataPack){
                         existingPositive: removeAiPromptMarker(createPromptResult.positivePromptLeft, REPLACE_AI_MARK),
                         existingPositiveRight: removeAiPromptMarker(createPromptResult.positivePromptRight, REPLACE_AI_MARK),
                         existingNegative: createPromptResult.negativePrompt,
-                        editorFields: structuredRefine ? refineSnapshot.fields : null,
+                        editorFields: structuredRefine ? refineRequestFields(refineSnapshot) : null,
                         generationContext: structuredRefine ? {
                             positive: removeAiPromptMarker(createPromptResult.positivePromptLeft, REPLACE_AI_MARK),
                             positiveRight: removeAiPromptMarker(createPromptResult.positivePromptRight, REPLACE_AI_MARK),
                             negative: createPromptResult.negativePrompt,
+                            negativeLeft: createPromptResult.negativePromptLeft,
+                            negativeRight: createPromptResult.negativePromptRight,
                         } : null,
                         temperature: globalThis.ai.local_temp.getValue(),
                         n_predict:globalThis.ai.local_n_predict.getValue(),
@@ -680,7 +712,7 @@ export async function generateRegionalImage(dataPack){
                 id:createPromptResult.charactersName,
                 planWeights: imageOverride?.weights ?? null,
                 refineSnapshot,
-                refineContext: createPromptResult.refineContext,
+                refineContext: refineRequestContext(createPromptResult.refineContext, { structuredRefine, refineSystemPrompt: aiRunSettings.refineSystemPrompt, settings: SETTINGS }),
                 regionalSwap: false, // the sides are swapped in the data (Swap button), never at generation
                 refineRun,
                 structuredRefine,
@@ -744,6 +776,10 @@ export async function generateRegionalImage(dataPack){
             if (weightsInfo) finalInfo += `${weightsInfo}\n`;
         }
         generateData.queueManager.finalInfo = finalInfo;
+        // Cancel pressed while this image's prompt was being built: do not queue it.
+        // Skip drops the rest of the run, so an image still being built stays out too
+        if(globalThis.generate.cancelClicked || globalThis.generate.skipClicked)
+            break;
 
         const nameList = generateData.queueManager.id.replaceAll('\n', ' | ');
         const fullPrompt = `${createPromptResult.positivePromptLeft}\n${createPromptResult.positivePromptRight}`;
@@ -780,22 +816,25 @@ export async function seartGenerateRegional(apiInterface, generateData){
     let ret = 'success';
     let retCopy = '';
     let breakNow = false;
+    let cancelled = false;
 
     if(apiInterface === 'ComfyUI') {
         const result = await runComfyUI(apiInterface, generateData);
         ret = result.ret;
         retCopy = result.retCopy;
         breakNow = result.breakNow
+        cancelled = result.cancelled === true;
     } else if(apiInterface === 'WebUI') {
         const result = await runWebUI(apiInterface, generateData);
         ret = result.ret;
         retCopy = result.retCopy;
         breakNow = result.breakNow
+        cancelled = result.cancelled === true;
     } else if(apiInterface === 'None') {
         console.warn('apiInterface', apiInterface);
     }
 
-    return {ret, retCopy, breakNow}
+    return {ret, retCopy, breakNow, cancelled}
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -818,6 +857,7 @@ async function runComfyUI(apiInterface, generateData){
     let ret = 'success';
     let retCopy = '';
     let breakNow = false;
+    let cancelled = false;   // no image was made: the caller must not count it as one
 
     try {
         let result;
@@ -827,7 +867,13 @@ async function runComfyUI(apiInterface, generateData){
             result = await globalThis.api.runComfyUI_Regional(generateData);
         }
 
-        if(result.startsWith('Error')){
+        if (result === 'Error: Cancelled') {
+            // cancelled before the prompt was queued (e.g. while ComfyUI waited to restart for fast-mode flags).
+            // The Cancel button stops the run; a queue-row delete ("−" on this job) drops only
+            // this job and the loop goes on, as it does for a cancel during sampling.
+            cancelled = true;
+            breakNow = globalThis.generate.cancelClicked === true;
+        } else if(result.startsWith('Error')){
             ret = LANG.gr_error_creating_image.replace('{0}',result).replace('{1}', apiInterface);
             retCopy = result;
             breakNow = true;
@@ -843,10 +889,12 @@ async function runComfyUI(apiInterface, generateData){
                     }
 
                     if (globalThis.generate.cancelClicked) {
+                        cancelled = true;
                         breakNow = true;
                     } else if(image.startsWith('Error')) {
                         if(image.endsWith('Cancelled')) {
                             console.log('Generate cancelled from queue manager');
+                            cancelled = true;
                         } else {
                             ret = LANG.gr_error_creating_image.replace('{0}',image).replace('{1}', apiInterface);
                             retCopy = image;
@@ -878,7 +926,7 @@ async function runComfyUI(apiInterface, generateData){
         breakNow = true;
     }
 
-    return {ret, retCopy, breakNow }
+    return {ret, retCopy, breakNow, cancelled }
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -892,6 +940,7 @@ async function runWebUI(apiInterface, generateData) {
     let ret = 'success';
     let retCopy = '';
     let breakNow = false;
+    let cancelled = false;   // no image was made: the caller must not count it as one
 
     try {
         let result;
@@ -902,6 +951,7 @@ async function runWebUI(apiInterface, generateData) {
         }        
         
         if(globalThis.generate.cancelClicked) {
+            cancelled = true;
             breakNow = true;
         } else {
             const typeResult = typeof result;
@@ -909,6 +959,7 @@ async function runWebUI(apiInterface, generateData) {
                 if(result.startsWith('Error')){
                     if(result.endsWith('Cancelled')) {
                         console.log('Generate regional cancelled from queue manager');
+                        cancelled = true;
                     } else {
                         ret = LANG.gr_error_creating_image.replace('{0}',result).replace('{1}', apiInterface)
                         retCopy = result;
@@ -939,5 +990,5 @@ async function runWebUI(apiInterface, generateData) {
         await updateADetailerModelList();
     }
     
-    return {ret, retCopy, breakNow }
+    return {ret, retCopy, breakNow, cancelled }
 }

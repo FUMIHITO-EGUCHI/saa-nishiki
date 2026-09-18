@@ -2,6 +2,7 @@ import { updateLanguage } from '../language.js';
 import { callback_myCharacterList_updateThumb, callback_myViewList_Update } from '../callbacks.js'
 import { generateGUID } from '../slots/myLoRASlot.js'
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
+import { clearTagAliasCache } from '../tagAliasClient.js';
 import {
     myRegionalCharacterSelectionModal,
     myVariableCharacterList,
@@ -170,6 +171,7 @@ export function myLanguageList(language) {
         } catch (error) {
             console.error(CAT, '[myLanguageList] Failed to reload tag language:', error);
         }
+        clearTagAliasCache();   // the chips' translations follow the dictionary language
         updateLanguage(false, globalThis.inBrowser);
     };
 

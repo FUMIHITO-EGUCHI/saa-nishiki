@@ -43,8 +43,10 @@ export function setupCheckbox(containerId, spanText = 'myCheckbox', defaultCheck
 
     container.addEventListener('click', (event) => {
         if (!enabled) return; // ignore user clicks when disabled
+        // only the knob and the label text toggle; padding or empty space around them never does
+        if (event.target !== checkboxInput && event.target !== checkboxSpan) return;
         if (event.target !== checkboxInput) {
-            checkboxInput.checked = !checkboxInput.checked;            
+            checkboxInput.checked = !checkboxInput.checked;
         }
         if (callback)
             callback(checkboxInput.checked);

@@ -53,6 +53,9 @@ export function createSelectionModal({
     onOpen = null,
     onClose = null,
     onOptionHover = null,
+    // fires whenever the highlighted row changes, by mouse or by keyboard, so a caller can
+    // bind a side panel to it (null when nothing is highlighted)
+    onActiveOption = null,
     onOptionLeave = null,
     loadOptions = null,
 } = {}) {
@@ -151,20 +154,16 @@ export function createSelectionModal({
     let requestGeneration = 0;
     let searchTimer = null;
     let favOnly = false;
-    let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, favorites: null };
+    let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, onActiveOption, favorites: null };
 
     function isFavoriteOption(option) {
         return Boolean(activeConfig.favorites?.isFavorite?.(optionKey(option)));
     }
 
-    // A leading '@' searches favorites only (parity with the legacy dropdown's
-    // special search). Only meaningful when a favorites config is active.
+    // Favorites are narrowed with the Fav-only button; the search text is taken as
+    // written ('@' is a cast reference elsewhere and no longer a search prefix).
     function effectiveSearch() {
-        const raw = searchInput.value;
-        if (activeConfig.favorites && raw.trimStart().startsWith('@')) {
-            return { query: raw.trimStart().slice(1), favoritesOnly: true };
-        }
-        return { query: raw, favoritesOnly: favOnly };
+        return { query: searchInput.value, favoritesOnly: favOnly };
     }
 
     function renderFavOnlyButton() {
@@ -231,6 +230,7 @@ export function createSelectionModal({
 
     function updateActiveDescendant() {
         const item = visibleOptions[activeIndex];
+        activeConfig.onActiveOption?.(item ?? null);
         if (!item) {
             listbox.removeAttribute('aria-activedescendant');
             return;
@@ -491,6 +491,7 @@ export function createSelectionModal({
                 categories,
                 attributes,
                 onOptionHover,
+                onActiveOption,
                 onOptionLeave,
                 loadOptions: dynamicLoadOptions,
                 favorites: favorites && typeof favorites.isFavorite === 'function' ? favorites : null,

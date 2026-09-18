@@ -1,0 +1,5 @@
+out/
+out-*/
+big/
+pod-jobs*.json
+pod-object-info.json

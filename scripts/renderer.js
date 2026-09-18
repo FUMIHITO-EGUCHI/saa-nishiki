@@ -1,11 +1,13 @@
 import { updateLanguage, updateSettings, SAMPLER_COMFYUI, SCHEDULER_COMFYUI, SAMPLER_WEBUI, SCHEDULER_WEBUI } from './renderer/language.js';
-import { migrateRegionalSwap } from './shared/regionalSides.js';
+import { SPLITS, migrateRegionalSwap, splitFromLabel, splitLabel } from './shared/regionalSides.js';
 import { setupGallery } from './renderer/customGallery.js';
 import { setupThumbOverlay, setupThumb } from './renderer/customThumbGallery.js';
 import { setupSuggestionSystem } from './renderer/tagAutoComplete.js';
 import { setupButtonOverlay, customCommonOverlay } from './renderer/customOverlay.js';
 import { myCharacterList, myRegionalCharacterList, myViewsList, myLanguageList, mySimpleList } from './renderer/components/myDropdown.js';
-import { callback_api_model_select, callback_api_model_type, callback_api_interface, 
+import { myArtistList } from './renderer/components/artistSelectionModal.js';
+import { callback_artistList_changed,
+    callback_api_model_select, callback_api_model_type, callback_api_interface, 
     callback_generate_start, callback_generate_skip, callback_generate_cancel,callback_keep_gallery,
     callback_regional_condition, callback_controlnet, callback_adetailer, callback_queue_autostart,
     callback_thumb_select, callback_ptompt_textbox_autoresize, callback_ptompt_textbox_fontsize
@@ -14,11 +16,12 @@ import { setupSlider } from './renderer/components/mySlider.js';
 import { setupCheckbox, setupRadiobox } from './renderer/components/myCheckbox.js';
 import { setupButtons, toggleButtons, showCancelButtons } from './renderer/components/myButtons.js';
 import { setupPodControls } from './renderer/podControl.js';
+import { setupComfyProcessControl } from './renderer/comfyProcessControl.js';
 import { setupCollapsed, setupModelReloadToggle, 
     setupFuctionKeys, setupSwapToggle, reloadFiles, doSwap } from './renderer/components/myCollapsed.js';
 import { setupTextbox, setupInfoBox } from './renderer/components/myTextbox.js';
 import { setupPromptFieldManager } from './renderer/components/promptFieldManager.js';
-import { from_main_updateGallery, from_main_updatePreview, from_main_customOverlayProgress } from './renderer/generate_backend.js';
+import { from_main_updateGallery, from_main_updatePreview, from_main_customOverlayProgress, from_main_customOverlayStatus } from './renderer/generate_backend.js';
 import { setupLoRA } from './renderer/slots/myLoRASlot.js';
 import { setupControlNet } from './renderer/slots/myControlNetSlot.js';
 import { setupJsonSlot } from './renderer/slots/myJsonSlot.js';
@@ -42,6 +45,8 @@ import { installSettingsProxy, setupSettingsPersistence } from './renderer/setti
 import { setupEditHistoryUi } from './renderer/editHistoryUi.js';
 import { get_prompt_textBox_Heights, set_prompt_textBox_Heights } from './renderer/components/componentsManager.js';
 import { hiresCalculate } from './renderer/tools/hiresCalculation.js';
+import { SIZE_HARD_MAX, SIZE_LIMIT_STEP, SIZE_MIN, SIZE_STEP } from './shared/sizeLimits.js';
+import { applySizeRange } from './renderer/callbacks.js';
 
 function afterDOMinit() {
     (async () => {
@@ -55,6 +60,7 @@ function afterDOMinit() {
         globalThis.okm.setup_mainGallery_appendImageData(from_main_updateGallery);
         globalThis.okm.setup_customOverlay_updatePreview(from_main_updatePreview);
         globalThis.okm.setup_customOverlay_progressBar(from_main_customOverlayProgress);
+        globalThis.okm.setup_customOverlay_status?.(from_main_customOverlayStatus);
         globalThis.okm.setup_rightClickMenu_spellCheck(addSpellCheckSuggestions);
         if (globalThis.initialized) {
             setNormal();
@@ -96,7 +102,15 @@ export async function setupHeader(SETTINGS, FILES, LANG){
         vpred:  mySimpleList('model-vpred', LANG.vpred, [LANG.vpred_auto, LANG.vpred_on, LANG.vpred_on_zsnr, LANG.vpred_off], 
             (index, value) => { globalThis.globalSettings.api_model_file_vpred = value; }, 5, false, true),
         thumb_select: mySimpleList('thumb-select', LANG.thumb_select, SETTINGS.thumb_select_list,
-            callback_thumb_select, 5, false, true)
+            callback_thumb_select, 5, false, true),
+
+        // upper bound of the run bar's Size boxes per model type (scripts/shared/sizeLimits.js)
+        size_limit_checkpoint: setupSlider('size-limit-checkpoint', LANG.size_limit_checkpoint,
+            {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_LIMIT_STEP, defaultValue:SETTINGS.size_limit_checkpoint},
+            (value) => { globalThis.globalSettings.size_limit_checkpoint = value; applySizeRange(); }),
+        size_limit_diffusion: setupSlider('size-limit-diffusion', LANG.size_limit_diffusion,
+            {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_LIMIT_STEP, defaultValue:SETTINGS.size_limit_diffusion},
+            (value) => { globalThis.globalSettings.size_limit_diffusion = value; applySizeRange(); }),
     }
     globalThis.dropdownList.languageList.updateDefaults(LANG.language);
     globalThis.dropdownList.vpred.updateDefaults(SETTINGS.api_model_file_vpred);
@@ -113,6 +127,7 @@ export async function setupHeader(SETTINGS, FILES, LANG){
     // Character and OC List
     globalThis.characterList = myCharacterList('dropdown-character', FILES.characterList, FILES.ocList);
     globalThis.characterListRegional = myRegionalCharacterList('dropdown-character-regional', FILES.characterList, FILES.ocList);    
+    globalThis.artistList = myArtistList('dropdown-artist', callback_artistList_changed);
     console.log('Thumbnail files loaded successfully.', FILES.characterListArray.length, 'characters available.');
 }
 
@@ -149,6 +164,15 @@ export async function setupLeftRight(SETTINGS, FILES, LANG) {
 function setFastSetting(key, value) {
     globalThis.globalSettings[key] = value;
     globalThis.settingsPersistence?.flush?.();
+}
+
+// A launch-flag field commits when it loses focus, not per keystroke: half a flag ("--f")
+// handed to the main process would restart ComfyUI with it if a run started meanwhile.
+function launchFlagsTextbox(containerId, title, key) {
+    const box = setupTextbox(containerId, title, { value: globalThis.globalSettings[key] ?? '', maxLines: 1 }, true, null);
+    const textarea = document.querySelector(`.myTextbox-${containerId}-textarea`);
+    textarea?.addEventListener('change', () => setFastSetting(key, textarea.value.trim()));
+    return box;
 }
 
 // A batch with a fixed seed and nothing else varying repeats the same image; ask first.
@@ -190,8 +214,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         seed: setupSlider('generate-random-seed', LANG.random_seed, {min:-1, max:4294967295, step:1, defaultValue:SETTINGS.random_seed}, (value) =>{globalThis.globalSettings.random_seed = value;}),
         cfg: setupSlider('generate-cfg', LANG.cfg, {min:0, max:20, step:0.01, defaultValue:SETTINGS.cfg}, (value) =>{globalThis.globalSettings.cfg = value;}),
         step: setupSlider('generate-step', LANG.step, {min:1, max:100, step:1, defaultValue:SETTINGS.step}, (value) =>{globalThis.globalSettings.step = value;}),
-        width: setupSlider('generate-width', LANG.width, {min:512, max:2048, step:8, defaultValue:SETTINGS.width}, (value) =>{globalThis.globalSettings.width = value; hiresCalculate(); }),
-        height: setupSlider('generate-height', LANG.height, {min:512, max:2048, step:8, defaultValue:SETTINGS.height}, (value) =>{globalThis.globalSettings.height = value; hiresCalculate(); }),
+        // the effective range narrows to the model type's limit (applySizeRange, callbacks.js)
+        width: setupSlider('generate-width', LANG.width, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.width}, (value) =>{globalThis.globalSettings.width = value; hiresCalculate(); }),
+        height: setupSlider('generate-height', LANG.height, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.height}, (value) =>{globalThis.globalSettings.height = value; hiresCalculate(); }),
         batch: setupSlider('generate-batch', LANG.batch, {min:1, max:2038, step:1, defaultValue:SETTINGS.batch}, (value) =>{globalThis.globalSettings.batch = value;}),
         hifix: setupCheckbox('generate-hires-fix', LANG.api_hf_enable, SETTINGS.api_hf_enable, true, (value) => { globalThis.globalSettings.api_hf_enable = value; hiresCalculate(); }),
         refiner: setupCheckbox('generate-refiner', LANG.api_refiner_enable, SETTINGS.api_refiner_enable, true, (value) => { globalThis.globalSettings.api_refiner_enable = value; }),
@@ -200,6 +225,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
 
         landscape: setupCheckbox('generate-landscape', LANG.api_image_landscape, SETTINGS.api_image_landscape, true, (value) =>{globalThis.globalSettings.api_image_landscape = value;}),
         tag_assist: setupCheckbox('generate-tag-assist', LANG.tag_assist, SETTINGS.tag_assist, true, (value) =>{ globalThis.globalSettings.tag_assist = value; }),
+        // translation on the chips (Settings > Prompt editing); the fields re-render through the alias event
+        tag_chip_alias: setupCheckbox('system-settings-tag-chip-alias', LANG.tag_chip_alias, SETTINGS.tag_chip_alias !== false, true,
+            (value) => { globalThis.globalSettings.tag_chip_alias = value; document.dispatchEvent(new CustomEvent('saa:tag-aliases-updated')); }),
         wildcard_random: setupCheckbox('generate-wildcard-random', LANG.wildcard_random, SETTINGS.wildcard_random, true, (value) =>{ globalThis.globalSettings.wildcard_random = value; }),
         sampler: mySimpleList('generate-sampler', LANG.api_model_sampler, ['Auto'], (index, value) =>{ globalThis.globalSettings.api_model_sampler = value; }, 20, false, false),
         scheduler: mySimpleList('generate-scheduler', LANG.api_model_scheduler, ['Auto'], (index, value) =>{ globalThis.globalSettings.api_model_scheduler = value; }, 20, false, false),
@@ -269,6 +297,13 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         api_preview_refresh_time: setupSlider('system-settings-api-refresh-rate',
             LANG.api_preview_refresh_time, {min:0, max:5, step:1, defaultValue:SETTINGS.api_preview_refresh_time},
             (value) => { globalThis.globalSettings.api_preview_refresh_time = value; }),
+        // local ComfyUI process control (scripts/renderer/comfyProcessControl.js)
+        comfy_launch_command: setupTextbox('system-settings-comfy-launch-command', LANG.comfy_launch_command, {
+            value: SETTINGS.comfy_launch_command ?? '',
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.comfy_launch_command = value; }),
+        comfy_autostart: setupCheckbox('system-settings-comfy-autostart', LANG.comfy_autostart, SETTINGS.comfy_autostart === true, true,
+            (value) => { globalThis.globalSettings.comfy_autostart = value; }),
 
         api_pod_ssh_enable: setupCheckbox('system-settings-api-pod-ssh-enable', LANG.api_pod_ssh_enable, SETTINGS.api_pod_ssh_enable, true,
             (value) => {
@@ -333,6 +368,26 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
             (index, value) => setFastSetting('api_fast_sampler', Array.isArray(value) ? value[0] : value), 20, false, true),
         api_fast_scheduler: mySimpleList('system-settings-api-fast-scheduler', LANG.api_fast_scheduler, ['sgm_uniform'],
             (index, value) => setFastSetting('api_fast_scheduler', Array.isArray(value) ? value[0] : value), 20, false, true),
+        // process-wide ComfyUI flags per fast set (scripts/shared/comfyLaunchArgs.js)
+        api_fast_comfy_args: launchFlagsTextbox('system-settings-api-fast-comfy-args', LANG.api_fast_comfy_args, 'api_fast_comfy_args'),
+        // Diffusion (Anima) fast set: Anima Turbo LoRA
+        api_fast_diff_lora: mySimpleList('system-settings-api-fast-diff-lora', LANG.api_fast_diff_lora,
+            ['None', ...(Array.isArray(FILES.loraList) ? FILES.loraList : [])],
+            (index, value) => setFastSetting('api_fast_diff_lora', Array.isArray(value) ? value[0] : value), 20, true, true),
+        api_fast_diff_lora_strength: setupSlider('system-settings-api-fast-diff-lora-strength', LANG.api_fast_diff_lora_strength,
+            {min:0, max:2, step:0.05, defaultValue:SETTINGS.api_fast_diff_lora_strength},
+            (value) => setFastSetting('api_fast_diff_lora_strength', value)),
+        api_fast_diff_steps: setupSlider('system-settings-api-fast-diff-steps', LANG.api_fast_diff_steps,
+            {min:1, max:30, step:1, defaultValue:SETTINGS.api_fast_diff_steps},
+            (value) => setFastSetting('api_fast_diff_steps', value)),
+        api_fast_diff_cfg: setupSlider('system-settings-api-fast-diff-cfg', LANG.api_fast_diff_cfg,
+            {min:0, max:5, step:0.1, defaultValue:SETTINGS.api_fast_diff_cfg},
+            (value) => setFastSetting('api_fast_diff_cfg', value)),
+        api_fast_diff_sampler: mySimpleList('system-settings-api-fast-diff-sampler', LANG.api_fast_diff_sampler, ['euler'],
+            (index, value) => setFastSetting('api_fast_diff_sampler', Array.isArray(value) ? value[0] : value), 20, false, true),
+        api_fast_diff_scheduler: mySimpleList('system-settings-api-fast-diff-scheduler', LANG.api_fast_diff_scheduler, ['simple'],
+            (index, value) => setFastSetting('api_fast_diff_scheduler', Array.isArray(value) ? value[0] : value), 20, false, true),
+        api_fast_diff_comfy_args: launchFlagsTextbox('system-settings-api-fast-diff-comfy-args', LANG.api_fast_diff_comfy_args, 'api_fast_diff_comfy_args'),
 
         model_filter:setupCheckbox('system-settings-api-fliter', LANG.model_filter, SETTINGS.model_filter,
             false, (value) => {
@@ -392,6 +447,7 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         }),
     };
     globalThis.podControls = setupPodControls();
+    globalThis.comfyProcessControl = setupComfyProcessControl();
 }
 
 export async function createPrompt(SETTINGS, FILES, LANG) {
@@ -533,8 +589,15 @@ export async function createRegional(SETTINGS, FILES, LANG) {
         option_left: mySimpleList('regional-condition-option-left', LANG.regional_option_left, ['default', 'mask bounds'],
             (index, value) => { globalThis.globalSettings.regional_option_left = value; }, 5, false, true),
         option_right: mySimpleList('regional-condition-option-right', LANG.regional_option_right, ['default', 'mask bounds'],
-            (index, value) => { globalThis.globalSettings.regional_option_right = value; }, 5, false, true)
+            (index, value) => { globalThis.globalSettings.regional_option_right = value; }, 5, false, true),
+        // left / right (columns) or top / bottom (rows); the prompt sides follow in name only
+        split: mySimpleList('regional-condition-split', LANG.regional_split, SPLITS.map(splitLabel),
+            (index, value) => {
+                globalThis.globalSettings.regional_split = splitFromLabel(value);
+                document.dispatchEvent(new CustomEvent('saa:regional-split-changed'));
+            }, 5, false, true)
     }
+    globalThis.regional.split?.updateDefaults?.(splitLabel(SETTINGS.regional_split));
 }
 
 export async function createAI(SETTINGS, FILES, LANG) {
@@ -544,6 +607,9 @@ export async function createAI(SETTINGS, FILES, LANG) {
             (value) => { globalThis.globalSettings.ai_prompt_role = value; }),
         ai_prompt_preview: setupCheckbox('system-settings-ai-preview', LANG.ai_prompt_preview, SETTINGS.ai_prompt_preview, true,
             (value) => { globalThis.globalSettings.ai_prompt_preview = value; }),
+        // shown by the AI card only while the model type is Diffusion
+        ai_prose_enable: setupCheckbox('system-settings-ai-prose', LANG.ai_prose_enable, SETTINGS.ai_prose_enable, true,
+            (value) => { globalThis.globalSettings.ai_prose_enable = value; globalThis.uiShell?.aiCard?.render?.(); globalThis.uiShell?.proseCard?.render?.(); }),
 
         interface: mySimpleList('system-settings-ai-interface', LANG.ai_interface, ['None', 'Remote', 'Local', 'Pod'],
             (index, value) => {globalThis.globalSettings.ai_interface = value;}, 5, false, true),

@@ -51,8 +51,9 @@ export function normalizeWeightPlan(plan = {}) {
     const step = Math.max(EPSILON, Math.abs(finiteNumber(plan?.step, DEFAULT_STEP)));
     const seed = Math.max(0, Math.floor(finiteNumber(plan?.seed, 0)));
     // autoStep: the step is derived from the batch count at expansion time so the
-    // plan walks min → max in exactly `count` images (see effectiveStep).
-    const autoStep = plan?.autoStep === true;
+    // plan walks min → max in exactly `count` images (see effectiveStep). A random draw
+    // has no step to derive, so it never carries the flag.
+    const autoStep = plan?.autoStep === true && mode !== 'random';
 
     if (mode === 'fixed') {
         return { mode, min: first, max: first, step, seed, autoStep: false };
@@ -179,21 +180,198 @@ export function assignCapsuleIds(capsules = []) {
 // it survives text-mode editing and presets, and is dropped when the prompt is built.
 export const DISABLED_TAG_MARKER = '~';
 
+// ---------------------------------------------------------------- prompt tokenizer
+// Prompt text split at its commas and line breaks, except the commas inside a closed
+// group: "(red hair, blue eyes:1.2)", "[a, b]" and "{red hair, blue eyes|green hair}"
+// each stay one token. A group opens only where a token or a word starts, so emoticon
+// tags (":(", ":)") and escaped parentheses ("\(") are plain text, and an opener that
+// never closes ("(unclosed, tag") is plain text too - the other groups of that line
+// still hold their commas together.
+//
+// Everything that reads prompt text as a list of tags shares this: the chips, the
+// Exclude filter, the plan weights, AI Refine and the Scene counts. Split a group
+// anywhere else and half of it ("blue eyes:1.2)") leaks into a prompt.
+const CLOSER_OF = { '(': ')', '[': ']', '{': '}' };
+const OPENER_OF = { ')': '(', ']': '[', '}': '{' };
+// what may stand in front of an opener: white space, a comma, another opener, the
+// disabled marker, or the end of the group before it
+const OPENS_GROUP = /[\s,([{~)\]}]/;
+
+// [open, close] index pairs of every closed group of one line; an opener that never
+// closes is not one.
+function groupRanges(line) {
+    const open = [];
+    const ranges = [];
+    for (let index = 0; index < line.length; index += 1) {
+        const character = line[index];
+        if (character === '\\') {
+            index += 1;
+            continue;
+        }
+        if (CLOSER_OF[character] && (index === 0 || OPENS_GROUP.test(line[index - 1]))) {
+            open.push({ character, index });
+            continue;
+        }
+        const opener = OPENER_OF[character];
+        if (!opener || open.length === 0) continue;
+        for (let depth = open.length - 1; depth >= 0; depth -= 1) {
+            if (open[depth].character !== opener) continue;
+            ranges.push([open[depth].index, index]);
+            open.length = depth;
+            break;
+        }
+    }
+    return ranges;
+}
+
+function splitLineTokens(line) {
+    // one pass to mark what sits inside a group, so the split below stays linear
+    const inside = new Uint8Array(line.length);
+    for (const [start, end] of groupRanges(line)) inside.fill(1, start + 1, end);
+    const grouped = index => inside[index] === 1;
+    const tokens = [];
+    let start = 0;
+    for (let index = 0; index < line.length; index += 1) {
+        if (line[index] === '\\') {
+            index += 1;
+            continue;
+        }
+        if (line[index] !== ',' || grouped(index)) continue;
+        tokens.push(line.slice(start, index));
+        start = index + 1;
+    }
+    tokens.push(line.slice(start));
+    return tokens;
+}
+
+/** The tags of a prompt text: trimmed, blanks dropped, a group's commas kept inside it. */
+export function splitPromptTokens(text = '') {
+    return String(text ?? '').split('\n').flatMap(splitLineTokens).map(token => token.trim()).filter(Boolean);
+}
+
+/**
+ * Rewrites the tags of a prompt text in place. `replace(token, index)` answers the new
+ * text of one tag, '' to drop it, or null / undefined to leave it alone. The commas, the
+ * line breaks and the spacing around each tag stay as they were.
+ */
+export function mapPromptTokens(text = '', replace) {
+    let index = 0;
+    return String(text ?? '')
+        .split('\n')
+        .map(line => splitLineTokens(line)
+            .map(part => {
+                const token = part.trim();
+                if (!token) return part;
+                const next = replace(token, index++);
+                if (next === null || next === undefined || next === token) return part;
+                if (next === '') return '';
+                const [leading] = /^\s*/.exec(part);
+                const [trailing] = /\s*$/.exec(part);
+                return `${leading}${next}${trailing}`;
+            })
+            .join(','))
+        .join('\n');
+}
+
+/**
+ * The first closed group of a token taken apart, with whatever stands around it, or null
+ * when the token holds none: "(red hair, blue eyes:1.2)" becomes
+ * { before: '', open: '(', body: 'red hair, blue eyes', close: ':1.2)', after: '' }.
+ * A token that is exactly one group is the one with an empty `before` and `after`.
+ */
+export function splitGroupToken(token = '') {
+    const text = String(token ?? '').trim();
+    const ranges = groupRanges(text);
+    const top = ranges
+        .filter(([start, end]) => !ranges.some(([outerStart, outerEnd]) => outerStart < start && end < outerEnd))
+        .sort((left, right) => left[0] - right[0])[0];
+    if (!top) return null;
+    const [start, end] = top;
+    const closer = CLOSER_OF[text[start]];
+    const body = text.slice(start + 1, end);
+    const weighted = /^([\s\S]*):(\s*-?(?:\d+(?:\.\d+)?|\.\d+)\s*)$/.exec(body);
+    return {
+        before: text.slice(0, start),
+        open: text[start],
+        body: weighted ? weighted[1] : body,
+        close: weighted ? `:${weighted[2]}${closer}` : closer,
+        after: text.slice(end + 1),
+    };
+}
+
+// One token of prompt text as capsule data ("~(long hair:1.2)" → a disabled "long hair" at 1.2).
+function parseCapsuleToken(token) {
+    const disabled = token.startsWith(DISABLED_TAG_MARKER);
+    const body = disabled ? token.slice(DISABLED_TAG_MARKER.length).trim() : token;
+    const weighted = /^\((.*):\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\)$/.exec(body);
+    const value = (weighted ? weighted[1] : body).trim();
+    const weight = weighted ? Number(weighted[2]) : DEFAULT_WEIGHT;
+    return { value, weightPlan: createFixedWeightPlan(weight), disabled };
+}
+
 export function parsePromptToCapsules(text = '') {
-    const parsed = String(text ?? '')
-        .split(/[,\n]/)
-        .map(token => token.trim())
-        .filter(Boolean)
-        .map(token => {
-            const disabled = token.startsWith(DISABLED_TAG_MARKER);
-            const body = disabled ? token.slice(DISABLED_TAG_MARKER.length).trim() : token;
-            const weighted = /^\((.*):\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\)$/.exec(body);
-            const value = (weighted ? weighted[1] : body).trim();
-            const weight = weighted ? Number(weighted[2]) : DEFAULT_WEIGHT;
-            return { value, weightPlan: createFixedWeightPlan(weight), disabled };
-        })
+    const parsed = splitPromptTokens(text)
+        .map(parseCapsuleToken)
         .filter(capsule => capsule.value);
     return assignCapsuleIds(parsed);
+}
+
+// ---------------------------------------------------------------- stored plan ids
+// The tokenizer before this one split every comma, so "(a, smile, b:1.2), smile" named
+// the outer "smile" `smile#1`; today it is `smile#0`. A sidecar written by that build
+// is renamed here once (and written back), so a plan is not discarded - and the group's
+// own `smile#0` plan does not land on the chip that inherited the id.
+function legacyIdMap(text) {
+    const tokens = splitPromptTokens(text);
+    const parsed = tokens.map(parseCapsuleToken);
+    const current = assignCapsuleIds(parsed.filter(capsule => capsule.value));
+    const legacyPieces = tokens.map(token => token
+        .split(',')
+        .map(piece => piece.trim())
+        .filter(Boolean)
+        .map(parseCapsuleToken)
+        .filter(capsule => capsule.value));
+    const legacy = assignCapsuleIds(legacyPieces.flat());
+    const rename = new Map();
+    let currentIndex = 0;
+    let legacyIndex = 0;
+    let split = false;
+    for (const [index, pieces] of legacyPieces.entries()) {
+        const capsule = parsed[index].value ? current[currentIndex++] : null;
+        const ids = legacy.slice(legacyIndex, legacyIndex + pieces.length);
+        legacyIndex += pieces.length;
+        if (pieces.length > 1) split = true;
+        // a token that is one tag under both tokenizers simply keeps its plan
+        if (pieces.length === 1 && capsule) rename.set(ids[0].id, capsule.id);
+    }
+    return {
+        rename,
+        split,
+        legacyIds: new Set(legacy.map(capsule => capsule.id)),
+        currentIds: new Set(current.map(capsule => capsule.id)),
+    };
+}
+
+/**
+ * Stored weight plans (id → plan) renamed onto the ids this text gives out now. Nothing
+ * moves unless a stored id is gone today and the previous tokenizer did hand it out, so
+ * a sidecar this build wrote is never touched. A plan on a fragment of a group ("(a",
+ * "b:1.2)") has no chip to move to and is dropped.
+ */
+export function migratePlanIds(plans = {}, text = '') {
+    const stored = Object.entries(plans ?? {});
+    if (stored.length === 0) return { plans, changed: false };
+    const map = legacyIdMap(text);
+    if (!map.split) return { plans, changed: false };
+    const fromLegacy = stored.some(([id]) => !map.currentIds.has(id) && map.legacyIds.has(id));
+    if (!fromLegacy) return { plans, changed: false };
+    const next = {};
+    for (const [id, plan] of stored) {
+        // an id the old tokenizer never handed out is left alone (reconcilePlans reports it)
+        const target = map.legacyIds.has(id) ? map.rename.get(id) : id;
+        if (target && !next[target]) next[target] = plan;
+    }
+    return { plans: next, changed: true };
 }
 
 // `omitDisabled` builds prompt text (disabled tags dropped); the default keeps them
@@ -241,8 +419,7 @@ export function stripDisabledTags(text = '') {
     // cleanly so no ", ," or leading blank is left for the backend
     return source
         .split('\n')
-        .map(line => line
-            .split(',')
+        .map(line => splitLineTokens(line)
             .map(token => token.trim())
             .filter(token => token && !token.startsWith(DISABLED_TAG_MARKER))
             .join(', '))
@@ -269,20 +446,45 @@ export function setCapsulesDisabled(capsules = [], ids = [], disabled = true) {
     });
 }
 
-// Moves the selected capsules as one block (their relative order kept) so that the
-// block starts where the capsule currently at `to` sits; `to === length` appends.
+// Moves the selected capsules as one block (their relative order kept) to the insertion
+// index `to` (a slot between chips, counted over the whole list): the block lands before
+// the first unselected capsule at or after `to`; `to === length` appends.
 export function moveCapsules(capsules = [], ids = [], to) {
+    return moveCapsuleBlock(capsules, ids, to).capsules;
+}
+
+// moveCapsules plus the ids the block carries afterwards (ids follow the name
+// ordinals, so a moved "smile" may change its "#n"), in block order.
+export function moveCapsuleBlock(capsules = [], ids = [], to) {
     const pick = new Set(ids);
     const block = capsules.filter(capsule => pick.has(capsule.id));
-    if (block.length === 0) return capsules;
+    if (block.length === 0) return { capsules, ids: [] };
     const target = Math.max(0, Math.min(capsules.length, Math.floor(finiteNumber(to, capsules.length))));
-    const anchor = capsules[target] ?? null;
-    if (anchor && pick.has(anchor.id)) return capsules;
+    const anchor = capsules.slice(target).find(capsule => !pick.has(capsule.id)) ?? null;
     const rest = capsules.filter(capsule => !pick.has(capsule.id));
-    const position = anchor ? rest.findIndex(capsule => capsule.id === anchor.id) : rest.length;
+    const position = anchor ? rest.indexOf(anchor) : rest.length;
     const next = [...rest.slice(0, position), ...block, ...rest.slice(position)];
-    if (next.every((capsule, index) => capsule === capsules[index])) return capsules;
-    return assignCapsuleIds(next);
+    if (next.every((capsule, index) => capsule === capsules[index])) return { capsules, ids: block.map(capsule => capsule.id) };
+    const moved = assignCapsuleIds(next);
+    return { capsules: moved, ids: moved.slice(position, position + block.length).map(capsule => capsule.id) };
+}
+
+// Where a drop over the wrapped chip row inserts, from the chips' boxes ({ top, bottom,
+// left, width }, in chip order): every chip on a row above the pointer counts, plus the
+// chips on its row whose centre is left of it. Blank row space and the add slot resolve
+// to the end of that row.
+export function insertionIndexFromRects(rects = [], x, y) {
+    let index = 0;
+    for (const rect of rects) {
+        if (y > rect.bottom || (y >= rect.top && x > rect.left + rect.width / 2)) index += 1;
+    }
+    return index;
+}
+
+// The target index of one chip dragged within its own row: the insertion index still
+// counts the dragged chip while it sits before the point.
+export function reorderIndex(from, insertAt) {
+    return insertAt > from ? insertAt - 1 : insertAt;
 }
 
 // Several capsules into another field at `at`, in their source order.
@@ -482,7 +684,7 @@ export function transferCapsule(source = [], target = [], capsuleId, options = {
 // matched by normalized name, the first occurrence of each is removed, and the
 // remaining text keeps its line structure.
 function splitTokens(text) {
-    return String(text ?? '').split(/[,\n]/).map(token => token.trim()).filter(Boolean);
+    return splitPromptTokens(text);
 }
 
 function tokenName(token) {
@@ -507,8 +709,7 @@ export function removeTagsFromText(text = '', tags = []) {
     if (wanted.size === 0) return String(text ?? '');
     return String(text ?? '')
         .split('\n')
-        .map(line => line
-            .split(',')
+        .map(line => splitLineTokens(line)
             .filter(token => {
                 const name = tokenName(token.trim());
                 const remaining = wanted.get(name) ?? 0;
@@ -613,7 +814,18 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
         let positiveRight = chain
             ? (chain.positiveRight ? chainText(chain.positiveRight) : '')
             : join(expandedFields.common, expandedFields.positive_right);
-        const negative = chain ? chainText(chain.negative ?? ['negative']) : expandedFields.negative;
+        // Regional: `chain.negativeShared` are the units both sides get. Generation writes
+        // them once and drops a side unit that repeats one of them (scripts/shared/
+        // negativeComposition.js composeRegionalNegatives), so the preview does the same.
+        const shared = new Set(Array.isArray(chain?.negativeShared) ? chain.negativeShared : []);
+        const negativeIds = chain ? (chain.negative ?? ['negative']) : [];
+        const sharedTexts = new Set(negativeIds.filter(id => shared.has(id)).map(id => expandedFields[id] ?? '').filter(Boolean));
+        const negative = chain
+            ? join(...negativeIds.map(id => {
+                const value = expandedFields[id] ?? '';
+                return shared.has(id) || !sharedTexts.has(value) ? value : '';
+            }))
+            : expandedFields.negative;
         const exclude = expandedFields.exclude;
         if (applyExclude && exclude) {
             positive = applyExclude(positive, exclude);

@@ -1,3 +1,5 @@
+import { isStructuredRefineFormat } from '../../aiPromptRefiner.js';
+
 function cloneCandidate(candidate) {
     if (!candidate) return null;
     return {
@@ -17,7 +19,7 @@ export function createRefineRunState({ runId, role, runSame = false } = {}) {
 }
 
 export function addRefineRunCandidate(state, candidate) {
-    if (!state || !candidate || candidate.validForEditorApply !== true || candidate.format !== 'v2') return state;
+    if (!state || !candidate || candidate.validForEditorApply !== true || !isStructuredRefineFormat(candidate.format)) return state;
     if (candidate.runId && candidate.runId !== state.runId) return state;
     if (state.role === 3 || state.runSame) return state;
     if (state.role === 1 && state.candidate) return state;

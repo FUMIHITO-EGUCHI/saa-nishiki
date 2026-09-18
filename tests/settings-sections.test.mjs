@@ -154,3 +154,11 @@ test('sanitizePresetName strips path characters and the .json suffix', () => {
     assert.equal(sanitizePresetName(null), null);
     assert.equal(sanitizePresetName('x'.repeat(100)).length, 64);
 });
+
+test('the prompt section keeps six character slots and a twenty character alias', () => {
+    const slots = Array.from({ length: 8 }, (_, index) => ({ key: `K${index}`, weight: 1 }));
+    const kept = normalizeSection('prompt', { character_slots: slots });
+    assert.deepEqual(kept.character_slots.map(slot => slot.key), ['K0', 'K1', 'K2', 'K3', 'K4', 'K5']);
+    const long = normalizeSection('prompt', { character_slots: [{ key: 'A', weight: 1, alias: `${'x'.repeat(20)}y` }] });
+    assert.equal(long.character_slots[0].alias, 'x'.repeat(20), 'the twenty-first character is dropped');
+});

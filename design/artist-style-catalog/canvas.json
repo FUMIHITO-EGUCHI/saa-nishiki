@@ -1,0 +1,98 @@
+{
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Search first"
+    },
+    {
+      "id": "page-2",
+      "name": "Later: catalog"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "ArtistPicker.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 880,
+      "h": 600,
+      "title": "Slot picker · one search, name or tag",
+      "page": "page-1"
+    },
+    {
+      "file": "PickerStates.dc.html",
+      "x": 980,
+      "y": 0,
+      "w": 780,
+      "h": 1130,
+      "title": "Picker states",
+      "page": "page-1"
+    },
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 700,
+      "w": 640,
+      "h": 620,
+      "title": "Artist card next to Characters",
+      "page": "page-1"
+    },
+    {
+      "file": "ArtistStates.dc.html",
+      "x": 700,
+      "y": 1180,
+      "w": 640,
+      "h": 600,
+      "title": "Artist card states",
+      "page": "page-1"
+    },
+    {
+      "file": "Output.dc.html",
+      "x": 1420,
+      "y": 1180,
+      "w": 600,
+      "h": 620,
+      "title": "What gets sent",
+      "page": "page-1"
+    },
+    {
+      "file": "StyleCatalog.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 900,
+      "h": 720,
+      "title": "Style catalog",
+      "page": "page-2"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -250,
+      "w": 400,
+      "page": "page-1",
+      "text": "Artist for Diffusion (Anima) - v6, 2026-09-16\nPhase 1 is search only; the catalog moved to the second page.\n- Artist is its own card with slots, built like Characters (trigger + weight + / -)\n- A slot holds one artist, picked from this modal\n- Diffusion only; the card is hidden on Checkpoint and its slots are kept\n- 1 slot by default, 3 max\n- Slots store plain names; generation writes @name, weight as (@name:0.8)\n- One search box: a word matches artist names and the tags a profile carries, and the profile card lights up the tag that matched\n- Prompts are remembered per model type, Checkpoint and Diffusion"
+    },
+    {
+      "id": "profile-note",
+      "x": 980,
+      "y": -250,
+      "w": 420,
+      "page": "page-1",
+      "text": "Where the profile comes from\nThe shipped co-occurrence dictionary has no artist tags at all - its source CSV only carries general, copyright and character tags. So scripts/buildArtistProfiles.mjs asks danbooru's related_tag endpoint twice per artist and writes data/artist_profiles.txt: the general tags the artist uses far more than the site average, plus the series. No API key, resumable, nothing fetched at run time.\nBuilt 2026-09-16 for the 1 779 artists above 500 posts; the tag wording is frozen there for now. Lower thresholds (7 686 above 200, 17 716 above 100) are a later run.\nShape of that data: 2 809 distinct tags, 41 % of them on a single artist, median 2 artists per tag. So a tag search usually returns a handful of artists, not a crowd."
+    },
+    {
+      "id": "catalog-note",
+      "x": 0,
+      "y": -150,
+      "w": 400,
+      "page": "page-2",
+      "text": "Postponed 2026-09-16. Build after search ships.\nOne probe prompt x every candidate, same seed, 768x1024 / 20 steps, no Hires, local only. Thumbs saved per model as <model>_artist_thumbs.json and reused as slot and picker thumbs. Open questions: what happens when the probe prompt changes, real time per image, whether the pod may run it."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-1"
+  }
+}

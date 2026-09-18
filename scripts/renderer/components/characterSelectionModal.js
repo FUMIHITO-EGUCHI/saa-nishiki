@@ -4,6 +4,8 @@ import { addFavorites, delFavorites } from './favoriteCharacters.js';
 import { createSelectionModal } from './selectionModal.js';
 import { normalizeSearchText, normalizeSelectionKey } from './selectionModalLogic.js';
 import { originalKey } from '../../shared/characterKeys.js';
+import { normalizeAlias } from '../../shared/castMembers.js';
+import { SLOT_SIDES, assignSlotSide, slotSide, slotSideLabels, uniqueSlotSides } from '../../shared/characterSides.js';
 import { characterWorkSearchTerms, characterWorkTitles } from '../../shared/characterWorks.js';
 
 function splitLabels(value, count) {
@@ -204,7 +206,14 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
     let valueOnly = globalThis.globalSettings?.language === 'en-US';
     let allOptions = makeOptions([[], []], []);
     let committed = Array(dropdownCount).fill(null);
+    // a stored key the current character pack (thumb_select) does not carry: shown as None,
+    // but kept so the next prompt-section autosave does not overwrite it with 'None'
+    const pending = Array(dropdownCount).fill('');
     let weights = Array(dropdownCount).fill('1.0');
+    // cast alias per slot (the "@alias" prompt row and Action reference, Diffusion only)
+    const aliases = Array(dropdownCount).fill('');
+    // region per slot while Regional is on: 'left' | 'right' | 'both' (scripts/shared/characterSides.js)
+    const sides = Array(dropdownCount).fill('both');
     let activeIndex = 0;
     const fields = [];
     const thumbPreview = createCharacterThumbPreview();
@@ -233,6 +242,7 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
             const selectedOption = selected[0] || findOption(field.options, 'none');
             if (!selectedOption) return;
             committed[activeIndex] = selectedOption;
+            pending[activeIndex] = ''; // a pick replaces whatever the pack could not resolve
             paintTrigger(field.trigger, selectedOption, valueOnly);
             if (typeof callback === 'function') callback(activeIndex, committed.map(option => option?.key || 'None'));
         },
@@ -248,6 +258,22 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         paintTrigger(field.trigger, selected, valueOnly);
         field.trigger.setAttribute('aria-label', labels[index]);
         field.weight.value = weights[index];
+        paintSide(index);
+    }
+
+    // the side column: L / R / · (T / B / · under a top-bottom split), one checked
+    function paintSide(index) {
+        const field = fields[index];
+        if (!field?.side) return;
+        const sideText = slotSideLabels(globalThis.globalSettings?.regional_split);
+        const hint = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.ui_character_side
+            ?? 'Region for this character while Regional is on: {0} / {1} / · (not in a region)';
+        field.side.title = hint.replace('{0}', sideText.left).replace('{1}', sideText.right);
+        for (const value of SLOT_SIDES) {
+            const button = field.sideButtons[value];
+            button.textContent = sideText[value];
+            button.setAttribute('aria-checked', String(sides[index] === value));
+        }
     }
 
     for (let index = 0; index < dropdownCount; index++) {
@@ -270,10 +296,47 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         weight.inputMode = 'decimal';
         weight.value = '1.0';
         weight.setAttribute('aria-label', `${labels[index]} weight`);
-        controls.append(trigger, weight);
+        const alias = document.createElement('input');
+        alias.type = 'text';
+        alias.className = 'character-selection-alias';
+        alias.maxLength = 20;
+        alias.placeholder = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language]?.cast_alias_placeholder ?? '@alias';
+        alias.setAttribute('aria-label', `${labels[index]} alias`);
+        const side = document.createElement('div');
+        side.className = 'character-selection-side';
+        side.setAttribute('role', 'radiogroup');
+        const sideButtons = {};
+        for (const value of SLOT_SIDES) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.side = value;
+            button.setAttribute('role', 'radio');
+            button.setAttribute('aria-checked', String(value === 'both'));
+            button.addEventListener('click', () => {
+                if (sides[index] === value) return;
+                // one slot per region: L / R moves away from the slot that had it
+                const next = assignSlotSide(sides.map(current => ({ side: current })), index, value).map(slotSide);
+                next.forEach((current, position) => { sides[position] = current; paintSide(position); });
+                if (typeof callback === 'function') callback(index, committed.map(option => option?.key || 'None'));
+            });
+            side.appendChild(button);
+            sideButtons[value] = button;
+        }
+        // one row per slot: alias | character | weight | side
+        // (the alias shows for the cast only, the side column while Regional is on)
+        controls.append(alias, trigger, weight, side);
         fieldElement.append(label, controls);
         grid.appendChild(fieldElement);
-        fields.push({ trigger, weight, label, options: [] });
+        fields.push({ trigger, weight, alias, side, sideButtons, label, options: [], settledWeight: '1.0' });
+
+        alias.addEventListener('change', event => {
+            const typed = normalizeAlias(event.target.value);
+            // an alias another slot already has would give both the same "@n": the old one stays
+            const taken = typed !== '' && aliases.some((other, position) => position !== index && other === typed);
+            aliases[index] = taken ? aliases[index] : typed;
+            event.target.value = aliases[index];
+            if (typeof callback === 'function') callback(index, committed.map(option => option?.key || 'None'));
+        });
 
         trigger.addEventListener('click', event => {
             event.preventDefault();
@@ -304,6 +367,11 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
             event.target.value = value.toFixed(1);
             weights[index] = event.target.value;
             previousWeight = event.target.value;
+            // a changed weight reaches the regional list and the stored slots through the callback
+            if (fields[index].settledWeight !== event.target.value) {
+                fields[index].settledWeight = event.target.value;
+                if (typeof callback === 'function') callback(index, committed.map(option => option?.key || 'None'));
+            }
         });
     }
 
@@ -321,7 +389,9 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         updateDefaults(...defaults) {
             const values = Array.isArray(defaults[0]) ? defaults[0] : defaults;
             fields.forEach((_, index) => {
-                const option = findOption(fields[index].options, values[index] || 'None');
+                const wanted = values[index] || 'None';
+                const option = findOption(fields[index].options, wanted);
+                pending[index] = (option || wanted === 'None') ? '' : String(wanted);
                 committed[index] = option || findOption(fields[index].options, 'None');
                 renderField(index);
             });
@@ -329,6 +399,10 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         },
         getKey() {
             return committed.map(option => option?.key || 'None');
+        },
+        // the stored key behind a slot that resolved to None ('' when it resolved)
+        getPendingKey(index) {
+            return pending[index] ?? '';
         },
         getValue() {
             const values = committed.map(option => option?.value || 'none');
@@ -340,7 +414,28 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         setTextValue(index, value) {
             const parsed = Number.parseFloat(value) || 1;
             weights[index] = parsed === 1 ? '1.0' : String(parsed);
-            if (fields[index]) fields[index].weight.value = weights[index];
+            if (fields[index]) {
+                fields[index].weight.value = weights[index];
+                fields[index].settledWeight = weights[index];
+            }
+        },
+        getAlias(index) {
+            return aliases[index] ?? '';
+        },
+        setAlias(index, value) {
+            aliases[index] = normalizeAlias(value);
+            if (fields[index]) fields[index].alias.value = aliases[index];
+        },
+        getSide(index) {
+            return sides[index] ?? 'both';
+        },
+        setSide(index, value) {
+            sides[index] = slotSide({ side: value });
+            paintSide(index);
+        },
+        // the column's letters follow the split (L / R or T / B)
+        refreshSideLabels() {
+            fields.forEach((_, index) => paintSide(index));
         },
         setValueOnly(trigger) {
             valueOnly = Boolean(trigger);
@@ -411,7 +506,7 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         container.appendChild(row);
     }
 
-    function build(keys = [], weights = [], valueOnly = null) {
+    function build(keys = [], weights = [], valueOnly = null, aliases = [], sides = []) {
         const previousValueOnly = valueOnly ?? control?.isValueOnly?.() ?? (globalThis.globalSettings?.language === 'en-US');
         control = createCharacterControl({
             containerId,
@@ -424,15 +519,29 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         const defaults = Array.from({ length: count }, (_, index) => keys[index] ?? 'None');
         control.updateDefaults(...defaults);
         for (let index = 0; index < count; index++) control.setTextValue(index, weights[index] ?? 1);
+        for (let index = 0; index < count; index++) control.setAlias(index, aliases[index] ?? '');
+        for (let index = 0; index < count; index++) control.setSide(index, sides[index] ?? 'both');
         renderSlotButtons();
     }
 
+    // the stored keys, not the resolved ones: a rebuild (slot + / −, a new character list)
+    // must carry a key the pack could not resolve, so it stays pending or resolves now,
+    // instead of becoming 'None' and being written back by the next autosave
     function currentKeys() {
-        return control ? control.getKey() : [];
+        if (!control) return [];
+        return control.getKey().map((key, index) => (key === 'None' ? (control.getPendingKey?.(index) || 'None') : key));
     }
 
     function currentWeights() {
         return control ? Array.from({ length: count }, (_, index) => control.getTextValue(index)) : [];
+    }
+
+    function currentAliases() {
+        return control ? Array.from({ length: count }, (_, index) => control.getAlias(index)) : [];
+    }
+
+    function currentSides() {
+        return control ? Array.from({ length: count }, (_, index) => control.getSide(index)) : [];
     }
 
     function setSlotCount(next) {
@@ -440,9 +549,12 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         if (clamped === count) return;
         const keys = currentKeys().slice(0, Math.min(count, clamped));
         const weights = currentWeights().slice(0, Math.min(count, clamped));
+        const aliases = currentAliases().slice(0, Math.min(count, clamped));
+        const sides = currentSides().slice(0, Math.min(count, clamped));
         count = clamped;
         build([...keys, ...Array(Math.max(0, count - keys.length)).fill('None')].slice(0, count),
-            [...weights, ...Array(Math.max(0, count - weights.length)).fill(1)].slice(0, count));
+            [...weights, ...Array(Math.max(0, count - weights.length)).fill(1)].slice(0, count),
+            null, aliases, sides);
         onSlotsChanged?.();
         if (typeof callback === 'function') callback(0, control.getKey());
     }
@@ -450,14 +562,25 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
     const api = {
         // ---- variable-slot surface ----
         getSlotCount: () => count,
-        getSlots: () => Array.from({ length: count }, (_, index) => ({
-            key: control?.getKey()[index] ?? 'None',
-            weight: control?.getTextValue(index) ?? 1,
-        })),
+        getSlots: () => Array.from({ length: count }, (_, index) => {
+            // a key the current pack could not resolve is persisted as stored, not as 'None'
+            // (settingsPersistence.js collects these on every prompt autosave)
+            const resolved = control?.getKey()[index] ?? 'None';
+            const key = resolved === 'None' ? (control?.getPendingKey?.(index) || 'None') : resolved;
+            const slot = { key, weight: control?.getTextValue(index) ?? 1 };
+            const alias = control?.getAlias(index) ?? '';
+            if (alias !== '') slot.alias = alias;
+            const side = control?.getSide(index) ?? 'both';
+            if (side !== 'both') slot.side = side;
+            return slot;
+        }),
         setSlots(slots) {
-            const list = Array.isArray(slots) && slots.length ? slots.slice(0, maxSlots) : [{ key: 'None', weight: 1 }];
+            // one slot per region: a stored card or a hand-edited preset that puts two
+            // slots on L would show both checked while only the first one is drawn
+            const list = Array.isArray(slots) && slots.length ? uniqueSlotSides(slots.slice(0, maxSlots)) : [{ key: 'None', weight: 1 }];
             count = Math.max(minSlots, list.length);
-            build(list.map(slot => slot?.key ?? 'None'), list.map(slot => slot?.weight ?? 1));
+            build(list.map(slot => slot?.key ?? 'None'), list.map(slot => slot?.weight ?? 1), null,
+                list.map(slot => slot?.alias ?? ''), list.map(slot => slot?.side ?? 'both'));
         },
         addSlot: () => setSlotCount(count + 1),
         removeSlot: () => setSlotCount(count - 1),
@@ -465,13 +588,16 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         setOptions(data, originalData) {
             if (Array.isArray(data?.[0]) && Array.isArray(data?.[1])) charData = data;
             if (Array.isArray(originalData)) ocData = originalData;
-            build(currentKeys(), currentWeights());
+            build(currentKeys(), currentWeights(), null, currentAliases(), currentSides());
             return api;
         },
         updateDefaults(...defaults) {
             control.updateDefaults(...defaults);
             return api;
         },
+        getSide: index => control.getSide(index),
+        setSide: (index, value) => control.setSide(index, value),
+        refreshSideLabels: () => control.refreshSideLabels(),
         getKey: () => control.getKey(),
         getValue: () => control.getValue(),
         getTextValue: index => control.getTextValue(index),

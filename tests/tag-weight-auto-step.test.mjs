@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 
 import {
     buildWeightCandidates,
+    describePlan,
     effectiveStep,
     expandAll,
     normalizeWeightPlan,
@@ -18,6 +20,19 @@ test('autoStep survives normalization and distinguishes plans', () => {
     assert.equal(normalizeWeightPlan({ ...AUTO, autoStep: undefined }).autoStep, false);
     assert.equal(normalizeWeightPlan({ mode: 'fixed', min: 1, autoStep: true }).autoStep, false, 'fixed plans never auto-step');
     assert.equal(plansEqual(AUTO, { ...AUTO, autoStep: false }), false);
+});
+
+test('a random plan never carries autoStep: its step and label stay what the popover shows', () => {
+    // the popover hides "÷ batch count" in Random; a switch from an auto-stepped Increment
+    // used to keep the hidden flag, so the chip read "÷n" and the typed step was ignored
+    const random = normalizeWeightPlan({ ...AUTO, mode: 'random', step: 0.1 });
+    assert.equal(random.autoStep, false);
+    assert.equal(describePlan(random), '0.80–1.20', 'no ÷n on the chip');
+    assert.deepEqual(buildWeightCandidates(random, { batchCount: 2 }), [0.8, 0.9, 1, 1.1, 1.2], 'the manual step, not span / (count - 1)');
+    assert.deepEqual(buildWeightCandidates(random, {}), buildWeightCandidates(random, { batchCount: 7 }), 'independent of the batch count');
+    assert.equal(normalizeWeightPlan({ ...AUTO, mode: 'decrement' }).autoStep, true, 'stepped modes keep it');
+    const popover = fs.readFileSync(new URL('../scripts/renderer/components/weightPopover.js', import.meta.url), 'utf8');
+    assert.match(popover, /return normalizeWeightPlan\(\{ \.\.\.planDraft, seed: followSeed \? 0 : planDraft\.seed \}\);/, 'Apply normalizes the draft, dropping the flag for Random');
 });
 
 test('effectiveStep spreads min..max over the batch count', () => {

@@ -58,7 +58,7 @@ test('chip row implements roving tabindex, keyboard reducer actions, drag reorde
   for (const action of ['open', 'add', 'type', 'delete', 'move-left', 'move-right', 'weight-up', 'weight-down', 'exit']) {
     assert.match(field, new RegExp(`case '${action}'`), `${action} handled`);
   }
-  assert.match(field, /chip\.tabIndex = index === focusIndex \? 0 : -1/);
+  assert.match(field, /if \(chip\) chip\.tabIndex = 0;/);
   assert.match(field, /addEventListener\('dragstart'/);
   assert.match(field, /addEventListener\('drop'/);
   assert.match(field, /function openTagModal/, 'add-tag routes to the tag selection modal');
@@ -88,6 +88,25 @@ test('weight popover is 336px, fixed-position, focus-trapped, and only writes on
   assert.match(popover, /WEIGHT_PRESETS/);
   assert.match(popover, /tag_ui_follow_seed/);
   assert.doesNotMatch(popover, /candidates?List|tag-weight-cands/, 'no candidate column in the plan tab');
+  // three tabs; the "÷ batch count" switch sits in its own row under Min / Max / Step
+  // (so the three inputs stay level) and is hidden for a random draw
+  assert.match(popover, /const TABS = \['fixed', 'plan', 'related'\]/);
+  assert.match(popover, /autoStepRow\.hidden = planDraft\.mode === 'random'/, 'no batch-count switch in Random');
+  assert.match(popover, /const autoStepRow = el\('div', 'tag-weight-row tag-weight-autostep-row'\)/);
+  assert.doesNotMatch(popover, /planStepField\.append\(autoStepLabel\)/, 'the switch no longer lives inside the step column');
+  assert.match(popover, /applyButton\.hidden = activeTab === 'related'/, 'Related closes, it does not Apply');
+  assert.match(popover, /titleName\.textContent = value;/, 'the header is the tag itself, the translation under it');
+  // focus returns to the chip only when the popover held it: a Shift+click replace has
+  // already focused the replacing chip (the anchor element is gone, the fallback was the view toggle)
+  assert.match(popover, /const hadFocus = root\.contains\(document\.activeElement\);/);
+  assert.match(popover, /if \(hadFocus\) target\?\.focus\?\.\(\);/);
+});
+
+test('"Edit weight…" in the context menu opens a weight tab even after Related was used', () => {
+  const menu = read('scripts/renderer/components/myRightClickMenu.js');
+  assert.match(menu, /if \(field\?\.editWeight && capsule\) field\.editWeight\(capsule\.id\);/);
+  assert.match(field, /editWeight: id => \{[\s\S]*?openPopover\(index, \{ tab: 'weight' \}\);/);
+  assert.match(popover, /let initial = TABS\.includes\(tab\) \? tab : \(tab !== 'weight' && lastTabKind === 'related' \? 'related' : weightTab\);/);
 });
 
 test('batch dialog reuses the selection-modal skeleton and previews terminal / random rows', () => {

@@ -14,6 +14,7 @@ let okm = {
   mainGallery_appendImageData: null,
   customOverlay_updatePreview: null,
   customOverlay_progressBar: null,
+  customOverlay_status: null,
   rightClickMenu_spellCheck: null
 }
 
@@ -32,6 +33,11 @@ contextBridge.exposeInMainWorld('okm', {
     if (typeof callback === 'function') {
       okm.customOverlay_progressBar = callback;
     } 
+  },
+  setup_customOverlay_status: (callback) => {
+    if (typeof callback === 'function') {
+      okm.customOverlay_status = callback;
+    }
   },
   setup_rightClickMenu_spellCheck: (callback) => {
     if (typeof callback === 'function') {
@@ -52,7 +58,12 @@ const generateFunctions = {
   updateProgress(progress, totalProgress) {
     if(okm.customOverlay_progressBar)
       okm.customOverlay_progressBar(progress, totalProgress);
-  }, 
+  },
+  // a wait that is not sampling (a ComfyUI restart for fast-mode flags): { key, text, args } | null
+  updateStatus(status) {
+    if(okm.customOverlay_status)
+      okm.customOverlay_status(status);
+  },
   rightClickMenu_spellCheck(suggestions, word) {
     if(okm.rightClickMenu_spellCheck)
       okm.rightClickMenu_spellCheck(suggestions, word);
@@ -97,13 +108,15 @@ contextBridge.exposeInMainWorld('api', {
   getCachedFiles: async () => ipcRenderer.invoke('get-cached-files'),
   updateCachedCharacterThumb: async (thumbSelect) => ipcRenderer.invoke('update-cached-character-thumb', thumbSelect),
   // downloadFiles
-  downloadURL: async () => ipcRenderer.invoke('download-url', url, filePath),
+  downloadURL: async (url, filePath) => ipcRenderer.invoke('download-url', url, filePath),
   // modelList
   updateModelList: async (args) => ipcRenderer.invoke('update-model-list', args),
   // remote ComfyUI (pod relay / HTTPS) model lists via /object_info; { open } dials the pod when true
   updateModelListRemote: async (args) => ipcRenderer.invoke('update-model-list-remote', args),
   // Runpod pod lifecycle: 'status' | 'start' | 'stop' (never terminate)
   runpodPodControl: async (action) => ipcRenderer.invoke('runpod-pod-control', action),
+  // local ComfyUI process: { action: 'state' | 'start' | 'stop' | 'restart' } (loopback only)
+  comfyProcess: async (args) => ipcRenderer.invoke('comfy-process', args),
   podRunBootstrap: async () => ipcRenderer.invoke('pod-run-bootstrap'),
   // pod setup wizard: { action: 'probe' | 'deploy' | 'provision' | 'log', components, civitaiToken, name, offset }
   podSetup: async (args) => ipcRenderer.invoke('pod-setup', args),
@@ -123,8 +136,15 @@ contextBridge.exposeInMainWorld('api', {
   // Tag Auto Complete
   tagReload: async (language) => ipcRenderer.invoke('tag-reload', language),
   tagGet: async (text, options) => ipcRenderer.invoke('tag-get-suggestions', text, options),
+  tagLookup: async (keys) => ipcRenderer.invoke('tag-lookup', keys),
+  // translations for the chips' alias line: { loaded, aliases: { value: alias } }
+  tagAliases: async (tags) => ipcRenderer.invoke('tag-aliases', tags),
   tagRelated: async (tag, options) => ipcRenderer.invoke('tag-related', tag, options),
   tagRelatedAvailable: async () => ipcRenderer.invoke('tag-related-available'),
+  // Artist card (Diffusion): name / profile-tag search and one artist's profile
+  artistSearch: async (query, options) => ipcRenderer.invoke('artist-search', query, options),
+  artistProfile: async (name) => ipcRenderer.invoke('artist-profile', name),
+  artistProfilesAvailable: async () => ipcRenderer.invoke('artist-profiles-available'),
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),

@@ -5,7 +5,7 @@
 // submenu (expands in place — the menu box clips flyouts).
 import { getAiPrompt } from '../remoteAI.js';
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
-import { appendTagsToText, removeTagsFromText } from './tagCapsuleLogic.js';
+import { appendTagsToText, removeTagsFromText, splitPromptTokens } from './tagCapsuleLogic.js';
 
 function debounce(func, wait) {
     let timeout;
@@ -550,8 +550,7 @@ function countLabel(base, count) {
 function textareaSelection(scope) {
     if (!(scope instanceof HTMLTextAreaElement)) return [];
     if (scope.selectionStart === scope.selectionEnd) return [];
-    return scope.value.slice(scope.selectionStart, scope.selectionEnd)
-        .split(/[,\n]/).map(token => token.trim()).filter(Boolean);
+    return splitPromptTokens(scope.value.slice(scope.selectionStart, scope.selectionEnd));
 }
 
 function transferSelection(scope, targetId, { copy }) {
@@ -586,7 +585,12 @@ function registerDefaultMenuItems() {
     // ---------------------------------------------------------------- tag capsule
     rc.append('tag_edit_weight', LANG.right_menu_edit_weight, {
         selector: '.tag-capsule-chip',
-        func: (chip) => chip.click(),
+        func: (chip) => {
+            // a plain chip click opens the tab used last (maybe Related); this entry means the weight
+            const { field, capsule } = chipContext(chip);
+            if (field?.editWeight && capsule) field.editWeight(capsule.id);
+            else chip.click();
+        },
     });
     rc.append('tag_toggle', LANG.right_menu_disable_tag, {
         selector: '.tag-capsule-chip',

@@ -1,5 +1,58 @@
 const CAT = '[myTextbox]';
 
+// Live height adjusters, one per textbox. A window resize re-measures all of
+// them in a single coalesced frame in separate read and write phases (every
+// textbox drops to height:auto, then every scrollHeight is read, then every
+// height is written), so N textboxes cost one layout instead of 2N.
+// There is no per-textbox teardown call, so the set holds each adjuster weakly and
+// its textbox keeps it alive (adjusterOwners): a textbox removed with its row (a
+// queue slot, a deleted custom prompt field) can be collected and its entry drops
+// out on the next batch. A textbox that is out of the page for now is skipped and
+// keeps its height until it is back (measured detached, it collapsed to minLines).
+const liveAdjusters = new Set();   // WeakRef<adjuster>
+const adjusterOwners = new WeakMap();   // textbox -> adjuster
+let resizeFrame = 0;
+let resizeListenerInstalled = false;
+
+function collectAdjusters() {
+    const adjusters = [];
+    for (const ref of liveAdjusters) {
+        const adjuster = ref.deref();
+        if (adjuster) adjusters.push(adjuster);
+        else liveAdjusters.delete(ref);
+    }
+    return adjusters;
+}
+
+function runBatchedAdjust() {
+    resizeFrame = 0;
+    const adjusters = collectAdjusters().filter(adjuster => adjuster.isConnected());
+    // The font may have changed (changeFontSize dispatches a synthetic resize).
+    for (const adjuster of adjusters) adjuster.invalidateLineHeight();
+    // Write phase: release the fixed heights.
+    for (const adjuster of adjusters) adjuster.beginMeasure();
+    // Read phase: one layout for every scrollHeight/line-height read.
+    for (const adjuster of adjusters) adjuster.measure();
+    // Write phase: apply the new heights.
+    for (const adjuster of adjusters) adjuster.applyHeight();
+}
+
+function scheduleBatchedAdjust() {
+    if (resizeFrame) return;
+    const raf = globalThis.requestAnimationFrame ?? (callback => setTimeout(callback, 16));
+    resizeFrame = raf(runBatchedAdjust);
+}
+
+function registerAdjuster(owner, adjuster) {
+    adjusterOwners.set(owner, adjuster);
+    liveAdjusters.add(new WeakRef(adjuster));
+    if (!resizeListenerInstalled && typeof globalThis.addEventListener === 'function') {
+        resizeListenerInstalled = true;
+        // The viewport cap depends on the window height; one listener serves every textbox.
+        globalThis.addEventListener('resize', scheduleBatchedAdjust);
+    }
+}
+
 function addDynamicColorClass(color) {
     try {
         const sanitizedColor = color.replaceAll(/[^a-zA-Z0-9]/g, '-');
@@ -98,14 +151,31 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
     textbox.value = value;
     if (defaultTextColor !== 'auto') textbox.style.color = defaultTextColor;
     
-    const DEFAULT_LINE_HEIGHT = 20;     
+    const DEFAULT_LINE_HEIGHT = 20;
+
+    // The parsed line height is cached per textbox: getComputedStyle on every
+    // keystroke is a style recalc we do not need. The cache is dropped on window
+    // resize (which changeFontSize also dispatches) and by changeFontSize itself.
+    let cachedLineHeight = null;
 
     const getLineHeight = () => {
-        let lineHeight = Number.parseInt(globalThis.getComputedStyle(textbox).lineHeight, 10);
+        if (cachedLineHeight !== null) return cachedLineHeight;
+        const raw = globalThis.getComputedStyle(textbox).lineHeight;
+        let lineHeight = Number.parseInt(raw, 10);
         if (Number.isNaN(lineHeight)) {
             lineHeight = DEFAULT_LINE_HEIGHT;
         }
+        // Only a resolved value is stable enough to cache: a textbox without a
+        // layout box (hidden, detached) reports the raw computed value, so it is
+        // measured again on the next adjustment.
+        if (typeof raw === 'string' && (raw.endsWith('px') || raw === 'normal')) {
+            cachedLineHeight = lineHeight;
+        }
         return lineHeight;
+    };
+
+    const invalidateLineHeight = () => {
+        cachedLineHeight = null;
     };
 
     const updateHandleVisibility = () => {
@@ -114,18 +184,30 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
         }
     };
 
-    const adjustHeight = () => {
-        const lineHeight = getLineHeight();
+    // Height adjustment runs in three phases so the resize batch can group the
+    // writes and reads of every textbox: beginMeasure (write), measure (read),
+    // applyHeight (write). adjustHeight runs all three for a single textbox.
+    let measuredScrollHeight = 0;
+    let measuredLineHeight = DEFAULT_LINE_HEIGHT;
+
+    const beginMeasure = () => {
+        if (maxLines === 1) return;
+        // Release the fixed height so scrollHeight reflects the content alone.
+        textbox.style.height = 'auto';
+    };
+
+    const measure = () => {
+        measuredLineHeight = getLineHeight();
+        if (maxLines === 1) return;
+        measuredScrollHeight = textbox.scrollHeight;
+    };
+
+    const applyHeight = () => {
+        const lineHeight = measuredLineHeight;
 
         if (maxLines === 1) {
             textbox.style.height = `${lineHeight}px`;
             textbox.style.overflowY = 'hidden';
-
-            textbox.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                }                
-            });
             return;
         }
 
@@ -137,8 +219,7 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
 
         // Auto mode: calculate needed lines strictly based on current content
         if (isAutoMode) {
-            textbox.style.height = 'auto';
-            const neededLines = Math.ceil(textbox.scrollHeight / lineHeight);
+            const neededLines = Math.ceil(measuredScrollHeight / lineHeight);
             currentAllowedLines = Math.max(minLines, Math.min(maxLines, viewportCapLines, neededLines));
         }
 
@@ -148,13 +229,31 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
 
         textbox.style.height = `${targetHeight}px`;
 
-        // Overflow/scrollbar control independent of resize capability
-        if (textbox.scrollHeight > targetHeight) {
-            textbox.style.overflowY = 'scroll'; 
+        // Overflow/scrollbar control independent of resize capability. The
+        // content height was already read at height:auto, so no second layout.
+        if (measuredScrollHeight > targetHeight) {
+            textbox.style.overflowY = 'scroll';
         } else {
             textbox.style.overflowY = 'hidden';
         }
     };
+
+    const adjustHeight = () => {
+        beginMeasure();
+        measure();
+        applyHeight();
+    };
+
+    registerAdjuster(textbox, { invalidateLineHeight, beginMeasure, measure, applyHeight, isConnected: () => textbox.isConnected });
+
+    if (maxLines === 1) {
+        // Single-line box: swallow Enter. Registered once here, not per adjustment.
+        textbox.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+    }
 
     // --- Drag-to-resize logic by single-line increments ---
     let startY = 0;
@@ -197,9 +296,6 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
     setTimeout(() => {
         adjustHeight();
     }, 0);
-
-    // The viewport cap depends on the window height
-    globalThis.addEventListener('resize', adjustHeight);
 
     let realValue = textbox.value;
     if (passwordMode) {
@@ -267,8 +363,6 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
             textbox.value = realValue;
         }
     });
-
-    globalThis.addEventListener('resize', adjustHeight);
 
     return {
         getValue: () => {
@@ -427,5 +521,7 @@ export function changeFontSize(fontSize, lineHeight = '1.4') {
         el.style.lineHeight = lineHeight;
     }
 
+    // The cached line heights are stale now; the resize batch re-measures them.
+    for (const adjuster of collectAdjusters()) adjuster.invalidateLineHeight();
     globalThis.dispatchEvent(new Event('resize'));
 }

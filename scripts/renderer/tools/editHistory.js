@@ -219,10 +219,22 @@ export function createEditHistory({
         status,
         isRecordingSuspended: () => suspended > 0,
         isTransactionActive: () => Boolean(active),
-        clear() {
-            undoStack.length = 0;
-            redoStack.length = 0;
-            undoBytes = 0;
+        // clear() forgets everything. clear(['generation']) forgets only the entries that
+        // hold a snapshot of one of those sections: a model type switch swaps some sections
+        // and leaves the others alone, so only what it swapped becomes un-undoable.
+        clear(sections = null) {
+            const dropped = Array.isArray(sections) ? new Set(sections) : null;
+            if (!dropped) {
+                undoStack.length = 0;
+                redoStack.length = 0;
+                undoBytes = 0;
+                emit();
+                return;
+            }
+            const keeps = entry => !entry.sections.some(section => dropped.has(section));
+            undoStack.splice(0, undoStack.length, ...undoStack.filter(keeps));
+            redoStack.splice(0, redoStack.length, ...redoStack.filter(keeps));
+            undoBytes = undoStack.reduce((total, entry) => total + entry.bytes, 0);
             emit();
         },
     };

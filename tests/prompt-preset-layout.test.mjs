@@ -13,7 +13,7 @@ const bad = { id: 'cf_bad00001', name: 'Bad', polarity: 'negative', text: 'blurr
 
 const current = {
     prompt_custom_fields: [body, gear, bad],
-    prompt_positive_order: ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive', 'cf_gear0001', 'cf_body0001'],
+    prompt_positive_order: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive', 'cf_gear0001', 'cf_body0001'],
     prompt_negative_order: ['negative', 'cf_bad00001'],
     prompt_field_presets: { cf_body0001: [{ name: 'fox', text: 'fox ears' }], style: [{ name: 's', text: 'anime' }] },
 };
@@ -21,7 +21,7 @@ const current = {
 test('a preset that carries fields is the authority: fewer fields → fields go, more → fields come', () => {
     const fewer = mergePromptFieldLayout(current, { prompt_custom_fields: [{ ...body, text: 'cat ears' }], prompt_positive_order: ['cf_body0001', 'positive'] });
     assert.deepEqual(fewer.prompt_custom_fields, [{ ...body, text: 'cat ears' }]);
-    assert.deepEqual(fewer.prompt_positive_order, ['cf_body0001', 'positive', 'common', 'views', 'background', 'style', 'ai', 'characters']);
+    assert.deepEqual(fewer.prompt_positive_order, ['cf_body0001', 'positive', 'common', 'views', 'background', 'style', 'artist', 'ai', 'characters']);
     assert.deepEqual(fewer.prompt_negative_order, ['negative']);
 
     const extra = { id: 'cf_extra001', name: 'Extra', polarity: 'positive', text: 'sword' };
@@ -31,7 +31,7 @@ test('a preset that carries fields is the authority: fewer fields → fields go,
 
     const none = mergePromptFieldLayout(current, { prompt_custom_fields: [] });
     assert.deepEqual(none.prompt_custom_fields, []);
-    assert.deepEqual(none.prompt_positive_order, ['common', 'views', 'background', 'style', 'ai', 'characters', 'positive']);
+    assert.deepEqual(none.prompt_positive_order, ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive']);
 });
 
 test('a preset that predates custom fields (no key) leaves fields and order alone', () => {
@@ -53,7 +53,7 @@ test('per-field presets are a library: unioned, current wins, never dropped by a
     });
     const manager = read('scripts/renderer/components/promptFieldManager.js');
     // the container sweep does not delete preset buckets; only the editor's delete button does
-    assert.match(manager, /container\.remove\(\);\s*delete globalThis\.prompt\[id\];\s*globalThis\.prompt\.tagCapsuleFields\?\.remove\?\.\(id\);\s*\}/);
+    assert.match(manager, /container\.remove\(\);\s*delete globalThis\.prompt\[id\];\s*globalThis\.prompt\.tagCapsuleFields\?\.remove\?\.\(id\);\s*for \(const picker of pickers\.get\(id\) \?\? \[\]\) picker\.modal\?\.destroy\?\.\(\);\s*pickers\.delete\(id\);\s*\}/);
     assert.match(manager, /\/\/ explicit delete: the field's preset bucket goes with it/);
 });
 
@@ -65,7 +65,8 @@ test('preset apply goes through the layout merge, undo restores snapshots exactl
     const language = read('scripts/renderer/language.js');
     assert.match(language, /globalThis\.prompt\.fieldManager\?\.refresh\?\.\(\);\s*globalThis\.prompt\.tagCapsuleFields\?\.loadFromSettings\?\.\(SETTINGS\);/, 'field set first, then the capsule plans');
     const manager = read('scripts/renderer/components/promptFieldManager.js');
-    assert.match(manager, /refresh: \(\) => \{\s*fields = normalizeCustomFields\(SETTINGS\.prompt_custom_fields\);/);
+    // the cast rows ("@alias" per character slot) are re-synced before the field set is read
+    assert.match(manager, /refresh: \(\) => \{\s*syncCast\(\);\s*fields = normalizeCustomFields\(SETTINGS\.prompt_custom_fields\);/);
     assert.match(manager, /if \(control\?\.getValue && String\(control\.getValue\(\) \?\? ''\) !== field\.text\) control\.setValue\(field\.text\)/);
     // text callbacks resolve the field by id so a reloaded `fields` array is never stale
     assert.match(manager, /\(value\) => setFieldText\(field\.id, value\)/);

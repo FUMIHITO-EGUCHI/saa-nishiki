@@ -1,3 +1,5 @@
+import { mapPromptTokens, splitGroupToken, splitPromptTokens } from '../components/tagCapsuleLogic.js';
+
 ////////////////////////////////////////////////////////////////////////////////
 // Helper Function: Escape special characters for Regular Expressions
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,48 +67,58 @@ function processExcludedTags(text, excludeList) {
         }
     }
 
-    let resultText = text;
+    // 2. Replacements (sorted by target length descending)
+    replacementItems.sort((a, b) => b.target.length - a.target.length);
+    const replacements = replacementItems.map(({ target, replacement }) => ({
+        // Regex captures optional leading brackets ($1), weight modifier ($2), and trailing brackets ($3)
+        regex: new RegExp(String.raw`(\(+)?\b${escapeRegExp(target)}\b(:[\d.]+)?(\)*)`, 'gi'),
+        replacement,
+    }));
 
-    // 2. Perform Tag Replacements (Sorted by target length descending)
-    if (replacementItems.length > 0) {
-        replacementItems.sort((a, b) => b.target.length - a.target.length);
+    // 3. Removals (sorted by tag length descending)
+    removalTags.sort((a, b) => b.length - a.length);
+    const removeRegex = removalTags.length > 0
+        ? new RegExp(removalTags.map(tag => String.raw`(?:\(+)?\b${escapeRegExp(tag)}\b(?::[\d.]+)?\)*`).join('|'), 'gi')
+        : null;
 
-        for (const { target, replacement } of replacementItems) {
-            const escapedTarget = escapeRegExp(target);
-            // Regex captures optional leading brackets ($1), weight modifier ($2), and trailing brackets ($3)
-            const replaceRegex = new RegExp(String.raw`(\(+)?\b${escapedTarget}\b(:[\d.]+)?(\)*)`, 'gi');
-            
-            resultText = resultText.replace(replaceRegex, (match, p1 = '', p2 = '', p3 = '') => {
-                return `${p1}${replacement}${p2}${p3}`;
-            });
+    // Applied tag by tag, with the chips' tokenizer: a weighted group is one tag, so a tag
+    // excluded inside it is taken out of the group ("(red hair, blue eyes:1.2)" without
+    // "red hair" is "(blue eyes:1.2)") instead of cutting the group in half. A group left
+    // with nothing inside goes away with it.
+    const applyRules = tag => {
+        let value = tag;
+        for (const { regex, replacement } of replacements) {
+            value = value.replace(regex, (match, p1 = '', p2 = '', p3 = '') => `${p1}${replacement}${p2}${p3}`);
         }
-    }
-
-    // 3. Perform Tag Removals (Sorted by tag length descending)
-    if (removalTags.length > 0) {
-        removalTags.sort((a, b) => b.length - a.length);
-
-        const patterns = removalTags.map(tag => {
-            const escaped = escapeRegExp(tag);
-            return String.raw`(?:\(+)?\b${escaped}\b(?::[\d.]+)?\)*`;
-        });
-
-        const removeRegex = new RegExp(patterns.join('|'), 'gi');
-        resultText = resultText.replace(removeRegex, '');
-    }
+        return removeRegex ? value.replace(removeRegex, '') : value;
+    };
+    const rewriteTag = token => {
+        const group = splitGroupToken(token);
+        if (!group || !group.body.includes(',')) return applyRules(token);
+        const kept = splitPromptTokens(mapPromptTokens(group.body, rewriteTag));
+        const inside = kept.length === 0 ? '' : `${group.open}${kept.join(', ')}${group.close}`;
+        // the colored copy wraps tags in [color=..], so a group can sit inside a token
+        return `${applyRules(group.before)}${inside}${rewriteTag(group.after)}`;
+    };
 
     // 4. Clean up structural artifacts (isolated commas and spaces left after removal/replacement)
-    return cleanPromptText(resultText);
+    return cleanPromptText(mapPromptTokens(text, rewriteTag));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Exported Entry Function
 ////////////////////////////////////////////////////////////////////////////////
+// The Exclude field is a chip field as well: a weighted group chip in it names every tag
+// inside the group ("(red hair, blue eyes:1.2)" excludes "red hair" and "blue eyes"),
+// which is what its halves meant before the group became one chip.
+function expandExcludeToken(token) {
+    const group = splitGroupToken(token);
+    if (!group || group.open !== '(' || group.before !== '' || group.after !== '') return [token];
+    return splitPromptTokens(group.body).flatMap(expandExcludeToken);
+}
+
 export function filterPrompts(positivePrompt, positivePromptColored, exclude) {
-    const excludeList = exclude
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean);
+    const excludeList = splitPromptTokens(exclude).flatMap(expandExcludeToken);
 
     if (excludeList.length === 0) {
         return { positivePrompt, positivePromptColored };

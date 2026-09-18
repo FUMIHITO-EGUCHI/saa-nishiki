@@ -286,6 +286,50 @@ html, body {
     font-size: 1.05rem;
 }
 
+/* Settings help lives behind an (i) icon: the text shows on hover / keyboard focus
+   instead of sitting under every group. The icon follows a group title or a page
+   heading; the note text is what applyUiText fills (data-ui-text on the inner span). */
+.settings-info {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    vertical-align: middle;
+    color: var(--saa-muted);
+    cursor: help;
+    font-size: 0;
+    line-height: 1;
+}
+.settings-info:hover, .settings-info:focus-visible { color: var(--saa-accent); }
+.settings-info:focus-visible { outline: 2px solid var(--saa-accent); outline-offset: 2px; border-radius: 50%; }
+.settings-info-text {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 100%;
+    z-index: 20;
+    min-width: 240px;
+    max-width: 360px;
+    margin-top: 4px;
+    padding: 6px 8px;
+    border: 1px solid var(--saa-border);
+    border-radius: 6px;
+    background: var(--saa-bg-panel);
+    color: var(--saa-text);
+    font-size: 11.5px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1.4;
+    white-space: normal;
+    box-shadow: 0 4px 12px var(--saa-shadow);
+}
+.settings-info:hover .settings-info-text,
+.settings-info:focus .settings-info-text,
+.settings-info:focus-within .settings-info-text { display: block; }
+/* a group title sits on one line with its icon; the grid below starts a new line */
+.settings-group-title + .settings-info { margin-bottom: 8px; }
+
 .settings-modal-page-content {
     width: 100%;
 }
@@ -516,7 +560,7 @@ html, body {
     font-size: 1.5rem;
     color: rgba(255, 255, 255, 0.5);
     border: 2px dashed transparent;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .drag-hint-bottom {
@@ -527,7 +571,7 @@ html, body {
     font-size: 1.5rem;
     color: rgba(255, 255, 255, 0.5);
     border: 2px dashed transparent;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .drag-hint-top.active {
@@ -545,7 +589,15 @@ html, body {
 }
 
 /* Character and tag selection modals */
-.character-selection-grid {
+/* The slot grid does not depend on the slot count: the container also carries a
+   mydropdown-container-<count> class, but only 1 / 2 / 4 have rules, so 3 / 5 / 6
+   slots used to fall back to block layout and stack. Two columns, any count. */
+.character-selection-grid,
+.characters-card .dropdown-character .character-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
     align-items: end;
 }
 
@@ -592,6 +644,941 @@ html, body {
     width: 100%;
     padding: 3px;
     text-align: center;
+}
+
+/* cast alias (Diffusion): names the slot's "@alias" prompt row and its Action reference */
+.character-selection-alias {
+    display: none;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 28px;
+    padding: 3px 8px;
+    border: 1px solid;
+    border-radius: 5px;
+    font: inherit;
+    font-size: 0.82rem;
+}
+
+/* the cast row: alias | character | weight, no "Character list n" label */
+.cast-mode .dropdown-character .character-selection-alias {
+    display: block;
+}
+
+.cast-mode .dropdown-character .character-selection-label {
+    display: none;
+}
+
+.cast-mode .dropdown-character .character-selection-controls {
+    grid-template-columns: 104px minmax(0, 1fr) 34px;
+}
+
+/* the regional Left / Right list only stores what the side column chose */
+.dropdown-character-regional {
+    display: none !important;
+}
+
+/* side column (Regional on, Checkpoint): L / R / · per slot */
+.character-selection-side {
+    display: none;
+    box-sizing: border-box;
+    align-self: center;
+    height: 24px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.character-selection-side button {
+    min-width: 22px;
+    height: 100%;
+    padding: 0 6px;
+    border: none;
+    background: transparent;
+    font: inherit;
+    font-size: 10.5px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.character-selection-side button:last-child {
+    border-right: none;
+}
+
+.character-selection-side button[aria-checked="true"] {
+    font-weight: 600;
+}
+
+.regional-on:not(.cast-mode) .dropdown-character .character-selection-side {
+    display: inline-flex;
+}
+
+.regional-on:not(.cast-mode) .dropdown-character .character-selection-controls {
+    grid-template-columns: minmax(0, 1fr) 34px auto;
+}
+
+/* Scene: every prompt unit as one row (label | chips) in chain order, edited in place
+   (scripts/renderer/components/promptFieldManager.js) */
+.prompt-scene {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+}
+
+/* one compact row per unit: handle + label | chips | tools (on hover) */
+.prompt-scene .prompt-field > .myTextbox-wrapper {
+    display: grid;
+    grid-template-columns: 136px minmax(0, 1fr) auto;
+    column-gap: 12px;
+    row-gap: 4px;
+    align-items: start;
+}
+
+.prompt-scene .prompt-field .tag-field-header {
+    grid-column: 1;
+    grid-row: 1;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 5px;
+    min-height: 26px;
+    margin: 4px 0 0;
+    min-width: 0;
+}
+
+.prompt-scene .prompt-field > .myTextbox-wrapper > :not(.tag-field-header):not(.tag-field-tools):not(.prompt-action-cast) {
+    grid-column: 2;
+}
+
+/* the label: plain text, no colour square; negative rows red, cast rows the accent */
+.prompts-card .prompt-scene .tag-field-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+    color: var(--saa-muted2, #969ca8);
+}
+
+.prompts-card .prompt-scene .tag-field-label::before {
+    display: none;
+}
+
+.prompts-card .prompt-scene .prompt-field[data-stripe="negative"] .tag-field-label {
+    color: var(--saa-stripe-negative, #e07070);
+}
+
+.prompts-card .prompt-scene .prompt-cast-field .tag-field-label {
+    color: var(--saa-accent, #7fb0f5);
+    font-weight: 600;
+}
+
+.prompt-scene .prompt-field > .myTextbox-wrapper > .tag-field-tools {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    gap: 5px;
+    margin-top: 5px;
+    margin-right: 4px;
+    opacity: 0.35;
+    transition: opacity 0.12s;
+}
+
+.prompt-scene .prompt-field:hover > .myTextbox-wrapper > .tag-field-tools,
+.prompt-scene .prompt-field:focus-within > .myTextbox-wrapper > .tag-field-tools {
+    opacity: 1;
+}
+
+.prompt-scene .prompt-field .tag-field-tools .tag-selection-trigger {
+    min-height: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 4px;
+    font-size: 10.5px;
+}
+
+/* presets and the Text / Chips switch live in the ⋯ menu; "Choose tags" duplicates "+ Add tag" */
+.prompt-scene .prompt-field .tag-field-tools .prompt-preset-button,
+.prompt-scene .prompt-field .tag-field-tools .tag-view-toggle,
+.prompt-scene .prompt-field .tag-field-tools .tag-selection-trigger {
+    display: none;
+}
+
+/* the chip box: a quiet field, no stripe */
+.prompts-card .prompt-scene .prompt-field .tag-capsule-view {
+    min-height: 26px;
+    margin: 2px 0;
+    padding: 6px 8px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 6px;
+    background: var(--saa-bg-field, #16181d);
+    box-shadow: none;
+}
+
+.prompt-scene .tag-capsule-chips {
+    gap: 6px;
+}
+
+/* Segoe UI sits low in a 1-line box: a hair of bottom padding centres the text optically */
+.prompt-scene .tag-capsule-chip {
+    height: 23px;
+    padding: 0 10px 2px 0; /* the toggle block supplies the left inset */
+    border-radius: 12px;
+    line-height: 1.3;
+}
+
+/* the Scene's own labels say enough: no chain description in the head */
+.prompts-card .ui-card-head .ui-card-sub {
+    display: none;
+}
+
+/* the Scene head keeps the card inset like the other cards (an older prompt-card rule zeroes it) */
+#prompt-text-container.prompts-card > .ui-card-head {
+    padding: 0 10px;
+}
+
+/* the Scene's chips are a touch shorter: the toggle block keeps its full-height
+   hit area, only the dot inside it shrinks and fades until hovered */
+.prompt-scene .tag-capsule-chip-toggle::before {
+    width: 7px;
+    height: 7px;
+    opacity: 0.55;
+}
+
+.prompt-scene .tag-capsule-chip:hover .tag-capsule-chip-toggle::before,
+.prompt-scene .tag-capsule-chip.is-disabled .tag-capsule-chip-toggle::before {
+    opacity: 1;
+}
+
+/* "+ Tag" wears the capsule frame (the theme paints the border colour) */
+.prompt-scene .tag-capsule-add {
+    height: 23px;
+    padding: 0 10px 2px 7px;
+    border-style: solid;
+    border-radius: 12px;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+/* the chip rows carry no footer ("n tags", weight tools) in the Scene: the ⋯ menu has them */
+.prompt-scene .tag-capsule-footer {
+    display: none;
+}
+
+.prompts-card .prompt-scene .prompt-field [class^="myTextbox-"][class*="-textarea"] {
+    min-height: 40px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    box-shadow: none;
+}
+
+.prompt-scene .prompt-views-row > .myTextbox-wrapper > .dropdown-view {
+    margin: 0;
+    padding: 0;
+    border-top: none;
+}
+
+.prompt-views-row.is-collapsed > .myTextbox-wrapper > .dropdown-view {
+    display: none !important;
+}
+
+/* the row's own label says View; the Angle / Camera captions go into the dropdown titles */
+.prompt-scene .prompt-views-row .view-labels {
+    display: none;
+}
+
+/* the Action sentence reads as its own block at the end of the chain */
+.prompt-scene .prompt-field.prompt-action-field {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--saa-border, #343945);
+}
+
+/* the "@alias" buttons sit above the Action text, in its column; the tools stay at the right like every row */
+.prompt-scene .prompt-action-cast {
+    grid-column: 2;
+    padding: 4px 0 0;
+}
+
+/* a custom field's textbox title duplicates the capsule header's label */
+.prompts-card .prompt-custom-field > .myTextbox-wrapper > [class^="myTextbox-"][class*="-header"] {
+    display: none;
+}
+
+/* handle: grip · chevron · ● */
+.scene-handle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+}
+
+.scene-grip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 18px;
+    color: var(--saa-border-strong, #474d5b);
+    cursor: grab;
+}
+
+/* the grip arms a native drag of the row; the global `-webkit-user-drag: none`
+   would otherwise swallow the draggable attribute */
+.prompt-scene .prompt-field[draggable="true"] {
+    -webkit-user-drag: element;
+}
+
+/* a pinned row keeps the grip's space so the chevrons line up */
+.scene-grip[hidden] {
+    display: inline-flex;
+    visibility: hidden;
+}
+
+.scene-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--saa-muted2, #969ca8);
+    cursor: pointer;
+}
+
+.scene-chevron svg {
+    transform: rotate(90deg);
+    transition: transform 0.12s;
+}
+
+.prompt-field.is-collapsed .scene-chevron svg {
+    transform: none;
+}
+
+.scene-mute {
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    border: 1px solid var(--saa-accent, #7fb0f5);
+    border-radius: 50%;
+    background: var(--saa-accent, #7fb0f5);
+    box-shadow: inset 0 0 0 3px var(--saa-bg-panel, #1f2229);
+    cursor: pointer;
+}
+
+.prompt-field.is-muted .scene-mute {
+    background: transparent;
+    border-color: var(--saa-border-strong, #474d5b);
+    box-shadow: none;
+}
+
+.scene-label {
+    cursor: pointer;
+}
+
+.scene-count {
+    font-size: 10px;
+    color: var(--saa-muted, #969ca8);
+    margin-left: 2px;
+}
+
+.scene-rename {
+    width: 120px;
+    min-width: 0;
+    height: 20px;
+    padding: 0 6px;
+    border: 1px solid var(--saa-accent, #7fb0f5);
+    border-radius: 4px;
+    background: var(--saa-bg-control, #16181d);
+    color: var(--saa-text, #e4e6ea);
+    font: inherit;
+    font-size: 12px;
+}
+
+/* muted: the tags stay, nothing is sent */
+.prompt-field.is-muted .tag-field-label {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.prompt-field.is-muted .tag-capsule-view,
+.prompt-field.is-muted [class^="myTextbox-"][class*="-textarea"],
+.prompt-field.is-muted .dropdown-view {
+    opacity: 0.45;
+}
+
+.prompt-field.is-muted .tag-capsule-chip {
+    border-style: dashed;
+}
+
+/* collapsed: the header line only (the tools stay reachable) */
+.prompt-field.is-collapsed .myTextbox-wrapper > :not(.tag-field-header):not(.tag-field-tools) {
+    display: none !important;
+}
+
+.prompt-field.is-collapsed .prompt-action-cast {
+    display: none;
+}
+
+/* row tools: polarity badge, delete, ⋯ */
+.scene-polarity,
+.scene-delete,
+.scene-menu-button {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 4px;
+    background: var(--saa-bg-control, #262a33);
+    color: var(--saa-muted2, #969ca8);
+    font: inherit;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.scene-polarity.is-positive {
+    color: var(--saa-stripe-positive, #7fd0a0);
+    border-color: currentColor;
+}
+
+.scene-polarity.is-negative {
+    color: var(--saa-stripe-negative, #e07070);
+    border-color: currentColor;
+}
+
+.scene-delete:hover {
+    color: var(--saa-danger, #e07070);
+}
+
+.scene-menu-button:hover,
+.scene-polarity:hover {
+    background: var(--saa-bg-hover, #2c303a);
+}
+
+.prompt-scene .prompt-field > .myTextbox-wrapper > .tag-field-tools {
+    position: relative;
+}
+
+.scene-row-menu {
+    position: absolute;
+    right: 0;
+    top: 24px;
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+    padding: 4px;
+    border: 1px solid var(--saa-border, #343945);
+    border-radius: 6px;
+    background: var(--saa-bg-panel, #1f2229);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.scene-row-menu button {
+    height: 24px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--saa-text, #e4e6ea);
+    font: inherit;
+    font-size: 11.5px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.scene-row-menu button:hover {
+    background: var(--saa-bg-hover, #2c303a);
+}
+
+.scene-row-menu button.is-danger {
+    color: var(--saa-danger, #e07070);
+}
+
+.scene-row-menu button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* drag: a row moves before the row under the pointer, or to the end of a box */
+.prompt-scene .prompt-field.is-dragging {
+    opacity: 0.4;
+}
+
+.prompt-scene .prompt-field.is-drop-before {
+    box-shadow: inset 0 2px 0 var(--saa-accent, #7fb0f5);
+}
+
+.prompt-scene.is-drop-target,
+.scene-side.is-drop-target {
+    outline: 1px dashed var(--saa-accent, #7fb0f5);
+    outline-offset: 2px;
+}
+
+/* a chip dropped on another row's header moves there (Ctrl / Alt = copy) */
+.prompt-scene .tag-field-header.is-drop-target {
+    outline: 2px dashed var(--saa-accent, #7fb0f5);
+    outline-offset: -2px;
+    border-radius: 4px;
+}
+
+/* "+ Add field" and its popover (name · + Pos | − Neg · Add) */
+.scene-add {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 8px 0 2px 40px;
+}
+
+.scene-add-button {
+    height: 24px;
+    padding: 0 10px;
+    border: 1px dashed var(--saa-border-ctl, #474d5b);
+    border-radius: 5px;
+    background: transparent;
+    color: var(--saa-muted, #969ca8);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.scene-add-button:hover {
+    background: var(--saa-bg-hover, #2c303a);
+    color: var(--saa-text, #e4e6ea);
+}
+
+.scene-add-pop {
+    position: absolute;
+    left: 36px;
+    top: 30px;
+    z-index: 1500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 300px;
+    padding: 8px 10px;
+    border: 1px solid var(--saa-border, #343945);
+    border-radius: 7px;
+    background: var(--saa-bg-panel, #1f2229);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+
+.scene-side .scene-add-pop {
+    left: auto;
+    right: 0;
+}
+
+.scene-add-pop input {
+    flex: 1;
+    min-width: 0;
+    height: 24px;
+    padding: 0 6px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 4px;
+    background: var(--saa-bg-control, #16181d);
+    color: var(--saa-text, #e4e6ea);
+    font: inherit;
+    font-size: 12px;
+}
+
+.scene-add-polarity {
+    display: inline-flex;
+    overflow: hidden;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 5px;
+}
+
+.scene-add-polarity button {
+    height: 22px;
+    padding: 0 8px;
+    border: none;
+    border-left: 1px solid var(--saa-border-ctl, #474d5b);
+    background: var(--saa-bg-control, #262a33);
+    color: var(--saa-muted, #969ca8);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.scene-add-polarity button:first-child {
+    border-left: none;
+}
+
+.scene-add-polarity button.is-selected {
+    background: var(--saa-bg-selected, #2a3550);
+    color: var(--saa-text, #e4e6ea);
+    font-weight: 600;
+}
+
+.scene-add-submit {
+    height: 24px;
+    padding: 0 10px;
+    border: 1px solid var(--saa-accent, #7fb0f5);
+    border-radius: 5px;
+    background: var(--saa-accent, #7fb0f5);
+    color: #0f1013;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.scene-muted-note {
+    font-size: 10.5px;
+    white-space: nowrap;
+    color: var(--saa-warn, #e0a458);
+}
+
+.scene-muted-note:empty {
+    display: none;
+}
+
+/* Regional block: head (title · switch · split · Swap), a settings row, one box per
+   side (green = first, orange = second). Off = head only. */
+/* kept in the DOM but out of the layout while the cast (Diffusion) Scene has no Regional block */
+.scene-regional[hidden] { display: none !important; }
+.scene-regional {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 4px 0;
+    padding: 4px 8px 6px;
+    border: 1px solid var(--saa-warn, #e0a458);
+    border-radius: 8px;
+}
+
+.scene-regional.is-off .scene-regional-body,
+.scene-regional.is-off .scene-regional-tools {
+    display: none;
+}
+
+.scene-regional-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 24px;
+    flex-wrap: wrap;
+}
+
+.scene-regional-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--saa-warn, #e0a458);
+}
+
+/* the On / Off switch beside the title, its label hidden (the title says it) */
+.scene-regional-head .regional-condition-trigger-dummy {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+}
+
+.scene-regional-head .regional-condition-trigger-dummy [class$="-span"] {
+    display: none;
+}
+
+.scene-regional-tools {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Left / Right | Top / Bottom */
+.scene-split-seg {
+    display: inline-flex;
+    height: 22px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.scene-split-seg button {
+    padding: 0 8px;
+    border: none;
+    border-right: 1px solid var(--saa-border-ctl, #474d5b);
+    background: transparent;
+    color: var(--saa-muted2, #9aa0ad);
+    font: inherit;
+    font-size: 10.5px;
+    cursor: pointer;
+}
+
+.scene-split-seg button:last-child {
+    border-right: none;
+}
+
+.scene-split-seg button[aria-checked="true"] {
+    background: var(--saa-bg-hover, #2a2d36);
+    color: var(--saa-text, #e6e6e6);
+    font-weight: 600;
+}
+
+.scene-regional-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* settings row: split ratio · overlap as one-line sliders (the split dropdown is the seg above) */
+.scene-regional-settings .regional-condition-settings-1 {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0;
+    padding: 0 0 2px;
+    width: auto;
+}
+
+.scene-regional-settings .regional-condition-split {
+    display: none;
+}
+
+.scene-regional-settings .regional-condition-image-ratio,
+.scene-regional-settings .regional-condition-overlap-ratio {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.scene-regional-settings [class^="mySlider-regional-condition-"][class*="-row"] {
+    display: contents;
+}
+
+.scene-regional-settings [class^="mySlider-regional-condition-"][class*="-span"] {
+    order: 0;
+    font-size: 11px;
+    color: var(--saa-muted2, #9aa0ad);
+    white-space: nowrap;
+}
+
+.scene-regional-settings [class^="mySlider-regional-condition-"][class*="-bar"] {
+    order: 1;
+    flex: 1;
+    min-width: 60px;
+    margin: 0;
+}
+
+.scene-regional-settings [class^="mySlider-regional-condition-"][class*="-value"] {
+    order: 2;
+    width: 44px;
+    height: 22px;
+}
+
+/* side head: LEFT · character · area · emphasis · + Add field */
+.scene-side-head .regional-condition-side {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+/* the area list's "Left Area" header is the box's own name */
+.scene-side-head .regional-condition-side [class^="mydropdown-"][class$="-header"] {
+    display: none;
+}
+
+.scene-side-head .regional-condition-side > [class^="regional-condition-option"] {
+    width: 120px;
+}
+
+.scene-side-head .scene-add {
+    margin-left: 0;
+}
+
+/* drop hint: only while a row is dragged */
+.scene-drop-hint {
+    display: none;
+    margin: 2px 0 2px 32px;
+    padding: 3px 8px;
+    border: 1px dashed var(--saa-accent, #7fb0f5);
+    border-radius: 6px;
+    color: var(--saa-accent, #7fb0f5);
+    font-size: 11px;
+    background: rgba(127, 176, 245, 0.07);
+}
+
+.prompt-scene.is-row-dragging .scene-drop-hint {
+    display: block;
+}
+
+.scene-side {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 0 4px 8px;
+    border-left: 3px solid var(--saa-stripe-positive, #7fd0a0);
+    border-radius: 0 6px 6px 0;
+}
+
+.scene-side.is-right {
+    border-left-color: var(--saa-warn, #e0a458);
+}
+
+.scene-side-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+}
+
+.scene-side-name {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--saa-stripe-positive, #7fd0a0);
+}
+
+.scene-side.is-right .scene-side-name {
+    color: var(--saa-warn, #e0a458);
+}
+
+/* the region's character, chosen in the Characters card's side column */
+.scene-side-character {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+.scene-side-character.is-empty {
+    font-style: italic;
+}
+
+.scene-side-head .scene-add {
+    margin-left: auto;
+    padding: 0;
+}
+
+.scene-side-head .scene-add-button {
+    height: 20px;
+    padding: 0 8px;
+    font-size: 10.5px;
+}
+
+.scene-side-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Diffusion (Anima): Regional, Refiner and ControlNet belong to the checkpoint route
+   (Fast mode has a Diffusion set of its own: scripts/shared/fastMode.js) */
+.cast-mode .regional-condition-trigger-dummy,
+.cast-mode .scene-regional,
+.cast-mode .pipeline-card .refiner-container,
+.cast-mode .pipeline-card .controlnet-container {
+    display: none;
+}
+
+/* "@alias" buttons over an Action field */
+.prompt-action-cast {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 2px 0 4px;
+}
+
+.prompt-action-cast-chip {
+    height: 20px;
+    padding: 0 8px;
+    border: 1px solid var(--saa-accent, #7fb0f5);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--saa-accent, #7fb0f5);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.prompt-action-cast-chip:hover {
+    background: var(--saa-bg-selected, rgba(127, 176, 245, 0.15));
+}
+
+/* Prose card (Diffusion only) */
+.prose-card .ui-card-head .system-settings-ai-prose [class^="myCheckbox-"][class*="-span"] {
+    display: none;
+}
+
+.prose-card.is-off .prose-card-body {
+    display: none;
+}
+
+.prose-scope-label {
+    font-size: 11px;
+    color: var(--saa-muted, #969ca8);
+    margin-right: 4px;
+}
+
+.prose-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 7px 8px;
+}
+
+.prose-preview {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 72px;
+    padding: 6px 8px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 6px;
+    background: var(--saa-bg-control, #16181d);
+    color: var(--saa-text, #e4e6ea);
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.prose-preview:disabled {
+    opacity: 0.6;
+}
+
+.prose-card-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.prose-card-note {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 11px;
+    color: var(--saa-muted, #969ca8);
+}
+
+.prose-button,
+.run-mini-button {
+    height: 24px;
+    padding: 0 10px;
+    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border-radius: 5px;
+    background: var(--saa-bg-control, #16181d);
+    color: var(--saa-text, #e4e6ea);
+    font: inherit;
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.prose-button:disabled,
+.run-mini-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.run-mini-button {
+    height: 26px;
+    margin-left: 4px;
 }
 
 .selection-modal {
@@ -1189,3 +2176,164 @@ html, body {
 .pod-llm-model { flex: 1 1 260px; min-width: 200px; }
 .pod-llm-keep { width: 110px; flex: none; margin-left: auto; }
 .pod-llm-proxy { margin-bottom: 8px; }
+
+/* ---------------------------------------------------------------- Artist card
+   The Artist card (Diffusion only) reuses the character slot shapes; only the "@"
+   colouring, the picker's profile panel and its two-column dialog live here. */
+.artist-selection-grid {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.artist-selection-controls {
+    grid-template-columns: minmax(0, 1fr) 52px;
+}
+
+.artist-selection-trigger.is-empty {
+    color: var(--saa-placeholder, #77777f);
+}
+
+
+.artist-selection-body {
+    display: flex;
+    gap: 10px;
+    min-height: 0;
+    flex: 1 1 auto;
+    padding: 0 12px 10px;
+}
+
+.artist-selection-body .selection-modal-list {
+    flex: 1 1 auto;
+    margin: 0;
+}
+/* the picker: list on the left, the highlighted artist's profile on the right */
+.artist-selection-dialog .selection-modal-list {
+    min-width: 0;
+}
+
+.artist-selection-dialog .selection-modal-option-category {
+    flex: none;
+    padding: 0 6px;
+    border: 1px solid var(--saa-border-ctl, #4a4a52);
+    border-radius: 8px;
+    font-size: 0.68em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.artist-profile-panel {
+    flex: 0 0 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 10px;
+    border: 1px solid var(--saa-border-ctl, #4a4a52);
+    border-radius: 5px;
+    overflow-y: auto;
+}
+
+.artist-profile-panel[hidden] {
+    display: none;
+}
+
+.artist-profile-head {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.artist-profile-title {
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+.artist-profile-posts {
+    margin-left: auto;
+    font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+    font-size: 0.72em;
+    opacity: 0.6;
+}
+
+.artist-profile-section {
+    font-size: 0.64em;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.65;
+}
+
+.artist-profile-section[hidden] {
+    display: none;
+}
+
+.artist-profile-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.artist-profile-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 21px;
+    padding: 0 8px;
+    border: 1px solid var(--saa-border-ctl, #4a4a52);
+    border-radius: 11px;
+    font-size: 0.76em;
+}
+
+.artist-profile-tag mark {
+    background: none;
+    color: inherit;
+    font-weight: 700;
+}
+
+.artist-profile-percent {
+    font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+    font-size: 0.66em;
+    opacity: 0.6;
+}
+
+.artist-profile-series {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.artist-profile-series-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78em;
+}
+
+.artist-profile-series-name {
+    flex: none;
+    width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.artist-profile-bar {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--saa-bar-track, #2c2c32);
+}
+
+.artist-profile-bar i {
+    display: block;
+    height: 100%;
+}
+
+.artist-profile-empty {
+    font-size: 0.74em;
+    opacity: 0.55;
+}
+
+.artist-profile-empty[hidden] {
+    display: none;
+}

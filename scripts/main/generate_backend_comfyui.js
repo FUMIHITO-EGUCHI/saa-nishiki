@@ -12,7 +12,10 @@ import { backendAuthHeaders, httpApiUrl, wsApiUrl } from '../shared/backendAddre
 import { buildParametersText, embedPngParameters, findDiskWriterNodes, toWebsocketOutputWorkflow } from '../shared/podWorkflow.js';
 import { interruptPodWorkflow, isPodSshEnabled, runPodWorkflow } from './podSshTransport.js';
 import { getGlobalSettings } from './globalSettings.js';
-import { applyFastMode } from '../shared/fastMode.js';
+import { applyFastMode, isDiffusionGeneration, missingFastLora } from '../shared/fastMode.js';
+import { ensureComfyLaunchArgs } from './comfyProcess.js';
+import { getLoRAList, getLoRAListSource } from './modelList.js';
+import { remoteModelSource } from './remoteModelList.js';
 import { resolveUnionControlType } from '../shared/controlNetUnion.js';
 
 const CAT = '[ComfyUI]';
@@ -1556,6 +1559,9 @@ class ComfyUI {
     // Regional Condition Mask
     // Set Mask Ratio
     workflow["47"].inputs.Layout = regional.ratio;
+    // Colum_first true cuts the layout into columns (left / right), false into rows
+    // (top / bottom); the first region stays the "left" prompt either way
+    workflow["47"].inputs.Colum_first = regional.split !== 'top-bottom';
     // Set Left Mask Strength and Area
     workflow["50"].inputs.strength = regional.str_left;
     workflow["50"].inputs.set_cond_area = regional.option_left;
@@ -1735,6 +1741,9 @@ class ComfyUI {
     // Regional Condition Mask
     // Set Mask Ratio
     workflow["47"].inputs.Layout = regional.ratio;
+    // Colum_first true cuts the layout into columns (left / right), false into rows
+    // (top / bottom); the first region stays the "left" prompt either way
+    workflow["47"].inputs.Colum_first = regional.split !== 'top-bottom';
     // Set Left Mask Strength and Area
     workflow["50"].inputs.strength = regional.str_left;
     workflow["50"].inputs.set_cond_area = regional.option_left;
@@ -2542,6 +2551,7 @@ async function setupGenerateBackendComfyUI() {
   backendComfyUI = new ComfyUI(crypto.randomUUID());
 
   ipcMain.handle('generate-backend-comfyui-run', async (event, generateData) => {
+      // from the SAA window itself: this is the run that may restart ComfyUI for its flags
       return await runComfyUI(generateData);
   });
 
@@ -2570,9 +2580,9 @@ async function setupGenerateBackendComfyUI() {
   });
 }
 
-async function runComfyUI(generateData) {
+async function runComfyUI(generateData, { remote = false } = {}) {
   try {
-    return await runComfyUI_unguarded(generateData);
+    return await runComfyUI_unguarded(generateData, remote);
   } catch (error) {
     console.error(CAT, 'runComfyUI failed:', error);
     await setMutexBackendBusy(false);
@@ -2580,7 +2590,40 @@ async function runComfyUI(generateData) {
   }
 }
 
-async function runComfyUI_unguarded(generateData) {
+// Before a generation: the fast-mode LoRA has to exist on the backend (the text LoRA
+// loader skips a missing file silently, leaving a low-step run without its weights),
+// and a local ComfyUI has to run with the launch flags this run's fast set wants
+// (comfyProcess.js restarts it when they differ). Returns an error string that ends
+// the run — with the backend mutex released — or '' to go on.
+async function prepareFastModeRun(generateData, settings, remote) {
+  // the list only counts when it describes the backend this run goes to (the pod's own
+  // list is fetched on demand; until then SAA holds the local scan)
+  const listMatchesBackend = getLoRAListSource() === (remoteModelSource(settings) ?? 'local');
+  const missing = listMatchesBackend ? missingFastLora(generateData, settings, getLoRAList('ComfyUI')) : '';
+  if (missing) {
+    setMutexBackendBusy(false);
+    return `Error: Fast mode LoRA "${missing}" is not in ComfyUI's LoRA list. Put it under models/loras and refresh the model lists, or pick another in Settings > Backend > Fast generation.`;
+  }
+  if (backendComfyUI.podEnabled()) return '';
+  const uuid = generateData.uuid;
+  const launch = await ensureComfyLaunchArgs(settings, {
+    diffusion: isDiffusionGeneration(generateData),
+    remote,   // only a run from the SAA window itself restarts the local ComfyUI
+    onStatus: status => sendToRenderer(uuid, 'updateStatus', status),
+    isCancelled: () => cancelMark,
+  });
+  if (!launch.ok) {
+    setMutexBackendBusy(false);
+    return launch.cancelled ? 'Error: Cancelled' : `Error: ${launch.message}`;
+  }
+  if (cancelMark) {
+    setMutexBackendBusy(false);
+    return 'Error: Cancelled';
+  }
+  return '';
+}
+
+async function runComfyUI_unguarded(generateData, remote = false) {
   const isBusy = await getMutexBackendBusy();
   if (isBusy) {
     console.warn(CAT, 'ComfyUI is busy, cannot run new generation, please try again later.');
@@ -2589,6 +2632,8 @@ async function runComfyUI_unguarded(generateData) {
   setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
 
+  const prepareError = await prepareFastModeRun(generateData, getGlobalSettings(), remote);
+  if (prepareError) return prepareError;
   generateData = applyFastMode(generateData, getGlobalSettings());
   let workflow;
   if (generateData.unet?.enable){
@@ -2606,9 +2651,9 @@ async function runComfyUI_unguarded(generateData) {
   return result;
 }
 
-async function runComfyUI_Regional(generateData) {
+async function runComfyUI_Regional(generateData, { remote = false } = {}) {
   try {
-    return await runComfyUI_Regional_unguarded(generateData);
+    return await runComfyUI_Regional_unguarded(generateData, remote);
   } catch (error) {
     console.error(CAT, 'runComfyUI_Regional failed:', error);
     await setMutexBackendBusy(false);
@@ -2616,7 +2661,7 @@ async function runComfyUI_Regional(generateData) {
   }
 }
 
-async function runComfyUI_Regional_unguarded(generateData) {
+async function runComfyUI_Regional_unguarded(generateData, remote = false) {
   const isBusy = await getMutexBackendBusy();
   if (isBusy) {
     console.warn(CAT, 'ComfyUI API is busy, cannot run new generation, please try again later.');
@@ -2625,6 +2670,8 @@ async function runComfyUI_Regional_unguarded(generateData) {
   setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
 
+  const prepareError = await prepareFastModeRun(generateData, getGlobalSettings(), remote);
+  if (prepareError) return prepareError;
   generateData = applyFastMode(generateData, getGlobalSettings());
   let workflow;
   if (generateData.unet?.enable) {
@@ -2746,6 +2793,9 @@ async function python_runComfyUI(generateData, isRegional=false, skeletonKey=fal
     generateData.vae = { vae_override: false, vae: 'None' };
   }
 
+  // a run that came in over the websocket (a Python tool): it never restarts the local ComfyUI
+  const prepareError = await prepareFastModeRun(generateData, getGlobalSettings(), true);
+  if (prepareError) return prepareError;
   generateData = applyFastMode(generateData, getGlobalSettings());
   const workflow = isRegional ? backendComfyUI.createWorkflowRegional(generateData) : backendComfyUI.createWorkflow(generateData);
   backendComfyUI.timeout = TIMEOUT; // Reset timeout to TIMEOUT(5s) for normal workflow    

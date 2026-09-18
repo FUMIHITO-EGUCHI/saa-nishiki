@@ -175,7 +175,19 @@ function getSecureRandomInt(max) {
     return array[0] % max;
 }
 
-export function processRandomString(input) {
+// The option a "{a|b}" takes: the one this image already took when `materials` is
+// replaying it (scripts/renderer/tools/promptMaterials.js), else a fresh draw, recorded.
+function takeOption(options, braceContent, materials) {
+    const taken = materials?.pick?.(braceContent);
+    if (typeof taken === 'string') return taken;
+    const drawn = options[getSecureRandomInt(options.length)];
+    materials?.remember?.(braceContent, drawn);
+    return drawn;
+}
+
+// `materials` (optional) records the draws so the same material can be resolved again
+// with the same answers; without it every call draws on its own, as it always did.
+export function processRandomString(input, materials = null) {
     // Check if input contains braces
     if (!String(input).includes('{')) {
         return input;
@@ -217,11 +229,10 @@ export function processRandomString(input) {
 
         // Split options by top-level |
         const options = splitByTopLevelPipe(braceContent);
-        
-        // Randomly select one option securely
-        const randomIndex = getSecureRandomInt(options.length);
-        const selected = options[randomIndex].trim();
-        
+
+        // Randomly select one option securely (or take the one this image already took)
+        const selected = takeOption(options, braceContent, materials).trim();
+
         // Replace brace content with selected option
         result = result.substring(0, start) + selected + result.substring(end + 1);
     }

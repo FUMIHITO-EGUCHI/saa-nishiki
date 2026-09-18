@@ -1,0 +1,39 @@
+// Negative prompts are assembled from ordered units, exactly like the positive chain:
+// the built-in Negative field, the custom negative fields, and - while Regional
+// Condition is on - the per-side Negative (left / right). Each side's character
+// negatives come last. Generation and AI Refine's recomposition both go through here
+// so the same units always produce the same text.
+
+// a unit's own leading / trailing commas are dropped, so "worst quality, " never joins
+// into "worst quality,, extra arms"
+const clean = value => String(value ?? '').replace(/^[\s,]+|[\s,]+$/g, '');
+
+export function joinNegativeParts(parts) {
+    return parts.map(clean).filter(Boolean).join(', ').trim();
+}
+
+function unitTexts(chain, texts) {
+    return (Array.isArray(chain) ? chain : []).map(id => clean(texts?.[id])).filter(Boolean);
+}
+
+export function composeNegativeChain({ chain = [], texts = {}, characterNegative = '', extra = '' } = {}) {
+    return joinNegativeParts([...unitTexts(chain, texts), characterNegative, extra]);
+}
+
+// `extra` is what generation adds without storing: today the signature guard that keeps
+// an Anima artist from signing the picture (scripts/shared/artistSlots.js).
+
+// A "both" unit is written into the left and the right prompt, so a side unit repeating
+// it is dropped from that side. `merged` is the single negative for backends without
+// regional negatives (Forge Neo).
+export function composeRegionalNegatives({ chains = {}, texts = {}, characterLeft = '', characterRight = '' } = {}) {
+    const both = unitTexts(chains.both, texts);
+    const sideOnly = side => unitTexts(chains[side], texts).filter(part => !both.includes(part));
+    const left = sideOnly('left');
+    const right = sideOnly('right');
+    return {
+        left: joinNegativeParts([...both, ...left, characterLeft]),
+        right: joinNegativeParts([...both, ...right, characterRight]),
+        merged: joinNegativeParts([...both, ...left, ...right, characterLeft, characterRight]),
+    };
+}

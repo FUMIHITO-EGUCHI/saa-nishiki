@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import zlib from 'node:zlib';
 
 import {
     buildParametersText,
@@ -74,15 +75,17 @@ test('parameters text follows chained text links (combiner and tagger workflows)
     assert.match(text, /\nNegative prompt: bad quality\n/);
 });
 
-test('embedPngParameters inserts a tEXt chunk after IHDR and leaves non-PNGs alone', () => {
-    // minimal fake PNG: signature + IHDR(13 bytes payload) + IEND-ish tail
+// minimal fake PNG: signature + IHDR(13 bytes payload) + IEND-ish tail
+function fakePng() {
     const signature = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
     const ihdr = Buffer.alloc(12 + 13);
     ihdr.writeUInt32BE(13, 0);
     ihdr.write('IHDR', 4, 'latin1');
-    const tail = Buffer.from('rest');
-    const png = Buffer.concat([signature, ihdr, tail]);
+    return Buffer.concat([signature, ihdr, Buffer.from('rest')]);
+}
 
+test('embedPngParameters inserts a tEXt chunk after IHDR and leaves non-PNGs alone', () => {
+    const png = fakePng();
     const embedded = embedPngParameters(png, 'params here');
     assert.equal(embedded.subarray(0, 33).equals(png.subarray(0, 33)), true);
     assert.equal(embedded.subarray(33 + 8, 33 + 8 + 11).toString('latin1'), 'parameters\0');
@@ -91,6 +94,69 @@ test('embedPngParameters inserts a tEXt chunk after IHDR and leaves non-PNGs alo
     const notPng = Buffer.from('JPEG data here, long enough to pass the length check....');
     assert.equal(embedPngParameters(notPng, 'x'), notPng);
     assert.equal(embedPngParameters(png, ''), png);
+});
+
+test('the tEXt chunk is checksummed the way PNG readers expect, so the parameters survive', () => {
+    // a wrong CRC makes viewers drop the chunk: the image would come back without its prompt
+    const text = 'masterpiece, 1girl\nNegative prompt: bad quality\nSteps: 30, Seed: 1234';
+    const embedded = embedPngParameters(fakePng(), text);
+    const length = embedded.readUInt32BE(33);
+    const chunk = embedded.subarray(33, 33 + 12 + length);
+    assert.equal(chunk.subarray(4, 8).toString('latin1'), 'tEXt');
+    assert.equal(chunk.subarray(8, 8 + length).toString('utf8'), `parameters\0${text}`);
+    // zlib computes the same CRC-32 PNG uses; that it does is anchored by IEND's known checksum
+    assert.equal(zlib.crc32(Buffer.from('IEND', 'latin1')), 0xAE42_6082);
+    assert.equal(chunk.readUInt32BE(8 + length), zlib.crc32(chunk.subarray(4, 8 + length)));
+    // a longer text takes another path through the table: check that one too
+    const long = embedPngParameters(fakePng(), 'x'.repeat(5000));
+    const longLength = long.readUInt32BE(33);
+    assert.equal(long.readUInt32BE(33 + 8 + longLength), zlib.crc32(long.subarray(37, 41 + longLength)));
+});
+
+// One saver whose positive walks `links`; the negative is the plain string ''.
+function saverWith(links, nodes = {}) {
+    return {
+        ...nodes,
+        '14': { inputs: { steps: 20, positive: links, negative: '' }, class_type: 'ImageSaverMira' },
+    };
+}
+
+test('a text combiner joins both inputs, and one input on its own still resolves', () => {
+    const nodes = {
+        '9': { inputs: { text: 'masterpiece, scenery' }, class_type: 'TextBoxMira' },
+        '10': { inputs: { text: 'golden hour' }, class_type: 'TextBoxMira' },
+    };
+    const combined = inputs => buildParametersText(saverWith(['6', 0], { ...nodes, '6': { inputs, class_type: 'TextCombinerTwo' } }));
+    assert.match(combined({ text1: ['9', 0], text2: ['10', 0] }), /^masterpiece, scenery\ngolden hour\nNegative prompt: \n/);
+    assert.match(combined({ text1: ['9', 0] }), /^masterpiece, scenery\nNegative prompt: /, 'text2 unwired');
+    assert.match(combined({ text2: ['10', 0] }), /^golden hour\nNegative prompt: /, 'text1 unwired');
+    assert.match(combined({ text1: ['9', 0], text2: ['5', 0] }), /^masterpiece, scenery\nNegative prompt: /, 'a runtime-only producer contributes nothing');
+});
+
+test('a link into nothing, and one that goes in a circle, end the walk instead of the run', () => {
+    // a node the workflow no longer has, and one that carries no text input at all
+    const broken = saverWith(['99', 0], { '15': { inputs: {}, class_type: 'TextBoxMira' } });
+    broken['14'].inputs.negative = ['15', 0];
+    assert.equal(buildParametersText(broken), '\nNegative prompt: \nSteps: 20, Sampler: , Scheduler: , CFG scale: , Seed: , Model: ');
+
+    // two text nodes pointing at each other
+    const circle = saverWith(['20', 0], {
+        '20': { inputs: { text: ['21', 0] }, class_type: 'TextBoxMira' },
+        '21': { inputs: { text: ['20', 0] }, class_type: 'TextBoxMira' },
+    });
+    assert.equal(buildParametersText(circle).split('\n')[0], '');
+});
+
+test('the text walk follows nine links and stops there', () => {
+    const chainOf = length => {
+        const nodes = {};
+        for (let step = 1; step <= length; step++) {
+            nodes[`t${step}`] = { inputs: { text: step === length ? 'deep enough' : [`t${step + 1}`, 0] }, class_type: 'TextBoxMira' };
+        }
+        return saverWith(['t1', 0], nodes);
+    };
+    assert.match(buildParametersText(chainOf(9)), /^deep enough\n/);
+    assert.equal(buildParametersText(chainOf(10)).split('\n')[0], '', 'one link further and nothing comes back');
 });
 
 test('frame parser extracts sentinel-framed JSON and ignores PTY noise', () => {

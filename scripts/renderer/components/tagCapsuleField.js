@@ -3,6 +3,7 @@
 // derived view and variable plans live in a per-field sidecar (id → plan).
 import {
     DEFAULT_BATCH,
+    assignCapsuleIds,
     capsuleStats,
     collectPlans,
     excludedTagSet,
@@ -10,6 +11,7 @@ import {
     handleChipKey,
     insertCapsules,
     isVariablePlan,
+    migratePlanIds,
     moveCapsule,
     normalizeBatch,
     normalizeTagName,
@@ -25,7 +27,9 @@ import {
     setCapsulePlan,
     toggleCapsuleDisabled,
     transferCapsule,
-    moveCapsules,
+    moveCapsuleBlock,
+    insertionIndexFromRects,
+    reorderIndex,
     removeCapsules,
     setCapsulesDisabled,
     transferCapsules,
@@ -36,24 +40,33 @@ import { getWeightPopover } from './weightPopover.js';
 import { getBatchWeightDialog } from './batchWeightDialog.js';
 import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
 import { tagText } from './tagUiText.js';
+import { TAG_DICTIONARY_EVENT, tagStatus } from './tagDictionaryStatus.js';
 import { customFieldExtras, isCustomFieldId, normalizeCustomFields, normalizeOrder, setCustomFieldExtras } from '../../shared/promptFieldOrder.js';
 import { sideOrder } from '../../shared/regionalSides.js';
+import { castEnabled, isDiffusionFieldId } from '../../shared/castMembers.js';
 
 // Unit ids of each prompt in generation order (scripts/shared/regionalSides.js), so
 // the Final prompt preview and the batch dialogs mirror what generate.js assembles.
 // Regional: the left / right positive chains and one merged negative (shared, left,
 // right); otherwise the single chains and no right prompt.
 export function chainFromSettings(stored = {}) {
-    const customs = normalizeCustomFields(stored?.prompt_custom_fields);
+    // the "@alias" cast rows and the Action row join the chain for the Diffusion model type only
+    const customs = normalizeCustomFields(stored?.prompt_custom_fields)
+        .filter(field => castEnabled(stored) || !isDiffusionFieldId(field.id));
     const positive = normalizeOrder(stored?.prompt_positive_order, 'positive', customs);
     const negative = normalizeOrder(stored?.prompt_negative_order, 'negative', customs);
     if (!stored?.regional_condition) return { positive, positiveRight: null, negative };
-    const negativeLeft = sideOrder(negative, 'left', customs);
-    const negativeRight = sideOrder(negative, 'right', customs).filter(id => !negativeLeft.includes(id));
+    // the merged negative in the order generation writes it (negativeComposition.js
+    // composeRegionalNegatives): the shared units first, then the left ones, then the right ones
+    const negativeBoth = sideOrder(negative, 'both', customs);
+    const negativeLeft = sideOrder(negative, 'left', customs).filter(id => !negativeBoth.includes(id));
+    const negativeRight = sideOrder(negative, 'right', customs).filter(id => !negativeBoth.includes(id));
     return {
         positive: sideOrder(positive, 'left', customs),
         positiveRight: sideOrder(positive, 'right', customs),
-        negative: [...negativeLeft, ...negativeRight],
+        negative: [...negativeBoth, ...negativeLeft, ...negativeRight],
+        // generation writes a shared unit once: a side unit repeating its text is dropped
+        negativeShared: negativeBoth,
     };
 }
 
@@ -70,7 +83,8 @@ function setTextboxValue(textboxControl, textbox, value, guard) {
     guard(true);
     try {
         textboxControl.setValue(value);
-        textbox.dispatchEvent(new Event('input', { bubbles: true }));
+        // the chips wrote this text; tagAutoComplete.js must not answer it with suggestions
+        textbox.dispatchEvent(new CustomEvent('input', { bubbles: true, detail: { source: 'capsules' } }));
     } finally {
         guard(false);
     }
@@ -93,6 +107,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         initialMode = 'string',
         onExternalDrop = null,   // ({ field, id }, at, { copy }) — a chip dragged in from another field
         fetchRelated = null,     // async (tagValue) => { related: [{tag, score}], family: [{tag}] }
+        readStoredPlans = null,  // () => the stored plan entries of this field (settings)
     } = options;
 
     const textbox = textboxControl?.getElement?.();
@@ -120,12 +135,17 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     function selectionIds() {
         return capsules.filter(capsule => selectedIds.has(capsule.id)).map(capsule => capsule.id);
     }
+    // true while at least one chip carries `is-selected`; an empty selection over an
+    // unpainted row is a no-op, so plain renders skip the per-chip attribute writes
+    let selectionPainted = false;
     function applySelectionClasses() {
+        if (selectedIds.size === 0 && !selectionPainted) return;
         const chipNodes = chips.querySelectorAll(':scope > .tag-capsule-chip');
         chipNodes.forEach((chip, index) => {
             chip.classList.toggle('is-selected', selectedIds.has(capsules[index]?.id));
             chip.setAttribute('aria-selected', selectedIds.has(capsules[index]?.id) ? 'true' : 'false');
         });
+        selectionPainted = selectedIds.size > 0;
     }
     function setSelection(ids) {
         selectedIds.clear();
@@ -215,20 +235,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     chips.appendChild(addSlot);
     view.appendChild(chips);
 
-    // Related-tag strip: fed by the offline co-occurrence dictionary for the focused chip.
-    const suggest = el('div', 'tag-capsule-suggest');
-    suggest.hidden = true;
-    const suggestHead = el('div', 'tag-capsule-suggest-head');
-    const suggestTitle = el('span', 'tag-capsule-suggest-title');
-    const suggestClose = el('button', 'tag-capsule-suggest-close');
-    suggestClose.type = 'button';
-    suggestClose.tabIndex = -1;
-    suggestClose.appendChild(createIcon('close', 11));
-    suggestHead.append(suggestTitle, suggestClose);
-    const suggestBody = el('div', 'tag-capsule-suggest-body');
-    suggest.append(suggestHead, suggestBody);
-    view.appendChild(suggest);
-
     const footer = el('div', 'tag-capsule-footer');
     const stats = el('div', 'tag-capsule-stats');
     const statTags = el('span', 'tag-capsule-stat');
@@ -257,7 +263,10 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     // ---------------------------------------------------------------- helpers
     function fieldLabel() {
         const LANG = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language];
-        const short = LANG?.[`ui_field_${key}`];
+        // inside a Regional box the box names the side: "Positive (right)" reads "Positive"
+        const boxed = Boolean(view.closest?.('.scene-side'));
+        const labelKey = boxed && /^(positive|negative)_(left|right)$/.test(key) ? key.split('_')[0] : key;
+        const short = LANG?.[`ui_field_${labelKey}`];
         if (typeof short === 'string' && short) return short;
         return textbox.placeholder || textbox.title || key;
     }
@@ -279,8 +288,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         batchButtonText.textContent = text('tag_ui_batch_weights');
         suggestButton.title = text('tag_ui_related_toggle');
         suggestButton.setAttribute('aria-label', text('tag_ui_related_toggle'));
-        suggestClose.title = text('tag_ui_close');
-        suggestClose.setAttribute('aria-label', text('tag_ui_close'));
         chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
         renderFooter();
         renderBadge();
@@ -301,6 +308,9 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
 
     function syncFromText() {
         const parsed = parsePromptToCapsules(textbox.value);
+        // plans stored before the grouped-token parser name their chips the old way
+        const migrated = migratePlanIds(plans, textbox.value);
+        if (migrated.changed) plans = migrated.plans;
         const result = reconcilePlans(parsed, plans);
         capsules = result.capsules;
         const before = Object.keys(plans).length;
@@ -308,6 +318,8 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         if (result.discarded.length > 0) {
             discardedNotice = result.discarded.length;
             if (Object.keys(plans).length !== before) emitPlans();
+        } else if (migrated.changed) {
+            emitPlans();
         }
     }
 
@@ -324,100 +336,17 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         onChange?.(api);
     }
 
-    // ---------------------------------------------------------------- related-tag strip
-    const SUGGEST_STORAGE_KEY = 'saa.tagSuggest';
-    function suggestEnabled() {
-        try { return localStorage.getItem(SUGGEST_STORAGE_KEY) !== 'off'; } catch { return true; }
+    // ---------------------------------------------------------------- related tags
+    // Related tags live in the chip popover's Related tab (weightPopover.js). This
+    // opens it there for a chip: the footer spark button, the context menu's "Related
+    // tags…" and Ctrl+R on a chip all land here. (Earlier builds drew a panel under
+    // the field, and before that opened it on chip focus; both are gone.)
+    function openRelated(index) {
+        if (typeof fetchRelated !== 'function' || capsules.length === 0) return;
+        const at = index >= 0 && index < capsules.length ? index : 0;
+        openPopover(at, { tab: 'related' });
     }
-    function setSuggestEnabled(enabled) {
-        try { localStorage.setItem(SUGGEST_STORAGE_KEY, enabled ? 'on' : 'off'); } catch { /* storage blocked */ }
-        suggestButton.classList.toggle('is-on', enabled);
-        if (!enabled) hideSuggestions();
-    }
-    let suggestFor = '';
-    let suggestToken = 0;
-    let suggestTimer = 0;
-
-    function hideSuggestions() {
-        suggestFor = '';
-        suggestToken += 1;
-        suggest.hidden = true;
-        suggestBody.replaceChildren();
-    }
-
-    function displayTag(tag) {
-        return String(tag ?? '').replaceAll('_', ' ');
-    }
-
-    function renderSuggestions(capsule, result) {
-        const present = new Set(capsules.map(item => normalizeTagName(item.value)));
-        const groups = [
-            { label: text('tag_ui_related_cooccur'), items: result?.related ?? [] },
-            { label: text('tag_ui_related_family', displayTag(result?.familyWord ?? '')), items: result?.family ?? [] },
-        ];
-        suggestTitle.textContent = text('tag_ui_related_title', capsule.value);
-        suggestBody.replaceChildren();
-        let shown = 0;
-        for (const group of groups) {
-            const items = group.items.filter(item => !present.has(normalizeTagName(displayTag(item.tag))));
-            if (items.length === 0) continue;
-            const row = el('div', 'tag-capsule-suggest-row');
-            row.appendChild(el('span', 'tag-capsule-suggest-label', group.label));
-            for (const item of items) {
-                const button = el('button', 'tag-capsule-suggest-chip', displayTag(item.tag));
-                button.type = 'button';
-                button.tabIndex = -1;
-                button.dataset.tag = displayTag(item.tag);
-                if (Number.isFinite(item.score)) button.title = `${displayTag(item.tag)} · ${item.score}`;
-                row.appendChild(button);
-                shown += 1;
-            }
-            suggestBody.appendChild(row);
-        }
-        if (shown === 0) suggestBody.appendChild(el('span', 'tag-capsule-suggest-empty', text('tag_ui_related_none')));
-        suggest.hidden = false;
-    }
-
-    async function showSuggestions(index, { force = false } = {}) {
-        if (typeof fetchRelated !== 'function') return;
-        if (!force && !suggestEnabled()) return;
-        const capsule = capsules[index];
-        if (!capsule) return;
-        if (suggestFor === capsule.value && !suggest.hidden) return;
-        suggestFor = capsule.value;
-        const token = ++suggestToken;
-        suggestTitle.textContent = text('tag_ui_related_title', capsule.value);
-        suggestBody.replaceChildren(el('span', 'tag-capsule-suggest-empty', text('tag_ui_related_loading')));
-        suggest.hidden = false;
-        let result = null;
-        try { result = await fetchRelated(capsule.value); } catch (error) { console.warn('[tagCapsuleField] related tags failed:', error); }
-        if (token !== suggestToken) return;
-        renderSuggestions(capsule, result);
-    }
-
-    function scheduleSuggestions(index) {
-        clearTimeout(suggestTimer);
-        suggestTimer = setTimeout(() => { showSuggestions(index); }, 160);
-    }
-
-    suggestBody.addEventListener('click', event => {
-        const button = event.target.closest('.tag-capsule-suggest-chip');
-        if (!button) return;
-        const sourceIndex = capsules.findIndex(item => item.value === suggestFor);
-        const at = sourceIndex >= 0 ? sourceIndex + 1 : capsules.length;
-        const next = insertCapsules(capsules, [button.dataset.tag], at);
-        if (next === capsules) return;
-        commitCapsules(next);
-        button.remove();
-        focusChip(at);
-    });
-    suggestClose.addEventListener('click', () => hideSuggestions());
-    suggestButton.addEventListener('click', () => {
-        const enabled = !suggestEnabled();
-        setSuggestEnabled(enabled);
-        if (enabled && focusIndex < capsules.length) showSuggestions(focusIndex, { force: true });
-    });
-    suggestButton.classList.toggle('is-on', suggestEnabled());
+    suggestButton.addEventListener('click', () => openRelated(focusIndex < capsules.length ? focusIndex : 0));
 
     function renderBadge() {
         const { variable } = capsuleStats(capsules);
@@ -438,12 +367,28 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         notice.hidden = discardedNotice === 0;
     }
 
+    // renderChips keeps the chips as the leading children of the row (the add slot is
+    // always last), so the chip at a capsule index is a direct child lookup
+    function chipAt(index) {
+        const node = index >= 0 && index < capsules.length ? chips.children[index] : null;
+        return node?.classList.contains('tag-capsule-chip') ? node : null;
+    }
+
+    // Roving tabindex: every chip is created with tabIndex -1, so only the previously
+    // focused chip and the new one need a write (not the whole row on each focus move).
+    let rovingChip = null;
     function updateRoving() {
-        const chipNodes = chips.querySelectorAll(':scope > .tag-capsule-chip');
         focusIndex = Math.max(0, Math.min(capsules.length, focusIndex));
-        chipNodes.forEach((chip, index) => { chip.tabIndex = index === focusIndex ? 0 : -1; });
+        const chip = chipAt(focusIndex);
+        if (rovingChip && rovingChip !== chip) rovingChip.tabIndex = -1;
+        if (chip) chip.tabIndex = 0;
+        rovingChip = chip;
         addButton.tabIndex = focusIndex === capsules.length ? 0 : -1;
     }
+
+    // dictionary answers arrive after the first paint; the chips are re-marked then
+    const onDictionaryEvent = () => { if (mode === 'capsule') render(); };
+    document.addEventListener(TAG_DICTIONARY_EVENT, onDictionaryEvent);
 
     function render() {
         if (mode === 'capsule') {
@@ -452,6 +397,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
                 excludedSet: excludedTagSet(getExcludeText()),
                 trailing: addSlot,
                 isFavorite: value => isFavoriteTag(favGroupForKey(key), value),
+                tagStatus,
             });
             chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
             updateRoving();
@@ -460,15 +406,13 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         }
         renderFooter();
         renderBadge();
-        // the strip follows a chip; once that chip is gone the strip goes too
-        if (suggestFor && !capsules.some(item => item.value === suggestFor)) hideSuggestions();
     }
 
     function focusChip(index, { fallbackToAdd = true } = {}) {
         focusIndex = Math.max(0, Math.min(capsules.length, index));
         updateRoving();
         if (focusIndex < capsules.length) {
-            chips.querySelectorAll(':scope > .tag-capsule-chip')[focusIndex]?.focus();
+            chipAt(focusIndex)?.focus();
         } else if (fallbackToAdd) {
             addButton.focus();
         }
@@ -497,8 +441,8 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             if (focus) focusChip(0);
         } else {
             getWeightPopover().close();
-            hideSuggestions();
-            writeCurrentText();
+            // every chip edit already wrote the text (commitCapsules); rewriting it here
+            // would re-join untouched text (line breaks, "1.125", "(tag:1.0)") on a mere toggle
             mode = 'string';
             relativeContainer.hidden = false;
             view.hidden = true;
@@ -528,21 +472,39 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     function chipIndexOf(target) {
         const chip = target?.closest?.('.tag-capsule-chip');
         if (!chip) return -1;
-        return [...chips.querySelectorAll(':scope > .tag-capsule-chip')].indexOf(chip);
+        // each chip carries its capsule id (tagCapsuleChip.js updateChip); no DOM query needed
+        const id = chip.dataset.capsuleId;
+        return id ? capsules.findIndex(capsule => capsule.id === id) : -1;
     }
 
-    function openPopover(index) {
+    function openPopover(index, { tab = null } = {}) {
         const capsule = capsules[index];
-        const anchor = chips.querySelectorAll(':scope > .tag-capsule-chip')[index];
+        const anchor = chipAt(index);
         if (!capsule || !anchor) return;
         getWeightPopover().open({
             anchor,
             capsule,
             generationSeed: Math.max(0, getGenerationSeed()),
             fallbackFocus: capsuleButton,
+            tab,
             onApply: plan => {
                 commitCapsules(setCapsulePlan(capsules, capsule.id, plan));
                 focusChip(index);
+            },
+            // Related tab: the dictionary's neighbours of this chip's tag
+            fetchRelated: typeof fetchRelated === 'function' ? fetchRelated : null,
+            presentTags: () => new Set(capsules.map(item => normalizeTagName(item.value))),
+            onPick: (tag, { replace = false } = {}) => {
+                const at = capsules.findIndex(item => item.id === capsule.id);
+                if (replace && at >= 0) {
+                    // the picked tag takes this chip's place, weight plan and all
+                    const next = assignCapsuleIds(capsules.map((item, i) => (i === at ? { ...item, value: tag } : item)));
+                    commitCapsules(next);
+                    focusChip(at);
+                    return;
+                }
+                const next = insertCapsules(capsules, [tag], at >= 0 ? at + 1 : capsules.length);
+                if (next !== capsules) commitCapsules(next);
             },
         });
     }
@@ -590,13 +552,21 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
 
     chips.addEventListener('focusin', event => {
         const index = chipIndexOf(event.target);
-        if (index >= 0) { focusIndex = index; updateRoving(); scheduleSuggestions(index); }
+        if (index >= 0) { focusIndex = index; updateRoving(); }
     });
 
     chips.addEventListener('keydown', event => {
         if (event.isComposing || event.keyCode === 229) return;
         const onAdd = event.target === addButton;
         const state = { index: onAdd ? capsules.length : focusIndex, count: capsules.length };
+        // Ctrl+R opens the chip popover on its Related tab for the focused chip; on the
+        // add slot it does nothing. Either way the key is consumed here, so it never
+        // reaches the window menu's Reload.
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'r') {
+            event.preventDefault();
+            if (!onAdd) openRelated(focusIndex);
+            return;
+        }
         // selection keys first: Ctrl+A selects every chip, Escape drops the selection,
         // Delete on a selected chip removes the whole selection
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a' && !onAdd) {
@@ -675,48 +645,80 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             for (const chip of chips.querySelectorAll(':scope > .tag-capsule-chip.is-selected')) chip.classList.add('is-dragging');
         }
     });
-    chips.addEventListener('dragend', () => {
+    // Where a pointer over the wrapped chip row would insert: every chip on a row
+    // above the pointer counts, plus the chips on its row whose centre is left of it.
+    // Blank row space and the add slot resolve to the end.
+    function insertionIndexAt(x, y) {
+        const rects = [...chips.querySelectorAll(':scope > .tag-capsule-chip')].map(chip => chip.getBoundingClientRect());
+        return insertionIndexFromRects(rects, x, y);
+    }
+    // A thin bar at the insertion point while something is dragged over the row.
+    let dropMarker = null;
+    function showDropMarker(index) {
+        dropMarker ??= Object.assign(document.createElement('span'), { className: 'tag-capsule-drop-marker' });
+        const all = chips.querySelectorAll(':scope > .tag-capsule-chip');
+        const anchor = all[index] ?? all[all.length - 1]?.nextElementSibling ?? null;
+        if (dropMarker.nextElementSibling !== anchor || dropMarker.parentElement !== chips) chips.insertBefore(dropMarker, anchor);
+    }
+    function hideDropMarker() {
+        dropMarker?.remove();
+    }
+    // One undo step per drop (the context menu's Move-to does the same).
+    const dropTransaction = mutate => {
+        if (globalThis.settingsPersistence?.runEditTransaction) return globalThis.settingsPersistence.runEditTransaction({ source: 'capsule-drag', sections: ['prompt'] }, mutate);
+        return mutate();
+    };
+    function endDrag() {
         for (const chip of chips.querySelectorAll(':scope > .tag-capsule-chip.is-dragging')) chip.classList.remove('is-dragging');
         dragIndex = -1;
-    });
+        hideDropMarker();
+    }
+    chips.addEventListener('dragend', endDrag);
+    // A drop that moves the dragged chip into another field re-renders this row before
+    // `dragend` fires, so that event lands on a detached chip and never reaches the row.
+    // Any drop in the document ends this row's drag once the drop handlers have run.
+    const onDocumentDrop = () => { if (dragIndex >= 0) setTimeout(endDrag, 0); };
+    document.addEventListener('drop', onDocumentDrop, true);
     chips.addEventListener('dragover', event => {
-        if (dragIndex >= 0) {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-            return;
-        }
-        if (!isExternalDrag(event)) return;
+        const own = dragIndex >= 0;
+        if (!own && !isExternalDrag(event)) return;
         event.preventDefault();
-        event.dataTransfer.dropEffect = event.ctrlKey || event.altKey ? 'copy' : 'move';
-        chips.classList.add('is-drop-target');
+        event.dataTransfer.dropEffect = own ? 'move' : (event.ctrlKey || event.altKey ? 'copy' : 'move');
+        if (!own) chips.classList.add('is-drop-target');
+        showDropMarker(insertionIndexAt(event.clientX, event.clientY));
     });
     chips.addEventListener('dragleave', event => {
-        if (!chips.contains(event.relatedTarget)) chips.classList.remove('is-drop-target');
+        if (chips.contains(event.relatedTarget)) return;
+        chips.classList.remove('is-drop-target');
+        hideDropMarker();
     });
     chips.addEventListener('drop', event => {
         chips.classList.remove('is-drop-target');
+        const insertAt = insertionIndexAt(event.clientX, event.clientY);
+        hideDropMarker();
         if (dragIndex >= 0) {
             event.preventDefault();
-            let target = chipIndexOf(event.target);
-            const draggedId = capsules[dragIndex]?.id;
+            const from = dragIndex;
+            dragIndex = -1;
+            const draggedId = capsules[from]?.id;
             if (selectedIds.has(draggedId) && selectedIds.size > 1) {
-                // the selection moves as a block: before the chip dropped on, or to the end
-                const next = moveCapsules(capsules, selectionIds(), target < 0 ? capsules.length : target);
-                if (next !== capsules) {
-                    const keep = new Set(selectionIds().map(id => capsules.find(capsule => capsule.id === id)?.value));
-                    commitCapsules(next);
-                    setSelection(next.filter(capsule => keep.has(capsule.value)).map(capsule => capsule.id));
+                // the selection moves as a block to the insertion point (before the chip there, or the end)
+                const moved = moveCapsuleBlock(capsules, selectionIds(), insertAt);
+                if (moved.capsules !== capsules) {
+                    const next = moved.capsules;
+                    dropTransaction(() => commitCapsules(next));
+                    // the moved block by position, not by value: an unselected chip with the same name stays unselected
+                    setSelection(moved.ids);
                     focusChip(Math.max(0, next.findIndex(capsule => selectedIds.has(capsule.id))));
                 }
-                dragIndex = -1;
                 return;
             }
-            if (target < 0) target = capsules.length - 1;
-            if (target !== dragIndex) {
-                commitCapsules(moveCapsule(capsules, dragIndex, target));
-                focusChip(target);
+            // insertion index counts the dragged chip itself while it still sits before the point
+            const to = reorderIndex(from, insertAt);
+            if (to !== from) {
+                dropTransaction(() => commitCapsules(moveCapsule(capsules, from, to)));
+                focusChip(to);
             }
-            dragIndex = -1;
             return;
         }
         if (!isExternalDrag(event)) return;
@@ -724,9 +726,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         let payload = null;
         try { payload = JSON.parse(event.dataTransfer.getData(CAPSULE_MIME) || 'null'); } catch { payload = null; }
         if (!payload?.field || !payload?.id || payload.field === key) return;
-        const over = chipIndexOf(event.target);
-        const at = over < 0 ? capsules.length : over;
-        onExternalDrop?.(payload, at, { copy: event.ctrlKey || event.altKey });
+        onExternalDrop?.(payload, insertAt, { copy: event.ctrlKey || event.altKey });
     });
 
     // ---------------------------------------------------------------- toggle events
@@ -777,6 +777,11 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     });
     textbox.addEventListener('mytextbox-value-set', () => {
         if (suppressInput) return;
+        // A programmatic set (Swap, preset load, undo, model-type restore) writes the
+        // stored plans together with the text: reconcile the new text against those.
+        // The plans of the text this field held before would be discarded and written
+        // back over the stored ones.
+        if (typeof readStoredPlans === 'function') plans = parsePlans(readStoredPlans());
         syncFromText();
         render();
         onChange?.(api);
@@ -786,7 +791,20 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     titleObserver.observe(textbox, { attributes: true, attributeFilter: ['placeholder', 'title'] });
 
     // star toggles in the selection modal reflect into the chips immediately
-    document.addEventListener(FAVORITE_TAGS_CHANGED_EVENT, () => render());
+    const onFavoritesChanged = () => render();
+    document.addEventListener(FAVORITE_TAGS_CHANGED_EVENT, onFavoritesChanged);
+
+    // Field removal (custom rows): drops the document-level listeners, the title
+    // observer and any pending timer so a detached field stops rendering.
+    let disposed = false;
+    function dispose() {
+        if (disposed) return;
+        disposed = true;
+        document.removeEventListener(TAG_DICTIONARY_EVENT, onDictionaryEvent);
+        document.removeEventListener(FAVORITE_TAGS_CHANGED_EVENT, onFavoritesChanged);
+        document.removeEventListener('drop', onDocumentDrop, true);
+        titleObserver.disconnect();
+    }
 
     // ---------------------------------------------------------------- init
     textbox.dataset.tagCapsuleFieldSetup = 'true';
@@ -861,8 +879,19 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         },
         showRelated: id => {
             const index = capsules.findIndex(capsule => capsule.id === id);
-            if (index >= 0) showSuggestions(index, { force: true });
+            if (index >= 0) openRelated(index);
         },
+        // the context menu's "Edit weight…": a weight tab even when Related was used last
+        editWeight: id => {
+            const index = capsules.findIndex(capsule => capsule.id === id);
+            if (index < 0) return;
+            clearSelection();
+            focusIndex = index;
+            anchorIndex = index;
+            updateRoving();
+            openPopover(index, { tab: 'weight' });
+        },
+        dispose,
     };
     if (initialMode === 'capsule') setMode('capsule');
     return api;
@@ -891,8 +920,17 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
     const fieldList = () => [...fields.values()];
     const previewSeed = () => Math.max(0, getGenerationSeed());
 
+    // A muted field (the row's ● switch, promptFieldManager) keeps its chips but
+    // sends nothing: the preview and the batch dialogs see it empty. A row the model type
+    // hides - a cast or Action row on a checkpoint - is not in the prompt at all, so its
+    // weight plans and its batch stay out too: they turned one click into a batch of
+    // identical images.
+    const mutedKeys = new Set();
     function expansionFields() {
-        return fieldList().map(field => ({ key: field.key, capsules: field.getCapsules(), batch: field.getBatch() }));
+        const cast = castEnabled(settings());
+        return fieldList()
+            .filter(field => cast || !isDiffusionFieldId(field.key))
+            .map(field => ({ key: field.key, capsules: mutedKeys.has(field.key) ? [] : field.getCapsules(), batch: field.getBatch() }));
     }
 
     function expandRows(count, seed) {
@@ -921,6 +959,9 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
     const MODE_STORAGE_KEY = 'saa.capsuleMode';
     let sharedMode = 'string';
     try { sharedMode = localStorage.getItem(MODE_STORAGE_KEY) === 'capsule' ? 'capsule' : 'string'; } catch { /* storage blocked */ }
+    // Fields that hold a sentence (the Action) stay text when the card flips to
+    // capsules; their own toggle still works locally.
+    const sentenceKeys = new Set();
     let propagatingMode = false;
     function propagateMode(mode) {
         if (propagatingMode || mode === sharedMode) return;
@@ -928,7 +969,10 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         try { localStorage.setItem(MODE_STORAGE_KEY, mode); } catch { /* storage blocked */ }
         propagatingMode = true;
         try {
-            for (const field of fields.values()) if (field.getMode() !== mode) field.setMode(mode);
+            for (const [key, field] of fields) {
+                if (sentenceKeys.has(key) && mode === 'capsule') continue;
+                if (field.getMode() !== mode) field.setMode(mode);
+            }
         } finally {
             propagatingMode = false;
         }
@@ -954,6 +998,19 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
         if (extras.batch !== undefined) stored[`${key}_batch`] = { ...extras.batch };
     }
 
+    // The Exclude text re-marks the chips of every other field (excludedSet). Typing
+    // there fires onChange per keystroke, so the fan-out is debounced (trailing);
+    // the Final prompt refresh is not, it stays immediate.
+    const EXCLUDE_FANOUT_DELAY = 150;
+    let excludeFanOutTimer = 0;
+    function scheduleExcludeFanOut(changed) {
+        clearTimeout(excludeFanOutTimer);
+        excludeFanOutTimer = setTimeout(() => {
+            excludeFanOutTimer = 0;
+            for (const other of fields.values()) if (other !== changed) other.refresh();
+        }, EXCLUDE_FANOUT_DELAY);
+    }
+
     function addField(control, key) {
         const stored = settings();
         const extras = readStoredExtras(stored, key);
@@ -961,13 +1018,16 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
             key,
             text,
             getGenerationSeed,
-            initialMode: sharedMode,
+            initialMode: sentenceKeys.has(key) ? 'string' : sharedMode,
             onModeChange: propagateMode,
             fetchRelated,
             onExternalDrop: (payload, at, { copy }) => set.transfer(payload.field, Array.isArray(payload.ids) && payload.ids.length > 1 ? payload.ids : payload.id, key, { at, copy }),
-            getExcludeText: () => fields.get('exclude')?.textbox?.value ?? globalThis.prompt?.exclude?.getValue?.() ?? '',
+            // the Exclude row's ● switch off: nothing is excluded, so no chip is marked for it
+            getExcludeText: () => (mutedKeys.has('exclude') ? ''
+                : (fields.get('exclude')?.textbox?.value ?? globalThis.prompt?.exclude?.getValue?.() ?? '')),
             initialPlans: extras.weight_plans,
             initialBatch: extras.batch,
+            readStoredPlans: () => readStoredExtras(settings(), key).weight_plans,
             onPlansChange: plans => writeStoredExtras(key, { weight_plans: plans }),
             onBatchChange: batch => writeStoredExtras(key, { batch }),
             onSeedChange: seed => { if (Number.isFinite(seed)) setGenerationSeed(seed); },
@@ -980,9 +1040,7 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
                         : row.fields[fieldKey],
             })),
             onChange: changed => {
-                if (changed.key === 'exclude') {
-                    for (const other of fields.values()) if (other !== changed) other.refresh();
-                }
+                if (changed.key === 'exclude') scheduleExcludeFanOut(changed);
                 requestFinalPromptRefresh();
             },
         });
@@ -1015,11 +1073,32 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
             return field;
         },
         remove: key => {
-            if (!fields.delete(key)) return;
+            const field = fields.get(key);
+            if (!field) return;
+            field.dispose?.();
+            fields.delete(key);
             requestFinalPromptRefresh();
         },
         getMode: () => sharedMode,
         setMode: mode => propagateMode(mode === 'capsule' ? 'capsule' : 'string'),
+        // muted rows leave the Final prompt preview and the batch expansion
+        setMuted: (key, muted = true) => {
+            const was = mutedKeys.has(key);
+            if (muted) mutedKeys.add(key); else mutedKeys.delete(key);
+            if (was === mutedKeys.has(key)) return;
+            // the Exclude row's switch changes what every other row counts as excluded
+            if (key === 'exclude') for (const other of fields.values()) if (other.key !== 'exclude') other.refresh();
+            requestFinalPromptRefresh();
+        },
+        // marks a field as a sentence (kept as text when the card shows capsules)
+        setSentence: (key, sentence = true) => {
+            if (sentence) sentenceKeys.add(key); else sentenceKeys.delete(key);
+            const field = fields.get(key);
+            if (field && sentence && field.getMode() === 'capsule') {
+                propagatingMode = true;
+                try { field.setMode('string'); } finally { propagatingMode = false; }
+            }
+        },
         // Moves (copy: duplicates) one capsule into another field, weight plan and
         // disabled state included. Returns the inserted capsule or null.
         // `capsuleId` may be an array: the whole selection moves as one block.

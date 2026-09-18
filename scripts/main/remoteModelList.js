@@ -82,7 +82,7 @@ export async function refreshRemoteModelLists(settings, { open = false } = {}) {
         const reply = await fetchObjectInfo(settings, { open });
         if (!reply.ok) return { ok: false, source: reply.source, applied: [], counts: {}, message: reply.message };
         const lists = extractModelLists(reply.info);
-        const applied = applyRemoteModelLists(lists, settings);
+        const applied = applyRemoteModelLists(lists, settings, reply.source);
         const counts = countLists(lists);
         console.log(CAT, `${reply.source} lists applied:`, JSON.stringify(counts));
         return { ok: true, source: reply.source, applied, counts, message: '' };

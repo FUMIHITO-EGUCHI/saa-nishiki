@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applyFastMode, fastLoraTag, fastModeConfig } from '../scripts/shared/fastMode.js';
+import { applyFastMode, fastLoraTag, fastModeConfig, missingFastLora } from '../scripts/shared/fastMode.js';
 
 const FAST_SETTINGS = {
     api_fast_enable: true,
@@ -33,6 +33,55 @@ test('fast mode off returns the generateData untouched', () => {
     const data = sampleGenerateData();
     assert.equal(applyFastMode(data, { api_fast_enable: false }), data);
     assert.equal(applyFastMode(data, {}), data);
+});
+
+const DIFF_SETTINGS = {
+    api_fast_diff_lora: 'anima-turbo-lora-v0.2.safetensors',
+    api_fast_diff_lora_strength: 0.8,
+    api_fast_diff_steps: 8,
+    api_fast_diff_cfg: 1.5,
+    api_fast_diff_sampler: 'euler',
+    api_fast_diff_scheduler: 'simple',
+};
+
+test('a Diffusion (UNET) run takes the Anima Turbo set, never the SDXL LoRA', () => {
+    const unet = { ...sampleGenerateData(), unet: { enable: true, model: 'waiANIMA_v10Base10.safetensors' } };
+    const result = applyFastMode(unet, { ...FAST_SETTINGS, ...DIFF_SETTINGS, api_model_type: 'Diffusion' });
+
+    assert.equal(result.step, 8);
+    assert.equal(result.cfg, 1.5);
+    assert.equal(result.sampler, 'euler');
+    assert.equal(result.scheduler, 'simple');
+    assert.match(result.positive, /<lora:anima-turbo-lora-v0\.2\.safetensors:0\.8:0\.8>$/);
+    assert.doesNotMatch(result.positive, /dmd2/);
+    assert.deepEqual(result.hifix, { enable: true, steps: 8, cfg: 1.5, denoise: 0.4, seed: 1 });
+    assert.equal(result.adetailer[0].sampler, 'euler');
+    assert.equal(unet.step, 30, 'input must not be mutated');
+});
+
+test('the route follows the run, not the stored model type', () => {
+    // a checkpoint workflow (no unet) keeps the SDXL set even while the UI sits on Diffusion
+    const checkpoint = applyFastMode(sampleGenerateData(), { ...FAST_SETTINGS, ...DIFF_SETTINGS, api_model_type: 'Diffusion' });
+    assert.equal(checkpoint.sampler, 'lcm');
+    assert.match(checkpoint.positive, /dmd2_sdxl_4step_lora/);
+});
+
+test('Diffusion set falls back to the measured Turbo values', () => {
+    assert.deepEqual(fastModeConfig({ api_fast_enable: true }, { diffusion: true }),
+        { enabled: true, lora: '', strength: 0.8, steps: 8, cfg: 1.5, sampler: 'euler', scheduler: 'simple' });
+});
+
+test('a fast LoRA ComfyUI does not list is reported, an unknown list never blocks', () => {
+    const unet = { ...sampleGenerateData(), unet: { enable: true } };
+    const settings = { ...FAST_SETTINGS, ...DIFF_SETTINGS };
+    assert.equal(missingFastLora(unet, settings, ['None', 'dmd2_sdxl_4step_lora.safetensors']), 'anima-turbo-lora-v0.2.safetensors');
+    assert.equal(missingFastLora(unet, settings, ['None', 'anima-turbo-lora-v0.2.safetensors']), '');
+    assert.equal(missingFastLora(unet, { ...settings, api_fast_diff_lora: 'anima/turbo.safetensors' }, ['anima\\turbo.safetensors']), '', 'separators do not matter');
+    assert.equal(missingFastLora(unet, settings, ['None']), '', 'placeholder-only list is unknown');
+    assert.equal(missingFastLora(unet, settings, []), '');
+    assert.equal(missingFastLora(unet, { ...settings, api_fast_enable: false }, ['x.safetensors']), '');
+    assert.equal(missingFastLora(unet, { ...settings, api_fast_diff_lora: 'None' }, ['x.safetensors']), '');
+    assert.equal(missingFastLora(sampleGenerateData(), settings, ['dmd2_sdxl_4step_lora.safetensors']), '', 'checkpoint run checks the SDXL LoRA');
 });
 
 test('fast mode overrides sampling on the base pass and appends the LoRA tag', () => {

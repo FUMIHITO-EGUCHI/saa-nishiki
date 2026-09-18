@@ -6,7 +6,7 @@ import {
     normalizeOllamaChatResponse,
     resolveSaaOllamaModel,
 } from '../scripts/main/ollamaSaaAdapter.js';
-import { REFINE_SYSTEM_PROMPT } from '../scripts/aiPromptRefiner.js';
+import { LEGACY_V2_REFINE_SYSTEM_PROMPT, REFINE_SYSTEM_PROMPT } from '../scripts/aiPromptRefiner.js';
 
 const SMALL_MODEL = 'gemma4-12b-uncensored-comfy:latest';
 const LARGE_MODEL = 'hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M';
@@ -50,49 +50,90 @@ test('Ollama chat requests include the selected model and unload after the reque
     );
 });
 
-test('Refine v2 requests separate editor fields from rendered generation context', () => {
-    const request = buildOllamaChatRequest({
-        mode: 'Small',
-        use: 'prompt',
-        promptMode: 'Refine',
-        refineSystemPrompt: REFINE_SYSTEM_PROMPT,
-        userPrompt: '顔と目を強調する',
-        existingPositive: 'masterpiece, portrait, city background',
-        existingNegative: 'worst quality, blurry',
-        editorFields: {
-            common: 'masterpiece',
-            positive: 'portrait',
-            positiveRight: '',
-            negative: 'worst quality, blurry',
-        },
-        generationContext: {
-            positive: 'masterpiece, portrait, city background',
-            positiveRight: '',
-            negative: 'worst quality, blurry',
-        },
-        temperature: 0.3,
-        n_predict: 768,
-    });
+const REFINE_REQUEST = Object.freeze({
+    mode: 'Small',
+    use: 'prompt',
+    promptMode: 'Refine',
+    userPrompt: '顔と目を強調する',
+    existingPositive: 'masterpiece, portrait, city background',
+    existingNegative: 'worst quality, blurry',
+    editorFields: {
+        common: 'masterpiece',
+        positive: 'portrait',
+        positiveRight: '',
+        negative: 'worst quality, blurry',
+        negativeLeft: 'harsh shadow',
+        negativeRight: '',
+    },
+    generationContext: {
+        positive: 'masterpiece, portrait, city background',
+        positiveRight: '',
+        negative: 'worst quality, blurry',
+        negativeLeft: 'worst quality, blurry, harsh shadow',
+        negativeRight: '',
+    },
+    temperature: 0.3,
+    n_predict: 768,
+});
+
+test('Refine v3 requests separate editor fields, side negatives included, from rendered generation context', () => {
+    const request = buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: REFINE_SYSTEM_PROMPT });
 
     assert.equal(request.model, SMALL_MODEL);
     assert.equal(request.messages[0].content, REFINE_SYSTEM_PROMPT);
     assert.deepEqual(JSON.parse(request.messages[1].content), {
-        schema_version: 2,
+        schema_version: 3,
         instruction: '顔と目を強調する',
         editor: {
             common: 'masterpiece',
             positive: 'portrait',
             positive_right: '',
             negative: 'worst quality, blurry',
+            negative_left: 'harsh shadow',
+            negative_right: '',
         },
         generation_context: {
             positive: 'masterpiece, portrait, city background',
             positive_right: '',
             negative: 'worst quality, blurry',
+            negative_left: 'worst quality, blurry, harsh shadow',
+            negative_right: '',
         },
     });
     assert.equal(request.format, 'json');
     assert.equal(request.keep_alive, 0);
+});
+
+test('a saved schema 2 system prompt still gets a schema 2 request', () => {
+    const request = buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: LEGACY_V2_REFINE_SYSTEM_PROMPT });
+
+    const content = JSON.parse(request.messages[1].content);
+    assert.equal(content.schema_version, 2);
+    assert.deepEqual(Object.keys(content.editor), ['common', 'positive', 'positive_right', 'negative']);
+});
+
+test('a customized system prompt picks its request schema from what it says', () => {
+    // no schema_version anywhere: the legacy request, even with editor fields at hand
+    const legacy = buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: 'custom legacy prompt' });
+    assert.deepEqual(JSON.parse(legacy.messages[1].content), {
+        instruction: '顔と目を強調する',
+        positive: 'masterpiece, portrait, city background',
+        negative: 'worst quality, blurry',
+    });
+
+    // a reworded schema 3 prompt still gets the side negatives
+    const reworded = REFINE_SYSTEM_PROMPT.replace('numeric "schema_version": 3', 'schema_version には数値 3 を入れる');
+    const v3 = JSON.parse(buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: reworded }).messages[1].content);
+    assert.equal(v3.schema_version, 3);
+    assert.equal(v3.editor.negative_left, 'harsh shadow');
+});
+
+test('a structured Refine answer is not cut off at the Expand-sized token limit', () => {
+    assert.equal(buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: REFINE_SYSTEM_PROMPT }).options.num_predict, 1536);
+    assert.equal(buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: REFINE_SYSTEM_PROMPT, n_predict: 4096 }).options.num_predict, 4096);
+    // Expand and the legacy request keep the user's limit
+    assert.equal(buildOllamaChatRequest({ ...REFINE_REQUEST, refineSystemPrompt: 'custom legacy prompt' }).options.num_predict, 768);
+    assert.equal(buildOllamaChatRequest({ ...REFINE_REQUEST, promptMode: 'Expand', systemPrompt: 'system' }).options.num_predict, 768);
 });
 
 test('custom Refine without editor fields keeps the legacy generation-only request', () => {
@@ -123,4 +164,10 @@ test('Ollama chat responses are normalized to the SAA response shape', () => {
             choices: [{ message: { role: 'assistant', content: '1girl, portrait' } }],
         },
     );
+    const cut = normalizeOllamaChatResponse(JSON.stringify({
+        model: SMALL_MODEL,
+        message: { role: 'assistant', content: '{"prompt": "the girl with long' },
+        done_reason: 'length',
+    }));
+    assert.equal(cut.choices[0].finish_reason, 'length', 'an answer cut off at num_predict says so');
 });

@@ -8,13 +8,26 @@
 
 export const RELATED_SCORE_SCALE = 1000;
 
-// Prompt text → dictionary key: weight / disabled markers off, spaces → underscores.
+// Prompt text → dictionary key: weight / disabled markers off, escapes off ("\(" → "("),
+// spaces → underscores. "long hair", "long_hair" and "Long Hair" share one key, and so do
+// "1990s \(style\)" and "1990s_(style)".
 export function lookupKey(value) {
     let token = String(value ?? '').trim();
     if (token.startsWith('~')) token = token.slice(1).trim();
     const weighted = /^\((.*):\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\)$/.exec(token);
     if (weighted) token = weighted[1].trim();
+    token = token.replaceAll(/\\([\\()])/g, '$1');
     return token.toLowerCase().replaceAll(/\s+/g, '_');
+}
+
+// A dictionary tag as the prompt text the autocomplete inserts (formatSuggestion in
+// scripts/renderer/tagAutoComplete.js): underscores become spaces and backslashes /
+// parentheses are escaped, so "1990s_(style)" goes in as "1990s \(style\)" instead of
+// an emphasis group. Wildcards ("__name__") and tags starting or ending with ":" stay.
+export function promptTagForm(tag) {
+    const text = String(tag ?? '').trim();
+    if (/^__.*__$/.test(text) || text.startsWith(':') || text.endsWith(':')) return text;
+    return text.replaceAll('_', ' ').replaceAll(/[\\()]/g, String.raw`\$&`);
 }
 
 // The word a tag "belongs to": the last underscore-separated part (long_hair → hair,

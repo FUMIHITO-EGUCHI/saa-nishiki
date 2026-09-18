@@ -1,5 +1,7 @@
-import { callback_api_model_type, callback_regional_condition } from './callbacks.js';
+import { applySizeRange, callback_api_model_type, callback_regional_condition, syncRegionalCharacters } from './callbacks.js';
+import { migrateSlotSides } from '../shared/characterSides.js';
 import { hiresCalculate } from './tools/hiresCalculation.js';
+import { splitLabel } from '../shared/regionalSides.js';
 
 const CAT = '[Language]'
 
@@ -58,7 +60,9 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     const LANG = globalThis.cachedFiles.language[globalThis.globalSettings.language];
 
     // Header 
-    if (globalThis.globalSettings.api_model_type === 'Stable Diffusion') {
+    // the type values are 'Checkpoint' | 'Diffusion' (a stale type name tested here used to
+    // leave the dropdown titled "Diffusion Model" in Checkpoint mode)
+    if (globalThis.globalSettings.api_model_type === 'Checkpoint') {
         globalThis.dropdownList.model.setTitle(LANG.api_model_file_select);
     } else {
         globalThis.dropdownList.model.setTitle(LANG.api_diffusion_model);
@@ -68,6 +72,8 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.dropdownList.vae_unet.setTitle(LANG.api_difussion_vae_model);
     globalThis.dropdownList.vae_sdxl.setTitle(LANG.api_ckpt_vae_model);
     globalThis.dropdownList.vae_sdxl_override.setTitle(LANG.api_vae_sdxl_override);
+    globalThis.dropdownList.size_limit_checkpoint?.setTitle(LANG.size_limit_checkpoint);
+    globalThis.dropdownList.size_limit_diffusion?.setTitle(LANG.size_limit_diffusion);
 
     globalThis.dropdownList.diffusion_model_weight_dtype.setTitle(LANG.api_diffusion_model_weight_dtype);
     globalThis.dropdownList.textencoder.setTitle(LANG.api_text_encoder);
@@ -107,7 +113,12 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     };
     document.querySelectorAll('[data-settings-page-label]').forEach(label => {
         const text = settingsPageLabels[label.dataset.settingsPageLabel];
-        if (text) {
+        if (!text) return;
+        // a page heading may carry an info icon after its text: only the text node changes
+        const textNode = label.firstChild;
+        if (textNode && textNode.nodeType === Node.TEXT_NODE && label.childElementCount > 0) {
+            textNode.textContent = text;
+        } else {
             label.textContent = text;
         }
     });
@@ -139,12 +150,14 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     globalThis.generate.regionalCondition.setTitle(LANG.regional_condition);
     globalThis.generate.regionalCondition_dummy.setTitle(LANG.regional_condition);
-    globalThis.regional.overlap_ratio.setTitle(LANG.regional_overlap_ratio);
-    globalThis.regional.image_ratio.setTitle(LANG.regional_image_ratio);
-    globalThis.regional.str_left.setTitle(LANG.regional_strength || LANG.regional_str_left);
-    globalThis.regional.str_right.setTitle(LANG.regional_strength || LANG.regional_str_right);
-    globalThis.regional.option_left.setTitle(LANG.regional_option_left);
-    globalThis.regional.option_right.setTitle(LANG.regional_option_right);
+    // a missing regional control must not stop the language pass (init would end here)
+    globalThis.regional.overlap_ratio?.setTitle(LANG.regional_overlap_ratio);
+    globalThis.regional.image_ratio?.setTitle(LANG.regional_image_ratio);
+    globalThis.regional.str_left?.setTitle(LANG.regional_strength || LANG.regional_str_left);
+    globalThis.regional.str_right?.setTitle(LANG.regional_strength || LANG.regional_str_right);
+    globalThis.regional.option_left?.setTitle(LANG.regional_option_left);
+    globalThis.regional.option_right?.setTitle(LANG.regional_option_right);
+    globalThis.regional.split?.setTitle(LANG.regional_split);
 
     globalThis.generate.seed.setTitle(LANG.random_seed);
     globalThis.generate.cfg.setTitle(LANG.cfg);
@@ -160,6 +173,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     globalThis.generate.landscape.setTitle(LANG.api_image_landscape);
     globalThis.generate.tag_assist.setTitle(LANG.tag_assist);
+    globalThis.generate.tag_chip_alias?.setTitle(LANG.tag_chip_alias);
     globalThis.generate.wildcard_random.setTitle(LANG.wildcard_random);
     
     globalThis.generate.sampler.setTitle(LANG.api_model_sampler);
@@ -173,6 +187,8 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
 
     globalThis.generate.api_interface.setTitle(LANG.api_interface);
     globalThis.generate.api_address.setTitle(LANG.api_addr);
+    globalThis.generate.comfy_launch_command?.setTitle(LANG.comfy_launch_command);
+    globalThis.generate.comfy_autostart?.setTitle(LANG.comfy_autostart);
     globalThis.generate.api_preview_refresh_time.setTitle(LANG.api_preview_refresh_time);
     globalThis.generate.api_pod_ssh_enable.setTitle(LANG.api_pod_ssh_enable);
     globalThis.generate.api_pod_ssh_target.setTitle(LANG.api_pod_ssh_target);
@@ -189,6 +205,14 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.generate.api_fast_cfg.setTitle(LANG.api_fast_cfg);
     globalThis.generate.api_fast_sampler.setTitle(LANG.api_fast_sampler);
     globalThis.generate.api_fast_scheduler.setTitle(LANG.api_fast_scheduler);
+    globalThis.generate.api_fast_comfy_args?.setTitle(LANG.api_fast_comfy_args);
+    globalThis.generate.api_fast_diff_lora?.setTitle(LANG.api_fast_diff_lora);
+    globalThis.generate.api_fast_diff_lora_strength?.setTitle(LANG.api_fast_diff_lora_strength);
+    globalThis.generate.api_fast_diff_steps?.setTitle(LANG.api_fast_diff_steps);
+    globalThis.generate.api_fast_diff_cfg?.setTitle(LANG.api_fast_diff_cfg);
+    globalThis.generate.api_fast_diff_sampler?.setTitle(LANG.api_fast_diff_sampler);
+    globalThis.generate.api_fast_diff_scheduler?.setTitle(LANG.api_fast_diff_scheduler);
+    globalThis.generate.api_fast_diff_comfy_args?.setTitle(LANG.api_fast_diff_comfy_args);
 
     globalThis.generate.model_filter.setTitle(LANG.model_filter);    
     globalThis.generate.model_filter_keyword.setTitle(LANG.model_filter_keyword);
@@ -222,6 +246,8 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
         globalThis.prompt.positive.setTitle(LANG.regional_api_prompt);
     }
     globalThis.prompt.exclude.setTitle(LANG.prompt_ban);
+    // the Scene shortens the side rows' titles inside the Regional boxes and re-renders its own strings
+    globalThis.prompt.fieldManager?.updateLanguage?.();
     globalThis.prompt.tagCapsuleFields?.updateLanguage?.();
     globalThis.prompt.autoResize.setTitle(LANG.ptompt_textbox_autoresize);
     globalThis.prompt.fontSize.setTitle(LANG.ptompt_textbox_fontsize);
@@ -298,12 +324,15 @@ export function updateSettings() {
 
     globalThis.generate.regionalCondition.setValue(SETTINGS.regional_condition);
     globalThis.generate.regionalCondition_dummy.setValue(SETTINGS.regional_condition);
-    globalThis.regional.overlap_ratio.setValue(SETTINGS.regional_overlap_ratio);
-    globalThis.regional.image_ratio.setValue(SETTINGS.regional_image_ratio);
-    globalThis.regional.str_left.setValue(SETTINGS.regional_str_left);
-    globalThis.regional.str_right.setValue(SETTINGS.regional_str_right);
-    globalThis.regional.option_left.updateDefaults(SETTINGS.regional_option_left);
-    globalThis.regional.option_right.updateDefaults(SETTINGS.regional_option_right);
+    globalThis.regional.overlap_ratio?.setValue(SETTINGS.regional_overlap_ratio);
+    globalThis.regional.image_ratio?.setValue(SETTINGS.regional_image_ratio);
+    globalThis.regional.str_left?.setValue(SETTINGS.regional_str_left);
+    globalThis.regional.str_right?.setValue(SETTINGS.regional_str_right);
+    globalThis.regional.option_left?.updateDefaults(SETTINGS.regional_option_left);
+    globalThis.regional.option_right?.updateDefaults(SETTINGS.regional_option_right);
+    globalThis.regional.split?.updateDefaults?.(splitLabel(SETTINGS.regional_split));
+    // loaded settings may carry the other split; the side labels follow
+    document.dispatchEvent(new CustomEvent('saa:regional-split-changed'));
 
     globalThis.generate.model_filter.setValue(SETTINGS.model_filter);
     globalThis.generate.model_filter_keyword.setValue(SETTINGS.model_filter_keyword);
@@ -318,12 +347,15 @@ export function updateSettings() {
     globalThis.generate.webui_auth_enable.updateDefaults(SETTINGS.webui_auth_enable);
     globalThis.generate.queueAutostart.setValue(SETTINGS.generate_auto_start);
 
+    // settings / presets from before the side column keep their regional characters as slot sides
+    // (new slots only while Regional is on: with it off they would join the ordinary prompt)
+    SETTINGS.character_slots = migrateSlotSides(SETTINGS.character_slots, SETTINGS.character_left, SETTINGS.character_right,
+        { weights: [SETTINGS.weights4dropdownlist?.[7], SETTINGS.weights4dropdownlist?.[8]], regional: Boolean(SETTINGS.regional_condition) });
     globalThis.characterList.setSlots(SETTINGS.character_slots);
-    globalThis.characterListRegional.updateDefaults(SETTINGS.character_left, SETTINGS.character_right, 'None', 'None');
-    globalThis.characterListRegional.setTextValue(0, SETTINGS.weights4dropdownlist[7]);
-    globalThis.characterListRegional.setTextValue(1, SETTINGS.weights4dropdownlist[8]);
+    syncRegionalCharacters();
     
     globalThis.generate.tag_assist.setValue(SETTINGS.tag_assist);
+    globalThis.generate.tag_chip_alias?.setValue(SETTINGS.tag_chip_alias !== false);
     globalThis.generate.wildcard_random.setValue(SETTINGS.wildcard_random);
 
     globalThis.viewList.updateDefaults(SETTINGS.view_angle, SETTINGS.view_camera);
@@ -359,15 +391,19 @@ export function updateSettings() {
         }
     }
 
-    if (globalThis.globalSettings.api_model_type === 'Stable Diffusion') {
+    // The dropdown still holds the checkpoint list here (renderer.js seeds it with modelList);
+    // applyModelType (callbacks.js, called at the end of this function) swaps in the diffusion
+    // list and restores api_model_file_diffusion_select. A stale type-name test used to push
+    // the diffusion file name into the checkpoint list, which fell back to its first entry.
+    if (globalThis.globalSettings.api_model_type === 'Checkpoint') {
         globalThis.dropdownList.model.updateDefaults(SETTINGS.api_model_file_select);
-    } else {
-        globalThis.dropdownList.model.updateDefaults(SETTINGS.api_model_file_diffusion_select);
     }
     globalThis.dropdownList.model_type.updateDefaults(SETTINGS.api_model_type);
     globalThis.dropdownList.vae_unet.updateDefaults(SETTINGS.api_vae_unet_model);
     globalThis.dropdownList.vae_sdxl.updateDefaults(SETTINGS.api_vae_sdxl_model);
     globalThis.dropdownList.vae_sdxl_override.setValue(SETTINGS.api_vae_sdxl_override);
+    globalThis.dropdownList.size_limit_checkpoint?.setValue(SETTINGS.size_limit_checkpoint);
+    globalThis.dropdownList.size_limit_diffusion?.setValue(SETTINGS.size_limit_diffusion);
     globalThis.dropdownList.diffusion_model_weight_dtype.updateDefaults(SETTINGS.api_model_file_diffusion_weight_dtype);
     globalThis.dropdownList.textencoder.updateDefaults(SETTINGS.api_model_file_text_encoder);
     globalThis.dropdownList.textencoder_type.updateDefaults(SETTINGS.api_model_file_text_encoder_type);
@@ -380,6 +416,7 @@ export function updateSettings() {
     globalThis.generate.step.setValue(SETTINGS.step);
     globalThis.generate.width.setValue(SETTINGS.width);
     globalThis.generate.height.setValue(SETTINGS.height);
+    applySizeRange(); // narrows the boxes to the model type's range (may clamp the stored size)
     globalThis.generate.batch.setValue(SETTINGS.batch);    
     globalThis.generate.landscape.setValue(SETTINGS.api_image_landscape);
     globalThis.generate.scrollToLatest.setValue(SETTINGS.scroll_to_last);
@@ -423,6 +460,8 @@ export function updateSettings() {
     globalThis.generate.api_interface.updateDefaults(SETTINGS.api_interface);
     globalThis.generate.api_preview_refresh_time.setValue(SETTINGS.api_preview_refresh_time);
     globalThis.generate.api_address.setValue(SETTINGS.api_addr);
+    globalThis.generate.comfy_launch_command?.setValue(SETTINGS.comfy_launch_command ?? '');
+    globalThis.generate.comfy_autostart?.setValue(SETTINGS.comfy_autostart === true);
     globalThis.generate.api_pod_ssh_enable.setValue(SETTINGS.api_pod_ssh_enable);
     globalThis.generate.api_pod_ssh_target.setValue(SETTINGS.api_pod_ssh_target);
     globalThis.generate.api_pod_ssh_key.setValue(SETTINGS.api_pod_ssh_key);
@@ -439,6 +478,16 @@ export function updateSettings() {
     globalThis.generate.api_fast_sampler.updateDefaults(SAMPLER_COMFYUI.includes(SETTINGS.api_fast_sampler) ? SETTINGS.api_fast_sampler : 'lcm');
     globalThis.generate.api_fast_scheduler.setValue(LANG.api_fast_scheduler, SCHEDULER_COMFYUI);
     globalThis.generate.api_fast_scheduler.updateDefaults(SCHEDULER_COMFYUI.includes(SETTINGS.api_fast_scheduler) ? SETTINGS.api_fast_scheduler : 'sgm_uniform');
+    globalThis.generate.api_fast_comfy_args?.setValue(SETTINGS.api_fast_comfy_args ?? '');
+    globalThis.generate.api_fast_diff_lora?.updateDefaults(SETTINGS.api_fast_diff_lora || 'None');
+    globalThis.generate.api_fast_diff_lora_strength?.setValue(SETTINGS.api_fast_diff_lora_strength);
+    globalThis.generate.api_fast_diff_steps?.setValue(SETTINGS.api_fast_diff_steps);
+    globalThis.generate.api_fast_diff_cfg?.setValue(SETTINGS.api_fast_diff_cfg);
+    globalThis.generate.api_fast_diff_sampler?.setValue(LANG.api_fast_diff_sampler, SAMPLER_COMFYUI);
+    globalThis.generate.api_fast_diff_sampler?.updateDefaults(SAMPLER_COMFYUI.includes(SETTINGS.api_fast_diff_sampler) ? SETTINGS.api_fast_diff_sampler : 'euler');
+    globalThis.generate.api_fast_diff_scheduler?.setValue(LANG.api_fast_diff_scheduler, SCHEDULER_COMFYUI);
+    globalThis.generate.api_fast_diff_scheduler?.updateDefaults(SCHEDULER_COMFYUI.includes(SETTINGS.api_fast_diff_scheduler) ? SETTINGS.api_fast_diff_scheduler : 'simple');
+    globalThis.generate.api_fast_diff_comfy_args?.setValue(SETTINGS.api_fast_diff_comfy_args ?? '');
 
     globalThis.generate.hifix.setValue(SETTINGS.api_hf_enable);
     globalThis.hifix.scale.setValue(SETTINGS.api_hf_scale);

@@ -48,3 +48,6 @@ reports/
 
 models/embeddings/*.safetensors
 models/embeddings/*.pt
+
+# artist sample benches: a few hundred MB of generated images
+design/artist-samples/

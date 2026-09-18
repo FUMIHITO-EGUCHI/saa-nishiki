@@ -69,8 +69,11 @@ export async function setupModelReloadToggle() {
 // lists included) and redraw the dropdowns, keeping the current selection.
 export async function reloadModelLists() {
     const currentModelSelect = globalThis.dropdownList.model.getValue();
+    const modelType = globalThis.globalSettings.api_model_type;
     await reloadFiles();
-    globalThis.dropdownList.model.updateDefaults(currentModelSelect);
+    // a type switched while the lists reloaded owns another list: reloadFiles already put its
+    // stored selection back, and the name read above belongs to the other type's list
+    if (globalThis.globalSettings.api_model_type === modelType) globalThis.dropdownList.model.updateDefaults(currentModelSelect);
     globalThis.lora.reload();
     globalThis.controlnet.reload();
     globalThis.aDetailer.reload();
@@ -139,7 +142,8 @@ export async function reloadFiles(){
         globalThis.dropdownList.model.setValue(LANG.api_model_file_select, globalThis.cachedFiles.modelList);
         globalThis.dropdownList.model.updateDefaults(SETTINGS.api_model_file_select);
     } else {
-        globalThis.dropdownList.model.setValue(LANG.api_model_file_select, globalThis.cachedFiles.diffusionList);
+        globalThis.dropdownList.model.setValue(LANG.api_diffusion_model, globalThis.cachedFiles.diffusionList);
+        globalThis.dropdownList.model.setTitle(LANG.api_diffusion_model);
         globalThis.dropdownList.model.updateDefaults(SETTINGS.api_model_file_diffusion_select);
     }
     globalThis.dropdownList.vae_unet.setValue(LANG.api_difussion_vae_model, globalThis.cachedFiles.vaeList);

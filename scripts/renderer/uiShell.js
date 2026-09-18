@@ -5,8 +5,12 @@
 // Everything here only rearranges / decorates components that renderer.js already
 // created; generation logic and settings keys are untouched.
 import { setupRunProgress } from './components/runProgress.js';
+import { SLIDER_RANGE_EVENT } from './components/mySlider.js';
+import { applySizeRange } from './callbacks.js';
 import { setupStatusPills } from './components/statusPills.js';
 import { AI_MODES, applyAiMode, deriveAiMode, describeAiStatus } from './components/aiModeLogic.js';
+import { PROSE_SCOPES, normalizeProseScope } from '../shared/prosePrompt.js';
+import { describeProseEndpoint, onProseChange, proseState, regenerateProse, revertProseParagraph, setProseParagraph } from './prosePipeline.js';
 import {
     countLabel, summarizeADetailer, summarizeControlNet, summarizeHires, summarizeJson, summarizeLoRA, summarizeRefiner,
 } from './tools/pipelineSummary.js';
@@ -128,15 +132,35 @@ function setupPipelineRows() {
     card.addEventListener('change', debounced);
     card.addEventListener('input', debounced);
     card.addEventListener('click', debounced);
-    const timer = setInterval(() => { if (!document.hidden) refresh(); }, 2000);
+    // Every value the summaries read lives inside the card, so the local events above cover
+    // direct edits. External changes announce themselves on document: a preset / settings apply
+    // (settingsPersistence.js) and undo / redo (edit history). Language changes arrive through
+    // uiShell.updateLanguage() -> refresh(), so no poll is needed.
+    const DOCUMENT_EVENTS = ['saa-settings-applied', 'saa-edit-history-changed'];
+    for (const type of DOCUMENT_EVENTS) document.addEventListener(type, debounced);
+    // Slots filled or cleared from outside the card (Image Info's Add ControlNet, a dropped or
+    // pasted JSON file, the API switch clearing ADetailer) and a row opened from outside
+    // (collapsedTabs.*.setCollapsed) raise none of those events: the row bodies are watched.
+    // refresh() writes only into the row heads and rows, never a body, so it cannot feed itself.
+    const bodyObserver = new MutationObserver(debounced);
+    for (const body of card.querySelectorAll('.pipe-row-body')) {
+        bodyObserver.observe(body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    }
     refresh();
-    return { refresh, destroy: () => clearInterval(timer) };
+    return {
+        refresh,
+        destroy: () => {
+            for (const type of DOCUMENT_EVENTS) document.removeEventListener(type, debounced);
+            bodyObserver.disconnect();
+        },
+    };
 }
 
 // ------------------------------------------------------------------ characters & views
 // myViewsList renders two unlabeled dropdowns; add a label row above them (Angle / Camera).
 function setupCharactersCard() {
-    const view = document.querySelector('.characters-card .dropdown-view');
+    // the Angle / Camera dropdowns sit in the Scene's View row (promptFieldManager moves them)
+    const view = document.querySelector('.dropdown-view');
     if (!view) return null;
     let labels = view.querySelector('.view-labels');
     function render() {
@@ -157,6 +181,142 @@ function setupCharactersCard() {
     // setOptions() rebuilds the dropdown markup; keep the label row on top.
     const observer = new MutationObserver(() => { if (!view.contains(labels)) render(); else if (view.firstElementChild !== labels) view.prepend(labels); });
     observer.observe(view, { childList: true });
+    return { render };
+}
+
+// ------------------------------------------------------------------ Prose card
+// Diffusion (Anima) only: the switch, where the paragraph is written, how much of the
+// prompt it dissolves, and the paragraph of the last image - editable, revertible,
+// re-askable (scripts/renderer/prosePipeline.js keeps the state).
+function setupProseCard() {
+    const card = document.getElementById('prose-card');
+    const segment = document.getElementById('prose-scope-segment');
+    const preview = document.getElementById('prose-preview');
+    const note = document.getElementById('prose-card-note');
+    const status = document.getElementById('prose-card-status');
+    const revert = document.getElementById('prose-revert');
+    const regenerate = document.getElementById('prose-regenerate');
+    if (!card || !segment || !preview) return null;
+
+    const buttons = new Map();
+    for (const scope of PROSE_SCOPES) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'ai-mode-button';
+        button.dataset.scope = scope;
+        button.setAttribute('role', 'radio');
+        button.addEventListener('click', () => {
+            globalThis.globalSettings.ai_prose_scope = scope;
+            render();
+        });
+        segment.append(button);
+        buttons.set(scope, button);
+    }
+
+    let syncing = false;
+    // the paragraph being edited: a newer one can arrive while the box has focus, and the
+    // keystrokes must stay with the paragraph they were typed into
+    let editingKey = null;
+    preview.addEventListener('focus', () => { editingKey = proseState().key ?? null; });
+    preview.addEventListener('blur', () => { editingKey = null; render(); });
+    preview.addEventListener('input', () => {
+        if (syncing) return;
+        setProseParagraph(preview.value, { key: editingKey ?? proseState().key });
+    });
+    revert?.addEventListener('click', () => revertProseParagraph());
+    regenerate?.addEventListener('click', async () => {
+        if (globalThis.inGenerating) return;
+        await regenerateProse();
+    });
+    onProseChange(() => render());
+
+    function render() {
+        const SETTINGS = globalThis.globalSettings ?? {};
+        const diffusion = SETTINGS.api_model_type === 'Diffusion';
+        card.hidden = !diffusion;
+        if (!diffusion) return;
+        const on = SETTINGS.ai_prose_enable === true;
+        card.classList.toggle('is-off', !on);
+        const scope = normalizeProseScope(SETTINGS.ai_prose_scope);
+        const labels = { cast: uiText('ui_prose_scope_cast', 'Cast + Action'), scene: uiText('ui_prose_scope_scene', '+ Background'), all: uiText('ui_prose_scope_all', 'All') };
+        for (const [key, button] of buttons) {
+            button.textContent = labels[key];
+            button.classList.toggle('is-on', key === scope);
+            button.setAttribute('aria-checked', String(key === scope));
+        }
+        if (status) status.textContent = on ? describeProseEndpoint(SETTINGS) : uiText('ui_prose_sub_off', 'off: the tags go out as written');
+
+        const state = proseState();
+        const text = state.prompt ?? '';
+        if (document.activeElement !== preview && preview.value !== text) {
+            syncing = true;
+            preview.value = text;
+            syncing = false;
+        }
+        preview.placeholder = uiText('ui_prose_empty', 'The paragraph written for the last image appears here. Edit it and the next image with the same fields sends your text.');
+        preview.disabled = !state.key;
+        if (note) {
+            note.textContent = state.writing ? uiText('ui_prose_writing', 'Writing…')
+                : !state.key ? ''
+                    : state.edited ? uiText('ui_prose_note_edited', 'Edited: sent as it is while the fields stay the same.')
+                        : uiText('ui_prose_note', 'Written by the LLM. Edit it and the next image with the same fields sends your text.');
+        }
+        if (revert) revert.hidden = !state.edited;
+        if (regenerate) regenerate.disabled = !state.key || state.writing === true;
+    }
+
+    render();
+    return { render };
+}
+
+// ------------------------------------------------------- model type (Diffusion) wording
+// With the Diffusion model type the Characters card is the Cast and the Prompts card the
+// Scene; the run bar offers the Anima sampling defaults. Regional / Refiner / ControlNet
+// are hidden through body.cast-mode (index.css); Fast stays (its own Diffusion set).
+function setupModelTypeUi() {
+    const charactersTitle = document.querySelector('.characters-card [data-ui-text="ui_characters_title"]');
+    const charactersSub = document.querySelector('.characters-card [data-ui-text="ui_characters_sub"]');
+    const promptsTitle = document.querySelector('.prompts-card [data-ui-text="ui_prompts_title"]');
+    const promptsSub = document.querySelector('.prompts-card [data-ui-text="ui_prompts_sub"]');
+    const defaults = document.getElementById('anima-defaults');
+    const artistCard = document.getElementById('artist-card');
+
+    defaults?.addEventListener('click', () => {
+        const SETTINGS = globalThis.globalSettings;
+        const generate = globalThis.generate ?? {};
+        SETTINGS.api_model_sampler = 'er_sde';
+        SETTINGS.api_model_scheduler = 'simple';
+        generate.sampler?.updateDefaults?.('er_sde');
+        generate.scheduler?.updateDefaults?.('simple');
+        SETTINGS.step = 30;
+        SETTINGS.cfg = 4.5;
+        generate.step?.setValue?.(30);
+        generate.cfg?.setValue?.(4.5);
+        const landscape = Number(SETTINGS.width) >= Number(SETTINGS.height);
+        SETTINGS.width = landscape ? 1216 : 832;
+        SETTINGS.height = landscape ? 832 : 1216;
+        generate.width?.setValue?.(SETTINGS.width);
+        generate.height?.setValue?.(SETTINGS.height);
+        globalThis.uiShell?.runBar?.refresh?.();
+    });
+
+    function render() {
+        const SETTINGS = globalThis.globalSettings ?? {};
+        const diffusion = SETTINGS.api_model_type === 'Diffusion';
+        document.body.classList.toggle('cast-mode', diffusion);
+        if (charactersTitle) charactersTitle.textContent = diffusion ? uiText('ui_cast_title', 'Cast') : uiText('ui_characters_title', 'Characters & Views');
+        if (charactersSub) charactersSub.textContent = diffusion ? uiText('ui_cast_sub', 'alias · character · weight per slot') : uiText('ui_characters_sub', 'Characters (incl. OC) · weight per slot');
+        if (promptsTitle) promptsTitle.textContent = diffusion ? uiText('ui_scene_title', 'Scene') : uiText('ui_prompts_title', 'Prompts');
+        if (promptsSub) promptsSub.textContent = diffusion ? uiText('ui_scene_sub', 'Common → View → Background / Style → @cast rows → Positive → Action · Exclude applies to all') : uiText('ui_prompts_sub', 'Common → View → Background / Style → Character → Positive · Exclude applies to all');
+        // the Artist card is an Anima idea: a checkpoint reads a plain artist tag instead
+        if (artistCard) artistCard.hidden = !diffusion;
+        if (defaults) {
+            defaults.hidden = !diffusion;
+            defaults.title = uiText('ui_anima_defaults_tip', 'er_sde · simple · 30 steps · CFG 4.5 · 1216 × 832 (orientation kept)');
+        }
+    }
+
+    render();
     return { render };
 }
 
@@ -198,10 +358,16 @@ function setupAiCard() {
         card.classList.toggle('is-off', mode === 'off');
         card.dataset.mode = mode;
         if (status) status.textContent = describeAiStatus(SETTINGS, { text: { off: text.off, local: uiText('ui_ai_local', 'Local'), remote: uiText('ui_ai_remote', 'Remote'), pod: uiText('ui_ai_pod', 'Pod'), lastRun: uiText('ui_ai_last_run', 'last run') } });
+        // Prose is a Diffusion (Anima) affair: the switch only shows there, and while it
+        // is on the card says so even with the Off / Expand / Refine mode at Off.
+        const diffusion = SETTINGS.api_model_type === 'Diffusion';
+        const prose = diffusion && SETTINGS.ai_prose_enable === true;
+        card.classList.toggle('is-prose', prose);
         if (note) {
-            note.textContent = mode === 'refine' ? uiText('ui_ai_note_refine', 'Refine rewrites the whole prompt with one Ollama call per batch before the first image.')
-                : mode === 'expand' ? uiText('ui_ai_note_expand', 'Expand inserts AI tags at the marker (or the end) before each batch.')
-                    : uiText('ui_ai_note_off', 'AI is off. Prompts are sent as written.');
+            note.textContent = prose ? uiText('ui_ai_note_prose', 'Prose: the tags become one English paragraph (local / pod LLM) before each image. Write the Action as a description, not a pose name; Japanese is fine.')
+                : mode === 'refine' ? uiText('ui_ai_note_refine', 'Refine rewrites the whole prompt with one Ollama call per batch before the first image.')
+                    : mode === 'expand' ? uiText('ui_ai_note_expand', 'Expand inserts AI tags at the marker (or the end) before each batch.')
+                        : uiText('ui_ai_note_off', 'AI is off. Prompts are sent as written.');
         }
     }
 
@@ -261,6 +427,18 @@ function setupRunBar() {
         gallery.__uiShellWrapped = true;
     }
 
+    // Size range: the width / height boxes report an out-of-range typed value
+    // (mySlider.js SLIDER_RANGE_EVENT); the label turns red while either box is over.
+    const sizeLabel = document.getElementById('run-size-label');
+    const sizeBoxes = [...bar.querySelectorAll('.run-param-size .run-number')];
+    const overBoxes = new Set();
+    for (const box of sizeBoxes) {
+        box.addEventListener(SLIDER_RANGE_EVENT, event => {
+            if (event.detail?.over) overBoxes.add(box); else overBoxes.delete(box);
+            sizeLabel?.classList.toggle('is-over', overBoxes.size > 0);
+        });
+    }
+
     // Batch menu: wraps the existing Batch (Random) / Batch (Last) buttons.
     const menuButton = document.getElementById('generate-batch-menu-button');
     const menuList = document.getElementById('generate-batch-menu-list');
@@ -305,40 +483,56 @@ function setupRunBar() {
         globalThis.headerIcon?.settings?.open?.();
     });
 
+    // Markup is built as a string and only assigned when it differs from the last render,
+    // so a refresh that changes nothing costs a string compare instead of a DOM rebuild.
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const rendered = new Map();
+    const setMarkup = (element, markup) => {
+        if (rendered.get(element) === markup) return;
+        rendered.set(element, markup);
+        element.innerHTML = markup;
+    };
     function refresh() {
         const SETTINGS = globalThis.globalSettings ?? {};
-        if (menuButton) {
-            menuButton.innerHTML = '';
-            menuButton.append(document.createTextNode(uiText('ui_run_batch_menu', 'Batch')));
-            const chevron = document.createElement('span');
-            chevron.innerHTML = ICONS.chevD;
-            menuButton.append(chevron);
-        }
-        if (expandItem) {
-            expandItem.innerHTML = '';
-            const icon = document.createElement('span');
-            icon.innerHTML = ICONS.layers;
-            expandItem.append(icon, document.createTextNode(uiText('ui_run_expand_weights', 'Expand weights per image…')));
-        }
+        if (menuButton) setMarkup(menuButton, `${escapeHtml(uiText('ui_run_batch_menu', 'Batch'))}<span>${ICONS.chevD}</span>`);
+        if (expandItem) setMarkup(expandItem, `<span>${ICONS.layers}</span>${escapeHtml(uiText('ui_run_expand_weights', 'Expand weights per image…'))}`);
         if (queueStatus) {
             const count = globalThis.queueManager?.getSlotsCount?.() ?? 0;
             const auto = SETTINGS.generate_auto_start ? uiText('ui_run_autostart_on', 'auto-start on') : uiText('ui_run_autostart_off', 'auto-start off');
-            queueStatus.innerHTML = '';
-            const icon = document.createElement('span');
-            icon.innerHTML = ICONS.layers;
-            queueStatus.append(icon, document.createTextNode(`${uiText('ui_run_queue', 'Queue')} ${count} · ${auto}`));
+            setMarkup(queueStatus, `<span>${ICONS.layers}</span>${escapeHtml(`${uiText('ui_run_queue', 'Queue')} ${count} · ${auto}`)}`);
             queueStatus.classList.toggle('is-paused', !SETTINGS.generate_auto_start);
         }
         if (footnote) {
             const on = uiText('ui_on', 'on');
             const off = uiText('ui_off', 'off');
-            footnote.textContent = `${uiText('ui_run_tag_assist', 'Tag assist')} ${SETTINGS.tag_assist ? on : off} · ${uiText('ui_run_wildcard', 'Wildcard seed')} ${SETTINGS.wildcard_random ? on : off} ↗ ${uiText('system_settings', 'Settings')}`;
+            const text = `${uiText('ui_run_tag_assist', 'Tag assist')} ${SETTINGS.tag_assist ? on : off} · ${uiText('ui_run_wildcard', 'Wildcard seed')} ${SETTINGS.wildcard_random ? on : off} ↗ ${uiText('system_settings', 'Settings')}`;
+            if (footnote.textContent !== text) footnote.textContent = text;
         }
     }
-    const timer = setInterval(() => { if (!document.hidden) refresh(); }, 1000);
+    const scheduled = debounce(refresh, 50);
+    // The queue manager has no change event, but every slot is a child row of its container
+    // (myQueueSlot.js attach / removeAt), so a childList observer is the queue's change signal.
+    // Settings-driven parts (auto-start, tag assist, wildcard) follow the settings-applied event.
+    const queueContainer = globalThis.queueManager?.container ?? null;
+    const queueObserver = queueContainer ? new MutationObserver(scheduled) : null;
+    queueObserver?.observe(queueContainer, { childList: true });
+    // Without a queue container to observe (no queue manager yet), fall back to a poll that
+    // only does work while the queue is non-empty or a generation is running.
+    const fallbackTimer = queueObserver ? null : setInterval(() => {
+        if (document.hidden) return;
+        if ((globalThis.queueManager?.getSlotsCount?.() ?? 0) > 0 || globalThis.inGenerating) refresh();
+    }, 1000);
+    document.addEventListener('saa-settings-applied', scheduled);
     bar.addEventListener('click', () => requestAnimationFrame(refresh));
     refresh();
-    return { refresh, destroy: () => clearInterval(timer) };
+    return {
+        refresh,
+        destroy: () => {
+            queueObserver?.disconnect();
+            if (fallbackTimer) clearInterval(fallbackTimer);
+            document.removeEventListener('saa-settings-applied', scheduled);
+        },
+    };
 }
 
 // ------------------------------------------------------------------ left panel
@@ -618,7 +812,8 @@ function setupGpuToggle(onChanged) {
 }
 
 // ------------------------------------------------------- fast mode toggle
-// One-touch switch for the distillation-LoRA fast mode (Backend settings page).
+// One-touch switch for fast mode (Backend settings page): a distillation LoRA on a
+// Checkpoint, the Anima Turbo LoRA plus ComfyUI launch flags on Diffusion.
 // Only meaningful for ComfyUI; hidden on other backends.
 function setupFastToggle() {
     const pillHost = document.getElementById('header-status');
@@ -637,7 +832,9 @@ function setupFastToggle() {
         const on = SETTINGS.api_fast_enable === true;
         label.textContent = on ? uiText('ui_fast_mode_on', 'Fast: On') : uiText('ui_fast_mode_off', 'Fast: Off');
         button.classList.toggle('is-on', on);
-        button.title = uiText('ui_fast_mode_tip', 'Toggle the distillation-LoRA fast generation mode (Backend settings)');
+        button.title = SETTINGS.api_model_type === 'Diffusion'
+            ? uiText('ui_fast_mode_tip_diffusion', 'Toggle fast mode · Diffusion: Anima Turbo LoRA and ComfyUI flags; the local ComfyUI restarts before the next run when the flags change (Backend settings)')
+            : uiText('ui_fast_mode_tip', 'Toggle fast mode · Checkpoint: distillation LoRA (Backend settings)');
     };
 
     button.addEventListener('click', async () => {
@@ -686,11 +883,15 @@ export function setupUiShell() {
         });
         shell.gpuToggle?.render?.();
         shell.fastToggle?.render?.();
+        shell.modelTypeUi?.render?.();
+        shell.proseCard?.render?.();
     };
 
     shell.characters = setupCharactersCard();
     shell.pipeline = setupPipelineRows();
     shell.aiCard = setupAiCard();
+    shell.proseCard = setupProseCard();
+    shell.modelTypeUi = setupModelTypeUi();
     shell.runBar = setupRunBar();
     shell.leftPanel = setupLeftPanel();
     shell.preview = setupPreviewMirror();
@@ -725,8 +926,11 @@ export function setupUiShell() {
 
     // A preset was applied to a section (settingsPersistence.js): redraw everything derived from globalSettings.
     shell.refreshFromSettings = () => {
+        applySizeRange(); // a preset may change the model type or its size limit
         shell.pipeline?.refresh?.();
         shell.aiCard?.render?.();
+        shell.proseCard?.render?.();
+        shell.modelTypeUi?.render?.();
         shell.runBar?.refresh?.();
         shell.gpuToggle?.render?.();
         shell.fastToggle?.render?.();

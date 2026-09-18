@@ -8,6 +8,8 @@
 //   generation — run bar, checkpoint, Hires fix, Refiner, Regional.
 //   lora / adetailer / controlnet — pipeline slots.
 import { REFINE_SYSTEM_PROMPT } from '../aiPromptRefiner.js';
+import { normalizeArtistSlots } from './artistSlots.js';
+import { uniqueSlotSides } from './characterSides.js';
 
 export const SCHEMA_VERSION = 1;
 
@@ -44,10 +46,18 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // Variable standard character slots (R4). character1-3 stay in the schema as the
     // migration source for pre-slot files and as read-only mirrors of slots 0-2.
     character_slots: [{ key: 'Random', weight: 1 }, { key: 'None', weight: 1 }, { key: 'None', weight: 1 }],
+    // Artist slots (Diffusion only): a Danbooru artist tag per slot, sent as "@name".
+    // scripts/shared/artistSlots.js owns the shape and the spelling.
+    artist_slots: [{ key: '', weight: 1 }],
+    // while an artist is set, generation appends "artist name, signature, watermark" to
+    // the negative prompt so the model does not sign the picture
+    artist_signature_guard: true,
     character1: 'Random',
     character2: 'None',
     character3: 'None',
     tag_assist: true,
+    // translation of each tag on its chip (scripts/renderer/tagAliasClient.js)
+    tag_chip_alias: true,
     wildcard_random: false,
 
     regional_condition: false,
@@ -58,6 +68,19 @@ export const DEFAULT_SETTINGS = Object.freeze({
     regional_str_right: 1,
     regional_option_left: 'default',
     regional_option_right: 'default',
+    // 'left-right' | 'top-bottom' (regionalSides.js SPLITS)
+    regional_split: 'left-right',
+    // generation settings remembered per model type (scripts/shared/modelTypeSettings.js)
+    model_type_generation: {},
+    // the Prompts card remembered per model type (scripts/shared/modelTypePrompts.js): a
+    // switch puts the other type's last prompts back instead of clearing the card
+    model_type_prompts: {},
+    // the type the card on screen was written under, when a switch forced by the interface
+    // (WebUI has no diffusion route) parked it on the other type ('' = the type's own card)
+    model_type_prompt_owner: '',
+    // upper bound of the Size boxes per model type (scripts/shared/sizeLimits.js)
+    size_limit_checkpoint: 1536,
+    size_limit_diffusion: 2048,
     character_left: 'None',
     character_right: 'None',
 
@@ -94,7 +117,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     custom_prompt: '',
     api_prompt: 'masterpiece, best quality, amazing quality',
     api_prompt_right: ':d, selfie',
-    api_neg_prompt: 'bad quality,worst quality,worst detail,sketch,censor',
+    // "censored" is the Danbooru tag the checkpoints learned; "censor" is only an alias of
+    // it, so it was both weaker in the prompt and marked unknown by the dictionary check
+    api_neg_prompt: 'bad quality,worst quality,worst detail,sketch,censored',
     // Regional: per-side negatives (the shared api_neg_prompt goes to both sides)
     api_neg_prompt_left: '',
     api_neg_prompt_right: '',
@@ -107,6 +132,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     prompt_negative_order: [],
     prompt_field_presets: {},
     prompt_field_collapsed: [],
+    prompt_field_muted: [],
     common_weight_plans: [],
     positive_weight_plans: [],
     positive_right_weight_plans: [],
@@ -151,6 +177,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
     ai_refine_system_prompt: REFINE_SYSTEM_PROMPT,
     ai_prompt_role: 1,
     ai_prompt_preview: true,
+    // Diffusion (Anima) only: the tag prompt is rewritten as one English paragraph by the
+    // local / pod LLM before each image (regional bench: 12-14/15 vs 7-9/15 as tags)
+    ai_prose_enable: false,
+    // what the paragraph dissolves: 'cast' (characters + action), 'scene' (+ background /
+    // style) or 'all'; the rest goes out as the tags it was (scripts/shared/prosePrompt.js)
+    ai_prose_scope: 'cast',
 
     api_interface: 'None',
     api_preview_refresh_time: 1,
@@ -159,6 +191,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
     api_pod_ssh_target: '',
     api_pod_ssh_key: '',
     api_pod_ssh_comfy_port: 8188,
+    // local ComfyUI process control (scripts/main/comfyProcess.js): the command that
+    // brings the backend up (a start script or python main.py ...), and whether SAA
+    // runs it at launch when the loopback backend does not answer
+    comfy_launch_command: '',
+    comfy_autostart: false,
     pod_image_save_dir: '',
     // Runpod REST API (issue #4): start / stop / status only; the pod id defaults to the SSH target's prefix
     api_pod_runpod_api_key: '',
@@ -174,6 +211,18 @@ export const DEFAULT_SETTINGS = Object.freeze({
     api_fast_cfg: 1,
     api_fast_sampler: 'lcm',
     api_fast_scheduler: 'sgm_uniform',
+    // ComfyUI launch flags for the Checkpoint fast mode (scripts/shared/comfyLaunchArgs.js)
+    api_fast_comfy_args: '',
+    // Diffusion (Anima) fast mode: Anima Turbo LoRA v0.2 values measured on waiANIMA
+    // (0.8 · 8 steps · CFG 1.5 · euler / simple) plus SageAttention and --fast, which
+    // are ComfyUI launch flags: SAA restarts a local backend that lacks them
+    api_fast_diff_lora: 'anima-turbo-lora-v0.2.safetensors',
+    api_fast_diff_lora_strength: 0.8,
+    api_fast_diff_steps: 8,
+    api_fast_diff_cfg: 1.5,
+    api_fast_diff_sampler: 'euler',
+    api_fast_diff_scheduler: 'simple',
+    api_fast_diff_comfy_args: '--use-sage-attention --fast',
 
     api_hf_enable: false,
     api_hf_scale: 1.5,
@@ -197,6 +246,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     controlnet_slot: [],
 
     fav_characters: [],
+    fav_artists: [],
+    // the artists picked most recently, newest first (the picker's opening list)
+    artist_recent: [],
     fav_tags: { positive: [], negative: [] },
 
     generate_auto_start: true,
@@ -214,35 +266,40 @@ export const SECTION_KEYS = Object.freeze({
     app: Object.freeze([
         'version', 'setup_wizard', 'ws_service', 'ws_addr', 'ws_port',
         'language', 'css_style', 'rightToleft', 'ptompt_textbox_autoresize', 'ptompt_textbox_fontsize', 'ptompt_textbox_heights',
-        'api_interface', 'api_addr', 'api_preview_refresh_time', 'search_modelinsubfolder',
+        'api_interface', 'api_addr', 'api_preview_refresh_time', 'search_modelinsubfolder', 'comfy_launch_command', 'comfy_autostart',
         'api_pod_ssh_enable', 'api_pod_ssh_target', 'api_pod_ssh_key', 'api_pod_ssh_comfy_port', 'pod_image_save_dir', 'api_pod_runpod_api_key', 'api_pod_runpod_pod_id', 'api_pod_civitai_token',
-        'api_fast_enable', 'api_fast_lora', 'api_fast_lora_strength', 'api_fast_steps', 'api_fast_cfg', 'api_fast_sampler', 'api_fast_scheduler',
+        'api_fast_enable', 'api_fast_lora', 'api_fast_lora_strength', 'api_fast_steps', 'api_fast_cfg', 'api_fast_sampler', 'api_fast_scheduler', 'api_fast_comfy_args',
+        'api_fast_diff_lora', 'api_fast_diff_lora_strength', 'api_fast_diff_steps', 'api_fast_diff_cfg', 'api_fast_diff_sampler', 'api_fast_diff_scheduler', 'api_fast_diff_comfy_args',
         'model_filter', 'model_filter_keyword', 'model_filter_keyword_diffusion',
         'model_path_comfyui', 'model_path_webui', 'image_save_path_comfyui', 'image_save_path_webui', 'image_save_embed_character_name',
         'webui_auth', 'webui_auth_enable',
-        'api_model_type', 'api_model_file_vpred', 'thumb_select', 'thumb_select_list',
+        // the per-type generation store sits beside the type: neither is an undo step
+        'api_model_type', 'model_type_generation', 'model_type_prompts', 'model_type_prompt_owner', 'size_limit_checkpoint', 'size_limit_diffusion', 'api_model_file_vpred', 'thumb_select', 'thumb_select_list',
         'api_vae_sdxl_model', 'api_vae_sdxl_override', 'api_vae_unet_model', 'api_model_file_diffusion_weight_dtype',
         'api_model_file_text_encoder', 'api_model_file_text_encoder_type', 'api_model_file_text_encoder_device',
         'ai_local_addr', 'ai_local_model_mode', 'ai_local_timeout', 'ai_local_temp', 'ai_local_n_predict', 'ai_refine_system_prompt',
         'ai_pod_addr', 'ai_pod_share_host', 'ai_pod_auth', 'ai_pod_model', 'ai_pod_keep_alive',
         'remote_ai_base_url', 'remote_ai_model', 'remote_ai_api_key', 'remote_ai_timeout',
-        'tag_assist', 'wildcard_random',
+        'tag_assist', 'tag_chip_alias', 'wildcard_random',
         'keep_gallery', 'scroll_to_last', 'generate_auto_start',
         'fav_characters',
+        'fav_artists',
+        'artist_recent',
         'fav_tags',
         'preset_current',
     ]),
     prompt: Object.freeze([
-        'character_slots', 'character1', 'character2', 'character3', 'character_left', 'character_right',
+        'character_slots', 'artist_slots', 'artist_signature_guard',
+        'character1', 'character2', 'character3', 'character_left', 'character_right',
         'view_angle', 'view_camera', 'view_background', 'view_style', 'weights4dropdownlist',
         'custom_prompt', 'api_prompt', 'api_prompt_right', 'api_neg_prompt', 'api_neg_prompt_left', 'api_neg_prompt_right',
         'prompt_background', 'prompt_style', 'ai_prompt', 'prompt_ban',
-        'prompt_custom_fields', 'prompt_positive_order', 'prompt_negative_order', 'prompt_field_presets', 'prompt_field_collapsed',
+        'prompt_custom_fields', 'prompt_positive_order', 'prompt_negative_order', 'prompt_field_presets', 'prompt_field_collapsed', 'prompt_field_muted',
         'common_weight_plans', 'positive_weight_plans', 'positive_right_weight_plans', 'negative_weight_plans', 'exclude_weight_plans',
         'background_weight_plans', 'style_weight_plans', 'negative_left_weight_plans', 'negative_right_weight_plans',
         'common_batch', 'positive_batch', 'positive_right_batch', 'negative_batch', 'exclude_batch',
         'background_batch', 'style_batch', 'negative_left_batch', 'negative_right_batch',
-        'ai_interface', 'ai_local_prompt_mode', 'ai_prompt_role', 'ai_prompt_preview',
+        'ai_interface', 'ai_local_prompt_mode', 'ai_prompt_role', 'ai_prompt_preview', 'ai_prose_enable', 'ai_prose_scope',
     ]),
     generation: Object.freeze([
         'random_seed', 'cfg', 'step', 'width', 'height', 'batch', 'api_image_landscape', 'api_model_sampler', 'api_model_scheduler',
@@ -250,7 +307,7 @@ export const SECTION_KEYS = Object.freeze({
         'api_hf_enable', 'api_hf_scale', 'api_hf_denoise', 'api_hf_upscaler_selected', 'api_hf_colortransfer', 'api_hf_random_seed', 'api_hf_steps',
         'api_refiner_enable', 'api_refiner_add_noise', 'api_refiner_model', 'api_refiner_model_vpred', 'api_refiner_ratio',
         'regional_condition', 'regional_swap', 'regional_overlap_ratio', 'regional_image_ratio',
-        'regional_str_left', 'regional_str_right', 'regional_option_left', 'regional_option_right',
+        'regional_str_left', 'regional_str_right', 'regional_option_left', 'regional_option_right', 'regional_split',
     ]),
     lora: Object.freeze(['lora_slot']),
     adetailer: Object.freeze(['api_adetailer_enable', 'ad_slot']),
@@ -321,10 +378,19 @@ function coerce(key, value, defaultValue) {
             .slice(0, MAX_CHARACTER_SLOTS)
             .map(slot => {
                 const weight = Number.parseFloat(slot.weight);
-                return { key: slot.key, weight: Number.isFinite(weight) ? weight : 1 };
+                const result = { key: slot.key, weight: Number.isFinite(weight) ? weight : 1 };
+                // the cast alias (Diffusion prompt rows, scripts/shared/castMembers.js)
+                const alias = typeof slot.alias === 'string' ? slot.alias.trim().slice(0, 20) : '';
+                if (alias !== '') result.alias = alias;
+                // the region the slot is drawn in while Regional is on (scripts/shared/characterSides.js)
+                if (slot.side === 'left' || slot.side === 'right') result.side = slot.side;
+                return result;
             });
-        return slots.length ? slots : clone(defaultValue);
+        // one slot per region: stored data that puts two slots on the same side keeps it
+        // on the first one, the one the regional generator draws
+        return slots.length ? uniqueSlotSides(slots) : clone(defaultValue);
     }
+    if (key === 'artist_slots') return normalizeArtistSlots(value);
     if (key === 'weights4dropdownlist') {
         if (!Array.isArray(value)) return clone(defaultValue);
         const numbers = defaultValue.map((fallback, index) => {

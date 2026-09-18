@@ -11,6 +11,7 @@
 // With Regional off the side is ignored and the chain is the single ordered list.
 
 import { STRUCTURAL_UNITS, normalizeCustomFields } from './promptFieldOrder.js';
+import { swapSlotSides } from './characterSides.js';
 
 export const SIDES = Object.freeze(['both', 'left', 'right']);
 
@@ -19,6 +20,9 @@ const BUILTIN_SIDES = Object.freeze({
     common: 'both',
     background: 'both',
     style: 'both',
+    // Regional is a Checkpoint feature and the Artist card a Diffusion one, so this only
+    // matters for the order list; an artist would apply to the whole image anyway.
+    artist: 'both',
     negative: 'both',
     positive: 'left',
     negative_left: 'left',
@@ -31,6 +35,35 @@ export const REGIONAL_ONLY_FIELDS = Object.freeze(['positive_right', 'negative_l
 
 export function normalizeSide(value) {
     return value === 'left' || value === 'right' ? value : 'both';
+}
+
+// Split direction. 'left-right' cuts the image into a left and a right region;
+// 'top-bottom' into a top and a bottom one. The side ids stay left / right either way
+// (left = the first region, left or top; right = the second, right or bottom), so
+// prompts, presets and Swap are untouched and only the labels follow the split.
+export const SPLITS = Object.freeze(['left-right', 'top-bottom']);
+
+export function normalizeSplit(value) {
+    return value === 'top-bottom' ? 'top-bottom' : 'left-right';
+}
+
+// What the Split dropdown shows for each value, and back.
+export const SPLIT_LABELS = Object.freeze({ 'left-right': 'Left / Right', 'top-bottom': 'Top / Bottom' });
+
+export function splitLabel(value) {
+    return SPLIT_LABELS[normalizeSplit(value)];
+}
+
+export function splitFromLabel(label) {
+    return SPLITS.find(split => SPLIT_LABELS[split] === label) ?? 'left-right';
+}
+
+export function sideLabel(side, split) {
+    if (side === 'both') return 'BOTH SIDES';
+    const topBottom = normalizeSplit(split) === 'top-bottom';
+    if (side === 'left') return topBottom ? 'TOP' : 'LEFT';
+    if (side === 'right') return topBottom ? 'BOTTOM' : 'RIGHT';
+    return String(side ?? '').toUpperCase();
 }
 
 export function sideOf(id, customFields) {
@@ -85,12 +118,19 @@ export function swapSidesPatch(settings = {}) {
         patch[left] = clone(settings[right]);
         patch[right] = clone(settings[left]);
     }
+    // the Characters slots change region with their side column
+    if (Array.isArray(settings.character_slots)) patch.character_slots = swapSlotSides(settings.character_slots);
     if (Array.isArray(settings.prompt_custom_fields)) {
         patch.prompt_custom_fields = normalizeCustomFields(settings.prompt_custom_fields).map(field => {
             const side = normalizeSide(field.side);
             if (side === 'both') return field;
             return { ...field, side: side === 'left' ? 'right' : 'left' };
         });
+    }
+    // a muted side row stays muted with its text, as a custom field's `muted` travels in its entry
+    if (Array.isArray(settings.prompt_field_muted)) {
+        const other = { positive: 'positive_right', positive_right: 'positive', negative_left: 'negative_right', negative_right: 'negative_left' };
+        patch.prompt_field_muted = settings.prompt_field_muted.map(id => other[id] ?? id);
     }
     return patch;
 }
