@@ -65,14 +65,8 @@ test('main process forwards structured editor and generation context only to the
   assert.doesNotMatch(legacyBody, /editorFields|generationContext/, 'non-Ollama local backend remains legacy generation-only');
 });
 
-test('pending Refine UI treats model output as text and exposes keyboard-native actions', () => {
-  const source = read('scripts/renderer/uiShell.js');
-  assert.match(source, /summary\.textContent = String\(text \?\? ''\)/, 'untrusted model output is assigned with textContent');
-  assert.doesNotMatch(source, /ai-refine-summary[^\n]*innerHTML/, 'pending summary never uses innerHTML');
-  assert.match(source, /apply\.type = 'button'/);
-  assert.match(source, /discard\.type = 'button'/);
-  assert.match(source, /pendingRunId !== runId/, 'only the newest pending run remains actionable');
-});
+// The pending Refine panel itself (model output kept as text, the Apply / Discard buttons,
+// only the newest run actionable) is driven on a fake DOM in tests/ui-shell-behaviour.test.mjs.
 test('the queue tells the parse when the answer is a reused one', () => {
   // the AI role "Last" hands a run the answer of an earlier one (remoteAI.js: 'last-run')
   assert.match(read('scripts/renderer/generate.js'), /reusedAnswer: aiRequest\.source === 'last-run',/);

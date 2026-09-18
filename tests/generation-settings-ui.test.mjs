@@ -4,6 +4,8 @@ import test from 'node:test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { declarationsFor, hasSelector, parseStylesheet } from './helpers/cssRules.mjs';
+
 // Layout contract for the 2026-08-30 shell (wai-stack/SAA-ui-redesign.md §3):
 // header → viewer + info panel on the left; Characters & Views → Prompts (+ AI card) → Pipeline
 // with the run bar pinned at the bottom on the right; environment settings in the modal.
@@ -113,13 +115,20 @@ test('settings page labels resolve in every language (ui_* with legacy fallback)
 
 test('theme stylesheets style the shell through the generated token block', () => {
   for (const theme of ['html/index_dark.css', 'html/index_light.css']) {
-    const stylesheet = read(theme);
-    for (const selector of ['.ui-card', '.pipeline-card .pipe-row-head', '#run-bar', '.ai-mode-segment', '.status-pill', '#info-panel', '.left-splitter', '.settings-grid']) {
-      assert.ok(stylesheet.includes(selector), `${theme} styles ${selector}`);
+    const rules = parseStylesheet(read(theme));
+    for (const selector of ['.ui-card', '.pipeline-card .pipe-row-head', '#run-bar', '.ai-mode-segment', '.status-pill',
+      '#info-panel', '.left-splitter', '.settings-grid', '#settings-modal-dialog', '.settings-modal-nav']) {
+      assert.ok(hasSelector(rules, selector), `${theme} has a rule for ${selector}`);
     }
-    assert.match(stylesheet, /#settings-modal-dialog/);
-    assert.match(stylesheet, /\.settings-modal-nav/);
+    // the run bar hides the slider's own bar and draws the switches itself
+    assert.equal(declarationsFor(rules, '.run-number [class^="mySlider-"][class*="-bar"]').get('display'), 'none', theme);
+    assert.equal(declarationsFor(rules, '.ui-switch [class^="myCheckbox-"][class*="-input"]').get('appearance'), 'none', theme);
+    // the floating generation overlay stays hidden: the run bar shows the progress now
+    assert.equal(declarationsFor(rules, '#cg-loading-overlay').get('display'), 'none !important', theme);
   }
-  const base = read('html/index.css');
-  assert.match(base, /#top-header\{[\s\S]*grid-template-columns: auto minmax\(0, 1fr\) auto/);
+  // header: checkpoint | status pills | actions, with only the middle column flexible
+  const header = declarationsFor(parseStylesheet(read('html/index.css')), '#top-header');
+  assert.equal(header.get('display'), 'grid');
+  assert.equal(header.get('grid-template-columns'), 'auto minmax(0, 1fr) auto');
+  assert.equal(header.get('align-items'), 'center');
 });
