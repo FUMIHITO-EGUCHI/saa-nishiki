@@ -200,11 +200,19 @@ class GenerateDataPacker:
         a = image_ratio / 50.0
         c = 2.0 - a
         b = overlap_ratio / 100.0
-        
+        overlap = b if b != 0 else 0.01
+
         if self.api_interface == "WebUI":
-            ratio_str = f"{a},{c}"
+            # Forge Couple takes the two regions as fractions of the image: where the
+            # first one ends and where the second one starts (the same regions ComfyUI
+            # masks from the layout below - scripts/shared/regionalGeneration.js).
+            # "{a},{c}" used to be sent, which Forge read as a second region starting at
+            # c: past the right edge for any image ratio under 50, and the whole run was
+            # refused ("to" value must be larger than "from" value).
+            total = a + overlap + c
+            ratio_str = f"{(a + overlap) / total},{a / total}"
         else:
-            ratio_str = f"{a},{b if b != 0 else 0.01},{c}"
+            ratio_str = f"{a},{overlap},{c}"
 
         return {
             "info": "", 

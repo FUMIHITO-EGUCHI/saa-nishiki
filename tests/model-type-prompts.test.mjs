@@ -8,6 +8,7 @@ import {
     rememberPrompts,
     snapshotPrompts,
 } from '../scripts/shared/modelTypePrompts.js';
+import { DEFAULT_SETTINGS, SECTION_KEYS, normalizeSection } from '../scripts/shared/settingsSections.js';
 
 const CHECKPOINT = {
     api_prompt: '1girl, solo',
@@ -78,4 +79,14 @@ test('hasStoredPrompts says whether a switch would restore or clear', () => {
     assert.equal(hasStoredPrompts(store, 'Checkpoint'), true);
     assert.equal(hasStoredPrompts(store, 'Diffusion'), false);
     assert.equal(hasStoredPrompts(null, 'Checkpoint'), false);
+});
+
+test('the card owner sits in the app section beside the store', () => {
+    // a switch forced by the interface parks a card on the other type; the owner says where
+    // it goes back to (scripts/renderer/callbacks.js applyModelType)
+    assert.equal(DEFAULT_SETTINGS.model_type_prompt_owner, '');
+    assert.ok(SECTION_KEYS.app.includes('model_type_prompt_owner'));
+    assert.ok(!SECTION_KEYS.prompt.includes('model_type_prompt_owner'), 'an undo must not rewind it');
+    // it outlives a restart, so the parked card still goes back to its own type afterwards
+    assert.equal(normalizeSection('app', { model_type_prompt_owner: 'Diffusion' }).model_type_prompt_owner, 'Diffusion');
 });

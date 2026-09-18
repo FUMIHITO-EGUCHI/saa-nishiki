@@ -122,11 +122,15 @@ export function setupSlider(containerId, spanText = 'mySlider', options = {},  c
             const nextMax = Number.isFinite(range.max) ? range.max : max;
             const nextStep = Number.isFinite(range.step) && range.step > 0 ? range.step : step;
             if (nextMin === min && nextMax === max && nextStep === step) return;
+            // read the value in effect before the attributes move: a range input sanitizes its
+            // own value to the new min / max / step at once, so read afterwards it already sits
+            // on the bound and the clamp below would never commit (the number box and the
+            // callback's setting kept the old value while the bar held the clamped one)
+            const current = Number.parseFloat(sliderBar.value);
             min = nextMin; max = nextMax; step = nextStep;
             for (const input of [sliderBar, sliderText]) {
                 input.min = String(min); input.max = String(max); input.step = String(step);
             }
-            const current = Number.parseFloat(sliderBar.value);
             const resolved = resolveSliderValue(current, { min, max, step });
             if (resolved !== null && resolved !== current) commit(resolved, { clamped: true });
             else announce(false);

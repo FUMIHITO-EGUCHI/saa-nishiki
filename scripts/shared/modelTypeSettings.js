@@ -19,6 +19,34 @@ export const ANIMA_DEFAULTS = Object.freeze({
     api_model_sampler: 'er_sde', api_model_scheduler: 'simple', step: 30, cfg: 4.5,
 });
 
+// What a Checkpoint starts with when nothing was stored for it yet (a setup that has only
+// been used with a diffusion model): the app's own defaults (settingsSections.js
+// DEFAULT_SETTINGS), not the diffusion model's sampler and CFG carried over.
+export const CHECKPOINT_DEFAULTS = Object.freeze({
+    api_model_sampler: 'euler_ancestral', api_model_scheduler: 'normal', step: 30, cfg: 7,
+});
+
+// The defaults above are written in ComfyUI's names. WebUI spells the same sampler and
+// scheduler differently (language.js SAMPLER_WEBUI / SCHEDULER_WEBUI), and a name its
+// dropdown cannot find leaves the box on its first entry while the setting keeps saying
+// something else, so a default is translated when the WebUI backend is selected.
+export const WEBUI_SAMPLER_NAMES = Object.freeze({
+    euler: 'Euler', euler_ancestral: 'Euler a', er_sde: 'ER SDE', lcm: 'LCM', dpmpp_2m: 'DPM++ 2M',
+});
+export const WEBUI_SCHEDULER_NAMES = Object.freeze({
+    normal: 'Normal', simple: 'Simple', karras: 'Karras', exponential: 'Exponential', sgm_uniform: 'SGM Uniform',
+});
+
+export function defaultsForInterface(defaults = {}, settings = {}) {
+    if (settings.api_interface !== 'WebUI') return defaults;
+    const named = { ...defaults };
+    const sampler = WEBUI_SAMPLER_NAMES[named.api_model_sampler];
+    if (sampler) named.api_model_sampler = sampler;
+    const scheduler = WEBUI_SCHEDULER_NAMES[named.api_model_scheduler];
+    if (scheduler) named.api_model_scheduler = scheduler;
+    return named;
+}
+
 export function snapshotGeneration(settings = {}) {
     const snapshot = {};
     for (const key of GENERATION_KEYS) {
@@ -39,8 +67,11 @@ export function rememberGeneration(store, type, settings = {}) {
 }
 
 // The values to apply when entering `type`: the stored entry, else for Diffusion
-// the Anima defaults with the current size turned to 1216 × 832 (orientation kept),
-// else nothing (the current values stay).
+// the Anima defaults (in the selected backend's sampler names) with the current size
+// turned to 1216 × 832 (orientation kept),
+// else for Checkpoint the checkpoint defaults (the current size stays). A type entered
+// for the first time starts with Hires fix off: the other type's Hires (upscaler,
+// denoise) was tuned for that model.
 export function generationFor(store, type, settings = {}) {
     const stored = store && typeof store === 'object' && isType(type) ? store[type] : null;
     if (stored && typeof stored === 'object') {
@@ -52,7 +83,8 @@ export function generationFor(store, type, settings = {}) {
     }
     if (type === 'Diffusion') {
         const landscape = Number(settings.width) >= Number(settings.height);
-        return { ...ANIMA_DEFAULTS, width: landscape ? 1216 : 832, height: landscape ? 832 : 1216 };
+        return { ...defaultsForInterface(ANIMA_DEFAULTS, settings), width: landscape ? 1216 : 832, height: landscape ? 832 : 1216, api_hf_enable: false };
     }
+    if (type === 'Checkpoint') return { ...defaultsForInterface(CHECKPOINT_DEFAULTS, settings), api_hf_enable: false };
     return {};
 }

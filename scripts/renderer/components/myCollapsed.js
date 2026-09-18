@@ -69,8 +69,11 @@ export async function setupModelReloadToggle() {
 // lists included) and redraw the dropdowns, keeping the current selection.
 export async function reloadModelLists() {
     const currentModelSelect = globalThis.dropdownList.model.getValue();
+    const modelType = globalThis.globalSettings.api_model_type;
     await reloadFiles();
-    globalThis.dropdownList.model.updateDefaults(currentModelSelect);
+    // a type switched while the lists reloaded owns another list: reloadFiles already put its
+    // stored selection back, and the name read above belongs to the other type's list
+    if (globalThis.globalSettings.api_model_type === modelType) globalThis.dropdownList.model.updateDefaults(currentModelSelect);
     globalThis.lora.reload();
     globalThis.controlnet.reload();
     globalThis.aDetailer.reload();

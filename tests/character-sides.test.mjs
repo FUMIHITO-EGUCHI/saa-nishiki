@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { assignSlotSide, migrateSlotSides, regionalSlots, slotSide, slotSideLabels, swapSlotSides } from '../scripts/shared/characterSides.js';
+import { assignSlotSide, migrateSlotSides, regionalSlots, slotSide, slotSideLabels, swapSlotSides, uniqueSlotSides } from '../scripts/shared/characterSides.js';
 import { swapSidesPatch } from '../scripts/shared/regionalSides.js';
 import { normalizeSection } from '../scripts/shared/settingsSections.js';
 
@@ -57,17 +57,53 @@ test('migrateSlotSides marks matching slots, adds missing regional characters, k
     // matching slots take the side
     assert.deepEqual(migrateSlotSides([{ key: 'A', weight: 1 }, { key: 'B', weight: 1 }], 'B', 'A'),
         [{ key: 'A', weight: 1, side: 'right' }, { key: 'B', weight: 1, side: 'left' }]);
-    // a regional character that is not a slot becomes one, with the stored regional weight
-    assert.deepEqual(migrateSlotSides([{ key: 'A', weight: 1 }], 'A', 'Z', { weights: [1, 0.7] }),
+    // Regional on: a regional character that is not a slot becomes one, with the stored regional weight
+    assert.deepEqual(migrateSlotSides([{ key: 'A', weight: 1 }], 'A', 'Z', { weights: [1, 0.7], regional: true }),
         [{ key: 'A', weight: 1, side: 'left' }, { key: 'Z', weight: 0.7, side: 'right' }]);
     // None on a side adds nothing; the slot cap holds
-    assert.deepEqual(migrateSlotSides([{ key: 'A', weight: 1 }], 'None', 'Z', { maxSlots: 1 }), [{ key: 'A', weight: 1 }]);
+    assert.deepEqual(migrateSlotSides([{ key: 'A', weight: 1 }], 'None', 'Z', { maxSlots: 1, regional: true }), [{ key: 'A', weight: 1 }]);
     // a list that already carries a side is returned as it is
     const sided = [{ key: 'A', weight: 1, side: 'right' }, { key: 'B', weight: 1 }];
     assert.deepEqual(migrateSlotSides(sided, 'B', 'None'), sided);
     // the same key twice: only the first free one takes the side
     assert.deepEqual(migrateSlotSides([{ key: 'A', weight: 1 }, { key: 'A', weight: 1 }], 'A', 'A'),
         [{ key: 'A', weight: 1, side: 'left' }, { key: 'A', weight: 1, side: 'right' }]);
+});
+
+test('with Regional off the old regional characters never join the ordinary prompt', () => {
+    // pre-side settings: Regional used once, then switched off; the slots are the ordinary characters
+    const slots = [{ key: 'Random', weight: 1 }, { key: 'None', weight: 1 }, { key: 'None', weight: 1 }];
+    assert.deepEqual(migrateSlotSides(slots, 'hatsune_miku', 'kagamine_rin', { weights: [1.3, 0.9], regional: false }), slots,
+        'no slot added, so non-regional generation draws the same characters');
+    assert.deepEqual(migrateSlotSides(slots, 'hatsune_miku', 'kagamine_rin'), slots, 'off is the default');
+    // a character already among the slots only remembers its side; its weight is the ordinary prompt's
+    assert.deepEqual(migrateSlotSides([{ key: 'hatsune_miku', weight: 1 }], 'hatsune_miku', 'kagamine_rin', { weights: [1.3, 0.9] }),
+        [{ key: 'hatsune_miku', weight: 1, side: 'left' }]);
+});
+
+test('with Regional on the regional image keeps its characters and weights', () => {
+    // the matching slot takes the regional weight it was drawn with
+    assert.deepEqual(migrateSlotSides([{ key: 'hatsune_miku', weight: 1 }], 'hatsune_miku', 'None', { weights: [1.3, 1], regional: true }),
+        [{ key: 'hatsune_miku', weight: 1.3, side: 'left' }]);
+    // a full list gives a missing character its first empty side-less slot (alias kept)
+    const full = ['A', 'None', 'C', 'D', 'E', 'F'].map(key => ({ key, weight: 1 }));
+    full[1].alias = 'hero';
+    const migrated = migrateSlotSides(full, 'None', 'Z', { weights: [1, 0.8], regional: true });
+    assert.deepEqual(migrated[1], { key: 'Z', weight: 0.8, side: 'right', alias: 'hero' });
+    assert.equal(migrated.length, 6);
+    // six characters and no empty slot: nothing is overwritten
+    const busy = ['A', 'B', 'C', 'D', 'E', 'F'].map(key => ({ key, weight: 1 }));
+    assert.deepEqual(migrateSlotSides(busy, 'Z', 'None', { regional: true }), busy);
+});
+
+test('a side claimed by two slots stays with the first, the one regionalSlots draws', () => {
+    const doubled = [{ key: 'A', weight: 1, side: 'left' }, { key: 'B', weight: 1, side: 'left' }, { key: 'C', weight: 1, side: 'right' }];
+    assert.deepEqual(uniqueSlotSides(doubled), [{ key: 'A', weight: 1, side: 'left' }, { key: 'B', weight: 1 }, { key: 'C', weight: 1, side: 'right' }]);
+    assert.equal(doubled[1].side, 'left', 'the input is untouched');
+    // the load path (migrateSlotSides) hands the side column the de-duplicated list
+    assert.deepEqual(migrateSlotSides(doubled, 'None', 'None'), uniqueSlotSides(doubled));
+    assert.equal(regionalSlots(uniqueSlotSides(doubled)).left.key, regionalSlots(doubled).left.key);
+    assert.deepEqual(uniqueSlotSides(null), []);
 });
 
 test('slotSideLabels follow the split', () => {
@@ -81,4 +117,14 @@ test('the prompt section keeps a slot side and drops an invalid one', () => {
         character_slots: [{ key: 'A', weight: 1, side: 'left' }, { key: 'B', weight: 1, side: 'up' }, { key: 'C', weight: 1 }],
     });
     assert.deepEqual(kept.character_slots, [{ key: 'A', weight: 1, side: 'left' }, { key: 'B', weight: 1 }, { key: 'C', weight: 1 }]);
+});
+
+test('stored settings and presets give a side to one slot only', () => {
+    // a hand-edited preset (or a card stored by an older build) with two L slots
+    const doubled = normalizeSection('prompt', {
+        character_slots: [{ key: 'A', weight: 1, side: 'left' }, { key: 'B', weight: 1, side: 'left' }, { key: 'C', weight: 1, side: 'right' }],
+    });
+    assert.deepEqual(doubled.character_slots,
+        [{ key: 'A', weight: 1, side: 'left' }, { key: 'B', weight: 1 }, { key: 'C', weight: 1, side: 'right' }]);
+    assert.equal(regionalSlots(doubled.character_slots).left.key, 'A');
 });

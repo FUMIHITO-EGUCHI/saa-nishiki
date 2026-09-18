@@ -53,19 +53,47 @@ export function swapSlotSides(slots = []) {
     });
 }
 
+// A copy of `slots` where each side is held by the first slot that claims it, the one
+// regionalSlots draws (hand-edited data could leave two slots on L, both shown checked).
+export function uniqueSlotSides(slots = []) {
+    const taken = new Set();
+    return (Array.isArray(slots) ? slots : []).map(slot => {
+        const copy = { ...slot };
+        const side = slotSide(slot);
+        if (side === 'both') return copy;
+        if (taken.has(side)) delete copy.side; else taken.add(side);
+        return copy;
+    });
+}
+
 // Settings written before the side column kept the regional characters in
 // `character_left` / `character_right`. When no slot carries a side, the slot with
-// that key takes it; a character that is not among the slots becomes a new slot
-// (up to `maxSlots`). Slots that already carry a side are returned as they are.
-export function migrateSlotSides(slots = [], left = 'None', right = 'None', { maxSlots = 6, weights = [1, 1] } = {}) {
-    const list = (Array.isArray(slots) ? slots : []).map(slot => ({ ...slot }));
+// that key takes it.
+// With Regional on (`regional`) the regional image stays as it was: the matching slot
+// takes the stored regional weight, and a character that is not among the slots becomes
+// a new slot (up to `maxSlots`; a full list gives it its first empty side-less slot).
+// With Regional off the slots are the characters of the ordinary prompt, so nothing is
+// added and no weight changes (a new slot would draw an extra character in every image);
+// a value that matches no slot is dropped, and the next sync writes None over it.
+// Slots that already carry a side are returned as they are (a side claimed twice stays
+// with the first slot), so data that was migrated, or saved since, is never migrated again.
+export function migrateSlotSides(slots = [], left = 'None', right = 'None', { maxSlots = 6, weights = [1, 1], regional = false } = {}) {
+    const list = uniqueSlotSides(slots);
     if (list.some(slot => slotSide(slot) !== 'both')) return list;
     [['left', left, weights[0]], ['right', right, weights[1]]].forEach(([side, key, weight]) => {
         if (isNone(key)) return;
-        const existing = list.find(slot => slot.key === key && slotSide(slot) === 'both');
-        if (existing) { existing.side = side; return; }
         const parsed = Number.parseFloat(weight);
-        if (list.length < maxSlots) list.push({ key, weight: Number.isFinite(parsed) ? parsed : 1, side });
+        const existing = list.find(slot => slot.key === key && slotSide(slot) === 'both');
+        if (existing) {
+            existing.side = side;
+            if (regional && Number.isFinite(parsed)) existing.weight = parsed;
+            return;
+        }
+        if (!regional) return;
+        const added = { key, weight: Number.isFinite(parsed) ? parsed : 1, side };
+        if (list.length < maxSlots) { list.push(added); return; }
+        const empty = list.findIndex(slot => isNone(slot.key) && slotSide(slot) === 'both');
+        if (empty >= 0) list[empty] = { ...list[empty], ...added };
     });
     return list;
 }

@@ -11,6 +11,9 @@ export const SIZE_MIN = 512;
 export const SIZE_STEP = 8;
 // hard ceiling of the width / height sliders and of the limit settings themselves
 export const SIZE_HARD_MAX = 4096;
+// grid of the limit settings (Settings > Model boxes), measured from SIZE_MIN: the box and
+// the range derived here must land on the same value (1500 is 1472 in both)
+export const SIZE_LIMIT_STEP = 64;
 
 export const SIZE_LIMIT_KEYS = Object.freeze({
     Checkpoint: 'size_limit_checkpoint',
@@ -27,7 +30,7 @@ function limitFor(type, settings = {}) {
     const fallback = DEFAULT_SIZE_LIMITS[type] ?? DEFAULT_SIZE_LIMITS.Checkpoint;
     const raw = Number(settings[key]);
     if (!Number.isFinite(raw)) return fallback;
-    const snapped = Math.round(raw / SIZE_STEP) * SIZE_STEP;
+    const snapped = SIZE_MIN + Math.round((raw - SIZE_MIN) / SIZE_LIMIT_STEP) * SIZE_LIMIT_STEP;
     return Math.min(SIZE_HARD_MAX, Math.max(SIZE_MIN, snapped));
 }
 

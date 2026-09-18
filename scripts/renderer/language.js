@@ -348,8 +348,9 @@ export function updateSettings() {
     globalThis.generate.queueAutostart.setValue(SETTINGS.generate_auto_start);
 
     // settings / presets from before the side column keep their regional characters as slot sides
+    // (new slots only while Regional is on: with it off they would join the ordinary prompt)
     SETTINGS.character_slots = migrateSlotSides(SETTINGS.character_slots, SETTINGS.character_left, SETTINGS.character_right,
-        { weights: [SETTINGS.weights4dropdownlist?.[7], SETTINGS.weights4dropdownlist?.[8]] });
+        { weights: [SETTINGS.weights4dropdownlist?.[7], SETTINGS.weights4dropdownlist?.[8]], regional: Boolean(SETTINGS.regional_condition) });
     globalThis.characterList.setSlots(SETTINGS.character_slots);
     syncRegionalCharacters();
     

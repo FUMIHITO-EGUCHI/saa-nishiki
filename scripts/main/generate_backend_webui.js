@@ -3,6 +3,7 @@ import path from 'node:path';
 import { sendToRenderer } from './generate_backend_comfyui.js';
 import { getMutexBackendBusy, setMutexBackendBusy } from '../../main-common.js';
 import { backendAuthHeaders, httpApiUrl } from '../shared/backendAddress.js';
+import { forgeCoupleMapping, forgeCouplePrompt } from '../shared/regionalGeneration.js';
 
 const CAT = '[WebUI]';
 let backendWebUI = null;
@@ -435,16 +436,11 @@ class WebUI {
             const override_settings = this.create_override_settings_Forge(model, generateData?.unet, generateData?.vae, img_prefix);
 
             // Forge Couple requires SINGLE line for each character with common prompt
-            const positive = positive_left.replaceAll('\n', '').trim() + "\n" + positive_right.replaceAll('\n', '').trim();
-            const ratioes = regional.ratio.split(',');
-            const ratio_left = Number.parseFloat(ratioes[0]);
-            const ratio_right = Number.parseFloat(ratioes[1]);
-            const weight_left = Number.parseFloat(regional.str_left);
-            const weight_right = Number.parseFloat(regional.str_right);
-            // Advanced-mode mapping rows are [x1, x2, y1, y2, weight]; the first region
-            // (the "left" prompt) is the left part, or the top part for a top-bottom split
-            const topBottom = regional.split === 'top-bottom';
-            const region = (from, to, weight) => topBottom ? [0.0, 1.0, from, to, weight] : [from, to, 0.0, 1.0, weight];
+            // (a newline inside a side becomes a separator, not glued tags)
+            const positive = forgeCouplePrompt(positive_left, positive_right);
+            // Advanced-mode mapping rows [x1, x2, y1, y2, weight]: the regions ComfyUI masks
+            // (scripts/shared/regionalGeneration.js), columns or rows by the split
+            const mapping = forgeCoupleMapping(regional);
 
             backendWebUI.startPolling();            
 
@@ -470,10 +466,7 @@ class WebUI {
                             'Vertical',     // direction ("Horizontal" | "Vertical")
                             null,           // background
                             null,           // background_weight
-                            [               // mapping
-                                region(0.0, ratio_left, weight_left),
-                                region(ratio_right, 1.0, weight_right),
-                            ],              // mapping
+                            mapping,        // mapping
                             "{ }",          // common_parser
                             false,          // common_debug
                             true,           // def_in_prompt

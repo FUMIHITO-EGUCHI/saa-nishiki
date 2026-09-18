@@ -5,7 +5,7 @@ import { createSelectionModal } from './selectionModal.js';
 import { normalizeSearchText, normalizeSelectionKey } from './selectionModalLogic.js';
 import { originalKey } from '../../shared/characterKeys.js';
 import { normalizeAlias } from '../../shared/castMembers.js';
-import { SLOT_SIDES, assignSlotSide, slotSide, slotSideLabels } from '../../shared/characterSides.js';
+import { SLOT_SIDES, assignSlotSide, slotSide, slotSideLabels, uniqueSlotSides } from '../../shared/characterSides.js';
 import { characterWorkSearchTerms, characterWorkTitles } from '../../shared/characterWorks.js';
 
 function splitLabels(value, count) {
@@ -330,7 +330,10 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         fields.push({ trigger, weight, alias, side, sideButtons, label, options: [], settledWeight: '1.0' });
 
         alias.addEventListener('change', event => {
-            aliases[index] = normalizeAlias(event.target.value);
+            const typed = normalizeAlias(event.target.value);
+            // an alias another slot already has would give both the same "@n": the old one stays
+            const taken = typed !== '' && aliases.some((other, position) => position !== index && other === typed);
+            aliases[index] = taken ? aliases[index] : typed;
             event.target.value = aliases[index];
             if (typeof callback === 'function') callback(index, committed.map(option => option?.key || 'None'));
         });
@@ -521,8 +524,12 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         renderSlotButtons();
     }
 
+    // the stored keys, not the resolved ones: a rebuild (slot + / −, a new character list)
+    // must carry a key the pack could not resolve, so it stays pending or resolves now,
+    // instead of becoming 'None' and being written back by the next autosave
     function currentKeys() {
-        return control ? control.getKey() : [];
+        if (!control) return [];
+        return control.getKey().map((key, index) => (key === 'None' ? (control.getPendingKey?.(index) || 'None') : key));
     }
 
     function currentWeights() {
@@ -568,7 +575,9 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
             return slot;
         }),
         setSlots(slots) {
-            const list = Array.isArray(slots) && slots.length ? slots.slice(0, maxSlots) : [{ key: 'None', weight: 1 }];
+            // one slot per region: a stored card or a hand-edited preset that puts two
+            // slots on L would show both checked while only the first one is drawn
+            const list = Array.isArray(slots) && slots.length ? uniqueSlotSides(slots.slice(0, maxSlots)) : [{ key: 'None', weight: 1 }];
             count = Math.max(minSlots, list.length);
             build(list.map(slot => slot?.key ?? 'None'), list.map(slot => slot?.weight ?? 1), null,
                 list.map(slot => slot?.alias ?? ''), list.map(slot => slot?.side ?? 'both'));

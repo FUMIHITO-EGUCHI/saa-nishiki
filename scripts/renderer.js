@@ -45,7 +45,7 @@ import { installSettingsProxy, setupSettingsPersistence } from './renderer/setti
 import { setupEditHistoryUi } from './renderer/editHistoryUi.js';
 import { get_prompt_textBox_Heights, set_prompt_textBox_Heights } from './renderer/components/componentsManager.js';
 import { hiresCalculate } from './renderer/tools/hiresCalculation.js';
-import { SIZE_HARD_MAX, SIZE_MIN, SIZE_STEP } from './shared/sizeLimits.js';
+import { SIZE_HARD_MAX, SIZE_LIMIT_STEP, SIZE_MIN, SIZE_STEP } from './shared/sizeLimits.js';
 import { applySizeRange } from './renderer/callbacks.js';
 
 function afterDOMinit() {
@@ -106,10 +106,10 @@ export async function setupHeader(SETTINGS, FILES, LANG){
 
         // upper bound of the run bar's Size boxes per model type (scripts/shared/sizeLimits.js)
         size_limit_checkpoint: setupSlider('size-limit-checkpoint', LANG.size_limit_checkpoint,
-            {min:SIZE_MIN, max:SIZE_HARD_MAX, step:64, defaultValue:SETTINGS.size_limit_checkpoint},
+            {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_LIMIT_STEP, defaultValue:SETTINGS.size_limit_checkpoint},
             (value) => { globalThis.globalSettings.size_limit_checkpoint = value; applySizeRange(); }),
         size_limit_diffusion: setupSlider('size-limit-diffusion', LANG.size_limit_diffusion,
-            {min:SIZE_MIN, max:SIZE_HARD_MAX, step:64, defaultValue:SETTINGS.size_limit_diffusion},
+            {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_LIMIT_STEP, defaultValue:SETTINGS.size_limit_diffusion},
             (value) => { globalThis.globalSettings.size_limit_diffusion = value; applySizeRange(); }),
     }
     globalThis.dropdownList.languageList.updateDefaults(LANG.language);

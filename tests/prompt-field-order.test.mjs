@@ -112,3 +112,12 @@ test('custom field entries carry their weight plans / batch compactly (#13)', as
   assert.deepEqual(fields[1].weight_plans, undefined, 'input is not mutated');
   assert.ok(isCustomFieldId('cf_gear') && !isCustomFieldId('positive') && !isCustomFieldId(null));
 });
+
+test('a row name is cut to forty characters', () => {
+  const [exact, long] = normalizeCustomFields([
+    { id: 'cf_exact', name: 'x'.repeat(40) },
+    { id: 'cf_long', name: `${'y'.repeat(40)}z` },
+  ]);
+  assert.equal(exact.name, 'x'.repeat(40), 'forty still fits');
+  assert.equal(long.name, 'y'.repeat(40), 'the forty-first character is dropped');
+});

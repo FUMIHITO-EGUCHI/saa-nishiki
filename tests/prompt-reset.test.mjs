@@ -38,17 +38,20 @@ test('custom fields keep their shape (name, side, polarity, batch, mute) and los
     assert.deepEqual(clearedPromptPatch({}).prompt_custom_fields, []);
 });
 
-test('a model type switch swaps the Scene once, in one undo step, but not on the boot-time or forced apply', () => {
+test('a model type switch swaps the Scene once, outside the undo history, but not on the boot-time apply', () => {
     const callbacks = read('scripts/renderer/callbacks.js');
     assert.match(callbacks, /export async function callback_api_model_type\(index, selectedValue, \{ clearPrompts = true \} = \{\}\)/);
     assert.match(callbacks, /const previous = SETTINGS\.api_model_type;/);
-    // the type itself is not undoable, so the whole switch (swap, settings) runs with history suspended
-    assert.match(callbacks, /if \(clearPrompts && previous && previous !== value\) applyPromptsForModelType\(value\);/);
-    assert.match(callbacks, /if \(previous && previous !== value && globalThis\.editHistory\?\.suspendRecording\) return globalThis\.editHistory\.suspendRecording\(run\);/);
+    // the type itself is not undoable, so the whole switch (swap, settings) runs with history
+    // suspended, and the history of the sections the switch swaps ends there - the Scene only
+    // when the Scene is swapped (behaviour: tests/model-type-switch.test.mjs)
+    assert.match(callbacks, /if \(clearPrompts\) \{\s*applyPromptsForModelType\(value\);/);
+    assert.match(callbacks, /const swapped = clearPrompts \? \['generation', 'prompt'\] : \['generation'\];/);
+    assert.match(callbacks, /return globalThis\.editHistory\.suspendRecording\(run\)\.finally\(\(\) => globalThis\.editHistory\.clear\?\.\(swapped\)\);/);
     assert.match(callbacks, /callback_api_model_type\(0, \['Checkpoint'\], \{ clearPrompts: false \}\);/, 'the interface fallback keeps the prompts');
     assert.match(callbacks, /runEditTransaction\(\{ source: 'model-type-prompts', sections: \['prompt'\] \}, mutate\)/);
-    // the card being left is stored before the one being entered is applied
-    assert.match(callbacks, /SETTINGS\.model_type_prompts = rememberPrompts\(SETTINGS\.model_type_prompts, previous, SETTINGS\);/);
+    // the card being left is stored under the type it belongs to before the one being entered is applied
+    assert.match(callbacks, /SETTINGS\.model_type_prompts = rememberPrompts\(SETTINGS\.model_type_prompts, cardOwner, SETTINGS\);/);
     assert.match(callbacks, /Object\.assign\(SETTINGS, promptsFor\(SETTINGS\.model_type_prompts, type, SETTINGS\)\);/);
     // the slot controls hold their own copy, so they are pushed the restored values
     assert.match(callbacks, /globalThis\.artistList\?\.setSlots\?\.\(SETTINGS\.artist_slots\);/);

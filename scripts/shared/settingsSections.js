@@ -9,6 +9,7 @@
 //   lora / adetailer / controlnet — pipeline slots.
 import { REFINE_SYSTEM_PROMPT } from '../aiPromptRefiner.js';
 import { normalizeArtistSlots } from './artistSlots.js';
+import { uniqueSlotSides } from './characterSides.js';
 
 export const SCHEMA_VERSION = 1;
 
@@ -74,6 +75,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // the Prompts card remembered per model type (scripts/shared/modelTypePrompts.js): a
     // switch puts the other type's last prompts back instead of clearing the card
     model_type_prompts: {},
+    // the type the card on screen was written under, when a switch forced by the interface
+    // (WebUI has no diffusion route) parked it on the other type ('' = the type's own card)
+    model_type_prompt_owner: '',
     // upper bound of the Size boxes per model type (scripts/shared/sizeLimits.js)
     size_limit_checkpoint: 1536,
     size_limit_diffusion: 2048,
@@ -113,7 +117,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     custom_prompt: '',
     api_prompt: 'masterpiece, best quality, amazing quality',
     api_prompt_right: ':d, selfie',
-    api_neg_prompt: 'bad quality,worst quality,worst detail,sketch,censor',
+    // "censored" is the Danbooru tag the checkpoints learned; "censor" is only an alias of
+    // it, so it was both weaker in the prompt and marked unknown by the dictionary check
+    api_neg_prompt: 'bad quality,worst quality,worst detail,sketch,censored',
     // Regional: per-side negatives (the shared api_neg_prompt goes to both sides)
     api_neg_prompt_left: '',
     api_neg_prompt_right: '',
@@ -268,7 +274,7 @@ export const SECTION_KEYS = Object.freeze({
         'model_path_comfyui', 'model_path_webui', 'image_save_path_comfyui', 'image_save_path_webui', 'image_save_embed_character_name',
         'webui_auth', 'webui_auth_enable',
         // the per-type generation store sits beside the type: neither is an undo step
-        'api_model_type', 'model_type_generation', 'model_type_prompts', 'size_limit_checkpoint', 'size_limit_diffusion', 'api_model_file_vpred', 'thumb_select', 'thumb_select_list',
+        'api_model_type', 'model_type_generation', 'model_type_prompts', 'model_type_prompt_owner', 'size_limit_checkpoint', 'size_limit_diffusion', 'api_model_file_vpred', 'thumb_select', 'thumb_select_list',
         'api_vae_sdxl_model', 'api_vae_sdxl_override', 'api_vae_unet_model', 'api_model_file_diffusion_weight_dtype',
         'api_model_file_text_encoder', 'api_model_file_text_encoder_type', 'api_model_file_text_encoder_device',
         'ai_local_addr', 'ai_local_model_mode', 'ai_local_timeout', 'ai_local_temp', 'ai_local_n_predict', 'ai_refine_system_prompt',
@@ -380,7 +386,9 @@ function coerce(key, value, defaultValue) {
                 if (slot.side === 'left' || slot.side === 'right') result.side = slot.side;
                 return result;
             });
-        return slots.length ? slots : clone(defaultValue);
+        // one slot per region: stored data that puts two slots on the same side keeps it
+        // on the first one, the one the regional generator draws
+        return slots.length ? uniqueSlotSides(slots) : clone(defaultValue);
     }
     if (key === 'artist_slots') return normalizeArtistSlots(value);
     if (key === 'weights4dropdownlist') {

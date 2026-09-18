@@ -153,6 +153,25 @@ test('enforces entry count and approximate byte limits without retaining oversiz
   assert.equal(byBytes.history.canUndo(), false);
 });
 
+test('clear(sections) forgets only the entries that hold those sections', async () => {
+  const { state, history } = fixture();
+  await history.runTransaction({ source: 'edit', sections: ['prompt'] }, () => { state.prompt.text = 'b'; });
+  await history.runTransaction({ source: 'edit', sections: ['generation'] }, () => { state.generation.seed = 2; });
+  await history.runTransaction({ source: 'edit', sections: ['prompt', 'generation'] }, () => {
+    state.prompt.text = 'c';
+    state.generation.seed = 3;
+  });
+  await history.undo();                       // the mixed entry moves to the redo stack
+  assert.deepEqual(history.status(), { canUndo: true, canRedo: true, undoCount: 2, redoCount: 1 });
+
+  // what a model type switch does when it swaps the generation settings but keeps the Scene
+  history.clear(['generation']);
+  assert.deepEqual(history.status(), { canUndo: true, canRedo: false, undoCount: 1, redoCount: 0 });
+  await history.undo();
+  assert.equal(state.prompt.text, 'a', 'the prompt entry still undoes what it recorded');
+  assert.equal(history.canUndo(), false);
+});
+
 test('clear resets both stacks and emits state changes', async () => {
   const events = [];
   const { state, history } = fixture({ onChange: value => events.push(value) });
