@@ -221,8 +221,9 @@ export function setupSuggestionSystem() {
         });
 
         textbox.addEventListener('input', debounce(async (event) => {
-            // text rewritten by the capsule field (chip toggle, weight, order): nothing was typed
-            if (event?.detail?.source === 'capsules') {
+            // text rewritten by the capsule field (chip toggle, weight, order): nothing was typed;
+            // a hidden textarea (the field shows capsules, e.g. after "+ Add tag") has no caret to follow
+            if (event?.detail?.source === 'capsules' || textbox.getClientRects().length === 0) {
                 suggestionBox.style.display = 'none';
                 return;
             }
@@ -488,11 +489,11 @@ export function setupSuggestionSystem() {
             style.paddingRight = computed.paddingRight;
             style.paddingBottom = computed.paddingBottom;
             style.paddingLeft = computed.paddingLeft;
-            style.borderTopWidth = computed.borderTopWidth;
-            style.borderRightWidth = computed.borderRightWidth;
-            style.borderBottomWidth = computed.borderBottomWidth;
-            style.borderLeftWidth = computed.borderLeftWidth;
-            style.width = `${width}px`;
+            // The mirror has no scrollbar (overflow hidden), the textarea does once it scrolls:
+            // wrap at the textarea's clientWidth (padding box without the scrollbar) with no
+            // border, so both break lines at the same width.
+            style.borderWidth = '0';
+            style.width = `${textbox.clientWidth > 0 ? textbox.clientWidth : width}px`;
 
             mirror.textContent = textBeforeCursor;
             mirror.appendChild(caretMarker);

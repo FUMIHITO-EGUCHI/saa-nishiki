@@ -7,7 +7,10 @@ let instanceSlotManager = null;
 export function generateGUID() {
     const template = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
     let result = template;
-    const randomValues = new Uint8Array(16);
+    // one random byte per placeholder: with fewer, the reads past the end are undefined,
+    // "NaN" lands in the middle of the id and the tail keeps its "x"es (the class a slot
+    // row is looked up by then never matches, and its textbox is never built)
+    const randomValues = new Uint8Array(template.replaceAll('-', '').length);
     crypto.getRandomValues(randomValues);
     let randomIndex = 0;
     for (let i = 0; i < template.length; i++) {

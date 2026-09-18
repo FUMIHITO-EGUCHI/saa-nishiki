@@ -35,3 +35,17 @@ test('the whole file becomes the artist list', () => {
     assert.deepEqual(artists.map(artist => artist.tag), ['ebifurya', 'wlop']);
     assert.deepEqual(artists[1].aliases, ['wang_ling']);
 });
+
+test('a dictionary saved with CRLF parses like any other', () => {
+    const artists = parseArtistIndex([
+        '1girl,0,6008644,"1girls,sole_female"',
+        'ebifurya,1,5924,',
+        '',
+        'wlop,1,365,"wang_ling,wlop_(artist)"',
+    ].join('\r\n') + '\r\n');
+    assert.deepEqual(artists.map(artist => artist.tag), ['ebifurya', 'wlop']);
+    // the line break sits at the end of the alias field, where it would otherwise stick to the last alias
+    assert.deepEqual(artists[1].aliases, ['wang_ling', 'wlop_(artist)']);
+    assert.deepEqual(parseArtistRow('hammer_(sunset_beach),1,5418,aenobas\r').aliases, ['aenobas']);
+    assert.equal(parseArtistRow('ebifurya,1,5924,\r').heat, 5924);
+});

@@ -104,3 +104,49 @@ test('matchRange points at the part to highlight', () => {
     assert.equal(matchRange('sakura_oriko', 'wlop'), null);
     assert.equal(matchRange('sakura_oriko', ''), null);
 });
+
+test('a better name match wins even when the other artist is far busier', () => {
+    // heat rises down the list, so only the kind of match can produce this order
+    const artists = [
+        { tag: 'oriko_sakura', heat: 1, aliases: [] },                // the name starts with it
+        { tag: 'mahou_oriko_x', heat: 10, aliases: [] },              // a word of the name
+        { tag: 'moriko', heat: 100, aliases: [] },                    // somewhere inside the name
+        { tag: 'unrelated', heat: 1000, aliases: ['oriko_alias'] },   // an alias only
+    ];
+    assert.deepEqual(
+        flattenGroups(rankArtists('oriko', { artists })).map(entry => entry.key),
+        ['oriko_sakura', 'mahou_oriko_x', 'moriko', 'unrelated'],
+    );
+});
+
+test('a tag hit is ranked by the tag the artist draws most, not by the one they draw least', () => {
+    const artists = [
+        { tag: 'artist_a', heat: 10, aliases: [] },
+        { tag: 'artist_b', heat: 900, aliases: [] },
+    ];
+    const profiles = parseArtistProfiles([
+        'artist_a\t100\tsakura_hair_ornament:50,sakura_petals:5\toriginal:10',
+        'artist_b\t100\tsakura_tree:30\toriginal:10',
+    ].join('\n'));
+    const [byTag] = rankArtists('sakura', { artists, profiles });
+    assert.deepEqual(byTag.entries.map(entry => entry.key), ['artist_a', 'artist_b'], '50 % beats 30 %, the 5 % tag does not drag it down');
+    assert.deepEqual(byTag.entries[0].matchedTags.map(match => match.tag), ['sakura_hair_ornament', 'sakura_petals']);
+});
+
+test('an empty group gets no heading, and no artist is listed twice', () => {
+    assert.deepEqual(rankArtists('', options()).map(group => group.group), ['top'], 'nothing starred, nothing used yet');
+    const groups = rankArtists('', options({ favorites: ['sakura_oriko'], recent: ['sakura_oriko'], limit: 3 }));
+    assert.deepEqual(groups.map(group => group.group), ['favorite', 'top'], 'the recent one is already starred, so that group stays empty');
+    assert.deepEqual(groups[0].entries.map(entry => entry.key), ['sakura_oriko']);
+    assert.deepEqual(groups[1].entries.map(entry => entry.key), ['sakurazawa_izumi', 'horiguchi_yukiko']);
+    // a starred artist the dictionary no longer carries is simply left out
+    const gone = rankArtists('', options({ favorites: ['ghost_artist'], recent: ['ghost_artist'], limit: 1 }));
+    assert.deepEqual(gone.map(group => group.group), ['top']);
+});
+
+test('each group is cut to the limit the caller asked for', () => {
+    const groups = rankArtists('sakura', options({ limit: 1 }));
+    assert.deepEqual(groups.map(group => group.group), ['name', 'tag']);
+    assert.deepEqual(groups[0].entries.map(entry => entry.key), ['sakura_oriko'], 'the busiest of the two name hits');
+    assert.deepEqual(groups[1].entries.map(entry => entry.key), ['horiguchi_yukiko'], 'the strongest of the two tag hits');
+});

@@ -72,3 +72,23 @@ test('the whole file becomes a map keyed by the prompt spelling', () => {
     assert.equal(profiles.get(profileKey('@hammer (sunset beach)')).series[0].tag, 'touhou');
     assert.equal(profiles.get('ciloranko').draws[0].percent, 42);
 });
+
+test('a profile file saved with CRLF parses like any other', () => {
+    const profiles = parseArtistProfiles([
+        'ciloranko\t252\tdress:42,white_dress:14\tarknights:21',
+        '',
+        'hammer_(sunset_beach)\t5627\that:38\ttouhou:89',
+    ].join('\r\n') + '\r\n');
+    assert.equal(profiles.size, 2);
+    assert.deepEqual(profiles.get('ciloranko').series, [{ tag: 'arknights', percent: 21 }]);
+    assert.deepEqual(profiles.get('hammer_(sunset_beach)').draws, [{ tag: 'hat', percent: 38 }]);
+});
+
+test('spacing around a name or a separator is no part of the name', () => {
+    const parsed = parseArtistProfileLine('  ciloranko \t252\t dress : 42 , white_dress:14 \tarknights:21');
+    assert.equal(parsed.artist, 'ciloranko');
+    assert.deepEqual(parsed.draws, [{ tag: 'dress', percent: 42 }, { tag: 'white_dress', percent: 14 }]);
+    assert.deepEqual(parsed.series, [{ tag: 'arknights', percent: 21 }]);
+    // a padded name would look up fine but show up padded in the panel beside the list
+    assert.equal(parseArtistProfiles('  ciloranko \t252\t\t').get('ciloranko').artist, 'ciloranko');
+});

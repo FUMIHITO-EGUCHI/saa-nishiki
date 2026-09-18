@@ -91,13 +91,20 @@ class PromptManager {
     }
 
     parseLine(line) {
-        const parts = line.split(',', 4);
-        if (parts.length < 2) return null;
+        // `tag,category,heat,"alias,alias,alias"`: the alias field is quoted and holds commas,
+        // so it is taken whole from the third comma on. Splitting with a limit dropped every
+        // alias after the first (10 890 of the 221 787 rows lost aliases, and a search for
+        // "sole_female" or "boobs" found nothing).
+        const first = line.indexOf(',');
+        const second = line.indexOf(',', first + 1);
+        if (first <= 0) return null;
 
-        const prompt = parts[0].trim();
-        const group = this.parseNumber(parts[1]);
-        const heat = parts.length > 2 ? this.parseNumber(parts[2]) : 0;
-        const aliases = parts.length > 3 ? parts[3].trim().replaceAll(/(^")|("$)/g, '') : "";
+        const prompt = this.unquote(line.slice(0, first));
+        const third = second < 0 ? -1 : line.indexOf(',', second + 1);
+        const group = this.parseNumber(second < 0 ? line.slice(first + 1) : line.slice(first + 1, second));
+        const heatField = second < 0 ? '' : (third < 0 ? line.slice(second + 1) : line.slice(second + 1, third));
+        const heat = heatField === '' ? 0 : this.parseNumber(heatField);
+        const aliases = third < 0 ? '' : this.unquote(line.slice(third + 1));
 
         return {
             prompt,
@@ -110,6 +117,14 @@ class PromptManager {
     parseNumber(value) {
         const match = /^\d+$/.exec(value.trim());
         return match ? Number.parseInt(match[0]) : 0;
+    }
+
+    // A CSV field as the dictionary writes it: wrapped in quotes when it holds a comma or a
+    // quote of its own, with the inner quotes doubled (35 tags carry one, e.g. don't_say_"lazy").
+    unquote(value) {
+        const text = String(value ?? '').trim();
+        if (!text.startsWith('"') || !text.endsWith('"') || text.length < 2) return text;
+        return text.slice(1, -1).replaceAll('""', '"');
     }
 
     parseTranslateData(translateData) {
@@ -134,6 +149,9 @@ class PromptManager {
 
             if (prompt in promptDict) {
                 const existing = promptDict[prompt];
+                // the language file's own text is the tag's translation (shared/tagAliases.js);
+                // `aliases` below also holds the CSV's synonyms. A repeated line keeps the first.
+                existing.translation ||= newAliases;
                 if (existing.aliases) {
                     const existingAliases = new Set(existing.aliases.split(','));
                     const newAliasesSet = new Set(newAliases.split(','));
@@ -146,7 +164,8 @@ class PromptManager {
                     prompt,
                     group,
                     heat: 1,  // translate alias
-                    aliases: newAliases
+                    aliases: newAliases,
+                    translation: newAliases
                 });
                 promptDict[prompt] = this.prompts.at(-1);
             }
@@ -416,8 +435,8 @@ function tagLookup(keys) {
     return { loaded: true, known: list.filter(key => tagKeySet.has(key)) };
 }
 
-// Translation of each tag (the chips' alias line): { value: alias } from the merged
-// aliases of the loaded dictionary, '' when unknown or untranslated. `loaded: false`
+// Translation of each tag (the chip popover's alias line): { value: alias } from the
+// language file text kept on each entry, '' when unknown or untranslated. `loaded: false`
 // while no tag file is loaded so the renderer does not cache blanks.
 let tagEntryMap = null;
 export function getTagAliases(tags) {
@@ -452,6 +471,7 @@ export {
     setupTagAutoCompleteBackend,
     tagReload,
     tagGet,
+    tagLookup,
     getPromptList
 };
 

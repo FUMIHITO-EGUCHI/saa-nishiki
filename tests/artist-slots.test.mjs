@@ -66,3 +66,16 @@ test('the signature guard rides along only while an artist is set', () => {
     assert.equal(signatureGuard({ ...settings, artist_slots: [] }), '', 'no artist, no guard');
     assert.equal(signatureGuard({ ...settings, api_model_type: 'Checkpoint' }), '');
 });
+
+test('a fourth artist is dropped rather than sent', () => {
+    const slots = [{ key: 'ciloranko' }, { key: 'wlop' }, { key: 'nnn_yryr' }, { key: 'ebifurya' }];
+    assert.deepEqual(normalizeArtistSlots(slots).map(slot => slot.key), ['ciloranko', 'wlop', 'nnn_yryr'], 'the card holds three rows');
+    assert.deepEqual(filledArtistSlots(slots).map(slot => slot.key), ['ciloranko', 'wlop', 'nnn_yryr']);
+    assert.equal(artistPrompt({ api_model_type: 'Diffusion', artist_slots: slots }), '@ciloranko, @wlop, @nnn yryr');
+});
+
+test('a weight of zero reads as no weight at all', () => {
+    // "(@wlop:0)" would leave the artist in the prompt with nothing behind it
+    assert.deepEqual(normalizeArtistSlots([{ key: 'wlop', weight: 0 }]), [{ key: 'wlop', weight: 1 }]);
+    assert.equal(artistToken('wlop', 0), '@wlop');
+});

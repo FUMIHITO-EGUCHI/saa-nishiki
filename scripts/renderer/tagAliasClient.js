@@ -13,7 +13,9 @@ export const TAG_ALIASES_EVENT = 'saa:tag-aliases-updated';
 const aliases = new Map();   // chip value -> alias ('' when none)
 const pending = new Set();
 let timer = null;
-let unavailable = false;
+let unavailable = false;   // this build has no lookup API at all
+let retryAt = 0;           // a failed lookup (e.g. the web socket reconnecting) pauses requests until then
+const RETRY_DELAY_MS = 30_000;
 
 function enabled() {
     return globalThis.globalSettings?.tag_chip_alias !== false;
@@ -41,6 +43,7 @@ export function ensureAliases(values = []) {
 function request(key) {
     const hasApi = typeof globalThis.api?.tagAliases === 'function' || globalThis.inBrowser;
     if (!hasApi) { unavailable = true; return; }
+    if (Date.now() < retryAt) return;
     pending.add(key);
     timer ??= setTimeout(flush, 60);
 }
@@ -58,7 +61,8 @@ async function flush() {
         for (const key of keys) aliases.set(key, String(result.aliases?.[key] ?? ''));
     } catch (error) {
         console.warn('[tagAliasClient] alias lookup failed:', error?.message ?? error);
-        unavailable = true;
+        // not for the whole session: the next render after the pause asks again
+        retryAt = Date.now() + RETRY_DELAY_MS;
         return;
     }
     document.dispatchEvent(new CustomEvent(TAG_ALIASES_EVENT));
@@ -69,5 +73,6 @@ export function clearTagAliasCache() {
     aliases.clear();
     pending.clear();
     unavailable = false;
+    retryAt = 0;
     document.dispatchEvent(new CustomEvent(TAG_ALIASES_EVENT));
 }
