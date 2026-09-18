@@ -3,7 +3,7 @@
 // `count` queue entries, each with batch_size=1, expanded prompts, and seed + n − 1.
 // Nothing here touches ComfyUI; it only decides what text and seed each loop reads.
 
-import { stripDisabledTags } from '../components/tagCapsuleLogic.js';
+import { mapPromptTokens, stripDisabledTags } from '../components/tagCapsuleLogic.js';
 import { isFieldMuted } from '../../shared/promptFieldOrder.js';
 
 let activeOverride = null;
@@ -146,38 +146,71 @@ export function planWeightEntries(weights = {}) {
 
 // Rewrites "(tag:w)" / "tag" tokens in a comma-separated prompt so that planned tags carry their
 // per-image weight. Matching is by normalized name + occurrence ordinal; everything else is untouched.
-export function applyPlanWeights(text, entries = []) {
+// `counter` (name → how many were seen) carries the ordinals from one call to the next,
+// so a chain can be weighted unit by unit; without one every call starts at #0.
+export function applyPlanWeights(text, entries = [], counter = null) {
     if (!entries.length || !text) return text;
     const wanted = new Map();
-    for (const entry of entries) wanted.set(`${entry.name}#${entry.ordinal}`, entry.weight);
-    const seen = new Map();
-    return String(text).split(/(,|\n)/).map(part => {
-        if (part === ',' || part === '\n') return part;
-        const leading = /^\s*/.exec(part)[0];
-        const trailing = /\s*$/.exec(part)[0];
-        const token = part.trim();
-        if (!token) return part;
+    // first entry of a name#ordinal wins: a side negative repeats the shared negative,
+    // and the shared one is what stands first in the text
+    for (const entry of entries) {
+        const key = `${entry.name}#${entry.ordinal}`;
+        if (!wanted.has(key)) wanted.set(key, entry.weight);
+    }
+    const seen = counter ?? new Map();
+    // the chips' tokenizer: "(red hair, blue eyes:1.2)" is one tag with one ordinal, so
+    // the names and ordinals here are the ones the capsule ids were built from
+    return mapPromptTokens(text, token => {
         const weighted = /^\((.*):\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\)$/.exec(token);
         const rawName = weighted ? weighted[1].trim() : token;
         const name = normalizeName(rawName);
         const ordinal = seen.get(name) ?? 0;
         seen.set(name, ordinal + 1);
         const weight = wanted.get(`${name}#${ordinal}`);
-        if (weight === undefined) return part;
-        const rendered = Math.abs(weight - 1) < 1e-9 ? rawName : `(${rawName}:${weight.toFixed(2)})`;
-        return `${leading}${rendered}${trailing}`;
-    }).join('');
+        if (weight === undefined) return null;
+        return Math.abs(weight - 1) < 1e-9 ? rawName : `(${rawName}:${weight.toFixed(2)})`;
+    });
 }
 
-// Applies the planned weights to the final prompt trio after AI Refine.
-// Positive text is common + positive; positiveRight is common + positive_right; negative is negative.
+/**
+ * A weigher for a prompt chain that is built unit by unit (Prose): `weigh(text, ...fields)`
+ * puts the planned weights of those fields on one unit and keeps the tag ordinals running
+ * per field list, so a second unit continues where the first stopped instead of matching
+ * "smile#0" again. A unit of a field with no plans comes back unchanged. `reset()` starts
+ * the next chain.
+ */
+export function createPlanWeigher(weights = {}) {
+    const byField = planWeightEntries(weights);
+    const counters = new Map();
+    const weigh = (text, ...fields) => {
+        const entries = fields.flatMap(field => byField[field] ?? []);
+        if (entries.length === 0) return text;
+        const key = fields.join('+');
+        const counter = counters.get(key) ?? new Map();
+        counters.set(key, counter);
+        return applyPlanWeights(text, entries, counter);
+    };
+    weigh.reset = () => counters.clear();
+    return weigh;
+}
+
+// Applies the planned weights to the final prompts after AI Refine. Positive text is
+// common + positive; positiveRight is common + positive_right; the merged negative is
+// the Negative field. A Regional side negative is the shared negative plus that side's
+// field, so it takes both (the shared tags stand first and keep their own weight).
+// negativeLeft / negativeRight are only answered when the caller passed them.
 export function reapplyPlanWeights(prompts, weights) {
     const byField = planWeightEntries(weights);
     const merge = (...fields) => fields.flatMap(field => byField[field] ?? []);
+    const side = (key, field) => (typeof prompts?.[key] === 'string'
+        ? { [key]: applyPlanWeights(prompts[key], merge('negative', field)) }
+        : null);
     return {
         ...prompts,
         positive: applyPlanWeights(prompts.positive ?? '', merge('common', 'positive')),
         positiveRight: applyPlanWeights(prompts.positiveRight ?? '', merge('common', 'positive_right')),
         negative: applyPlanWeights(prompts.negative ?? '', merge('negative')),
+        ...side('negativeLeft', 'negative_left'),
+        ...side('negativeRight', 'negative_right'),
     };
 }

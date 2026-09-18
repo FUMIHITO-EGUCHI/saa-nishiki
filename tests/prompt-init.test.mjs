@@ -43,9 +43,12 @@ test('sides are a Regional concept: a new field takes one only while Regional is
     // a built-in keeps its side when dragged; a custom row takes the box it lands in
     assert.match(manager, /function sideAllowed\(id, side\) \{\s*if \(!isRegional\(\)\) return true;\s*if \(customOf\(id\)\) return true;\s*return sideOf\(id, fields\) === side;/);
     assert.match(manager, /if \(custom && isRegional\(\)\) \{\s*if \(side === 'both'\) delete custom\.side; else custom\.side = side;/);
-    // a cast row ("@alias" per character slot) and the Action row get no rename / delete controls
-    assert.match(manager, /function isFixed\(id\) \{\s*const custom = customOf\(id\);\s*if \(!custom \|\| isDiffusionFieldId\(custom\.id\)\) return true;\s*\/\/[^\n]*\n\s*return isActionNamed\(custom\) && castEnabled\(SETTINGS\);/);
-    assert.match(manager, /if \(custom && !isFixed\(id\)\) \{\s*const polarity = document\.createElement\('button'\);/);
+    // the rows the app owns - a cast row ("@alias" per character slot) and cf_action - get
+    // no rename / delete controls; a hand-made row named "Action" stays the user's own row
+    assert.match(manager, /function isFixed\(id\) \{\s*const custom = customOf\(id\);\s*return !custom \|\| isDiffusionFieldId\(custom\.id\);\s*\}/);
+    // the controls follow the row's current state (scene-behaviour.test.mjs exercises it)
+    assert.match(manager, /for \(const button of container\.querySelectorAll\('\.scene-polarity, \.scene-delete'\)\) button\.hidden = fixed;/);
+    assert.match(manager, /if \(!custom \|\| isFixed\(id\) \|\| !label \|\| label\.hidden\) return;/);
 });
 
 const caps = text => parsePromptToCapsules(text);

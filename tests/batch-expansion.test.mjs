@@ -14,6 +14,7 @@ import {
   readPromptValue,
 } from '../scripts/renderer/tools/promptBatchExpansion.js';
 import { expandAll, parsePromptToCapsules, setCapsulePlan } from '../scripts/renderer/components/tagCapsuleLogic.js';
+import { createRefineEditorSnapshot, snapshotFieldsForPromptOverride } from '../scripts/renderer/tools/refineEditorState.js';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(testDirectory, '..');
@@ -159,6 +160,51 @@ test('an explicit batch expands whenever a variable plan exists; a single click 
   assert.equal(random.baseSeed, 4242, 'seed -1 draws one base seed for the whole batch');
   assert.equal(beginImageOverride({ enabled: false }, 0, { fieldSet: set }), null);
   assert.equal(overrideSeed(99), 99);
+});
+
+test('seed 0 is a seed like any other: it is pinned, not read as "no seed"', () => {
+  const set = fakeFieldSet(3);
+  const expansion = planBatchExpansion({ loops: 1 }, { fieldSet: set, sliderSeed: 0, generateRandomSeed: () => 999 });
+  assert.deepEqual(
+    { baseSeed: expansion.baseSeed, fixedSeed: expansion.fixedSeed },
+    { baseSeed: 0, fixedSeed: true },
+    'the slider stands at 0, so 0 is the base seed and no random one is drawn',
+  );
+
+  beginImageOverride(expansion, 2, { fieldSet: set });
+  assert.equal(overrideSeed(4242), 0, 'image #3 of a pinned batch keeps seed 0');
+  endImageOverride();
+  assert.equal(overrideSeed(4242), 4242, 'with no override running the slider value is the seed');
+});
+
+test('a seed the override cannot state falls back to the slider', () => {
+  const row = { fields: { positive: 'x' }, weights: {}, terminal: [] };
+  // -1 is the "draw a random one" marker, not a seed a queue entry may carry
+  assert.equal(beginImageOverride({ enabled: true, loops: 1, rows: [row], baseSeed: -1, fixedSeed: true }, 0).seed, -1);
+  assert.equal(overrideSeed(777), 777);
+  beginImageOverride({ enabled: true, loops: 1, rows: [row], baseSeed: Number.POSITIVE_INFINITY, fixedSeed: true }, 0);
+  assert.equal(overrideSeed(777), 777, 'and neither is a number that is not finite');
+  endImageOverride();
+});
+
+test('the Refine snapshot field names are the keys the expansion bridge reads back', () => {
+  // snapshotFieldsForPromptOverride -> planBatchExpansion({ baseFields }) -> readPromptValue
+  const snapshot = createRefineEditorSnapshot({
+    mode: 'regional',
+    fields: {
+      common: 'shared', positive: 'left girl', positiveRight: 'right girl',
+      negative: 'blurry', negativeLeft: 'harsh shadow', negativeRight: 'lens flare', exclude: 'watermark',
+    },
+  });
+  const idle = { getBatchExpansion: () => ({ enabled: false, count: 1, variable: 0 }), getPromptOverrides: () => null };
+  const plain = planBatchExpansion({ loops: 1 }, { fieldSet: idle, baseFields: snapshotFieldsForPromptOverride(snapshot) });
+
+  assert.equal(beginImageOverride(plain, 0, { fieldSet: idle }), null, 'no expansion, only the snapshot');
+  assert.deepEqual(
+    ['common', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude'].map(key => readPromptValue(key)),
+    ['shared', 'left girl', 'right girl', 'blurry', 'harsh shadow', 'lens flare', 'watermark'],
+  );
+  endImageOverride();
 });
 
 test('generate.js and generate_regional.js read prompts and seeds through the expansion bridge', () => {

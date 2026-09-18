@@ -1,14 +1,17 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 
 import {
   buildWeightCandidates,
   formatTagWeight,
+  nudgeCapsuleWeight,
   parsePromptToCapsules,
   previewBatch,
   resolveWeight,
   serializeCapsules,
   stableHash32,
+  stripDisabledTags,
 } from '../scripts/renderer/components/tagCapsuleLogic.js';
 
 test('parses plain and weighted prompt tokens into capsule data', () => {
@@ -20,6 +23,33 @@ test('parses plain and weighted prompt tokens into capsule data', () => {
   assert.equal(capsules[1].weightPlan.min, 1.2);
   assert.equal(capsules[1].weightPlan.max, 1.2);
   assert.deepEqual(capsules.map(capsule => capsule.id), ['blue hair#0', 'school uniform#0', 'solo#0']);
+});
+
+test('a weighted group keeps its commas: one capsule, never split into broken halves', () => {
+  const capsules = parsePromptToCapsules('1girl, (red hair, blue eyes:1.2), (smile, blush)\nsolo');
+  assert.deepEqual(capsules.map(capsule => capsule.value), ['1girl', 'red hair, blue eyes', '(smile, blush)', 'solo']);
+  assert.equal(capsules[1].weightPlan.min, 1.2);
+  assert.equal(serializeCapsules(capsules), '1girl, (red hair, blue eyes:1.20), (smile, blush), solo');
+  // nudging the group reweights the whole group instead of producing "((red hair:1.05), blue eyes:1.2)"
+  const nudged = nudgeCapsuleWeight(capsules, 1, 0.05);
+  assert.equal(serializeCapsules(nudged), '1girl, (red hair, blue eyes:1.25), (smile, blush), solo');
+  // escaped parentheses are text, and a line whose parentheses never close splits as before
+  assert.deepEqual(parsePromptToCapsules(String.raw`hatsune miku \(cosplay\), smile`).map(capsule => capsule.value), [String.raw`hatsune miku \(cosplay\)`, 'smile']);
+  assert.deepEqual(parsePromptToCapsules('(unclosed, tag').map(capsule => capsule.value), ['(unclosed', 'tag']);
+  assert.deepEqual(parsePromptToCapsules(':(, sad, :)').map(capsule => capsule.value), [':(', 'sad', ':)'], 'emoticon tags open no group');
+  assert.deepEqual(parsePromptToCapsules('~(a, b:0.8), ((c, d)), e').map(capsule => capsule.value), ['a, b', '((c, d))', 'e']);
+  // a disabled group leaves the prompt as a whole
+  assert.equal(stripDisabledTags('1girl, ~(red hair, blue eyes:1.20), solo'), '1girl, solo');
+});
+
+test('the Capsules → Text toggle leaves untouched text as it was', () => {
+  // the field wrote the text back on every switch to Text: line breaks became ", ",
+  // "(tag:1.125)" became "(tag:1.13)" and "(tag:1.0)" lost its markup without any edit
+  const field = fs.readFileSync(new URL('../scripts/renderer/components/tagCapsuleField.js', import.meta.url), 'utf8');
+  const stringBranch = /getWeightPopover\(\)\.close\(\);([\s\S]*?)mode = 'string';/.exec(field);
+  assert.ok(stringBranch, 'the Text branch of setMode');
+  assert.doesNotMatch(stringBranch[1], /writeCurrentText\(\)/);
+  assert.match(field, /function commitCapsules\(next, \{ rewrite = true \} = \{\}\) \{[\s\S]*?if \(rewrite\) writeCurrentText\(\);/, 'edits still write the text');
 });
 
 test('serializes weight 1 without markup and formats other weights for ComfyUI', () => {

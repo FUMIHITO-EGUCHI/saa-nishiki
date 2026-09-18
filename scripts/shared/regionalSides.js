@@ -127,6 +127,11 @@ export function swapSidesPatch(settings = {}) {
             return { ...field, side: side === 'left' ? 'right' : 'left' };
         });
     }
+    // a muted side row stays muted with its text, as a custom field's `muted` travels in its entry
+    if (Array.isArray(settings.prompt_field_muted)) {
+        const other = { positive: 'positive_right', positive_right: 'positive', negative_left: 'negative_right', negative_right: 'negative_left' };
+        patch.prompt_field_muted = settings.prompt_field_muted.map(id => other[id] ?? id);
+    }
     return patch;
 }
 

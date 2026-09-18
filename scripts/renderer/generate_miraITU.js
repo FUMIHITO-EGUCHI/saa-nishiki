@@ -1,6 +1,8 @@
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { extractHostPort, extractAPISecure, toggleQueueColor, generateRandomSeed, startQueue, checkVpred } from './generate.js';
 import { resizeImageToControlNetResolution } from './components/imageInfoUtils.js';
+import { stripDisabledTags } from './components/tagCapsuleLogic.js';
+import { isFieldMuted } from '../shared/promptFieldOrder.js';
 
 export async function generateMiraITU(dataPack){
     const {imageData, taggerOptions} = dataPack;
@@ -47,7 +49,8 @@ export async function generateMiraITU(dataPack){
         model: taggerOptions.sdxlModels,
         vpred: checkVpred(),
         seed:seed,
-        exclude:globalThis.prompt.exclude.getValue(),
+        // the Exclude row's ● switch and its toggled-off chips ("~tag") apply here too
+        exclude: isFieldMuted(SETTINGS, 'exclude') ? '' : stripDisabledTags(globalThis.prompt.exclude.getValue()),
 
         refresh:globalThis.generate.api_preview_refresh_time.getValue(),
 

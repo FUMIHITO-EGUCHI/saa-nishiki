@@ -3,16 +3,30 @@ const CAT = '[myTextbox]';
 // Live height adjusters, one per textbox. A window resize re-measures all of
 // them in a single coalesced frame in separate read and write phases (every
 // textbox drops to height:auto, then every scrollHeight is read, then every
-// height is written), so N textboxes cost one layout instead of 2N. There is
-// no per-textbox teardown path in this module, so entries live as long as the
-// page does.
-const liveAdjusters = new Set();
+// height is written), so N textboxes cost one layout instead of 2N.
+// There is no per-textbox teardown call, so the set holds each adjuster weakly and
+// its textbox keeps it alive (adjusterOwners): a textbox removed with its row (a
+// queue slot, a deleted custom prompt field) can be collected and its entry drops
+// out on the next batch. A textbox that is out of the page for now is skipped and
+// keeps its height until it is back (measured detached, it collapsed to minLines).
+const liveAdjusters = new Set();   // WeakRef<adjuster>
+const adjusterOwners = new WeakMap();   // textbox -> adjuster
 let resizeFrame = 0;
 let resizeListenerInstalled = false;
 
+function collectAdjusters() {
+    const adjusters = [];
+    for (const ref of liveAdjusters) {
+        const adjuster = ref.deref();
+        if (adjuster) adjusters.push(adjuster);
+        else liveAdjusters.delete(ref);
+    }
+    return adjusters;
+}
+
 function runBatchedAdjust() {
     resizeFrame = 0;
-    const adjusters = [...liveAdjusters];
+    const adjusters = collectAdjusters().filter(adjuster => adjuster.isConnected());
     // The font may have changed (changeFontSize dispatches a synthetic resize).
     for (const adjuster of adjusters) adjuster.invalidateLineHeight();
     // Write phase: release the fixed heights.
@@ -29,8 +43,9 @@ function scheduleBatchedAdjust() {
     resizeFrame = raf(runBatchedAdjust);
 }
 
-function registerAdjuster(adjuster) {
-    liveAdjusters.add(adjuster);
+function registerAdjuster(owner, adjuster) {
+    adjusterOwners.set(owner, adjuster);
+    liveAdjusters.add(new WeakRef(adjuster));
     if (!resizeListenerInstalled && typeof globalThis.addEventListener === 'function') {
         resizeListenerInstalled = true;
         // The viewport cap depends on the window height; one listener serves every textbox.
@@ -229,7 +244,7 @@ export function setupTextbox(containerId, placeholder = 'Enter text...', options
         applyHeight();
     };
 
-    registerAdjuster({ invalidateLineHeight, beginMeasure, measure, applyHeight });
+    registerAdjuster(textbox, { invalidateLineHeight, beginMeasure, measure, applyHeight, isConnected: () => textbox.isConnected });
 
     if (maxLines === 1) {
         // Single-line box: swallow Enter. Registered once here, not per adjustment.
@@ -507,6 +522,6 @@ export function changeFontSize(fontSize, lineHeight = '1.4') {
     }
 
     // The cached line heights are stale now; the resize batch re-measures them.
-    for (const adjuster of liveAdjusters) adjuster.invalidateLineHeight();
+    for (const adjuster of collectAdjusters()) adjuster.invalidateLineHeight();
     globalThis.dispatchEvent(new Event('resize'));
 }

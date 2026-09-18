@@ -21,6 +21,7 @@ import {
     setFieldMuted,
 } from '../../shared/promptFieldOrder.js';
 import { SPLITS, normalizeSplit, sideLabel, sideOf, sideOrder, splitLabel, swapSidesPatch } from '../../shared/regionalSides.js';
+import { splitPromptTokens } from './tagCapsuleLogic.js';
 import { castEnabled, castRoster, isActionNamed, isCastFieldId, isDiffusionFieldId, syncCastFields } from '../../shared/castMembers.js';
 import { regionalSlots, slotSideLabels } from '../../shared/characterSides.js';
 
@@ -85,12 +86,25 @@ export function setupPromptFieldManager() {
 
     // One "@alias" row per character slot (scripts/shared/castMembers.js): the rows
     // follow the slots and their aliases, so the settings are re-synced before the
-    // custom fields are read.
+    // custom fields are read. The row a removed slot leaves behind is kept for this session
+    // and comes back, text and all, when a slot takes that place again.
+    const castStash = {};
     function syncCast() {
-        const patch = syncCastFields(SETTINGS, LANG());
+        const patch = syncCastFields(SETTINGS, LANG(), { stash: castStash });
+        for (const field of patch.dropped) castStash[field.id] = field;
+        for (const field of patch.prompt_custom_fields) delete castStash[field.id];
         if (!patch.changed) return false;
         SETTINGS.prompt_custom_fields = patch.prompt_custom_fields;
         SETTINGS.prompt_positive_order = patch.prompt_positive_order;
+        return true;
+    }
+
+    // The cast needs its rows: a rename or a delete that leaves it without an Action row
+    // brings the app's own cf_action back (scripts/shared/castMembers.js).
+    function resyncCast() {
+        if (!syncCast()) return false;
+        fields = normalizeCustomFields(SETTINGS.prompt_custom_fields);
+        persistFields();
         return true;
     }
 
@@ -248,7 +262,8 @@ export function setupPromptFieldManager() {
     }
 
     function tagCount(id) {
-        return fieldValue(id).split(/[,\n]/).map(part => part.trim()).filter(Boolean).length;
+        // the chips' own tokenizer, so the row count matches the number of capsules
+        return splitPromptTokens(fieldValue(id)).length;
     }
 
     function fieldLabel(id) {
@@ -272,12 +287,13 @@ export function setupPromptFieldManager() {
         return !PINNED_UNITS.has(id) && !STRUCTURAL_UNITS.has(id) || id === 'views';
     }
 
-    // fixed rows: no rename, no delete (cast rows follow their slot, the Action row is the Action)
+    // Fixed rows: no rename, no delete. The rows the app owns are fixed - a cast row follows
+    // its slot, cf_action is the Action row. A row the user made stays theirs even while its
+    // name makes it the cast's Action: renaming or deleting it brings the app's own Action
+    // row back (resyncCast) instead of leaving the user with a row they cannot touch.
     function isFixed(id) {
         const custom = customOf(id);
-        if (!custom || isDiffusionFieldId(custom.id)) return true;
-        // a hand-made "Action" field serves as the Action row while the Cast is on
-        return isActionNamed(custom) && castEnabled(SETTINGS);
+        return !custom || isDiffusionFieldId(custom.id);
     }
 
     // ------------------------------------------------------------------ icons
@@ -348,6 +364,15 @@ export function setupPromptFieldManager() {
             if (count) {
                 const n = tagCount(id);
                 count.textContent = n > 0 ? String(n) : '';
+            }
+            // rename / polarity / delete follow the model type: a hand-made "Action" row
+            // is fixed only while the Cast is on
+            const custom = customOf(id);
+            if (custom) {
+                const fixed = isFixed(id);
+                for (const button of container.querySelectorAll('.scene-polarity, .scene-delete')) button.hidden = fixed;
+                const label = container.querySelector('.scene-label');
+                if (label) label.title = fixed ? custom.name : text('ui_scene_rename_hint', 'Double-click to rename');
             }
         }
         mutedNote.textContent = muted > 0 ? text('ui_scene_muted_count', '{0} off').replace('{0}', String(muted)) : '';
@@ -441,10 +466,8 @@ export function setupPromptFieldManager() {
         if (label) {
             label.classList.add('scene-label');
             label.addEventListener('click', () => toggleCollapsed(id));
-            if (!isFixed(id)) {
-                label.title = text('ui_scene_rename_hint', 'Double-click to rename');
-                label.addEventListener('dblclick', event => { event.preventDefault(); startRename(container, id); });
-            }
+            // startRename refuses a fixed row; applyRowStates sets the hint while it is not
+            label.addEventListener('dblclick', event => { event.preventDefault(); startRename(container, id); });
             const count = document.createElement('span');
             count.className = 'scene-count';
             label.insertAdjacentElement('afterend', count);
@@ -457,7 +480,8 @@ export function setupPromptFieldManager() {
             header.appendChild(tools);
         }
         const custom = customOf(id);
-        if (custom && !isFixed(id)) {
+        // built for every custom row; applyRowStates hides them while the row is fixed
+        if (custom) {
             const polarity = document.createElement('button');
             polarity.type = 'button';
             polarity.className = `scene-polarity is-${custom.polarity}`;
@@ -491,7 +515,7 @@ export function setupPromptFieldManager() {
     function startRename(container, id) {
         const custom = customOf(id);
         const label = container.querySelector('.tag-field-label');
-        if (!custom || !label || label.hidden) return;
+        if (!custom || isFixed(id) || !label || label.hidden) return;
         const input = document.createElement('input');
         input.type = 'text';
         input.value = custom.name;
@@ -502,14 +526,18 @@ export function setupPromptFieldManager() {
             if (done) return;
             done = true;
             const name = input.value.trim();
-            if (commit && name !== '' && name !== custom.name) {
+            const renamed = commit && name !== '' && name !== custom.name;
+            if (renamed) {
                 custom.name = name.slice(0, 40);
                 persistFields();
+                resyncCast(); // the row may have been serving as the cast's Action row
                 renderCustomFields();
                 globalThis.prompt?.tagCapsuleFields?.updateLanguage?.();
             }
             input.replaceWith(label);
             label.hidden = false;
+            // a new name can make the row the cast's Action (sentence, @alias chips) or release it
+            if (renamed) layoutScene(); else applyRowStates();
         };
         input.addEventListener('keydown', event => {
             if (event.key === 'Enter') { event.preventDefault(); finish(true); }
@@ -552,6 +580,7 @@ export function setupPromptFieldManager() {
             SETTINGS.prompt_field_presets = store;
         }
         persistFields();
+        resyncCast(); // the deleted row may have been serving as the cast's Action row
         renderCustomFields();
         layoutScene();
     }
@@ -566,13 +595,37 @@ export function setupPromptFieldManager() {
         return field.id;
     }
 
+    // Up / down past the neighbouring row the Scene shows. The row steps inside the host it
+    // lives in - the Scene column, or the Regional side box - so a unit with no row there
+    // (the ai / artist / characters blocks, a checkpoint's hidden cast and Action rows, the
+    // other side's rows) is never swapped with: that changed the prompt order with nothing
+    // moving on screen. While Regional is on the block is one row of the Scene column: a
+    // shared row crossing it lands above / below every side row of its chain. The unit
+    // lands before (up) / after (down) the row it passed, as a drag onto it would.
     function moveUnit(id, delta) {
         const orderKey = chainOf(id);
-        const order = [...SETTINGS[orderKey]];
-        const index = order.indexOf(id);
-        const target = index + delta;
-        if (index < 0 || target < 0 || target >= order.length) return;
-        [order[index], order[target]] = [order[target], order[index]];
+        const container = unitContainer(id);
+        const host = container?.parentElement;
+        const current = SETTINGS[orderKey];
+        if (!host || !current.includes(id)) return;
+        const isStep = node => (isRegional() && node === group)
+            || (node.dataset?.sceneRow === orderKey && isAvailable(node) && isMovable(idOfContainer(node)));
+        const steps = [...host.children].filter(isStep);
+        const at = steps.indexOf(container);
+        const step = at < 0 ? null : steps[at + delta];
+        if (!step) return;
+        const order = current.filter(unitId => unitId !== id);
+        let position;
+        if (step === group) {
+            // every side row hides behind the block's single row, so the unit clears them all
+            const inBlock = unitId => sideOf(unitId, fields) !== 'both';
+            const edge = delta < 0 ? order.findIndex(inBlock) : order.findLastIndex(inBlock);
+            if (edge < 0) return; // the block holds no row of this chain
+            position = delta < 0 ? edge : edge + 1;
+        } else {
+            position = order.indexOf(idOfContainer(step)) + (delta < 0 ? 0 : 1);
+        }
+        order.splice(position, 0, id);
         SETTINGS[orderKey] = order;
         layoutScene();
     }
@@ -712,7 +765,7 @@ export function setupPromptFieldManager() {
             dragging = { id, orderKey: chainOf(id) };
             event.dataTransfer.effectAllowed = 'move';
             event.dataTransfer.setData(UNIT_MIME, JSON.stringify(dragging));
-            event.dataTransfer.setData('text/plain', fieldLabel(id));
+            // no text/plain: a textarea takes that on a drop and would get the row's label
             container.classList.add('is-dragging');
             scene?.classList.add('is-row-dragging'); // the side boxes show their drop hint
         });
@@ -727,12 +780,14 @@ export function setupPromptFieldManager() {
         host.addEventListener('dragover', event => {
             if (!dragging) return;
             const target = dropTarget(event);
-            if (!target) { clearDropMarks(); return; }
+            // not a place for this row: refuse the drop here (a textarea under the pointer
+            // would otherwise take it)
+            if (!target) { clearDropMarks(); event.preventDefault(); event.dataTransfer.dropEffect = 'none'; return; }
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
             clearDropMarks();
             if (target.row) target.row.classList.add('is-drop-before');
-            else target.zone.classList.add('is-drop-target');
+            else if (!target.self) target.zone.classList.add('is-drop-target');
         });
         host.addEventListener('dragleave', event => {
             if (!host.contains(event.relatedTarget)) clearDropMarks();
@@ -746,6 +801,7 @@ export function setupPromptFieldManager() {
             const { id, orderKey } = dragging;
             dragging = null;
             disarmDrag();
+            if (target.self) return; // released over its own row: nothing moves
             placeUnit(orderKey, id, target);
         });
     }
@@ -758,6 +814,8 @@ export function setupPromptFieldManager() {
         const side = zoneEl?.classList.contains('scene-side') ? zoneEl.dataset.side : 'both';
         if (!sideAllowed(dragging.id, side)) return null;
         const row = event.target.closest?.('.prompt-field[data-scene-row]');
+        // over the dragged row itself: a no-op (it used to send the row to the zone's end)
+        if (row && row === unitContainer(dragging.id)) return { row: null, zone: zoneEl, side, beforeId: null, self: true };
         if (row && row !== unitContainer(dragging.id) && zoneEl.contains(row) && chainOf(idOfContainer(row)) === dragging.orderKey && isMovable(idOfContainer(row))) {
             return { row, zone: zoneEl, side, beforeId: idOfContainer(row) };
         }
@@ -788,9 +846,11 @@ export function setupPromptFieldManager() {
             const last = zoneIds.at(-1);
             if (last) position = order.indexOf(last) + 1;
             else if (zone !== scene && zone.dataset.side) {
-                // an empty side box: after the box's own pinned unit (positive / negative)
+                // an empty side box: after the box's own pinned unit (positive / negative);
+                // that unit itself keeps its place (it used to land at the chain's end)
                 const anchor = orderKey === 'prompt_negative_order' ? 'negative' : 'positive';
-                if (order.includes(anchor)) position = order.indexOf(anchor) + 1;
+                if (anchor === id && SETTINGS[orderKey].includes(id)) position = SETTINGS[orderKey].indexOf(id);
+                else if (order.includes(anchor)) position = order.indexOf(anchor) + 1;
             }
         }
         order.splice(position, 0, id);
@@ -1295,7 +1355,16 @@ export function setupPromptFieldManager() {
         openEditor: () => openAddPopover(addFooter.querySelector('.scene-add-button'), 'both'),
         // re-render the rows only (character names, counts, labels)
         renderList: () => { applyRowStates(); if (isRegional()) renderGroupText(); },
-        updateLanguage: () => layoutScene(),
+        // a default alias follows the language ("char1" / "角色1"): the rows, and the Action
+        // references to them, are renamed before the Scene is laid out again
+        updateLanguage: () => {
+            if (syncCast()) {
+                fields = normalizeCustomFields(SETTINGS.prompt_custom_fields);
+                persistFields();
+                renderCustomFields();
+            }
+            layoutScene();
+        },
         swapSides,
         setMuted,
         // Weight plans / batch of a custom field live in its entry (tagCapsuleField

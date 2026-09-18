@@ -8,8 +8,12 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+    insertionIndexFromRects,
+    moveCapsule,
+    moveCapsuleBlock,
     moveCapsules,
     parsePromptToCapsules,
+    reorderIndex,
     removeCapsules,
     serializeCapsules,
     setCapsulesDisabled,
@@ -25,8 +29,43 @@ test('moveCapsules moves the selection as one block, relative order kept', () =>
     assert.equal(serializeCapsules(moveCapsules(capsules, ids, 0)), 'b, d, a, c, e');
     assert.equal(serializeCapsules(moveCapsules(capsules, ids, 2)), 'a, b, d, c, e', 'before the anchor chip');
     assert.equal(serializeCapsules(moveCapsules(capsules, ids, 5)), 'a, c, e, b, d', 'to the end');
-    assert.equal(moveCapsules(capsules, ids, 1), capsules, 'dropping on a selected chip is a no-op');
+    // `to` is an insertion slot: right before a selected chip, the block lands before the
+    // next unselected one (it used to be a no-op, so a drop there silently did nothing)
+    assert.equal(serializeCapsules(moveCapsules(capsules, ids, 1)), 'a, b, d, c, e', 'before a selected chip');
+    assert.equal(serializeCapsules(moveCapsules(capsules, ids, 3)), 'a, c, b, d, e', 'before the second selected chip');
+    const block = [capsules[1].id, capsules[2].id];
+    assert.equal(moveCapsules(capsules, block, 2), capsules, 'a drop inside a contiguous block changes nothing');
     assert.equal(moveCapsules(capsules, [], 0), capsules);
+});
+
+test('a drop onto the chip row inserts where the pointer is (before / after by midpoint, blank = row end)', () => {
+    // two rows: a b c on the first (y 0-20), d e on the second (y 30-50); each chip 40px wide at 50px pitch
+    const rect = (row, column) => ({ top: row * 30, bottom: row * 30 + 20, left: column * 50, width: 40 });
+    const rects = [rect(0, 0), rect(0, 1), rect(0, 2), rect(1, 0), rect(1, 1)];
+    assert.equal(insertionIndexFromRects(rects, 5, 10), 0, 'left half of the first chip');
+    assert.equal(insertionIndexFromRects(rects, 35, 10), 1, 'right half of the first chip');
+    assert.equal(insertionIndexFromRects(rects, 400, 10), 3, 'blank space after the first row: that row ends');
+    assert.equal(insertionIndexFromRects(rects, 5, 25), 3, 'the gap between rows: start of the next row');
+    assert.equal(insertionIndexFromRects(rects, 5, 40), 3, 'left half of the first chip on the second row');
+    assert.equal(insertionIndexFromRects(rects, 400, 40), 5, 'blank space after the last chip: the end');
+    assert.equal(insertionIndexFromRects(rects, 5, 80), 5, 'below every row: the end');
+    assert.equal(insertionIndexFromRects([], 5, 5), 0, 'an empty row');
+
+    // one chip dragged within its row: the slot index still counts the chip itself
+    const capsules = parsePromptToCapsules('a, b, c, d');
+    const reorder = (from, insertAt) => serializeCapsules(moveCapsule(capsules, from, reorderIndex(from, insertAt)));
+    assert.equal(reorder(1, 1), 'a, b, c, d', 'left half of itself');
+    assert.equal(reorder(1, 2), 'a, b, c, d', 'right half of itself');
+    assert.equal(reorder(1, 4), 'a, c, d, b', 'to the end');
+    assert.equal(reorder(3, 0), 'd, a, b, c', 'to the front');
+    assert.equal(reorder(0, 2), 'b, a, c, d', 'after the next chip');
+
+    // a selection moved by drop keeps exactly the moved chips selected, not every chip of the same name
+    const named = parsePromptToCapsules('smile, hat, smile, cat');
+    const moved = moveCapsuleBlock(named, [named[2].id, named[3].id], 0);
+    assert.equal(serializeCapsules(moved.capsules), 'smile, cat, smile, hat');
+    assert.deepEqual(moved.ids, [moved.capsules[0].id, moved.capsules[1].id]);
+    assert.notEqual(moved.ids[0], moved.capsules[2].id, 'the other "smile" is not part of the block');
 });
 
 test('transferCapsules moves several capsules into another field with plans and disabled state', () => {
@@ -59,8 +98,14 @@ test('the chip row keeps a selection: Ctrl/Shift+click, Ctrl+A, Escape, Delete, 
     assert.match(field, /event\.key\.toLowerCase\(\) === 'a' && !onAdd/, 'Ctrl+A selects every chip');
     assert.match(field, /event\.key === 'Escape' && selectedIds\.size > 0/);
     assert.match(field, /selectedIds\.size > 1 && selectedIds\.has\(capsules\[focusIndex\]\?\.id\)/, 'Delete removes the selection');
-    assert.match(field, /moveCapsules\(capsules, selectionIds\(\), insertAt\)/, 'a selected chip drags the block to the insertion point');
+    assert.match(field, /moveCapsuleBlock\(capsules, selectionIds\(\), insertAt\)/, 'a selected chip drags the block to the insertion point');
+    assert.match(field, /setSelection\(moved\.ids\)/, 'the moved block stays selected by position, not by name');
     assert.match(field, /function insertionIndexAt\(x, y\)/, 'the drop point comes from the pointer, not the chip dropped on');
+    assert.match(field, /return insertionIndexFromRects\(rects, x, y\);/);
+    assert.match(field, /const to = reorderIndex\(from, insertAt\);/);
+    // a move into another field re-renders this row before `dragend`: a document drop ends the drag here too
+    assert.match(field, /document\.addEventListener\('drop', onDocumentDrop, true\);/);
+    assert.match(field, /document\.removeEventListener\('drop', onDocumentDrop, true\);/);
     assert.match(field, /className: 'tag-capsule-drop-marker'/, 'a marker shows where the drop lands');
     assert.match(field, /source: 'capsule-drag', sections: \['prompt'\]/, 'a drop is one undo step');
     assert.match(field, /chip\.classList\.toggle\('is-selected', selectedIds\.has\(capsules\[index\]\?\.id\)\)/);

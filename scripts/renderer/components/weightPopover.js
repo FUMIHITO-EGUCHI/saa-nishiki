@@ -10,7 +10,6 @@ import {
     createFixedWeightPlan,
     formatTagWeight,
     isVariablePlan,
-    normalizeTagName,
     normalizeWeightPlan,
     roundWeight,
     weightWarning,
@@ -18,6 +17,7 @@ import {
 import { createIcon } from './tagCapsuleChip.js';
 import { tagText } from './tagUiText.js';
 import { TAG_ALIASES_EVENT, aliasFor, ensureAliases } from '../tagAliasClient.js';
+import { lookupKey, promptTagForm } from '../../shared/tagRelated.js';
 
 const POPOVER_WIDTH = 336;
 const VIEWPORT_MARGIN = 8;
@@ -352,7 +352,9 @@ export function createWeightPopover({ text = tagText } = {}) {
         const button = el('button', 'tag-weight-related-chip');
         button.type = 'button';
         button.dataset.tag = tag;
-        const known = present.has(normalizeTagName(tag));
+        button.dataset.value = promptTagForm(item.tag);   // what a click writes into the field
+        // the dictionary key: "long_hair" / "long hair" / "1990s \(style\)" match their chips
+        const known = present.has(lookupKey(item.tag));
         button.classList.toggle('is-present', known);
         button.disabled = known;
         button.appendChild(el('span', 'tag-weight-related-mark', known ? '✓' : '+'));
@@ -374,7 +376,7 @@ export function createWeightPopover({ text = tagText } = {}) {
             relatedPanel.appendChild(el('span', 'tag-weight-related-empty', text('tag_ui_related_loading')));
             return;
         }
-        const present = typeof session?.presentTags === 'function' ? session.presentTags() : new Set();
+        const present = new Set([...(typeof session?.presentTags === 'function' ? session.presentTags() : [])].map(lookupKey));
         const groups = [
             { label: text('tag_ui_related_cooccur'), items: result.related ?? [] },
             { label: text('tag_ui_related_family', displayTag(result.familyWord ?? '')), items: result.family ?? [] },
@@ -436,7 +438,7 @@ export function createWeightPopover({ text = tagText } = {}) {
     relatedPanel.addEventListener('click', event => {
         const button = event.target.closest('.tag-weight-related-chip');
         if (!button || button.disabled || !session) return;
-        const tag = button.dataset.tag;
+        const tag = button.dataset.value;
         const replace = event.shiftKey;
         session.onPick?.(tag, { replace });
         if (replace) {
@@ -444,10 +446,24 @@ export function createWeightPopover({ text = tagText } = {}) {
             close({ apply: false });
             return;
         }
+        const wasFocused = document.activeElement === button;
         button.disabled = true;
         button.classList.add('is-present');
         button.querySelector('.tag-weight-related-mark').textContent = '✓';
+        // a button that is disabled while it has the focus hands it to <body>: the popover
+        // would then see none of the keys (Ctrl+R would reach the window menu's Reload) and
+        // close without giving the focus back to the chip
+        if (wasFocused) focusAfterPick(button);
     });
+
+    // The next tag that can still be picked, or the tab strip when the list is used up.
+    function focusAfterPick(button) {
+        const chips = [...relatedPanel.querySelectorAll('.tag-weight-related-chip')];
+        const at = chips.indexOf(button);
+        const next = chips.slice(at + 1).find(chip => !chip.disabled)
+            ?? chips.slice(0, Math.max(0, at)).reverse().find(chip => !chip.disabled);
+        (next ?? relatedTab ?? root).focus();
+    }
 
     function position() {
         const anchor = session?.anchor;
@@ -472,6 +488,9 @@ export function createWeightPopover({ text = tagText } = {}) {
 
     function close({ apply }) {
         if (!session) return;
+        // focus goes back to the chip only when the popover held it: a Shift+click
+        // replace has already focused the new chip, which the anchor no longer is
+        const hadFocus = root.contains(document.activeElement);
         const current = session;
         session = null;
         relatedToken += 1;   // a related-tags answer still in flight is dropped
@@ -483,7 +502,7 @@ export function createWeightPopover({ text = tagText } = {}) {
         if (apply) current.onApply?.(resultPlan());
         current.onClose?.({ apply });
         const target = current.anchor?.isConnected ? current.anchor : current.fallbackFocus;
-        target?.focus?.();
+        if (hadFocus) target?.focus?.();
     }
 
     function onOutsidePointer(event) {
@@ -521,6 +540,13 @@ export function createWeightPopover({ text = tagText } = {}) {
             event.preventDefault();
             event.stopPropagation();
             close({ apply: false });
+            return;
+        }
+        // Ctrl+R opened this popover from a chip; pressed again while it is open it must
+        // not reach the window menu's Reload - wherever the focus sits (a picked Related
+        // tag disables its button, which can drop the focus out of the popover)
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && String(event.key).toLowerCase() === 'r') {
+            event.preventDefault();
             return;
         }
         if (!root.contains(event.target)) return;
@@ -587,7 +613,10 @@ export function createWeightPopover({ text = tagText } = {}) {
     }
 
     const updatePlan = patch => {
-        planDraft = normalizeWeightPlan({ ...planDraft, ...patch });
+        // the draft keeps the "÷ batch count" choice through a detour to Random (whose
+        // normalized plan drops it); resultPlan normalizes it away if Random is applied
+        const autoStep = patch.autoStep ?? planDraft.autoStep;
+        planDraft = { ...normalizeWeightPlan({ ...planDraft, ...patch }), autoStep };
         renderPlan();
     };
     bindNumber(minInput, (value, source) => {
@@ -658,7 +687,8 @@ export function createWeightPopover({ text = tagText } = {}) {
     applyText();
 
     return {
-        // `tab`: 'fixed' | 'plan' | 'related' to force one; otherwise the kind used last
+        // `tab`: 'fixed' | 'plan' | 'related' to force one, 'weight' for Fixed / Plan by the
+        // capsule's plan; otherwise the kind used last
         // time (Related stays Related; a weight tab is Fixed or Plan by the capsule's plan).
         // `fetchRelated(value)`, `presentTags()` and `onPick(tag, { replace })` feed the
         // Related tab; without a loader that tab is hidden.
@@ -687,7 +717,8 @@ export function createWeightPopover({ text = tagText } = {}) {
             const hasRelated = typeof fetchRelated === 'function';
             relatedTab.hidden = !hasRelated;
             const weightTab = isVariablePlan(plan) ? 'plan' : 'fixed';
-            let initial = TABS.includes(tab) ? tab : (lastTabKind === 'related' ? 'related' : weightTab);
+            // 'weight' asks for Fixed / Plan by the capsule's plan, whatever tab was used last
+            let initial = TABS.includes(tab) ? tab : (tab !== 'weight' && lastTabKind === 'related' ? 'related' : weightTab);
             if (initial === 'related' && !hasRelated) initial = weightTab;
             root.hidden = false;
             setTab(initial);

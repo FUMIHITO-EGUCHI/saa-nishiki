@@ -96,6 +96,17 @@ test('weight popover is 336px, fixed-position, focus-trapped, and only writes on
   assert.doesNotMatch(popover, /planStepField\.append\(autoStepLabel\)/, 'the switch no longer lives inside the step column');
   assert.match(popover, /applyButton\.hidden = activeTab === 'related'/, 'Related closes, it does not Apply');
   assert.match(popover, /titleName\.textContent = value;/, 'the header is the tag itself, the translation under it');
+  // focus returns to the chip only when the popover held it: a Shift+click replace has
+  // already focused the replacing chip (the anchor element is gone, the fallback was the view toggle)
+  assert.match(popover, /const hadFocus = root\.contains\(document\.activeElement\);/);
+  assert.match(popover, /if \(hadFocus\) target\?\.focus\?\.\(\);/);
+});
+
+test('"Edit weight…" in the context menu opens a weight tab even after Related was used', () => {
+  const menu = read('scripts/renderer/components/myRightClickMenu.js');
+  assert.match(menu, /if \(field\?\.editWeight && capsule\) field\.editWeight\(capsule\.id\);/);
+  assert.match(field, /editWeight: id => \{[\s\S]*?openPopover\(index, \{ tab: 'weight' \}\);/);
+  assert.match(popover, /let initial = TABS\.includes\(tab\) \? tab : \(tab !== 'weight' && lastTabKind === 'related' \? 'related' : weightTab\);/);
 });
 
 test('batch dialog reuses the selection-modal skeleton and previews terminal / random rows', () => {
