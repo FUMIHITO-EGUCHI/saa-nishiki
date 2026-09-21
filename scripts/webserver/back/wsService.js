@@ -20,7 +20,7 @@ import { getModelList, getModelListAll, getVAEList, getDiffusionModelList, getTe
     getLoRAList, getImageTaggerModels, updateModelAndLoRAList, getControlNetList,
     getUpscalerList, getADetailerList, getONNXList } from '../../main/modelList.js';
 import { updateWildcards, loadWildcard } from '../../main/wildCards.js';
-import { tagReload, tagGet, tagLookup, getTagAliases } from '../../main/tagAutoComplete_backend.js';
+import { tagReload, tagGet, tagSearch, tagLookup, getTagAliases } from '../../main/tagAutoComplete_backend.js';
 import { getRelatedTags, hasRelatedDictionary } from '../../main/tagRelated_backend.js';
 import { getArtistProfile, hasArtistProfiles, searchArtists } from '../../main/artist_backend.js';
 import { runComfyUI, runComfyUI_Regional, runComfyUI_ControlNet, runComfyUI_MiraITU, 
@@ -468,6 +468,7 @@ const methodHandlers = {
   // tag auto complete
   'tagReload': (params = [])=> tagReload(...params),
   'tagGet': (params = [])=> tagGet(...params),
+  'tagSearch': (params = [])=> tagSearch(...params),
   // a client that sends no params must not make the spread throw (the keys are checked there)
   'tagLookup': (params)=> tagLookup(Array.isArray(params) ? params[0] : null),
   'tagAliases': (params = [])=> getTagAliases(...params),

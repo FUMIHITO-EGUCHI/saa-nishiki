@@ -136,6 +136,9 @@ contextBridge.exposeInMainWorld('api', {
   // Tag Auto Complete
   tagReload: async (language) => ipcRenderer.invoke('tag-reload', language),
   tagGet: async (text, options) => ipcRenderer.invoke('tag-get-suggestions', text, options),
+  // one page of the matches of a word: { items, total, offset, limit }; options carry
+  // the tag filter and { offset, limit }
+  tagSearch: async (word, options) => ipcRenderer.invoke('tag-search', word, options),
   tagLookup: async (keys) => ipcRenderer.invoke('tag-lookup', keys),
   // translations for the chips' alias line: { loaded, aliases: { value: alias } }
   tagAliases: async (tags) => ipcRenderer.invoke('tag-aliases', tags),

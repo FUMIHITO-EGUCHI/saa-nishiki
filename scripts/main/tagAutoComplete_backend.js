@@ -176,15 +176,26 @@ class PromptManager {
         this.prompts.sort((a, b) => b.heat - a.heat);
     }
 
+    // The first `limit` of every match, ranked (see rankMatches); `this.lastSearch`
+    // keeps the count of the whole result so a caller can page through it with
+    // searchTags. Keep the existing (text, limit, group[]) contract and also allow
+    // getSuggestions(text, limit, options) for internal callers.
     getSuggestions(text, limit = 50, group = null, options = null) {
-        if (!text) return [];
-
-        // Keep the existing (text, limit, group[]) contract and also allow
-        // getSuggestions(text, limit, options) for internal callers.
         if (group && typeof group === 'object' && !Array.isArray(group)) {
             options = group;
             group = null;
         }
+        const ranked = this.rankMatches(text, group, options);
+        this.lastSearch = { total: ranked.length, offset: 0, limit };
+        return ranked.slice(0, limit);
+    }
+
+    // Every dictionary entry the last comma-separated word of `text` matches, prefix
+    // matches first and the more popular tag first inside each band. The whole
+    // dictionary is scanned before anything is cut, so a page never hides a better
+    // match behind a more popular one.
+    rankMatches(text, group = null, options = null) {
+        if (!text) return [];
         const normalizedOptions = normalizeTagFilterOptions(options);
         const hasActiveFilter = normalizedOptions.groupIds !== null || normalizedOptions.category !== null;
         const matchesFilter = hasActiveFilter
@@ -192,9 +203,12 @@ class PromptManager {
             : null;
 
         const parts = text.split(',');
-        const lastWord = parts.at(-1).trim().toLowerCase();
-
-        if (!lastWord) return [];
+        const typedWord = parts.at(-1).trim().toLowerCase();
+        if (!typedWord) return [];
+        // The dictionary keys join words with "_" while people type a space ("white d"
+        // is on its way to white_dress); the key is matched with the underscore form, an
+        // alias (which may hold real spaces) with either.
+        const lastWord = typedWord.replaceAll(' ', '_');
 
         const matches = {};
         for (const promptInfo of this.prompts) {
@@ -204,24 +218,37 @@ class PromptManager {
             }
             if (matchesFilter && !matchesFilter(promptInfo)) continue;
 
-            const prompt = promptInfo.prompt.toLowerCase();
-            const aliases = promptInfo.aliases ? promptInfo.aliases.toLowerCase().split(',') : [];
+            // lower-cased once per entry: the scan visits every row on every keystroke
+            promptInfo.searchPrompt ??= promptInfo.prompt.toLowerCase();
+            promptInfo.searchAliases ??= promptInfo.aliases ? promptInfo.aliases.toLowerCase().split(',') : [];
+            const prompt = promptInfo.searchPrompt;
 
-            const matchedAlias = this.matchPrompt(lastWord, prompt, aliases);
-            
-            if (this.shouldAddMatch(matchedAlias, lastWord, prompt)) {                
+            const matchedAlias = this.matchPrompt(lastWord, prompt, promptInfo.searchAliases, typedWord);
+            if (this.shouldAddMatch(matchedAlias, lastWord, prompt)) {
                 this.addMatch(matches, promptInfo, matchedAlias, prompt);
             }
-
-            if (Object.keys(matches).length >= limit) break;
         }
 
-        // Prefix matches first, then by popularity within each band.
         const startsWithWord = match => (match.prompt.toLowerCase().startsWith(lastWord) ? 1 : 0);
         return Object.values(matches).sort((a, b) => startsWithWord(b) - startsWithWord(a) || b.heat - a.heat);
     }
 
-    matchPrompt(lastWord, prompt, aliases) {
+    // One page of the ranked matches of `word` as rendered suggestion rows, with the
+    // size of the whole result: { items, total, offset, limit }. Unlike
+    // updateSuggestions this answers every call, so a list can ask for the next page
+    // of the same word. `options` carries the tag filter plus { offset, limit }.
+    searchTags(word, options = null) {
+        const offset = Math.max(0, Number.parseInt(options?.offset, 10) || 0);
+        const limit = Math.min(500, Math.max(1, Number.parseInt(options?.limit, 10) || 50));
+        if (!this.dataLoaded) return { items: [], total: 0, offset, limit };
+        const ranked = this.rankMatches(String(word ?? '').trim(), null, options);
+        return { items: this.formatMatches(ranked.slice(offset, offset + limit)), total: ranked.length, offset, limit };
+    }
+
+    // `lastWord` is the typed word with its spaces as "_" (the key form); `typedWord`
+    // is what was typed, so an alias with a real space still matches it.
+    matchPrompt(lastWord, prompt, aliases, typedWord = lastWord) {
+        const aliasWords = typedWord === lastWord ? [lastWord] : [lastWord, typedWord];
         if (lastWord.includes('*')) {
             const promptMatch = this.handleWildcardMatching(lastWord, prompt);
             if (promptMatch) {
@@ -230,7 +257,7 @@ class PromptManager {
             }
             // check aliases
             for (const alias of aliases) {
-                if (this.handleWildcardMatching(lastWord, alias.trim())) {
+                if (aliasWords.some(word => this.handleWildcardMatching(word, alias.trim()))) {
                     return alias.trim();
                 }
             }
@@ -240,7 +267,7 @@ class PromptManager {
             if(prompt.includes(lastWord)) {
                 return null;
             }
-            return aliases.find(alias => alias.trim().includes(lastWord)) || null;
+            return aliases.find(alias => aliasWords.some(word => alias.trim().includes(word))) || null;
         }
     }
 
@@ -285,13 +312,15 @@ class PromptManager {
 
     addMatch(matches, promptInfo, matchedAlias, prompt) {
         if (!(prompt in matches) || promptInfo.heat > matches[prompt].heat) {
-            const aliasDisplay = matchedAlias || (promptInfo.aliases ? promptInfo.aliases.split(',').map(a => a.trim()).join(', ') : '');
+            // only the alias the row was found by rides along: the row shows why it is
+            // there, not the whole synonym list of the tag
             matches[prompt] = {
                 prompt: promptInfo.prompt,
                 group: promptInfo.group,
                 heat: promptInfo.heat,
                 category: getCategoryForPrompt(this.categoryIndex, promptInfo.prompt),
-                alias: aliasDisplay || null
+                alias: matchedAlias || null,
+                translation: promptInfo.translation || '',
             };
         }
     }
@@ -335,16 +364,27 @@ class PromptManager {
             matches = this.getSuggestions(targetWord, 50, null, normalizedOptions);
         }
 
+        this.previousCustomPrompt = this.lastCustomPrompt;
+        this.lastCustomPrompt = text;
+        this.previousFilterKey = filterKey;
+
+        return this.formatMatches(matches);
+    }
+
+    // The rows the renderer shows: [`<b>tag</b>: (aliases) (heat) [group] [category]`].
+    formatMatches(matches) {
+        const items = [];
         for (const match of matches) {
-            let displayAlias = match.alias ? match.alias.split(',').map(a => a.trim()).join(', ') : '';      
-            
-            // If translation is enabled and an alias was matched, use translated aliases
-            if (this.useTranslate && match.alias) {
-                const promptInfo = this.prompts.find(p => p.prompt === match.prompt);
-                if (promptInfo?.aliases) {
-                    displayAlias = promptInfo.aliases.split(',').map(a => a.trim()).join(', ');
-                }
-            }
+            // What the row says besides the tag: the translation (the language file's
+            // text) and, when the row was found through an alias, that alias - so a
+            // row whose tag does not contain the typed word still shows why it matched.
+            // The tag's other synonyms stay out; a long list made every row unreadable.
+            const translation = this.useTranslate ? String(match.translation ?? '').trim() : '';
+            const matchedAlias = String(match.alias ?? '').trim();
+            const shown = [];
+            if (matchedAlias && matchedAlias !== translation) shown.push(matchedAlias);
+            if (translation) shown.push(translation);
+            const displayAlias = shown.join(', ');
 
             const group = Number.parseInt(match.group);
             const groupName = groupNames[group] || 'Unknown';
@@ -362,11 +402,6 @@ class PromptManager {
             }
             items.push([key]);
         }
-
-        this.previousCustomPrompt = this.lastCustomPrompt;
-        this.lastCustomPrompt = text;
-        this.previousFilterKey = filterKey;
-
         return items;
     }
 }
@@ -405,6 +440,10 @@ async function setupTagAutoCompleteBackend(language = 'en-US'){
 
         ipcMain.handle('tag-get-suggestions', async (event, text, options) => {
             return tagGet(text, options);
+        });
+
+        ipcMain.handle('tag-search', async (event, word, options) => {
+            return tagSearch(word, options);
         });
 
         ipcMain.handle('tag-lookup', async (event, keys) => {
@@ -462,6 +501,12 @@ function tagGet(text, options) {
     return tagBackend.updateSuggestions(text, options);
 }
 
+// A page of the matches of one word: { items, total, offset, limit } (options carry
+// the tag filter and the page). The lists load the next page as they are scrolled.
+function tagSearch(word, options) {
+    return tagBackend.searchTags(word, options);
+}
+
 // Loaded tag entries ({ prompt, group, heat, aliases }), heat-sorted; empty until loaded.
 function getPromptList() {
     return tagBackend.dataLoaded ? tagBackend.prompts : [];
@@ -471,6 +516,7 @@ export {
     setupTagAutoCompleteBackend,
     tagReload,
     tagGet,
+    tagSearch,
     tagLookup,
     getPromptList
 };

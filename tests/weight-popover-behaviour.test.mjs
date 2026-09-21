@@ -426,6 +426,36 @@ test('the × in the header closes it the same way Cancel does', async () => {
     }, globalsFor(window));
 });
 
+test('the ★ in the header toggles the tag in the field\'s favorites, and stays out without hooks', async () => {
+    const window = fakeWindow();
+    await withFakeDom(async document => {
+        const plain = await mountPopover(document);
+        assert.equal(plain.q('.tag-weight-popover-fav').hidden, true, 'no favorite hooks: no button');
+
+        const favorites = new Set();
+        const toggled = [];
+        const { q } = await mountPopover(document, {
+            favorite: {
+                isFavorite: value => favorites.has(value),
+                toggle: value => { toggled.push(value); if (favorites.has(value)) favorites.delete(value); else favorites.add(value); },
+            },
+        });
+        const button = q('.tag-weight-popover-fav');
+        assert.equal(button.hidden, false);
+        assert.equal(button.textContent, '☆');
+        assert.equal(button.getAttribute('aria-pressed'), 'false');
+        assert.equal(button.title, text('tag_ui_fav_add', FIXED_CAPSULE.value));
+        button.dispatchEvent({ type: 'click', target: button, preventDefault() {} });
+        assert.deepEqual(toggled, [FIXED_CAPSULE.value]);
+        assert.equal(button.textContent, '★');
+        assert.equal(button.classList.contains('is-fav'), true);
+        assert.equal(button.title, text('tag_ui_fav_remove', FIXED_CAPSULE.value));
+        button.dispatchEvent({ type: 'click', target: button, preventDefault() {} });
+        assert.equal(button.textContent, '☆');
+        assert.equal(favorites.size, 0);
+    }, globalsFor(window));
+});
+
 test('a pointer outside closes the popover; one inside it does not', async () => {
     const window = fakeWindow();
     await withFakeDom(async document => {

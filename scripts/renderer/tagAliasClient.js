@@ -68,6 +68,20 @@ async function flush() {
     document.dispatchEvent(new CustomEvent(TAG_ALIASES_EVENT));
 }
 
+/**
+ * The translations of `values` as a Map, looked up now (one request) rather than on
+ * the next render: for a list built once, like the picker's favorites.
+ */
+export async function aliasesFor(values = []) {
+    const keys = [...new Set(values.map(value => String(value ?? '').trim()).filter(Boolean))];
+    if (!unavailable && enabled() && keys.some(key => !aliases.has(key))) {
+        for (const key of keys) if (!aliases.has(key)) pending.add(key);
+        clearTimeout(timer);
+        await flush();
+    }
+    return new Map(keys.map(key => [key, aliases.get(key) ?? '']));
+}
+
 /** Forget every answer (the dictionary was reloaded, e.g. after a language change). */
 export function clearTagAliasCache() {
     aliases.clear();

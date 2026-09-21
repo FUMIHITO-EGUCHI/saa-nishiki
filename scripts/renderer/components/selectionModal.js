@@ -1,4 +1,4 @@
-import { tagText } from './tagUiText.js';
+import { pagedCountText, tagText } from './tagUiText.js';
 import {
     filterSelectionOptions,
     limitSelectionOptions,
@@ -154,6 +154,7 @@ export function createSelectionModal({
     let requestGeneration = 0;
     let searchTimer = null;
     let favOnly = false;
+    let pager = null;
     let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, onActiveOption, favorites: null };
 
     function isFavoriteOption(option) {
@@ -241,14 +242,57 @@ export function createSelectionModal({
     }
 
     function renderStatus(totalCount, hasMore) {
-        if (totalCount === 0) {
+        if (totalCount === 0 && !(pager && pager.total > 0)) {
             status.textContent = searchInput.value.trim() ? emptyMessage : searchPrompt;
             return;
         }
         const hint = mode === 'multiple' ? ` · ${tagText('tag_ui_modal_hint')}` : '';
+        if (pager) {
+            // a paged answer: what is on screen out of everything the search matched
+            status.textContent = `${pagedCountText(currentOptions.length, Math.max(pager.total, currentOptions.length))}${hint}`;
+            return;
+        }
         status.textContent = hasMore
             ? `${totalCount} results shown. Refine your search to see more.${hint}`
             : `${totalCount} result${totalCount === 1 ? '' : 's'}${hint}`;
+    }
+
+    // A loader may answer with a page instead of a list: { items, total, loadMore(offset) }.
+    // The list then grows as it is scrolled (or arrowed) to its end, and the client-side
+    // cut of optionLimit is left to the loader.
+    function takeLoaded(answer) {
+        if (answer && !Array.isArray(answer) && Array.isArray(answer.items)) {
+            const total = Number.isInteger(answer.total) ? answer.total : answer.items.length;
+            pager = typeof answer.loadMore === 'function' && total > answer.items.length
+                ? { total, loadMore: answer.loadMore, loading: false }
+                : { total, loadMore: null, loading: false };
+            return answer.items;
+        }
+        pager = null;
+        return Array.isArray(answer) ? answer : [];
+    }
+
+    function hasMorePages() {
+        return Boolean(pager?.loadMore) && !pager.loading && currentOptions.length < pager.total;
+    }
+
+    async function loadNextPage() {
+        if (!hasMorePages()) return;
+        const generation = requestGeneration;
+        const page = pager;
+        page.loading = true;
+        try {
+            const more = await page.loadMore(currentOptions.length);
+            if (generation !== requestGeneration || !isOpen() || pager !== page) return;
+            const items = Array.isArray(more) ? more : [];
+            if (items.length === 0) page.total = currentOptions.length;   // the loader ran dry
+            currentOptions = currentOptions.concat(items);
+            renderOptions();
+        } catch (error) {
+            console.error('[SelectionModal] Failed to load the next page:', error);
+        } finally {
+            page.loading = false;
+        }
     }
 
     function renderOptions() {
@@ -266,8 +310,11 @@ export function createSelectionModal({
                 .sort((a, b) => a.fav - b.fav || a.index - b.index)
                 .map(entry => entry.option);
         }
-        const limited = limitSelectionOptions(filteredOptions, optionLimit);
+        const limited = limitSelectionOptions(filteredOptions, pager ? Number.MAX_SAFE_INTEGER : optionLimit);
         visibleOptions = limited.items;
+        // the list is redrawn in place (a page arrived, a row was toggled): the redraw
+        // empties the box, which drops its scroll, so the position is put back after
+        const scrollTop = listbox.scrollTop;
         listbox.replaceChildren();
         const selected = selectedKeys();
         visibleOptions.forEach((option, index) => {
@@ -300,6 +347,7 @@ export function createSelectionModal({
             item.addEventListener('mouseleave', () => activeConfig.onOptionLeave?.(option, item));
             listbox.appendChild(item);
         });
+        listbox.scrollTop = scrollTop;
         activeIndex = visibleOptions.length === 0 ? -1 : Math.min(Math.max(activeIndex, 0), visibleOptions.length - 1);
         updateActiveDescendant();
         renderStatus(filteredOptions.length, limited.hasMore);
@@ -317,7 +365,8 @@ export function createSelectionModal({
             nextOptions = await activeConfig.loadOptions(config);
         }
         if (generation !== requestGeneration || !isOpen()) return;
-        currentOptions = Array.isArray(nextOptions) ? nextOptions : [];
+        currentOptions = typeof activeConfig.loadOptions === 'function' ? takeLoaded(nextOptions) : currentOptions;
+        listbox.scrollTop = 0;
         activeIndex = -1;
         renderOptions();
     }
@@ -357,6 +406,11 @@ export function createSelectionModal({
 
     function moveActive(delta) {
         if (visibleOptions.length === 0) return;
+        // at the end of a paged list the arrow fetches the next page instead of wrapping
+        if (delta > 0 && activeIndex === visibleOptions.length - 1 && hasMorePages()) {
+            loadNextPage();
+            return;
+        }
         activeIndex = (activeIndex + delta + visibleOptions.length) % visibleOptions.length;
         updateActiveDescendant();
     }
@@ -448,6 +502,9 @@ export function createSelectionModal({
         activeIndex = index;
         toggleActive();
     });
+    listbox.addEventListener('scroll', () => {
+        if (listbox.scrollTop + listbox.clientHeight >= listbox.scrollHeight - 32) loadNextPage();
+    });
     listbox.addEventListener('keydown', event => {
         if (event.key === 'ArrowDown') {
             event.preventDefault();
@@ -506,6 +563,7 @@ export function createSelectionModal({
             attributeSelect.value = '';
             selectedOptions = Array.isArray(selection) ? selection.slice() : [];
             currentOptions = Array.isArray(options) ? options.slice() : [];
+            pager = null;
             activeIndex = -1;
             overlay.hidden = false;
             overlay.setAttribute('aria-hidden', 'false');

@@ -380,6 +380,71 @@ test('the status line counts what was found, and says so when the list was cut s
         });
 });
 
+// A loader that answers pages: { items, total, loadMore }; 130 tags for "hair", 50 at a time.
+function pagedLoader(log = []) {
+    // every row carries the query as a keyword, as the tag backend's rows carry the alias they matched by
+    const row = (index, query) => ({ key: `hair_${String(index + 1).padStart(3, '0')}`, value: `hair ${index + 1}`, label: `hair ${index + 1}`, attributes: [query] });
+    const page = (offset, query) => Array.from({ length: Math.max(0, Math.min(50, 130 - offset)) }, (_, index) => row(offset + index, query));
+    return async ({ query }) => {
+        log.push({ query, offset: 0 });
+        if (!query) return [];
+        return {
+            items: page(0, query),
+            total: 130,
+            loadMore: async offset => { log.push({ query, offset }); return page(offset, query); },
+        };
+    };
+}
+
+test('a paged answer grows as the list is scrolled or arrowed to its end, and the status counts the whole result', async () => {
+    const log = [];
+    await withModal({ mode: 'multiple', optionLimit: 2 }, async ({ modal, clock, ui }) => {
+        modal.open({ options: [], dynamicLoadOptions: pagedLoader(log) });
+        await clock.tick(0);
+        typeSearch(ui.search, 'hair');
+        await clock.tick(120);
+        assert.equal(ui.keys().length, 50, 'the first page, not cut by optionLimit');
+        assert.match(ui.status.textContent, /^50 \/ 130 results · scroll for more/);
+
+        // scrolled to the end: the next page is asked for and appended
+        ui.listbox.scrollTop = 700; ui.listbox.clientHeight = 300; ui.listbox.scrollHeight = 1000;
+        fire(ui.listbox, 'scroll');
+        await clock.tick(0);
+        assert.deepEqual(log.at(-1), { query: 'hair', offset: 50 });
+        assert.equal(ui.keys().length, 100);
+        assert.match(ui.status.textContent, /^100 \/ 130 results/);
+        assert.equal(ui.listbox.scrollTop, 700, 'the list stays where it was scrolled to; the new rows are below');
+
+        // toggling a row mid-list redraws it and keeps the scroll as well
+        ui.listbox.scrollTop = 420;
+        fire(ui.rows()[60], 'click');
+        assert.equal(ui.listbox.scrollTop, 420);
+
+        // the arrow at the last row fetches the rest instead of wrapping
+        ui.listbox.focus();
+        fire(ui.listbox, 'keydown', { key: 'End' });
+        fire(ui.listbox, 'keydown', { key: 'ArrowDown' });
+        await clock.tick(0);
+        assert.equal(ui.keys().length, 130);
+        assert.match(ui.status.textContent, /^130 results/);
+        assert.equal(ui.keys().at(-1), 'hair 130');
+
+        // everything is on screen: the end of the list wraps again and nothing more is asked for
+        const askedBefore = log.length;
+        fire(ui.listbox, 'keydown', { key: 'End' });
+        fire(ui.listbox, 'keydown', { key: 'ArrowDown' });
+        await clock.tick(0);
+        assert.equal(ui.listbox.getAttribute('aria-activedescendant'), `${ui.listbox.id.replace('-listbox', '')}-option-0`);
+        assert.equal(log.length, askedBefore);
+
+        // a new search starts a new list at the top
+        typeSearch(ui.search, 'hairb');
+        await clock.tick(120);
+        assert.equal(ui.keys().length, 50);
+        assert.equal(ui.listbox.scrollTop, 0);
+    });
+});
+
 test('the category and attribute boxes narrow the list, and stay out of sight when empty', async () => {
     await withModal({ mode: 'multiple' }, async ({ modal, clock, ui }) => {
         modal.open({ options: OPTIONS });

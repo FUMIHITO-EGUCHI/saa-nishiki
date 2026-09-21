@@ -8,10 +8,15 @@ function restoreOfficialWorkNames(localizedName, sourceTag, officialWorkNames) {
   const sourceParts = [...sourceTag.matchAll(/\(([^()]*)\)/g)].map(match => (
     match[1].trim().toLowerCase().replace(/\s+/g, ' ')
   ));
-  let sourceIndex = 0;
+  // The qualifiers are aligned from the end: the work is the last one on both
+  // sides, while a reviewed name may carry an extra qualifier of its own
+  // (大潮（改二）（艦隊これくしょん） for ooshio_kai_ni_(kancolle)).
+  const localizedParts = [...localizedName.matchAll(/[（(][^（）()]*[）)]/g)];
+  const offset = localizedParts.length - sourceParts.length;
+  let localizedIndex = 0;
 
-  return localizedName.replace(/[（(]([^（）()]*)[）)]/g, (part, localizedPart) => {
-    const sourcePart = sourceParts[sourceIndex++];
+  return localizedName.replace(/[（(]([^（）()]*)[）)]/g, (part) => {
+    const sourcePart = sourceParts[localizedIndex++ - offset];
     const officialName = sourcePart ? officialWorkNames?.[sourcePart] : null;
     return officialName ? `（${officialName}）` : part;
   });

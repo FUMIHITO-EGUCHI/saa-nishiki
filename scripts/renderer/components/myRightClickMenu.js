@@ -645,8 +645,7 @@ function registerDefaultMenuItems() {
         label: chip => countLabel(lang().right_menu_remove_tag, chipContext(chip).ids.length),
         func: (chip) => {
             const { field, ids } = chipContext(chip);
-            if (field && ids.length > 1) field.removeIds(ids);
-            else chip.querySelector('.tag-capsule-chip-remove')?.click();
+            if (field && ids.length) field.removeIds(ids);
         },
     });
     rc.append('separator_tag_3', null, { selector: '.tag-capsule-chip' });

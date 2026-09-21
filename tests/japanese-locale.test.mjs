@@ -214,6 +214,24 @@ test('bundled character data restores several English work titles', () => {
   );
 });
 
+test('a reviewed name with its own qualifier keeps it; only the work is restored', () => {
+  const characterNames = {
+    'ja-JP': {
+      'ooshio kai ni (kancolle)': '大潮（改二）（艦隊これくしょん）',
+      'okita souji alter (fate)': '沖田総司（オルタ）（Fate）',
+    },
+    officialWorkNames: { kancolle: '艦隊これくしょん -艦これ-', fate: 'Fate' },
+  };
+  assert.equal(
+    getLocalizedCharacterName({ tag: 'ooshio kai ni (kancolle)', language: 'ja-JP', characterNames }),
+    '大潮（改二）（艦隊これくしょん -艦これ-）',
+  );
+  assert.equal(
+    getLocalizedCharacterName({ tag: 'okita souji alter (fate)', language: 'ja-JP', characterNames }),
+    '沖田総司（オルタ）（Fate）',
+  );
+});
+
 test('bundled Japanese character data contains reviewed character names', () => {
   assert.equal(
     getLocalizedCharacterName({

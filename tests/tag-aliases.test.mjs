@@ -68,7 +68,8 @@ test('the app backend answers translations from the language file (Japanese)', a
         fs.mkdirSync(path.join(appRoot, 'data', 'wildcards'), { recursive: true });
         fs.writeFileSync(path.join(appRoot, 'data', 'danbooru_e621_merged.csv'), [
             'long_hair,0,4350743,"/lh,longhair,very_long_hair"',
-            'legendary_pokemon,12,58287,"legendary_pokémon,mythical_pokemon"',
+            // a species the Japanese file has no line for (legendary_pokemon got one)
+            'imaginary_pokemon,12,58287,"imaginary_pokémon,mythical_imaginary"',
             '1990s_(style),5,20000,"90s"',
             'lying,0,446035,"lay,laying,laying_down,lying_down"',
             'covered_nipples,0,159741,"covered_erect_nipples,erect_nipple"',
@@ -88,11 +89,11 @@ export const dialog = { showErrorBox() {} };`;
 }`));
         const backend = await import('../scripts/main/tagAutoComplete_backend.js');
         assert.equal(await backend.setupTagAutoCompleteBackend('ja-JP'), true);
-        const { loaded, aliases } = backend.getTagAliases(['long hair', 'legendary pokemon', String.raw`1990s \(style\)`, 'lying', 'covered nipples', 'puff of air', 'wake up girls! stage no tenshi', 'nonsense']);
+        const { loaded, aliases } = backend.getTagAliases(['long hair', 'imaginary pokemon', String.raw`1990s \(style\)`, 'lying', 'covered nipples', 'puff of air', 'wake up girls! stage no tenshi', 'nonsense']);
         assert.equal(loaded, true);
         assert.deepEqual(aliases, {
             'long hair': 'ロングヘア',
-            'legendary pokemon': '',                                            // no Japanese line; "legendary_pokémon" is a synonym
+            'imaginary pokemon': '',                                            // no Japanese line; "imaginary_pokémon" is a synonym
             [String.raw`1990s \(style\)`]: '1990年代風',                         // the escaped chip value
             lying: '横たわる',                                                  // hand-reviewed aliases, as the app shows them
             'covered nipples': '浮き乳首',

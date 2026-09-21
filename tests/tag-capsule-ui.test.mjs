@@ -66,6 +66,9 @@ test('chip row implements roving tabindex, keyboard reducer actions, drag reorde
   assert.doesNotMatch(field, /tag-capsule-add-input/, 'inline add input removed');
   assert.match(field, /event\.isComposing \|\| event\.keyCode === 229/);
   assert.match(chip, /draggable = true/);
+  // the stylesheet's global `-webkit-user-drag: none` swallows the attribute unless the
+  // chip opts back in (a drag never started; found live over CDP, 2026-09-20)
+  assert.match(read('html/index.css'), /\.tag-capsule-chip\[draggable="true"\]\s*\{\s*-webkit-user-drag: element;/);
   assert.match(chip, /setAttribute\('aria-label'/);
   assert.match(chip, /is-excluded/);
   assert.match(chip, /function renderChips/);

@@ -74,10 +74,15 @@ export function createWeightPopover({ text = tagText } = {}) {
     titleAlias.hidden = true;
     title.append(titleName, titleAlias);
     root.setAttribute('aria-labelledby', title.id);
+    // ★ / ☆: the tag in or out of the field's favorites (favoriteTags.js), when the
+    // opener hands over `favorite: { isFavorite(value), toggle(value) }`
+    const favButton = el('button', 'tag-weight-popover-fav');
+    favButton.type = 'button';
+    favButton.hidden = true;
     const closeButton = el('button', 'tag-weight-popover-close');
     closeButton.type = 'button';
     closeButton.appendChild(createIcon('close', 14));
-    head.append(title, closeButton);
+    head.append(title, favButton, closeButton);
     root.appendChild(head);
 
     // ---- tabs
@@ -435,6 +440,24 @@ export function createWeightPopover({ text = tagText } = {}) {
         titleAlias.hidden = !translation;
     }
 
+    function renderFavButton() {
+        const favorite = session?.favorite;
+        const value = session?.capsule?.value ?? '';
+        favButton.hidden = !(favorite && typeof favorite.isFavorite === 'function' && typeof favorite.toggle === 'function');
+        if (favButton.hidden) return;
+        const isFav = Boolean(favorite.isFavorite(value));
+        favButton.textContent = isFav ? '★' : '☆';
+        favButton.classList.toggle('is-fav', isFav);
+        favButton.setAttribute('aria-pressed', String(isFav));
+        favButton.title = text(isFav ? 'tag_ui_fav_remove' : 'tag_ui_fav_add', value);
+        favButton.setAttribute('aria-label', favButton.title);
+    }
+    favButton.addEventListener('click', () => {
+        if (!session?.favorite) return;
+        session.favorite.toggle(session.capsule?.value ?? '');
+        renderFavButton();
+    });
+
     relatedPanel.addEventListener('click', event => {
         const button = event.target.closest('.tag-weight-related-chip');
         if (!button || button.disabled || !session) return;
@@ -692,16 +715,18 @@ export function createWeightPopover({ text = tagText } = {}) {
         // time (Related stays Related; a weight tab is Fixed or Plan by the capsule's plan).
         // `fetchRelated(value)`, `presentTags()` and `onPick(tag, { replace })` feed the
         // Related tab; without a loader that tab is hidden.
+        // `favorite: { isFavorite(value), toggle(value) }` puts the ★ button in the head.
         open({ anchor, capsule, generationSeed = 0, fallbackFocus = null, onApply = null, onClose = null,
-            tab = null, fetchRelated = null, presentTags = null, onPick = null } = {}) {
+            tab = null, fetchRelated = null, presentTags = null, onPick = null, favorite = null } = {}) {
             if (session) close({ apply: false });
             applyText();
             const plan = normalizeWeightPlan(capsule?.weightPlan);
-            session = { anchor, capsule, generationSeed, fallbackFocus, onApply, onClose, fetchRelated, presentTags, onPick };
+            session = { anchor, capsule, generationSeed, fallbackFocus, onApply, onClose, fetchRelated, presentTags, onPick, favorite };
             const value = capsule?.value ?? '';
             titleName.textContent = value;
             title.title = value;
             applyTitleAlias();
+            renderFavButton();
             ensureAliases([value]);
             root.setAttribute('aria-label', value);
             if (isVariablePlan(plan)) {

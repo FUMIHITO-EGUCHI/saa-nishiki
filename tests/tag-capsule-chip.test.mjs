@@ -70,14 +70,14 @@ test('the weight badge shows the plan with the icon of its mode, and disappears 
 
         const up = chipOf(capsule('long hair', fixed(1.2)));
         assert.equal(badge(up).hidden, false);
-        assert.equal(badge(up).textContent, ':1.20');
+        assert.equal(badge(up).textContent, '1.20', 'the number alone; the token\'s ":" belongs to the prompt text');
         assert.deepEqual(iconNames(badge(up)), [], 'a fixed weight is not a mode with an icon');
         assert.equal(up.classList.contains('is-up'), true);
         assert.equal(up.classList.contains('is-down'), false);
 
         const down = chipOf(capsule('long hair', fixed(0.8)));
         assert.equal(down.classList.contains('is-down'), true);
-        assert.equal(badge(down).textContent, ':0.80');
+        assert.equal(badge(down).textContent, '0.80');
 
         for (const [mode, expected] of [['increment', 'tag-ui-icon-increment'], ['decrement', 'tag-ui-icon-decrement'], ['random', 'tag-ui-icon-random']]) {
             const chip = chipOf(capsule('long hair', plan(mode, 1, 1.3)));
@@ -123,10 +123,14 @@ test('the chip announces its value, its weight and the states it is in', async (
         assert.equal(off.querySelector('.tag-capsule-chip-toggle').title, text('tag_ui_enable_tag'));
         assert.equal(chipOf(capsule('long hair')).querySelector('.tag-capsule-chip-toggle').title, text('tag_ui_disable_tag'));
 
+        // the segment's icon is the state: ✓ on, − off, ★ favorite, × excluded
         const star = chipOf(capsule('long hair'), { favorite: true });
         assert.equal(star.classList.contains('is-fav'), true);
-        assert.equal(star.querySelector('.tag-capsule-chip-fav').hidden, false);
-        assert.equal(chipOf(capsule('long hair')).querySelector('.tag-capsule-chip-fav').hidden, true);
+        assert.equal(star.querySelector('.tag-capsule-chip-toggle').dataset.icon, 'star');
+        assert.equal(chipOf(capsule('long hair')).querySelector('.tag-capsule-chip-toggle').dataset.icon, 'check');
+        assert.equal(off.querySelector('.tag-capsule-chip-toggle').dataset.icon, 'minus');
+        assert.equal(chipOf(capsule('long hair'), { excluded: true }).querySelector('.tag-capsule-chip-toggle').dataset.icon, 'close');
+        assert.equal(star.querySelector('.tag-capsule-chip-remove'), null, 'no × on a chip');
     });
 });
 
@@ -199,7 +203,7 @@ test('only the chips whose signature changed are redrawn', async () => {
         renderChips(container, [capsule('long hair', fixed(1.2)), capsules[1]], { text: counted });
         assert.equal(redraws, 1, 'only the chip whose weight moved');
         assert.notEqual(long.dataset.signature, signatures[0]);
-        assert.equal(long.querySelector('.tag-capsule-chip-weight').textContent, ':1.20');
+        assert.equal(long.querySelector('.tag-capsule-chip-weight').textContent, '1.20');
         assert.equal(smile.dataset.signature, signatures[1], 'the untouched chip was left alone');
 
         renderChips(container, capsules, { text: counted, excludedSet: new Set(['smile']) });
