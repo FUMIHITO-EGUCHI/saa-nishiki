@@ -370,7 +370,9 @@ test('an unselected chip is addressed alone and falls through to the chip\'s own
 
         await press(document, built.chip.get('a#0').chip);
         await clickItem(document, 'tag_remove');
-        assert.deepEqual(toggled, ['toggle', 'remove']);
+        // the chip has no × of its own any more: the menu removes through the field
+        assert.deepEqual(world.took('removeIds'), [['positive', ['a#0']]]);
+        assert.deepEqual(toggled, ['toggle']);
     }, globalsFor(world));
 });
 

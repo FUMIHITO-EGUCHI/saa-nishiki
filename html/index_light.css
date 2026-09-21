@@ -222,6 +222,15 @@ body {
     color: #4A403A; /* Dark gray-brown */
 }
 
+/* "50 / 1,234 results · scroll for more" under the paged suggestion rows */
+.suggestion-more {
+    padding: 4px 12px;
+    font-size: 0.85em;
+    text-align: center;
+    color: #9A8B78;
+    pointer-events: none;
+}
+
 .menu-separator{
     height: 1px;
     background: #0e0e0e;
@@ -972,6 +981,7 @@ body {
 .tag-capsule-batch:focus-visible,
 .tag-weight-popover-tab:focus-visible,
 .tag-weight-popover-close:focus-visible,
+.tag-weight-popover-fav:focus-visible,
 .tag-weight-stepbtn:focus-visible,
 .tag-weight-preset:focus-visible,
 .tag-weight-mode:focus-visible,
@@ -1062,51 +1072,38 @@ body {
     text-overflow: ellipsis;
 }
 
+/* the weight is the chip's right-end segment, the mirror of the toggle at the left;
+   the × (hover) sits between the name and it */
 .tag-capsule-chip-weight {
     display: inline-flex;
     align-items: center;
+    align-self: stretch;
+    order: 2;
     gap: 2px;
+    margin: 0 -6px 0 2px; /* out to the chip's edge over its right padding */
+    padding: 0 8px;
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 0 12px 12px 0;
+    background: rgba(47, 127, 214, 0.12);
+    color: #2f6ea3;
     font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
     font-size: 11px;
     font-variant-numeric: tabular-nums;
 }
+.tag-capsule-chip-weight[hidden] { display: none; }
 
-.tag-capsule-chip.is-up { border-color: #8fb98a; }
+/* the direction of a weight tints the segment's text only; the chip frame stays the same */
 .tag-capsule-chip.is-up .tag-capsule-chip-weight { color: #397c36; }
-.tag-capsule-chip.is-down { border-color: #d9b48f; }
 .tag-capsule-chip.is-down .tag-capsule-chip-weight { color: #b0651f; }
-.tag-capsule-chip.is-plan { border-color: #8fb3d6; border-style: dashed; }
 .tag-capsule-chip.is-plan .tag-capsule-chip-weight { color: #2f6ea3; }
 .tag-capsule-chip.is-warn .tag-capsule-chip-weight { color: #b8721a; }
-.tag-capsule-chip.is-excluded .tag-capsule-chip-name { text-decoration: line-through; color: #75695e; }
+.tag-capsule-chip.is-excluded { border-color: #b04a4a; }
+.tag-capsule-chip.is-excluded .tag-capsule-chip-name { color: #9a3f3f; }
 /* not in the tag dictionary: SDXL mostly ignores it */
 .tag-capsule-chip.is-unknown .tag-capsule-chip-name { text-decoration: underline wavy #b8721a; text-underline-offset: 3px; }
 /* a sentence, sent as written (an action statement) */
 .tag-capsule-chip.is-sentence { border-style: dashed; }
 .tag-capsule-chip.is-sentence .tag-capsule-chip-name { font-style: italic; }
-
-/* The × keeps its width at all times (visibility, not display), so hovering or
-   focusing a chip never widens it and re-wraps the row. */
-.tag-capsule-chip-remove {
-    display: inline-flex;
-    visibility: hidden;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    border-radius: 8px;
-    color: #6A5D4A;
-}
-
-.tag-capsule-chip:hover .tag-capsule-chip-remove,
-.tag-capsule-chip:focus-visible .tag-capsule-chip-remove {
-    visibility: visible;
-}
-
-.tag-capsule-chip-remove:hover {
-    background: #D2CBB8;
-    color: #4A403A;
-}
 
 /* one-touch enable/disable: the whole left end of the chip is the button (22px wide,
    full height); the 9px dot inside it shows the state */
@@ -1115,31 +1112,28 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 100%;
+    width: 24px;
+    align-self: stretch; /* a percentage height inside a button does not resolve: the dot sat off-centre */
     margin-right: 1px;
-    border-right: 1px solid rgba(0, 0, 0, 0.10);
     border-radius: 12px 0 0 12px;
-    background: rgba(47, 127, 214, 0.12); /* the tinted segment IS the hit area */
+    background: #2f7fd6; /* the segment is filled solid: its colour IS the state (blue on, grey off, amber favorite, red excluded) */
     cursor: pointer;
 }
-.tag-capsule-chip-toggle::before {
-    content: "";
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: #2f7fd6;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2) inset;
-    transition: transform .1s ease;
-}
-.tag-capsule-chip-toggle:hover { background: rgba(47, 127, 214, 0.26); }
-.tag-capsule-chip-toggle:hover::before { transform: scale(1.25); }
-.tag-capsule-chip.is-disabled { opacity: 0.5; }
-.tag-capsule-chip.is-disabled .tag-capsule-chip-toggle { background: rgba(0, 0, 0, 0.05); }
-.tag-capsule-chip.is-disabled .tag-capsule-chip-toggle::before { background: #a8a29a; }
+/* the icon inside is the state (tagCapsuleChip.js): ✓ on, − off, ★ favorite, × excluded */
+.tag-capsule-chip-toggle svg { display: block; color: #fffdf5; stroke-width: 2.2; transition: transform .1s ease; }
+.tag-capsule-chip-toggle:hover { background: #5a9ce0; }
+.tag-capsule-chip-toggle:hover svg { transform: scale(1.15); }
+.tag-capsule-chip.is-fav { border-color: #c9973a; }
+.tag-capsule-chip.is-fav .tag-capsule-chip-toggle { background: #c9973a; }
+.tag-capsule-chip.is-fav .tag-capsule-chip-toggle:hover { background: #d9ab55; }
+.tag-capsule-chip.is-excluded .tag-capsule-chip-toggle { background: #b04a4a; }
+.tag-capsule-chip.is-excluded .tag-capsule-chip-toggle:hover { background: #c46060; }
+/* off: the whole chip goes grey, the name stays legible (no strike-through) */
+.tag-capsule-chip.is-disabled { color: #8a8073; }
+.tag-capsule-chip.is-disabled .tag-capsule-chip-toggle { background: #b8b0a4; }
+.tag-capsule-chip.is-disabled .tag-capsule-chip-toggle:hover { background: #a8a094; }
 /* insertion point while a chip is dragged over the row */
 .tag-capsule-drop-marker { display: inline-block; flex: 0 0 auto; width: 2px; height: 22px; margin: 0 -1px; border-radius: 1px; background: #2f7fd6; }
-.tag-capsule-chip.is-disabled .tag-capsule-chip-name { text-decoration: line-through; }
 
 .tag-capsule-add-slot {
     display: inline-flex;
@@ -1274,6 +1268,7 @@ body {
 /* two lines: the tag, then its translation (tagAliasClient.js) */
 .tag-weight-popover-title {
     display: flex;
+    flex: 1 1 auto; /* the ★ and × sit together at the right end */
     flex-direction: column;
     gap: 1px;
     min-width: 0;
@@ -1294,7 +1289,8 @@ body {
 }
 .tag-weight-popover-title-alias[hidden] { display: none; }
 
-.tag-weight-popover-close {
+.tag-weight-popover-close,
+.tag-weight-popover-fav {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1307,7 +1303,13 @@ body {
     cursor: pointer;
 }
 
-.tag-weight-popover-close:hover {
+/* ★ = in the field's favorites */
+.tag-weight-popover-fav { font-size: 14px; line-height: 1; }
+.tag-weight-popover-fav.is-fav { color: var(--saa-warn, #b8860b); }
+.tag-weight-popover-fav[hidden] { display: none; }
+
+.tag-weight-popover-close:hover,
+.tag-weight-popover-fav:hover {
     background: #e4decd;
     color: #4A403A;
 }

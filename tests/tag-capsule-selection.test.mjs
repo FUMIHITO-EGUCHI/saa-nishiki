@@ -121,11 +121,18 @@ test('the enable dot, the disabled look, the selection and the editor blocks are
     for (const file of ['html/index_dark.css', 'html/index_light.css']) {
         const css = read(file);
         // the whole left end of the chip is the toggle; the dot inside it shows the state
-        assert.match(css, /\.tag-capsule-chip-toggle \{[^}]*width: 22px;[^}]*height: 100%;/, `${file}: toggle block`);
-        assert.match(css, /\.tag-capsule-chip-toggle::before \{[^}]*width: 9px;[^}]*height: 9px;/, `${file}: dot size`);
+        assert.match(css, /\.tag-capsule-chip-toggle \{[^}]*width: 24px;[^}]*align-self: stretch;/, `${file}: toggle block`);
+        assert.doesNotMatch(css, /\.tag-capsule-chip-toggle::before/, `${file}: the state is an icon, not a drawn dot`);
+        assert.match(css, /\.tag-capsule-chip-toggle svg \{ display: block;/, `${file}: the icon in the segment`);
+        assert.doesNotMatch(css, /\.tag-capsule-chip-remove/, `${file}: no × on a chip`);
+        // the segment's fill is the state: a colour per state, the name never struck through
+        assert.match(css, /\.tag-capsule-chip\.is-fav \.tag-capsule-chip-toggle \{ background: #/, `${file}: favorite segment`);
+        assert.match(css, /\.tag-capsule-chip\.is-excluded \.tag-capsule-chip-toggle \{ background: #/, `${file}: excluded segment`);
+        assert.doesNotMatch(css, /\.tag-capsule-chip\.is-(?:disabled|excluded) \.tag-capsule-chip-name \{[^}]*line-through/, `${file}: no strike-through`);
+        assert.match(css, /\.tag-capsule-chip-weight \{[^}]*align-self: stretch;[^}]*border-radius: 0 12px 12px 0;/, `${file}: the weight is the right-end segment`);
         assert.match(css, /\.tag-capsule-drop-marker \{/, `${file}: drop marker`);
-        assert.match(css, /\.tag-capsule-chip\.is-disabled \{[^}]*opacity: 0\.5;/, `${file}: disabled chip`);
-        assert.match(css, /\.tag-capsule-chip\.is-disabled \.tag-capsule-chip-name \{[^}]*line-through/, `${file}: struck name`);
+        assert.match(css, /\.tag-capsule-chip\.is-disabled \{ color: #/, `${file}: disabled chip greys out`);
+        assert.match(css, /\.tag-capsule-chip\.is-disabled \.tag-capsule-chip-toggle \{ background: #/, `${file}: disabled segment`);
         assert.equal((css.match(/^\.tag-capsule-chip-toggle \{/gm) ?? []).length, 1, `${file}: one dot rule`);
         assert.match(css, /\.tag-capsule-chip\.is-selected \{/, `${file}: selection`);
     }

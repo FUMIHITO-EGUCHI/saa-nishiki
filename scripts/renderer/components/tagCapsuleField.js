@@ -35,7 +35,7 @@ import {
     transferCapsules,
 } from './tagCapsuleLogic.js';
 import { createIcon, renderChips } from './tagCapsuleChip.js';
-import { FAVORITE_TAGS_CHANGED_EVENT, favGroupForKey, isFavoriteTag } from './favoriteTags.js';
+import { FAVORITE_TAGS_CHANGED_EVENT, favGroupForKey, isFavoriteTag, toggleFavTag } from './favoriteTags.js';
 import { getWeightPopover } from './weightPopover.js';
 import { getBatchWeightDialog } from './batchWeightDialog.js';
 import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
@@ -491,6 +491,11 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
                 commitCapsules(setCapsulePlan(capsules, capsule.id, plan));
                 focusChip(index);
             },
+            // ★ in the popover head: this field's favorite pool (positive / negative)
+            favorite: {
+                isFavorite: value => isFavoriteTag(favGroupForKey(key), value),
+                toggle: value => toggleFavTag(favGroupForKey(key), { value }),
+            },
             // Related tab: the dictionary's neighbours of this chip's tag
             fetchRelated: typeof fetchRelated === 'function' ? fetchRelated : null,
             presentTags: () => new Set(capsules.map(item => normalizeTagName(item.value))),
@@ -520,10 +525,6 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     chips.addEventListener('click', event => {
         const index = chipIndexOf(event.target);
         if (index < 0) return;
-        if (event.target.closest('.tag-capsule-chip-remove')) {
-            deleteAt(index);
-            return;
-        }
         if (event.target.closest('.tag-capsule-chip-toggle')) {
             // on a selected chip the dot flips the whole selection together
             const ids = selectedIds.has(capsules[index]?.id) ? selectionIds() : [];

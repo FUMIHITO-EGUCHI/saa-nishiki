@@ -16,6 +16,7 @@ const ICON_PATHS = Object.freeze({
     chevronLeft: ['M10 4l-4 4 4 4'],
     chevronDown: ['M4 6l4 4 4-4'],
     minus: ['M3 8h10'],
+    check: ['M3 8.4l3.2 3.2L13 4.6'],
     lock: ['M5.5 7V5a2.5 2.5 0 0 1 5 0v2'],
     star: ['M8 2.2l1.8 3.7 4.1.6-3 2.9.7 4.1L8 11.6l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 2.2z'],
     undo: ['M6 5L3 8l3 3', 'M3 8h6a4 4 0 0 1 4 4'],
@@ -112,11 +113,7 @@ export function createChip(capsule, options = {}) {
     toggle.setAttribute('aria-hidden', 'true');
     chip.appendChild(toggle);
 
-    const fav = document.createElement('span');
-    fav.className = 'tag-capsule-chip-fav';
-    fav.setAttribute('aria-hidden', 'true');
-    fav.appendChild(createIcon('star', 11));
-    chip.appendChild(fav);
+    // a favorite is told by the segment (★ on amber); no separate star before the name
 
     const name = document.createElement('span');
     name.className = 'tag-capsule-chip-name';
@@ -125,12 +122,7 @@ export function createChip(capsule, options = {}) {
     const weight = document.createElement('span');
     weight.className = 'tag-capsule-chip-weight';
     chip.appendChild(weight);
-
-    const remove = document.createElement('span');
-    remove.className = 'tag-capsule-chip-remove';
-    remove.setAttribute('aria-hidden', 'true');
-    remove.appendChild(createIcon('close', 12));
-    chip.appendChild(remove);
+    // no × on the chip: a tag is removed from the context menu or with Delete
 
     updateChip(chip, capsule, { text, excluded, favorite, status });
     return chip;
@@ -158,6 +150,14 @@ export function updateChip(chip, capsule, options = {}) {
     chip.setAttribute('aria-pressed', capsule.disabled === true ? 'false' : 'true');
     const toggleMark = chip.querySelector('.tag-capsule-chip-toggle');
     if (toggleMark && typeof text === 'function') toggleMark.title = text(capsule.disabled ? 'tag_ui_enable_tag' : 'tag_ui_disable_tag');
+    // the segment's icon says the state: ✓ in the prompt, − left out, ★ a favorite, × excluded
+    const stateIcon = capsule.disabled === true ? 'minus' : excluded ? 'close' : favorite ? 'star' : 'check';
+    if (toggleMark && toggleMark.dataset.icon !== stateIcon) {
+        const icon = createIcon(stateIcon, 10);
+        if (stateIcon === 'star') icon.setAttribute('fill', 'currentColor');
+        toggleMark.replaceChildren(icon);
+        toggleMark.dataset.icon = stateIcon;
+    }
     const favMark = chip.querySelector('.tag-capsule-chip-fav');
     if (favMark) favMark.hidden = !favorite;
 
@@ -169,7 +169,8 @@ export function updateChip(chip, capsule, options = {}) {
     weight.replaceChildren();
     if (description) {
         if (modeIcon) weight.appendChild(createIcon(modeIcon, 12));
-        weight.appendChild(document.createTextNode(description));
+        // the segment shows the number alone; the token's ":" is for the prompt text
+        weight.appendChild(document.createTextNode(description.replace(/^:/, '')));
     }
     weight.hidden = !description;
 
