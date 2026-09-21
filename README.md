@@ -190,6 +190,22 @@ For a packaged executable, the equivalent option is:
 
 The DevTools endpoint is available at `http://127.0.0.1:9222/json/list` while SAA is running. Use a different port if `9222` is already occupied. Do not enable this option on an untrusted or publicly reachable machine because CDP can inspect and control the renderer.
 
+### Tests: unit and end-to-end (maintainers)
+
+`npm test` runs the unit suite (`tests/*.test.mjs`, about 1,170 tests) on an in-memory DOM in a few seconds. It pins how the components and the main-process modules behave; it does not model layout, scrolling or a real backend.
+
+`npm run test:e2e` runs the end-to-end stories in `tests/e2e/*.e2e.mjs`: the real app (Electron, with a settings folder of its own) against the real local ComfyUI, driven the way a person drives it and judged by what ComfyUI was asked to run (`/history`) and by what the gallery received. It needs, on this machine:
+
+- ComfyUI up at the address in `settings/app.json` (`SAA_E2E_COMFY=host:port` overrides), with the checkpoint and the diffusion model named in `settings/state.json` and the fast-mode LoRAs in its `loras` folder. The harness borrows these machine facts from the worktree's own settings and never writes to that folder.
+- A few minutes: the images are 512 × 512 at four steps, one story file starts one app.
+
+What it never does: restart ComfyUI (the app under test gets no launch command, so a launch-flag mismatch is logged and the run goes on), so the Diffusion fast set, which needs `--use-sage-attention --fast` at launch, is not covered.
+
+Two things to know when writing a story:
+
+- ComfyUI answers a prompt it already ran from its cache, and SAA reports that as an error ("running same prompt?"). Every launch gets a fresh seed (`freshSeed()`), and a story that reruns the same prompt sets another one (`app.setSeed`). A batch runs on seed `-1` (random): a fixed seed repeats the image, and the app asks before running such a batch.
+- The app is started with `--saa-settings-dir=<folder>` (also `SAA_SETTINGS_DIR`), which is how a run keeps its own settings. `SAA_E2E_KEEP=1` leaves the run folder with `app.log` behind for a look after a failure.
+
 # Update
 > [!IMPORTANT]
 > **Updating from GitHub does not update the dataset files.**
