@@ -8,12 +8,14 @@ import {
   findSharedAliases,
   formatTagRows,
   isPoliteStyleRow,
+  isReviewedBy,
   isSuspiciousTagRow,
   loadBaseIndex,
   loadReferenceAliases,
   normalizeTagKey,
   parseReviewResponse,
   parseTagRows,
+  reviewedTags,
   selectReviewRows,
   splitReviewRows,
   validateReviewRows,
@@ -237,6 +239,27 @@ test('apply matches repeated rows by tag, appends missing translations and drops
 test('a change without a replacement alias becomes an unsure keep', () => {
   const review = validateReviewRows([{ i: 1, tag: 'grass_root_youkai_network', alias: '' }], [{ i: 1, action: 'change', confidence: 'high', alias: '' }]);
   assert.deepEqual([review[0].action, review[0].confidence, review[0].alias], ['keep', 'low', '']);
+});
+
+test('a proposed alias with a comma or line break becomes an unsure keep instead of failing the batch', () => {
+  const input = [{ i: 1, tag: 'wake_up_girls!', alias: 'ウェイクアップガールズ' }];
+  const review = validateReviewRows(input, [{ i: 1, action: 'change', confidence: 'high', alias: 'Wake Up, Girls!' }]);
+  assert.equal(review[0].action, 'keep');
+  assert.equal(review[0].confidence, 'low');
+  assert.equal(review[0].alias, 'ウェイクアップガールズ');
+});
+
+test('a fallback model answer is neither done nor applied under --only-model', () => {
+  const luna = { tag: 'touhou', original: '東方', model: 'gpt-5.6-luna', verification: { model: 'gpt-5.6-luna' } };
+  const lunaUnverified = { tag: 'kancolle', original: '', model: 'gpt-5.6-luna', missing: true };
+  const fallback = { tag: 'fate', original: 'フェイト', model: 'qwen', verification: { model: 'qwen' } };
+  const mixed = { tag: 'pokemon', original: 'ポケモン', model: 'gpt-5.6-luna', verification: { model: 'qwen' } };
+  assert.equal(isReviewedBy(luna, 'gpt-5.6-luna'), true);
+  assert.equal(isReviewedBy(lunaUnverified, 'gpt-5.6-luna'), true);
+  assert.equal(isReviewedBy(fallback, 'gpt-5.6-luna'), false);
+  assert.equal(isReviewedBy(mixed, 'gpt-5.6-luna'), false);
+  assert.equal(isReviewedBy(fallback, ''), true, 'no model filter accepts everything');
+  assert.deepEqual([...reviewedTags([luna, lunaUnverified, fallback, mixed], 'gpt-5.6-luna')], ['touhou', 'kancolle']);
 });
 
 test('a change to the identical alias is recorded as keep', () => {

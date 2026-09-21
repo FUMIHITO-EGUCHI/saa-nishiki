@@ -510,6 +510,24 @@ node scripts/reviewJapaneseTags.mjs --apply --report review.jsonl --output data/
 
 `--dry-run` writes the selection without calling a model. A removed alias
 drops its row; a decision applies to every repeated row of the same tag.
+`data/japanese_alias_pins.csv` (tag,alias) holds the aliases settled by
+hand; `--apply` and the reference sync write them last, so a model run
+cannot undo them. Add a row there instead of editing the dictionary
+directly.
+Several workers can share a large audit with `--offset` / `--limit` (the
+pool is ordered by heat); a rate-limited Codex call is retried, not split.
+
+`scripts/syncReferenceAliases.mjs` copies the reviewed picker names into the
+dictionary before such a review: character names from
+`data/character_names.json` (with the curated work title in the qualifier)
+and work titles from `data/character_works.json` replace the Character and
+Copyright aliases, and tags without a row are appended. The same map is the
+`reference` the review treats as authoritative.
+
+```text
+node scripts/syncReferenceAliases.mjs --dry-run --report sync.jsonl
+node scripts/syncReferenceAliases.mjs --output data/danbooru_e621_merged_ja.csv
+```
 `scripts/categorizeTags.mjs` uses the same backends to fill
 `data/tag_categories.json` for the tag-picker category filters.
 

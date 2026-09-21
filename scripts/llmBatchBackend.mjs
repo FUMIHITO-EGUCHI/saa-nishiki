@@ -21,11 +21,14 @@ export const DEFAULT_POD_MODEL = 'huihui_ai/qwen3-abliterated:8b';
 export const DEFAULT_POD_SETTINGS = path.join(projectDir, 'settings', 'app.json');
 export const OLLAMA_URL = process.env.OLLAMA_TAG_REVIEW_URL || 'http://127.0.0.1:11434/api/chat';
 export const BACKENDS = Object.freeze(['auto', 'codex', 'ollama', 'pod']);
-export const FALLBACKS = Object.freeze(['ollama', 'pod']);
+export const FALLBACKS = Object.freeze(['ollama', 'pod', 'none']);
 export const CODEX_EFFORTS = Object.freeze(['minimal', 'low', 'medium', 'high', 'xhigh']);
 export const CODEX_TIERS = Object.freeze(['default', 'priority', 'flex']);
 // Codex batches at or below this size go to the fallback model when they fail.
 export const CODEX_SPLIT_FLOOR = 25;
+export const CODEX_TRANSIENT_ERROR = /rate.?limit|429|too many requests|overloaded|usage limit|timed? ?out|ECONNRESET|ENOTFOUND|network|stream disconnected|502|503|504/i;
+const CODEX_RETRIES = 3;
+const CODEX_RETRY_DELAYS_MS = [30_000, 60_000, 120_000];
 
 const NSFW_TAG_PATTERN = new RegExp([
   'sex', 'penis', 'pussy', 'vagina', 'anal', 'anus', '(^|_)cum', 'semen', 'ejaculat', 'erection',
@@ -104,7 +107,7 @@ export function validateBackendArgs(args) {
   if (args.codexTier && !CODEX_TIERS.includes(args.codexTier)) throw new Error(`--codex-tier must be one of ${CODEX_TIERS.join(', ')}`);
   // where a batch Codex refuses or garbles goes: the pod when its SSH is configured, else the local model
   if (!args.fallback) args.fallback = isPodConfigured(args.podSettings) ? 'pod' : 'ollama';
-  if (!FALLBACKS.includes(args.fallback)) throw new Error('--fallback must be ollama or pod');
+  if (!FALLBACKS.includes(args.fallback)) throw new Error('--fallback must be ollama, pod or none');
   return args;
 }
 
@@ -114,7 +117,8 @@ export function backendHelpText() {
   --codex-effort minimal|low|medium|high|xhigh and --codex-tier priority|default|flex
   (priority = fast mode), both default to ~/.codex/config.toml);
   a batch Codex refuses or garbles falls back to --fallback (pod when the SSH
-  pod is configured in --pod-settings, default settings/app.json; else ollama).
+  pod is configured in --pod-settings, default settings/app.json; else ollama;
+  none stops the run instead, so only Codex answers reach the report).
   --nsfw-direct sends explicit tags straight to the fallback model instead.
   pod = the Ollama model on the Runpod pod over the SSH relay (--pod-model,
   default ${DEFAULT_POD_MODEL}); ollama = OLLAMA_TAG_REVIEW_URL / 127.0.0.1:11434
@@ -204,15 +208,27 @@ export function callCodexJson(model, systemPrompt, userContent, schema, { effort
       '-o', outFile,
       '-',
     ].map(part => (/\s/.test(part) ? `"${part}"` : part)).join(' ');
-    const result = spawnSync(commandLine, {
-      input: `${systemPrompt}\n\nAnswer directly with the JSON only. Do not run commands or read files.\n\n${userContent}`,
-      encoding: 'utf8',
-      shell: true, // resolves the npm shim on Windows
-      timeout: 600_000,
-    });
-    if (result.error) throw result.error;
-    if (result.status !== 0) {
-      throw new Error(`codex exec exited with ${result.status}: ${String(result.stderr).slice(-400)}`);
+    const input = `${systemPrompt}\n\nAnswer directly with the JSON only. Do not run commands or read files.\n\n${userContent}`;
+    // A rate limit or a dropped connection is retried here (several review
+    // workers share one Codex account); anything else is the caller's split /
+    // fallback decision.
+    for (let attempt = 0; ; attempt += 1) {
+      const result = spawnSync(commandLine, {
+        input,
+        encoding: 'utf8',
+        shell: true, // resolves the npm shim on Windows
+        timeout: 600_000,
+      });
+      const stderr = String(result.stderr ?? '');
+      if (!result.error && result.status === 0) break;
+      const transient = result.error?.code === 'ETIMEDOUT' || CODEX_TRANSIENT_ERROR.test(stderr);
+      if (!transient || attempt >= CODEX_RETRIES) {
+        if (result.error) throw result.error;
+        throw new Error(`codex exec exited with ${result.status}: ${stderr.slice(-400)}`);
+      }
+      const waitMs = CODEX_RETRY_DELAYS_MS[Math.min(attempt, CODEX_RETRY_DELAYS_MS.length - 1)];
+      process.stdout.write(`codex exec failed (${(stderr.trim().split('\n').pop() || result.error?.code || '').slice(0, 120)}); retrying in ${waitMs / 1000} s...\n`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, waitMs);
     }
     if (!fs.existsSync(outFile)) throw new Error('codex exec produced no output message');
     return parseJsonRows(fs.readFileSync(outFile, 'utf8'));
@@ -304,6 +320,8 @@ export function createBatchClient(args, transports = {}) {
             ...await requestRows(backend, parts[1], { systemPrompt, buildPrompt, schema, validate, label }),
           ];
         }
+        // --fallback none: stop here; the report keeps the batches done so far
+        if (args.fallback === 'none') throw error;
         process.stdout.write(`Codex ${label} failed (${error.message.slice(0, 160)}); falling back to ${args.fallback}...\n`);
         return requestRows(args.fallback, rows, { systemPrompt, buildPrompt, schema, validate, label });
       }

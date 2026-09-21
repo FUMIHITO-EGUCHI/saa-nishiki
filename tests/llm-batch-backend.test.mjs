@@ -30,6 +30,7 @@ test('backend options parse and default to Codex with a local fallback', () => {
   assert.equal(parse(['--backend', 'pod', '--pod-model', 'x', '--pod-settings', 'nonexistent.json']).podModelExplicit, true);
   assert.throws(() => parse(['--backend', 'cloud']), /--backend must be/);
   assert.throws(() => parse(['--fallback', 'codex']), /--fallback must be/);
+  assert.equal(parse(['--fallback', 'none']).fallback, 'none');
   assert.throws(() => parse(['--batch-size', '0']), /--batch-size/);
   assert.equal(parse([]).codexEffort, '', 'the reasoning effort defaults to the Codex config');
   assert.equal(parse(['--codex-effort', 'xhigh']).codexEffort, 'xhigh');
