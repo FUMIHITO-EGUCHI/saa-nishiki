@@ -87,6 +87,10 @@ export const TAG_UI_DEFAULTS = Object.freeze({
     tag_ui_fav_remove: 'Remove {0} from favorites',
     tag_ui_modal_favorites_prompt: 'Showing favorites. Type to search all tags; Enter adds unknown text as a new tag.',
     tag_ui_modal_search_prompt: 'Enter a tag or character name to search. Enter adds unknown text as a new tag.',
+    // {0} rows on screen out of {1} matches; the next page loads as the list is scrolled
+    tag_ui_results_paged: '{0} / {1} results · scroll for more',
+    tag_ui_results_all: '{0} result',
+    tag_ui_results_all_plural: '{0} results',
     tag_ui_related_title: 'Related · {0}',
     tag_ui_related_cooccur: 'Often together',
     tag_ui_related_family: '…{0}',
@@ -94,6 +98,15 @@ export const TAG_UI_DEFAULTS = Object.freeze({
     tag_ui_related_loading: 'Loading…',
     tag_ui_related_toggle: 'Tag suggestions (offline co-occurrence dictionary)',
 });
+
+// "50 / 1,234 results · scroll for more" while a paged list is not complete, or
+// just the count once everything is on screen.
+export function pagedCountText(shown, total) {
+    const count = Math.max(0, Number(total) || 0);
+    const onScreen = Math.max(0, Number(shown) || 0);
+    if (onScreen < count) return tagText('tag_ui_results_paged', onScreen.toLocaleString(), count.toLocaleString());
+    return tagText(count === 1 ? 'tag_ui_results_all' : 'tag_ui_results_all_plural', count.toLocaleString());
+}
 
 export function formatText(template, args = []) {
     return String(template ?? '').replaceAll(/\{(\d+)\}/g, (match, index) => {

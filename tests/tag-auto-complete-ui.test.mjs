@@ -107,7 +107,10 @@ function typeInto(textbox, value, detail) {
 
 const mirrors = document => document.body.querySelectorAll('div').filter(node => node.getAttribute('aria-hidden') === 'true');
 
-const DEFAULT_ANSWER = async () => [['<b>long_hair</b>: (long hair) (123) [G]'], ['<b>long_sleeves</b>: (long sleeves) (45) [G]']];
+const DEFAULT_ROWS = [['<b>long_hair</b>: (long hair) (123) [G]'], ['<b>long_sleeves</b>: (long sleeves) (45) [G]']];
+// the tag backend answers a page: { items, total }; an answer given as a bare list is one page of itself
+const DEFAULT_ANSWER = async () => DEFAULT_ROWS;
+const asPage = answer => (Array.isArray(answer) ? { items: answer, total: answer.length } : answer);
 
 async function withSuggestions(body, answer = DEFAULT_ANSWER) {
   const saved = { api: globalThis.api, inBrowser: globalThis.inBrowser };
@@ -115,7 +118,7 @@ async function withSuggestions(body, answer = DEFAULT_ANSWER) {
     await withFakeDom(async document => {
       const asked = [];
       globalThis.inBrowser = false;
-      globalThis.api = { tagGet: async (...params) => { asked.push(params); return answer(...params); } };
+      globalThis.api = { tagSearch: async (...params) => { asked.push(params); return asPage(await answer(...params)); } };
       const textbox = promptTextarea(document);
       setupSuggestionSystem();
       await body({ document, textbox, asked, box: document.body.querySelector('.suggestion-box') });
@@ -133,12 +136,68 @@ test('a typed word opens the suggestion box on the answers the tag backend gives
 
     typeInto(textbox, 'smile, long hair');
     await settle();
-    assert.deepEqual(asked, [['long_hair']], 'the word under the caret goes out with its spaces as underscores');
+    assert.deepEqual(asked, [['long_hair', { offset: 0, limit: 50 }]], 'the word under the caret goes out with its spaces as underscores, asking for the first page');
     const items = box.querySelectorAll('.suggestion-item');
     assert.equal(items.length, 2);
     assert.deepEqual(items.map(item => item.dataset.value), ['long_hair', 'long_sleeves']);
     assert.equal(box.style.display, 'block');
   });
+});
+
+// A backend with 120 matches for "hair", answered 50 at a time.
+const rowsFor = (offset, limit, word = 'hair', total = 120) => Array.from({ length: Math.max(0, Math.min(limit, total - offset)) },
+  (_, index) => [`<b>${word}_${String(offset + index + 1).padStart(3, '0')}</b> (${total - offset - index}) [G]`]);
+const PAGED_ANSWER = async (word, { offset, limit }) => ({ items: rowsFor(offset, limit, word), total: 120 });
+
+test('the box shows one page, says how many matches there are, and fetches the next page at its end', async () => {
+  await withSuggestions(async ({ textbox, asked, box }) => {
+    typeInto(textbox, 'hair');
+    await settle();
+    assert.equal(box.querySelectorAll('.suggestion-item').length, 50);
+    const more = box.querySelector('.suggestion-more');
+    assert.equal(more.textContent, '50 / 120 results · scroll for more');
+
+    // scrolled to the end of the box: the next 50 are appended, the line counts them
+    box.scrollTop = 700; box.clientHeight = 300; box.scrollHeight = 1000;
+    box.dispatchEvent({ type: 'scroll' });
+    await settle();
+    assert.deepEqual(asked.at(-1), ['hair', { offset: 50, limit: 50 }]);
+    const items = box.querySelectorAll('.suggestion-item');
+    assert.equal(items.length, 100);
+    assert.equal(items.at(-1).dataset.value, 'hair_100');
+    assert.equal(box.querySelector('.suggestion-more').textContent, '100 / 120 results · scroll for more');
+    assert.equal(box.lastChild.className, 'suggestion-more', 'the count stays the last line');
+
+    // the arrow reaching the last row fetches the rest; once everything is there the line is a plain count
+    for (let index = 0; index < 100; index++) textbox.dispatchEvent({ type: 'keydown', key: 'ArrowDown', preventDefault() {} });
+    await settle();
+    assert.equal(box.querySelectorAll('.suggestion-item').length, 120);
+    assert.equal(box.querySelector('.suggestion-more').textContent, '120 results');
+    box.dispatchEvent({ type: 'scroll' });
+    await settle();
+    assert.equal(asked.length, 3, 'nothing more is asked for once every match is on screen');
+  }, PAGED_ANSWER);
+});
+
+test('a new word starts a new list: a page still on its way for the old word is dropped', async () => {
+  let release = null;
+  const slow = (word, page) => (word === 'hair' && page.offset === 50
+    ? new Promise(resolve => { release = () => resolve({ items: rowsFor(50, 50), total: 120 }); })
+    : PAGED_ANSWER(word, page));
+  await withSuggestions(async ({ textbox, box }) => {
+    typeInto(textbox, 'hair');
+    await settle();
+    box.scrollTop = 700; box.clientHeight = 300; box.scrollHeight = 1000;
+    box.dispatchEvent({ type: 'scroll' });
+    await settle();
+    typeInto(textbox, 'hair, smile');
+    await settle();
+    assert.equal(box.querySelectorAll('.suggestion-item').length, 50, 'the list is for "smile" now');
+    release();
+    await settle();
+    assert.equal(box.querySelectorAll('.suggestion-item').length, 50, 'the late "hair" page is not appended to it');
+    assert.equal(box.querySelector('.suggestion-item').dataset.value, 'smile_001');
+  }, slow);
 });
 
 test('an escaped tag is read back from the DOM, so what is inserted is the tag, not its markup', async () => {

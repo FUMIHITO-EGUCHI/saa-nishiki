@@ -1,5 +1,6 @@
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { COARSE_GROUP_FILTERS } from '../main/tagCategoryConstants.js';
+import { pagedCountText } from './components/tagUiText.js';
 
 export const TAG_FILTERS = Object.freeze([
     { value: 'all', label: 'All' },
@@ -29,6 +30,10 @@ export function getTagFilterOptions(filterValue) {
 export function extractPromptKeyFromSuggestion(suggestionHtml) {
     return /^\s*<b>(.*?)<\/b>/.exec(suggestionHtml)?.[1] || '';
 }
+
+// Rows per page of the suggestion box and of the tag picker; the next page is
+// fetched when the list is scrolled to its end.
+export const PAGE_SIZE = 50;
 
 function createTagFilterControl(textbox) {
     const wrapper = textbox.closest('.myTextbox-wrapper') || textbox.parentElement;
@@ -245,66 +250,21 @@ export function setupSuggestionSystem() {
             wordToSend = wordToSend.replaceAll(' ', '_');
             lastWordSent = wordToSend;
 
-            try {            
-                let suggestions;
-                const filterOptions = getTagFilterOptions(filterSelect?.value || 'all');
-                const params = filterOptions ? [wordToSend, filterOptions] : [wordToSend];
-                if (globalThis.inBrowser) {
-                    suggestions = await sendWebSocketMessage({ type: 'API', method: 'tagGet', params });
-                } else {
-                    suggestions = await globalThis.api.tagGet(...params);
-                }
-
-                if (!suggestions || suggestions.every(s => s.length === 0)) {
+            try {
+                const page = await searchPage(wordToSend, 0);
+                if (page.items.length === 0) {
                     suggestionBox.style.display = 'none';
                     return;
                 }
 
-                const fragment = document.createDocumentFragment();
-                let maxWidth = 0;
-                const tempDiv = document.createElement('div');
-                tempDiv.style.position = 'absolute';
-                tempDiv.style.visibility = 'hidden';
-                tempDiv.style.whiteSpace = 'nowrap';
-                document.body.appendChild(tempDiv);
-
                 currentSuggestions = [];
-                for (const [index, suggestion] of suggestions.entries()) {
-                    if (!Array.isArray(suggestion) || suggestion.length === 0) {
-                        console.warn('Invalid suggestion format at index', index, suggestion);
-                        continue;
-                    }
-                    const element = suggestion[0];
-                    if (typeof element !== 'string') {
-                        console.error('Unexpected element type at index', index, ':', typeof element, element);
-                        continue;
-                    }
-                    const item = document.createElement('div');
-                    item.className = 'suggestion-item';
-                    item.innerHTML = element;
-                    const promptMatch = extractPromptKeyFromSuggestion(element);
-                    // Read the value back from the DOM so escaped display text
-                    // such as &lt;o&gt; is inserted as the original tag.
-                    item.dataset.value = promptMatch
-                        ? (item.querySelector('b')?.textContent || '')
-                        : element.split(':')[0].trim();
-                    let sanitizedElement = element;
-                    let previousElement;
-                    do {
-                        previousElement = sanitizedElement;
-                        sanitizedElement = sanitizedElement.replaceAll(/<[^>]+>/g, '');  //NOSONAR S8786
-                    } while (sanitizedElement !== previousElement);
-                    tempDiv.textContent = sanitizedElement;
-                    maxWidth = Math.max(maxWidth, tempDiv.offsetWidth);
-                    currentSuggestions.push({ prompt: element, value: item.dataset.value });
-                    fragment.appendChild(item);
-                }
-
-                tempDiv.remove();
                 suggestionBox.innerHTML = '';
-                suggestionBox.appendChild(fragment);
-                suggestionBox.style.width = `${Math.min(maxWidth + 20, 300)}px`;
+                suggestionBox.appendChild(suggestionRows(page.items));
+                pageState = { word: wordToSend, total: page.total, loading: false };
+                renderMoreLine();
+                suggestionBox.style.width = `${Math.min(maxRowWidth + 20, 300)}px`;
                 suggestionBox.style.display = 'block';
+                suggestionBox.scrollTop = 0;
                 selectedIndex = -1;
 
             } catch (error) {
@@ -312,6 +272,95 @@ export function setupSuggestionSystem() {
                 suggestionBox.style.display = 'none';
             }
         }, 50));
+
+        // The list is paged: PAGE_SIZE rows come at a time, the next page is fetched
+        // when the box is scrolled near its end, and the last line says how many of
+        // the matches are on screen.
+        let pageState = { word: '', total: 0, loading: false };
+        let maxRowWidth = 0;
+        const moreLine = document.createElement('div');
+        moreLine.className = 'suggestion-more';
+
+        async function searchPage(word, offset) {
+            const filterOptions = getTagFilterOptions(filterSelect?.value || 'all') || {};
+            const params = [word, { ...filterOptions, offset, limit: PAGE_SIZE }];
+            const answer = globalThis.inBrowser
+                ? await sendWebSocketMessage({ type: 'API', method: 'tagSearch', params })
+                : await globalThis.api.tagSearch(...params);
+            const items = Array.isArray(answer?.items) ? answer.items : [];
+            return { items, total: Number.isInteger(answer?.total) ? answer.total : items.length };
+        }
+
+        // Rows for one page of answers; currentSuggestions grows with them.
+        function suggestionRows(items) {
+            const fragment = document.createDocumentFragment();
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.visibility = 'hidden';
+            tempDiv.style.whiteSpace = 'nowrap';
+            document.body.appendChild(tempDiv);
+            if (currentSuggestions.length === 0) maxRowWidth = 0;
+            for (const [index, suggestion] of items.entries()) {
+                if (!Array.isArray(suggestion) || suggestion.length === 0) {
+                    console.warn('Invalid suggestion format at index', index, suggestion);
+                    continue;
+                }
+                const element = suggestion[0];
+                if (typeof element !== 'string') {
+                    console.error('Unexpected element type at index', index, ':', typeof element, element);
+                    continue;
+                }
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.innerHTML = element;
+                const promptMatch = extractPromptKeyFromSuggestion(element);
+                // Read the value back from the DOM so escaped display text
+                // such as &lt;o&gt; is inserted as the original tag.
+                item.dataset.value = promptMatch
+                    ? (item.querySelector('b')?.textContent || '')
+                    : element.split(':')[0].trim();
+                let sanitizedElement = element;
+                let previousElement;
+                do {
+                    previousElement = sanitizedElement;
+                    sanitizedElement = sanitizedElement.replaceAll(/<[^>]+>/g, '');  //NOSONAR S8786
+                } while (sanitizedElement !== previousElement);
+                tempDiv.textContent = sanitizedElement;
+                maxRowWidth = Math.max(maxRowWidth, tempDiv.offsetWidth);
+                currentSuggestions.push({ prompt: element, value: item.dataset.value });
+                fragment.appendChild(item);
+            }
+            tempDiv.remove();
+            return fragment;
+        }
+
+        function renderMoreLine() {
+            moreLine.textContent = pagedCountText(currentSuggestions.length, pageState.total);
+            suggestionBox.appendChild(moreLine);
+        }
+
+        async function loadNextPage() {
+            if (pageState.loading || currentSuggestions.length >= pageState.total) return;
+            pageState.loading = true;
+            const word = pageState.word;
+            try {
+                const page = await searchPage(word, currentSuggestions.length);
+                // the word changed while the page was on its way: that answer is for another list
+                if (pageState.word !== word || suggestionBox.style.display === 'none') return;
+                pageState.total = page.total;
+                moreLine.remove();
+                suggestionBox.appendChild(suggestionRows(page.items));
+                renderMoreLine();
+            } catch (error) {
+                console.error('Suggestion paging error:', error);
+            } finally {
+                if (pageState.word === word) pageState.loading = false;
+            }
+        }
+
+        suggestionBox.addEventListener('scroll', () => {
+            if (suggestionBox.scrollTop + suggestionBox.clientHeight >= suggestionBox.scrollHeight - 24) loadNextPage();
+        });
 
         textbox.addEventListener('keydown', (e) => {
             if (suggestionBox.style.display !== 'none') {
@@ -330,6 +379,8 @@ export function setupSuggestionSystem() {
                     e.preventDefault();
                     selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
                     updateSelection(items);
+                    // the highlight reached the last row: fetch the next page so it can go on
+                    if (selectedIndex === items.length - 1) loadNextPage();
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     selectedIndex = Math.max(selectedIndex - 1, 0);

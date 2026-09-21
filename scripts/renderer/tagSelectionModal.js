@@ -1,9 +1,10 @@
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
-import { extractPromptKeyFromSuggestion, getTagFilterOptions, TAG_FILTERS } from './tagAutoComplete.js';
+import { extractPromptKeyFromSuggestion, getTagFilterOptions, PAGE_SIZE, TAG_FILTERS } from './tagAutoComplete.js';
 import { createSelectionModal } from './components/selectionModal.js';
 import { insertTagsAtCursor, normalizePromptToken } from './components/selectionModalLogic.js';
 import { tagText } from './components/tagUiText.js';
 import { favGroupForKey, favoriteOptions, isFavoriteTag, toggleFavTag } from './components/favoriteTags.js';
+import { aliasesFor } from './tagAliasClient.js';
 
 const DETAILED_TAG_FILTERS = TAG_FILTERS.filter(filter => filter.options?.category);
 
@@ -56,15 +57,43 @@ function storedCursor(textbox, key, fallback) {
     return Math.max(0, Math.min(textbox.value.length, parsed));
 }
 
-async function requestTagOptions(query, category) {
-    if (!query) return [];
-    const filterValue = category || 'all';
-    const filterOptions = getTagFilterOptions(filterValue);
-    const params = filterOptions ? [query, filterOptions] : [query];
-    const suggestions = globalThis.inBrowser
-        ? await sendWebSocketMessage({ type: 'API', method: 'tagGet', params })
-        : await globalThis.api.tagGet(...params);
-    return parseTagSuggestions(suggestions);
+// One page of the tags matching `query`: { items, total }; the modal asks for the
+// next page (offset = rows it has) as its list is scrolled.
+async function requestTagOptions(query, category, offset = 0) {
+    if (!query) return { items: [], total: 0 };
+    const filterOptions = getTagFilterOptions(category || 'all') || {};
+    const params = [query, { ...filterOptions, offset, limit: PAGE_SIZE }];
+    const answer = globalThis.inBrowser
+        ? await sendWebSocketMessage({ type: 'API', method: 'tagSearch', params })
+        : await globalThis.api.tagSearch(...params);
+    const items = parseTagSuggestions(answer?.items);
+    return { items, total: Number.isInteger(answer?.total) ? answer.total : items.length };
+}
+
+// The favorites list with each tag's translation on its description line, as a search
+// result row has it (the favorites are stored as bare tags).
+async function favoriteOptionsWithAliases(favGroup) {
+    const options = favoriteOptions(favGroup);
+    const translations = await aliasesFor(options.map(option => option.value));
+    return options.map(option => {
+        const description = translations.get(option.value) || '';
+        return description ? { ...option, description, attributes: [description] } : option;
+    });
+}
+
+// What the picker hands the modal for a search: the first page plus a loader for the
+// next ones; an empty query lists the favorites instead. `filter` narrows the rows
+// (single-tag options only, for the list editor).
+function tagPageLoader(favGroup, filter = options => options) {
+    return async ({ query, category }) => {
+        if (!query) return filter(await favoriteOptionsWithAliases(favGroup));
+        const page = await requestTagOptions(query, category, 0);
+        return {
+            items: filter(page.items),
+            total: page.total,
+            loadMore: async offset => filter((await requestTagOptions(query, category, offset)).items),
+        };
+    };
 }
 
 function applyTagsToTextbox(textbox, selectedOptions, start, end) {
@@ -129,9 +158,7 @@ export function openTagPicker(textbox, { favGroup = 'positive', singleTagsOnly =
         trigger: trigger ?? textbox,
         fallback: textbox,
         selection: promptSelection(textbox.value),
-        dynamicLoadOptions: async ({ query, category }) => filter(query
-            ? await requestTagOptions(query, category)
-            : favoriteOptions(favGroup)),
+        dynamicLoadOptions: tagPageLoader(favGroup, filter),
         favorites: {
             isFavorite: key => isFavoriteTag(favGroup, key),
             toggle: option => toggleFavTag(favGroup, option),
@@ -189,9 +216,7 @@ export function setupTagSelectionModal(textboxes = [], keys = []) {
                 fallback: textbox,
                 selection: promptSelection(textbox.value),
                 // empty query lists the field's favorites instead of nothing
-                dynamicLoadOptions: async ({ query, category }) => (query
-                    ? await requestTagOptions(query, category)
-                    : favoriteOptions(favGroup)),
+                dynamicLoadOptions: tagPageLoader(favGroup),
                 favorites: {
                     isFavorite: key => isFavoriteTag(favGroup, key),
                     toggle: option => toggleFavTag(favGroup, option),

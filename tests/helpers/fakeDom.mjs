@@ -496,6 +496,9 @@ export class FakeElement {
     replaceChildren(...nodes) {
         for (const child of this.childNodes) child.parentElement = null;
         this.childNodes = [];
+        // an emptied box has nothing to scroll: a browser clamps its scrollTop to 0 and
+        // does not bring it back when children are appended again
+        if ('scrollTop' in this) this.scrollTop = 0;
         this.append(...nodes);
     }
 

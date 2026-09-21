@@ -30,6 +30,7 @@ const ROWS = [
     'Blue_Sky,0,77,""',                                // the same key spelled differently, far less popular
     'hatsune_miku,4,900000,"miku"',                    // character
     'vocaloid,3,800000,""',                            // copyright
+    'wake_up_girls!,3,300,"Wake Up Girls"',            // an alias with real spaces
     // more matches for one word than the 50 a request answers with
     ...Array.from({ length: 60 }, (unused, index) => `zzz_${String(index + 1).padStart(3, '0')},0,${(index + 1) * 10},""`),
 ];
@@ -109,7 +110,7 @@ test('the tag channels are registered once the dictionary loaded, and answer thr
     stub.handlers = {};
     stub.errorBoxes = [];
     assert.equal(await backend.setupTagAutoCompleteBackend('en-US'), true);
-    assert.deepEqual(Object.keys(stub.handlers).sort(), ['tag-aliases', 'tag-get-suggestions', 'tag-lookup', 'tag-reload']);
+    assert.deepEqual(Object.keys(stub.handlers).sort(), ['tag-aliases', 'tag-get-suggestions', 'tag-lookup', 'tag-reload', 'tag-search']);
     assert.deepEqual(stub.errorBoxes, []);
     const items = await stub.handlers['tag-get-suggestions']({}, 'hatsune');
     assert.deepEqual(names(items), ['hatsune_miku']);
@@ -141,12 +142,44 @@ test('with more matches than a request answers with, the popular ones are the on
     assert.equal(shown.includes('zzz_001'), false, 'the ten least popular matches are the ones left out');
 });
 
+test('tagSearch pages through the whole ranked result and says how big it is', opts, async () => {
+    assert.equal(await backend.tagReload('en-US'), true);
+    const first = backend.tagSearch('zzz', { offset: 0, limit: 50 });
+    assert.equal(first.total, 60, 'every match is counted, not just the page');
+    assert.deepEqual([first.offset, first.limit, first.items.length], [0, 50, 50]);
+    assert.equal(names(first.items)[0], 'zzz_060');
+    const second = backend.tagSearch('zzz', { offset: 50, limit: 50 });
+    assert.deepEqual([second.total, second.items.length], [60, 10]);
+    assert.equal(names(second.items)[0], 'zzz_010', 'the next page starts where the first one stopped');
+    assert.equal(names(second.items).at(-1), 'zzz_001');
+    // the same word again is answered again (updateSuggestions would say "nothing changed")
+    assert.equal(backend.tagSearch('zzz', { offset: 0, limit: 5 }).items.length, 5);
+    assert.deepEqual(backend.tagSearch('', {}), { items: [], total: 0, offset: 0, limit: 50 });
+    // the filter rides on the same options
+    assert.equal(backend.tagSearch('hair', { category: 'appearance', limit: 50 }).total, 2);
+});
+
 test('a tag is found by an alias alone, and the alias it was found by is shown', opts, async () => {
     const items = await suggest('boobs');
     assert.deepEqual(names(items), ['breasts']);
     assert.match(items[0][0], /\(boobs\)/, 'the alias that matched is named, not the whole synonym list');
     assert.deepEqual(names(await suggest('tits')), ['breasts'], 'the last alias of a row finds it too');
     assert.deepEqual(names(await suggest('lh')), ['long_hair']);
+});
+
+test('a space in the typed word is the "_" of the dictionary key, and still a space in an alias', opts, async () => {
+    assert.equal(await backend.tagReload('en-US'), true);
+    const search = word => names(backend.tagSearch(word, { limit: 50 }).items);
+    // "white d" on its way to white_dress: the picker sends the space as typed
+    assert.deepEqual(search('long h'), ['long_hair']);
+    assert.deepEqual(search('long_h'), ['long_hair']);
+    assert.deepEqual(search('hair o'), ['hair_ornament']);
+    assert.deepEqual(search('long h*'), ['long_hair'], 'a wildcard pattern too');
+    // an alias that holds a real space is found by either spelling
+    assert.deepEqual(search('wake up'), ['wake_up_girls!']);
+    assert.deepEqual(search('up girls'), ['wake_up_girls!'], 'the space form matches the alias');
+    assert.deepEqual(search('up_girls'), ['wake_up_girls!'], 'the key form matches the key');
+    assert.deepEqual(search('  '), [], 'blanks alone are no word');
 });
 
 test('a wildcard anchors the match where it is written', opts, async () => {
@@ -164,7 +197,11 @@ test('two rows spelled the same keep the popular one', opts, async () => {
     const items = await suggest('blue_sky');
     assert.deepEqual(names(items), ['blue_sky']);
     assert.equal(heatOf(items, 'blue_sky'), 5000, 'not the 77 of the other spelling');
-    assert.match(items[0][0], /\(sky_blue\)/, 'and its aliases, not the empty ones of the row that lost');
+    assert.doesNotMatch(items[0][0], /sky_blue/, 'a row found by its own name lists none of its synonyms');
+    // found through the alias: the row says which alias it was, and only that one
+    const byAlias = await suggest('sky_blue');
+    assert.deepEqual(names(byAlias), ['blue_sky']);
+    assert.match(byAlias[0][0], /^<b>blue_sky<\/b>: \(sky_blue\) \(5000\)/);
 });
 
 test('the group and category filters leave the tags they were given out', opts, async () => {
