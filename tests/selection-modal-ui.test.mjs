@@ -406,14 +406,26 @@ test('a paged answer grows as the list is scrolled or arrowed to its end, and th
         assert.equal(ui.keys().length, 50, 'the first page, not cut by optionLimit');
         assert.match(ui.status.textContent, /^50 \/ 130 results · scroll for more/);
 
-        // scrolled to the end: the next page is asked for and appended
-        ui.listbox.scrollTop = 700; ui.listbox.clientHeight = 300; ui.listbox.scrollHeight = 1000;
-        fire(ui.listbox, 'scroll');
-        await clock.tick(0);
-        assert.deepEqual(log.at(-1), { query: 'hair', offset: 50 });
-        assert.equal(ui.keys().length, 100);
-        assert.match(ui.status.textContent, /^100 \/ 130 results/);
-        assert.equal(ui.listbox.scrollTop, 700, 'the list stays where it was scrolled to; the new rows are below');
+        // scrolled to the end: the next page is asked for and appended. The first row is
+        // the active one (a fresh search makes it so); appending a page must not scroll
+        // it into view, or the list jumps back to the top every 50 rows.
+        const proto = Object.getPrototypeOf(ui.listbox);
+        const scrolledIntoView = [];
+        const originalScrollIntoView = proto.scrollIntoView;
+        proto.scrollIntoView = function () { scrolledIntoView.push(this.id); };
+        try {
+            ui.listbox.scrollTop = 700; ui.listbox.clientHeight = 300; ui.listbox.scrollHeight = 1000;
+            fire(ui.listbox, 'scroll');
+            await clock.tick(0);
+            assert.deepEqual(log.at(-1), { query: 'hair', offset: 50 });
+            assert.equal(ui.keys().length, 100);
+            assert.match(ui.status.textContent, /^100 \/ 130 results/);
+            assert.equal(ui.listbox.scrollTop, 700, 'the list stays where it was scrolled to; the new rows are below');
+            assert.equal(ui.listbox.getAttribute('aria-activedescendant'), ui.rows()[0].id, 'the active row is still the first');
+            assert.deepEqual(scrolledIntoView, [], 'and nothing was scrolled into view');
+        } finally {
+            proto.scrollIntoView = originalScrollIntoView;
+        }
 
         // toggling a row mid-list redraws it and keeps the scroll as well
         ui.listbox.scrollTop = 420;

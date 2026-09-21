@@ -229,7 +229,7 @@ export function createSelectionModal({
         }
     }
 
-    function updateActiveDescendant() {
+    function updateActiveDescendant({ scroll = true } = {}) {
         const item = visibleOptions[activeIndex];
         activeConfig.onActiveOption?.(item ?? null);
         if (!item) {
@@ -238,7 +238,7 @@ export function createSelectionModal({
         }
         const itemId = `${id}-option-${activeIndex}`;
         listbox.setAttribute('aria-activedescendant', itemId);
-        listbox.querySelector(`#${CSS.escape(itemId)}`)?.scrollIntoView({ block: 'nearest' });
+        if (scroll) listbox.querySelector(`#${CSS.escape(itemId)}`)?.scrollIntoView({ block: 'nearest' });
     }
 
     function renderStatus(totalCount, hasMore) {
@@ -287,7 +287,7 @@ export function createSelectionModal({
             const items = Array.isArray(more) ? more : [];
             if (items.length === 0) page.total = currentOptions.length;   // the loader ran dry
             currentOptions = currentOptions.concat(items);
-            renderOptions();
+            renderOptions({ scrollActive: false });
         } catch (error) {
             console.error('[SelectionModal] Failed to load the next page:', error);
         } finally {
@@ -295,7 +295,7 @@ export function createSelectionModal({
         }
     }
 
-    function renderOptions() {
+    function renderOptions({ scrollActive = true } = {}) {
         const { query, favoritesOnly } = effectiveSearch();
         let filteredOptions = filterSelectionOptions(currentOptions, {
             query,
@@ -349,7 +349,10 @@ export function createSelectionModal({
         });
         listbox.scrollTop = scrollTop;
         activeIndex = visibleOptions.length === 0 ? -1 : Math.min(Math.max(activeIndex, 0), visibleOptions.length - 1);
-        updateActiveDescendant();
+        // the active row is scrolled into view when the list is (re)built for a search
+        // or a toggle - not when a page is appended to a list the mouse scrolled down,
+        // which threw the list back up to the active row (the first) every 50 rows
+        updateActiveDescendant({ scroll: scrollActive });
         renderStatus(filteredOptions.length, limited.hasMore);
     }
 
