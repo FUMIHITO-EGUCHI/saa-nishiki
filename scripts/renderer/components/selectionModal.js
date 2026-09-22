@@ -80,6 +80,14 @@ export function createSelectionModal({
     header.appendChild(closeButton);
     dialog.appendChild(header);
 
+    // the tab strip: shown only when open() brings extra tabs (a caller's own view of
+    // other things to pick, e.g. the parts grid next to the tag list); the search box,
+    // the filters, the Selected row and the footer stay in place across the tabs
+    const tabStrip = createElement('div', 'selection-modal-tabs');
+    tabStrip.setAttribute('role', 'tablist');
+    tabStrip.hidden = true;
+    dialog.appendChild(tabStrip);
+
     const toolbar = createElement('div', 'selection-modal-toolbar');
     const searchLabel = createElement('label', 'selection-modal-search-label', 'Search');
     const searchInput = createElement('input', 'selection-modal-search');
@@ -90,18 +98,20 @@ export function createSelectionModal({
     searchLabel.appendChild(searchInput);
     toolbar.appendChild(searchLabel);
 
-    const categoryLabel = createElement('label', 'selection-modal-filter-label', 'Category');
+    const categoryLabel = createElement('label', 'selection-modal-filter-label');
+    const categoryText = createElement('span', 'selection-modal-filter-text', 'Category');
     const categorySelect = createElement('select', 'selection-modal-filter');
     categorySelect.id = `${id}-category`;
     categorySelect.setAttribute('aria-label', 'Category');
-    categoryLabel.appendChild(categorySelect);
+    categoryLabel.append(categoryText, categorySelect);
     toolbar.appendChild(categoryLabel);
 
-    const attributeLabel = createElement('label', 'selection-modal-filter-label', 'Attribute');
+    const attributeLabel = createElement('label', 'selection-modal-filter-label');
+    const attributeText = createElement('span', 'selection-modal-filter-text', 'Attribute');
     const attributeSelect = createElement('select', 'selection-modal-filter');
     attributeSelect.id = `${id}-attribute`;
     attributeSelect.setAttribute('aria-label', 'Attribute');
-    attributeLabel.appendChild(attributeSelect);
+    attributeLabel.append(attributeText, attributeSelect);
     toolbar.appendChild(attributeLabel);
 
     const favOnlyButton = createElement('button', 'selection-modal-favonly', '★');
@@ -129,16 +139,29 @@ export function createSelectionModal({
     listbox.setAttribute('role', 'listbox');
     listbox.tabIndex = 0;
     if (mode === 'multiple') listbox.setAttribute('aria-multiselectable', 'true');
-    dialog.appendChild(listbox);
+    // the list and, for a tab that has one, the panel beside it about the active row
+    const body = createElement('div', 'selection-modal-body');
+    body.appendChild(listbox);
+    const panel = createElement('aside', 'selection-modal-panel');
+    panel.hidden = true;
+    body.appendChild(panel);
+    dialog.appendChild(body);
+    // under the list of the main tab: "N of them on the <other> tab" for the same search
+    const crosslink = createElement('button', 'selection-modal-crosslink');
+    crosslink.type = 'button';
+    crosslink.hidden = true;
+    dialog.appendChild(crosslink);
 
     const footer = createElement('footer', 'selection-modal-footer');
+    const footerActions = createElement('div', 'selection-modal-footer-actions');
+    footerActions.hidden = true;
     const footerNote = createElement('span', 'selection-modal-footer-note');
     footerNote.hidden = mode !== 'multiple';
     const cancelButton = createElement('button', 'selection-modal-cancel', 'Cancel');
     cancelButton.type = 'button';
     const applyButton = createElement('button', 'selection-modal-apply', 'Apply');
     applyButton.type = 'button';
-    footer.append(footerNote, cancelButton, applyButton);
+    footer.append(footerActions, footerNote, cancelButton, applyButton);
     dialog.appendChild(footer);
 
     overlay.appendChild(createElement('div', 'selection-modal-backdrop'));
@@ -155,7 +178,41 @@ export function createSelectionModal({
     let searchTimer = null;
     let favOnly = false;
     let pager = null;
+    let tabs = [];                 // the extra tabs open() brought, in order
+    let activeTab = null;          // null = the main tab
+    let mainTabLabel = 'Items';
+    let mainConfig = null;         // the main tab's view, as open() set it
+    let staticOptions = [];        // the main tab's options when there is no loader
+    let refreshHook = null;        // { type, listener } while a tab asked to follow an event
+    let crosslinkTab = null;
     let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, onActiveOption, favorites: null };
+
+    // Everything a tab can set: its filters (and what they are called), its loader, its
+    // favourites, and for a grid its tile renderer, its side panel and its footer actions.
+    function configFor(tab) {
+        if (!tab) return mainConfig;
+        const favoritesOf = tab.favorites && typeof tab.favorites.isFavorite === 'function' ? tab.favorites : null;
+        return {
+            categories: Array.isArray(tab.categories) ? tab.categories : [],
+            attributes: Array.isArray(tab.attributes) ? tab.attributes : [],
+            categoryLabel: tab.categoryLabel ?? 'Category',
+            attributeLabel: tab.attributeLabel ?? 'Attribute',
+            categoryAll: tab.categoryAll ?? 'All categories',
+            attributeAll: tab.attributeAll ?? 'All attributes',
+            onOptionHover: null,
+            onOptionLeave: null,
+            onActiveOption: null,
+            loadOptions: typeof tab.loadOptions === 'function' ? tab.loadOptions : null,
+            favorites: favoritesOf,
+            view: tab.view === 'grid' ? 'grid' : 'list',
+            renderOption: typeof tab.renderOption === 'function' ? tab.renderOption : null,
+            panel: typeof tab.panel === 'function' ? tab.panel : null,
+            actions: Array.isArray(tab.actions) ? tab.actions : [],
+            emptyMessage: tab.emptyMessage ?? emptyMessage,
+            searchPrompt: tab.searchPrompt ?? searchPrompt,
+            refreshEvent: typeof tab.refreshEvent === 'string' ? tab.refreshEvent : null,
+        };
+    }
 
     function isFavoriteOption(option) {
         return Boolean(activeConfig.favorites?.isFavorite?.(optionKey(option)));
@@ -168,7 +225,11 @@ export function createSelectionModal({
     }
 
     function renderFavOnlyButton() {
-        favOnlyButton.hidden = !activeConfig.favorites;
+        // with tabs the star keeps its place on a tab that has no favourites (greyed),
+        // so the toolbar does not shift between the tabs
+        const none = !activeConfig.favorites;
+        favOnlyButton.hidden = none && tabs.length === 0;
+        favOnlyButton.disabled = none;
         favOnlyButton.classList.toggle('is-on', favOnly);
         favOnlyButton.setAttribute('aria-pressed', String(favOnly));
         favOnlyButton.title = tagText('tag_ui_fav_only');
@@ -215,7 +276,11 @@ export function createSelectionModal({
         }
         for (const option of selectedOptions) {
             const chip = createElement('span', 'selection-modal-chip');
-            chip.appendChild(createElement('span', 'selection-modal-chip-label', optionLabel(option)));
+            // an option may dress its chip (a part: gold frame, "parts:" small in front)
+            if (option.chipClass) chip.classList.add(option.chipClass);
+            const label = createElement('span', 'selection-modal-chip-label', optionLabel(option));
+            if (option.prefix) label.prepend(createElement('span', 'selection-modal-chip-prefix', option.prefix));
+            chip.appendChild(label);
             const removeButton = createElement('button', 'selection-modal-chip-remove', '×');
             removeButton.type = 'button';
             removeButton.setAttribute('aria-label', `Remove ${optionLabel(option)}`);
@@ -229,9 +294,17 @@ export function createSelectionModal({
         }
     }
 
+    function renderPanel(option) {
+        if (!activeConfig.panel) return;
+        panel.replaceChildren();
+        const content = activeConfig.panel(option ?? null, panelApi);
+        if (content) panel.appendChild(content);
+    }
+
     function updateActiveDescendant({ scroll = true } = {}) {
         const item = visibleOptions[activeIndex];
         activeConfig.onActiveOption?.(item ?? null);
+        renderPanel(item ?? null);
         if (!item) {
             listbox.removeAttribute('aria-activedescendant');
             return;
@@ -241,9 +314,127 @@ export function createSelectionModal({
         if (scroll) listbox.querySelector(`#${CSS.escape(itemId)}`)?.scrollIntoView({ block: 'nearest' });
     }
 
+    // ---------------------------------------------------------------- tabs
+
+    function renderTabs() {
+        tabStrip.replaceChildren();
+        tabStrip.hidden = tabs.length === 0;
+        if (tabs.length === 0) return;
+        const entries = [{ id: null, label: mainTabLabel, tab: null }, ...tabs.map(tab => ({ id: tab.id, label: tab.label ?? tab.id, tab }))];
+        for (const entry of entries) {
+            const button = createElement('button', 'selection-modal-tab', entry.label);
+            button.type = 'button';
+            button.setAttribute('role', 'tab');
+            button.setAttribute('aria-selected', String(entry.tab === activeTab));
+            button.classList.toggle('is-active', entry.tab === activeTab);
+            button.addEventListener('click', () => selectTab(entry.tab));
+            tabStrip.appendChild(button);
+        }
+    }
+
+    function renderActions() {
+        footerActions.replaceChildren();
+        const actions = activeConfig.actions ?? [];
+        footerActions.hidden = actions.length === 0;
+        for (const action of actions) {
+            const label = typeof action.label === 'function' ? action.label() : action.label;
+            const button = createElement('button', 'selection-modal-action', label ?? '');
+            button.type = 'button';
+            if (action.title) button.title = action.title;
+            button.disabled = typeof action.disabled === 'function' ? Boolean(action.disabled()) : Boolean(action.disabled);
+            button.addEventListener('click', () => action.onClick?.(panelApi));
+            footerActions.appendChild(button);
+        }
+    }
+
+    function renderCrosslink() {
+        crosslink.hidden = true;
+        crosslinkTab = null;
+        if (activeTab || tabs.length === 0) return;
+        const query = searchInput.value.trim();
+        if (!query) return;
+        for (const tab of tabs) {
+            const count = typeof tab.peek === 'function' ? Number(tab.peek(query)) || 0 : 0;
+            if (count <= 0) continue;
+            crosslink.textContent = typeof tab.peekLabel === 'function' ? tab.peekLabel(count) : `${count} · ${tab.label ?? tab.id}`;
+            crosslink.hidden = false;
+            crosslinkTab = tab;
+            return;
+        }
+    }
+
+    function hookRefreshEvent() {
+        const type = activeConfig.refreshEvent;
+        if (!type || refreshHook) return;
+        const listener = () => { if (isOpen()) refreshOptions({ keep: true }).catch(() => {}); };
+        document.addEventListener(type, listener);
+        refreshHook = { type, listener };
+    }
+
+    function unhookRefreshEvent() {
+        if (!refreshHook) return;
+        document.removeEventListener(refreshHook.type, refreshHook.listener);
+        refreshHook = null;
+    }
+
+    // The toolbar for the active tab: its filter names and choices, the star, the list
+    // as a list or a grid, the panel, the footer actions.
+    function applyTabConfig() {
+        renderFavOnlyButton();
+        categoryText.textContent = activeConfig.categoryLabel ?? 'Category';
+        attributeText.textContent = activeConfig.attributeLabel ?? 'Attribute';
+        categorySelect.setAttribute('aria-label', categoryText.textContent);
+        attributeSelect.setAttribute('aria-label', attributeText.textContent);
+        setFilterOptions(categorySelect, activeConfig.categories, activeConfig.categoryAll ?? 'All categories');
+        setFilterOptions(attributeSelect, activeConfig.attributes, activeConfig.attributeAll ?? 'All attributes');
+        categorySelect.value = '';
+        attributeSelect.value = '';
+        listbox.classList.toggle('is-grid', activeConfig.view === 'grid');
+        panel.hidden = !activeConfig.panel;
+        if (!activeConfig.panel) panel.replaceChildren();
+        renderActions();
+        renderTabs();
+    }
+
+    function selectTab(tab) {
+        if (!isOpen() || tab === activeTab) return;
+        unhookRefreshEvent();
+        activeTab = tab;
+        activeConfig = configFor(tab);
+        favOnly = false;
+        clearTimeout(searchTimer);
+        currentOptions = tab ? [] : staticOptions.slice();
+        pager = null;
+        activeIndex = -1;
+        applyTabConfig();
+        hookRefreshEvent();
+        renderOptions();
+        if (activeConfig.loadOptions) {
+            refreshOptions().catch(error => {
+                console.error('[SelectionModal] Failed to load options:', error);
+                currentOptions = [];
+                renderOptions();
+            });
+        }
+        searchInput.focus();
+    }
+
+    // In a grid the arrows walk the tiles: the column count is read off the layout
+    function gridColumns() {
+        const items = [...listbox.children];
+        if (items.length < 2) return 1;
+        const top = items[0].offsetTop;
+        let columns = 0;
+        for (const item of items) {
+            if (item.offsetTop !== top) break;
+            columns += 1;
+        }
+        return Math.max(1, columns);
+    }
+
     function renderStatus(totalCount, hasMore) {
         if (totalCount === 0 && !(pager && pager.total > 0)) {
-            status.textContent = searchInput.value.trim() ? emptyMessage : searchPrompt;
+            status.textContent = searchInput.value.trim() ? activeConfig.emptyMessage ?? emptyMessage : activeConfig.searchPrompt ?? searchPrompt;
             return;
         }
         const hint = mode === 'multiple' ? ` · ${tagText('tag_ui_modal_hint')}` : '';
@@ -324,6 +515,14 @@ export function createSelectionModal({
             item.setAttribute('aria-selected', String(selected.has(optionKey(option))));
             item.dataset.index = String(index);
             item.dataset.key = optionKey(option);
+            if (activeConfig.view === 'grid' && activeConfig.renderOption) {
+                // a tile: the tab draws it
+                item.classList.add('selection-modal-tile');
+                const content = activeConfig.renderOption(option, { selected: selected.has(optionKey(option)) });
+                if (content) item.appendChild(content);
+                listbox.appendChild(item);
+                return;
+            }
             const labelSpan = createElement('span', 'selection-modal-option-label', optionLabel(option));
             const description = typeof option.description === 'function' ? option.description() : option.description;
             if (description) {
@@ -354,9 +553,12 @@ export function createSelectionModal({
         // which threw the list back up to the active row (the first) every 50 rows
         updateActiveDescendant({ scroll: scrollActive });
         renderStatus(filteredOptions.length, limited.hasMore);
+        renderCrosslink();
     }
 
-    async function refreshOptions() {
+    // `keep`: the list is reloaded in place (a tab's store changed), the active row and
+    // the scroll stay where they are
+    async function refreshOptions({ keep = false } = {}) {
         const generation = ++requestGeneration;
         const config = {
             query: effectiveSearch().query.trim(),
@@ -369,9 +571,15 @@ export function createSelectionModal({
         }
         if (generation !== requestGeneration || !isOpen()) return;
         currentOptions = typeof activeConfig.loadOptions === 'function' ? takeLoaded(nextOptions) : currentOptions;
+        if (keep) {
+            renderOptions({ scrollActive: false });
+            renderActions();
+            return;
+        }
         listbox.scrollTop = 0;
         activeIndex = -1;
         renderOptions();
+        renderActions();
     }
 
     function scheduleRefresh() {
@@ -399,6 +607,7 @@ export function createSelectionModal({
         if (!isOpen()) return;
         if (apply && typeof onApply === 'function') onApply(selectedOptions.slice());
         activeConfig.onOptionLeave?.();
+        unhookRefreshEvent();
         overlay.hidden = true;
         overlay.setAttribute('aria-hidden', 'true');
         document.removeEventListener('keydown', onDialogKeyDown);
@@ -418,6 +627,14 @@ export function createSelectionModal({
         updateActiveDescendant();
     }
 
+    // a grid does not wrap: the arrows stop at the edges
+    function moveActiveInGrid(delta) {
+        if (visibleOptions.length === 0) return;
+        const from = activeIndex < 0 ? 0 : activeIndex;
+        activeIndex = Math.max(0, Math.min(visibleOptions.length - 1, from + delta));
+        updateActiveDescendant();
+    }
+
     function toggleActive() {
         const option = visibleOptions[activeIndex];
         if (!option) return;
@@ -433,6 +650,24 @@ export function createSelectionModal({
             event.preventDefault();
             close({ apply: false });
             return;
+        }
+        if (tabs.length > 0 && event.ctrlKey && !event.altKey && !event.metaKey) {
+            // Ctrl+Tab cycles the tabs, Ctrl+1…9 jumps to one
+            const all = [null, ...tabs];
+            if (event.key === 'Tab') {
+                event.preventDefault();
+                const at = all.indexOf(activeTab);
+                selectTab(all[(at + (event.shiftKey ? -1 : 1) + all.length) % all.length]);
+                return;
+            }
+            if (/^[1-9]$/.test(event.key)) {
+                const target = all[Number(event.key) - 1];
+                if (target !== undefined) {
+                    event.preventDefault();
+                    selectTab(target);
+                }
+                return;
+            }
         }
         if (event.key === 'Tab') {
             const focusable = [...dialog.querySelectorAll(FOCUSABLE_SELECTOR)]
@@ -509,12 +744,16 @@ export function createSelectionModal({
         if (listbox.scrollTop + listbox.clientHeight >= listbox.scrollHeight - 32) loadNextPage();
     });
     listbox.addEventListener('keydown', event => {
-        if (event.key === 'ArrowDown') {
+        const grid = activeConfig.view === 'grid';
+        if (grid && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
             event.preventDefault();
-            moveActive(1);
+            moveActiveInGrid(event.key === 'ArrowRight' ? 1 : -1);
+        } else if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (grid) moveActiveInGrid(gridColumns()); else moveActive(1);
         } else if (event.key === 'ArrowUp') {
             event.preventDefault();
-            moveActive(-1);
+            if (grid) moveActiveInGrid(-gridColumns()); else moveActive(-1);
         } else if (event.key === 'Home') {
             event.preventDefault();
             activeIndex = visibleOptions.length > 0 ? 0 : -1;
@@ -532,6 +771,21 @@ export function createSelectionModal({
     closeButton.addEventListener('click', () => close({ apply: false }));
     cancelButton.addEventListener('click', () => close({ apply: false }));
     applyButton.addEventListener('click', () => close({ apply: true }));
+    crosslink.addEventListener('click', () => { if (crosslinkTab) selectTab(crosslinkTab); });
+
+    // what a tab's panel and actions get to act on the modal
+    const panelApi = {
+        refresh: () => refreshOptions({ keep: true }).catch(() => {}),
+        toggle(option) {
+            if (!option) return;
+            selectedOptions = selectOption(selectedOptions, option, mode);
+            renderSelected();
+            renderOptions({ scrollActive: false });
+        },
+        isSelected: option => selectedKeys().has(optionKey(option)),
+        close: () => close({ apply: false }),
+        apply: () => close({ apply: true }),
+    };
 
     return {
         open({
@@ -544,33 +798,52 @@ export function createSelectionModal({
             modalTitle = title,
             dynamicLoadOptions = loadOptions,
             favorites = null,
+            // extra tabs beside the main one (each: id, label, and what configFor lists);
+            // `tab` names the one to open on, `tabLabel` what the main tab is called
+            tabs: extraTabs = [],
+            tab: initialTab = null,
+            tabLabel = 'Items',
         } = {}) {
             lastTrigger = trigger;
             fallbackFocus = fallback;
-            activeConfig = {
+            unhookRefreshEvent();
+            mainConfig = {
                 categories,
                 attributes,
+                categoryLabel: 'Category',
+                attributeLabel: 'Attribute',
+                categoryAll: 'All categories',
+                attributeAll: 'All attributes',
                 onOptionHover,
                 onActiveOption,
                 onOptionLeave,
                 loadOptions: dynamicLoadOptions,
                 favorites: favorites && typeof favorites.isFavorite === 'function' ? favorites : null,
+                view: 'list',
+                renderOption: null,
+                panel: null,
+                actions: [],
+                emptyMessage,
+                searchPrompt,
+                refreshEvent: null,
             };
+            tabs = (Array.isArray(extraTabs) ? extraTabs : []).filter(tab => tab && typeof tab === 'object' && tab.id);
+            mainTabLabel = tabLabel;
+            activeTab = tabs.find(tab => tab.id === initialTab) ?? null;
+            activeConfig = configFor(activeTab);
             favOnly = false;
-            renderFavOnlyButton();
             heading.textContent = modalTitle;
-            setFilterOptions(categorySelect, categories, 'All categories');
-            setFilterOptions(attributeSelect, attributes, 'All attributes');
             searchInput.value = '';
-            categorySelect.value = '';
-            attributeSelect.value = '';
             selectedOptions = Array.isArray(selection) ? selection.slice() : [];
-            currentOptions = Array.isArray(options) ? options.slice() : [];
+            staticOptions = Array.isArray(options) ? options.slice() : [];
+            currentOptions = activeTab ? [] : staticOptions.slice();
             pager = null;
             activeIndex = -1;
+            applyTabConfig();
             overlay.hidden = false;
             overlay.setAttribute('aria-hidden', 'false');
             document.addEventListener('keydown', onDialogKeyDown);
+            hookRefreshEvent();
             if (typeof onOpen === 'function') onOpen();
             renderSelected();
             renderOptions();
@@ -583,7 +856,7 @@ export function createSelectionModal({
                     updateActiveDescendant();
                 }
             });
-            if (typeof dynamicLoadOptions === 'function') scheduleRefresh();
+            if (typeof activeConfig.loadOptions === 'function') scheduleRefresh();
         },
         close: () => close({ apply: false }),
         apply: () => close({ apply: true }),
@@ -593,5 +866,8 @@ export function createSelectionModal({
             close({ apply: false });
             overlay.remove();
         },
+        // the tab strip from outside: a caller's own button opens the modal on a tab
+        selectTab: tabId => selectTab(tabs.find(tab => tab.id === tabId) ?? null),
+        activeTab: () => activeTab?.id ?? null,
     };
 }

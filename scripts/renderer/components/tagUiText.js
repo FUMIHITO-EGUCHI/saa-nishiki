@@ -3,6 +3,7 @@
 
 export const TAG_UI_DEFAULTS = Object.freeze({
     tag_ui_choose_tags: 'Choose tags',
+    tag_ui_tab_tags: 'Tags',
     tag_ui_view: 'View',
     tag_ui_view_text: 'Text',
     tag_ui_view_capsules: 'Capsules',
