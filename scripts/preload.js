@@ -148,6 +148,11 @@ contextBridge.exposeInMainWorld('api', {
   artistSearch: async (query, options) => ipcRenderer.invoke('artist-search', query, options),
   artistProfile: async (name) => ipcRenderer.invoke('artist-profile', name),
   artistProfilesAvailable: async () => ipcRenderer.invoke('artist-profiles-available'),
+  // Parts (named tag bundles, "parts:<name>" in a prompt) and their sample images
+  partsGet: async () => ipcRenderer.invoke('parts-get'),
+  partsApply: async (change) => ipcRenderer.invoke('parts-apply', change),
+  partsAddSample: async (id, meta, dataUrl) => ipcRenderer.invoke('parts-add-sample', id, meta, dataUrl),
+  partsSampleImage: async (id, sampleId) => ipcRenderer.invoke('parts-sample-image', id, sampleId),
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),

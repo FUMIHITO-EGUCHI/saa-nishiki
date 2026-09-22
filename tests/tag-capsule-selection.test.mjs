@@ -151,8 +151,8 @@ test('every row of the Prompts field list (LEFT / RIGHT included) accepts a drag
 
 test('a Refine snapshot used as the prompt override never re-introduces disabled tags', () => {
     const bridge = read('scripts/renderer/tools/promptBatchExpansion.js');
-    assert.match(bridge, /return stripDisabledTags\(activeOverride\.fields\[key\]\);/);
-    assert.match(bridge, /return stripDisabledTags\(globalThis\.prompt\?\.\[key\]\?\.getValue\?\.\(\) \?\? ''\);/);
+    assert.match(bridge, /return expandParts\(stripDisabledTags\(activeOverride\.fields\[key\]\)\);/);
+    assert.match(bridge, /return expandParts\(stripDisabledTags\(globalThis\.prompt\?\.\[key\]\?\.getValue\?\.\(\) \?\? ''\)\);/);
 });
 
 test('Scene rows are ordered by drag; a drop into a LEFT / RIGHT box sets the side while Regional is on', () => {

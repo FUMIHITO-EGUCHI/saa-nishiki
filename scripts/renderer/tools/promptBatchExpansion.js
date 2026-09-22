@@ -5,6 +5,7 @@
 
 import { mapPromptTokens, stripDisabledTags } from '../components/tagCapsuleLogic.js';
 import { isFieldMuted } from '../../shared/promptFieldOrder.js';
+import { expandParts } from '../partsClient.js';
 
 let activeOverride = null;
 
@@ -13,15 +14,16 @@ function fieldSet() {
 }
 
 // Reads a prompt field, honouring the per-image override while one is active.
-// Disabled tags ("~tag", toggled off on a capsule) never reach the prompt.
+// Disabled tags ("~tag", toggled off on a capsule) never reach the prompt, and a
+// "parts:<name>" token goes out as the part's tags (scripts/shared/parts.js).
 export function readPromptValue(key) {
     // a muted row (the Scene's ● switch) keeps its text but sends nothing
     if (isFieldMuted(globalThis.globalSettings, key)) return '';
     if (activeOverride?.fields && typeof activeOverride.fields[key] === 'string') {
         // a Refine snapshot (baseFields) carries the raw field text, "~tag" included
-        return stripDisabledTags(activeOverride.fields[key]);
+        return expandParts(stripDisabledTags(activeOverride.fields[key]));
     }
-    return stripDisabledTags(globalThis.prompt?.[key]?.getValue?.() ?? '');
+    return expandParts(stripDisabledTags(globalThis.prompt?.[key]?.getValue?.() ?? ''));
 }
 
 // Seed for the current image while an override is active (falls back to the slider value).

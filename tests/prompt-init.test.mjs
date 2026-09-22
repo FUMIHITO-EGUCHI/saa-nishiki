@@ -106,7 +106,7 @@ test('the capsule field set derives the chain from the settings', () => {
     assert.match(source, /if \(!stored\?\.regional_condition\) return \{ positive, positiveRight: null, negative \};/);
     assert.match(source, /positive: sideOrder\(positive, 'left', customs\),\s*positiveRight: sideOrder\(positive, 'right', customs\),/);
     assert.match(source, /getChain = \(\) => chainFromSettings\(settings\(\)\),/);
-    assert.match(source, /chain: getChain\(\) \}\);/);
+    assert.match(source, /chain: getChain\(\), expandTokens: expandParts \}\);/);
 });
 
 test('structured Refine rebuilds the normal prompt around the assembled chain', async () => {

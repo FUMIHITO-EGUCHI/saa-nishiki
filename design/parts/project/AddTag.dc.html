@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>Add tag: tabs</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #7dbcff; }
+  </style>
+</helmet>
+<div style="width: 1700px; height: 900px; box-sizing: border-box; padding: 20px; background: #111111; color: #eeeeee;">
+
+  <div style="display: flex; align-items: baseline; gap: 14px; margin: 0 0 10px 2px;">
+    <span style="font-size: 15px; font-weight: 600;">「+ Add tag」「Choose tags」で開くモーダルにタブを付ける</span>
+    <span style="font-size: 12px; color: #9a9aa3;">左: 今までどおりの Tags タブ · 右: 同じモーダルの Parts タブ。Search / Category / Attribute / ★ / Selected / フッターは同じ位置、入れ替わるのは一覧の中身だけ</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 780px 780px; gap: 40px; align-items: start;">
+
+    <!-- ============================================================ Tags tab -->
+    <div style="display: flex; flex-direction: column; height: 720px; border: 2px solid #666666; border-radius: 9px; background: #111111; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.45);">
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: #27272a; border-bottom: 1px solid #555555;">
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+          <span style="font-size: 16px; font-weight: 600;">Add to Positive</span>
+          <span style="font-size: 11px; color: #aaaaaa;">カーソル位置に挿入</span>
+        </div>
+        <button aria-label="Close" style="width: 30px; height: 30px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: #aaaaaa; font-size: 20px; line-height: 1; cursor: pointer;">×</button>
+      </div>
+
+      <!-- tab strip -->
+      <div role="tablist" style="display: flex; align-items: flex-end; gap: 2px; padding: 8px 12px 0; border-bottom: 1px solid #3a3a42; background: #151517;">
+        <button role="tab" aria-selected="true" style="display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 14px; margin-bottom: -1px; border: 1px solid #555555; border-bottom-color: #111111; border-radius: 6px 6px 0 0; background: #111111; color: #eeeeee; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+Tags</button>
+        <button role="tab" aria-selected="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 14px; margin-bottom: -1px; border: 1px solid transparent; border-radius: 6px 6px 0 0; background: transparent; color: #bdbdc4; font: inherit; font-size: 12.5px; cursor: pointer;">
+Parts</button>
+        <span style="margin-left: auto; padding-bottom: 6px; font-size: 10.5px; color: #6f6f78;">Ctrl+Tab でタブ切替</span>
+      </div>
+
+      <!-- toolbar (as today) -->
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 150px 150px auto; gap: 8px; padding: 10px 12px 6px; align-items: end;">
+        <label style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #aaaaaa;">Search
+          <span style="display: flex; align-items: center; height: 30px; padding: 0 8px; border: 1px solid #4da3ff; border-radius: 5px; background: #222222; box-sizing: border-box; color: #eeeeee; font-size: 13px;">skirt</span>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #aaaaaa;">Category
+          <span style="display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; box-sizing: border-box; color: #eeeeee; font-size: 12.5px;">All <span style="font-size: 9px; color: #8a8a93;">▼</span></span>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #aaaaaa;">Attribute
+          <span style="display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; box-sizing: border-box; color: #eeeeee; font-size: 12.5px;">All <span style="font-size: 9px; color: #8a8a93;">▼</span></span>
+        </label>
+        <button aria-pressed="false" title="Favorites only" style="width: 30px; height: 30px; padding: 0; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #bdbdc4; font-size: 15px; cursor: pointer;">★</button>
+      </div>
+
+      <!-- selected (shared with the Parts tab) -->
+      <div style="padding: 6px 12px;">
+        <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px;">
+          <span style="font-size: 12.5px; font-weight: 600;">Selected</span>
+          <span style="font-size: 10.5px; color: #8a8a93;">2 tags · 1 part · タブをまたいで残る</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px; min-height: 24px;">
+          <span style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px 2px 8px; border: 1px solid #666666; border-radius: 12px; background: #2a2a2f; font-size: 12px;">pleated skirt<button aria-label="Remove" style="border: 0; background: transparent; color: #aaaaaa; font-size: 13px; cursor: pointer; padding: 0 2px;">×</button></span>
+          <span style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px 2px 8px; border: 1px solid #666666; border-radius: 12px; background: #2a2a2f; font-size: 12px;">red eyes<button aria-label="Remove" style="border: 0; background: transparent; color: #aaaaaa; font-size: 13px; cursor: pointer; padding: 0 2px;">×</button></span>
+          <span style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px 2px 8px; border: 1px solid #8a7440; border-radius: 12px; background: #2a2620; font-size: 12px;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>sailor uniform<button aria-label="Remove" style="border: 0; background: transparent; color: #aaaaaa; font-size: 13px; cursor: pointer; padding: 0 2px;">×</button></span>
+        </div>
+      </div>
+
+      <div role="status" style="padding: 3px 12px; font-size: 11px; color: #bdbdc4;">6 of 128 matching tags · Enter で選択 · Ctrl+D お気に入り</div>
+
+      <!-- list (as today) -->
+      <div style="display: flex; flex-direction: column; margin: 0 12px 8px; border: 1px solid #555555; border-radius: 5px; background: #19191c; overflow: hidden; flex-grow: 1;">
+        <div aria-selected="true" style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-height: 30px; padding: 6px 9px; background: #393941; font-size: 13px; font-weight: 600;"><span><span style="margin-right: 6px;">✓</span>pleated skirt <span style="font-weight: 400; color: #9a9aa3; font-size: 11.5px;">プリーツスカート</span></span><span style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #aaaaaa;">General<span style="color: #ffb454;">★</span></span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-height: 30px; padding: 6px 9px; font-size: 13px;"><span>skirt <span style="color: #9a9aa3; font-size: 11.5px;">スカート</span></span><span style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #aaaaaa;">General<span style="color: #6f6f78;">☆</span></span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-height: 30px; padding: 6px 9px; font-size: 13px;"><span>miniskirt <span style="color: #9a9aa3; font-size: 11.5px;">ミニスカート</span></span><span style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #aaaaaa;">General<span style="color: #6f6f78;">☆</span></span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-height: 30px; padding: 6px 9px; font-size: 13px;"><span>skirt lift <span style="color: #9a9aa3; font-size: 11.5px;">スカートたくし上げ</span></span><span style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #aaaaaa;">General<span style="color: #6f6f78;">☆</span></span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-height: 30px; padding: 6px 9px; font-size: 13px;"><span>plaid skirt <span style="color: #9a9aa3; font-size: 11.5px;">チェックスカート</span></span><span style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #aaaaaa;">General<span style="color: #6f6f78;">☆</span></span></div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-height: 30px; padding: 6px 9px; font-size: 13px;"><span>long skirt <span style="color: #9a9aa3; font-size: 11.5px;">ロングスカート</span></span><span style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #aaaaaa;">General<span style="color: #6f6f78;">☆</span></span></div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: auto; padding: 6px 9px; border-top: 1px solid #2e2e35; font-size: 11px; color: #8a8a93;">
+          <span style="display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border: 1px solid #5a4a2a; border-radius: 10px; background: #1d1a14; color: #e0c080;"><span style="font-size: 10.5px; font-weight: 600;">parts:</span>skirt に一致する部品 3 件 → Parts タブ</span>
+          <span style="margin-left: auto;">↓ で次のページ</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #27272a; border-top: 1px solid #555555;">
+        <span style="font-size: 10.5px; color: #8a8a93;">Apply で選択順に挿入: pleated skirt, red eyes, parts:sailor uniform</span>
+        <span style="display: flex; gap: 6px; margin-left: auto;">
+          <button style="min-height: 30px; padding: 0 12px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 12.5px; cursor: pointer;">Cancel</button>
+          <button style="min-height: 30px; padding: 0 12px; border: 1px solid #555555; border-radius: 5px; background: #285f8f; color: #ffffff; font: inherit; font-size: 12.5px; cursor: pointer;">Apply (3)</button>
+        </span>
+      </div>
+    </div>
+
+    <!-- ============================================================ Parts tab -->
+    <div style="display: flex; flex-direction: column; height: 720px; border: 2px solid #666666; border-radius: 9px; background: #111111; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.45);">
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; background: #27272a; border-bottom: 1px solid #555555;">
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+          <span style="font-size: 16px; font-weight: 600;">Add to Positive</span>
+          <span style="font-size: 11px; color: #aaaaaa;">カーソル位置に挿入</span>
+        </div>
+        <button aria-label="Close" style="width: 30px; height: 30px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: #aaaaaa; font-size: 20px; line-height: 1; cursor: pointer;">×</button>
+      </div>
+
+      <div role="tablist" style="display: flex; align-items: flex-end; gap: 2px; padding: 8px 12px 0; border-bottom: 1px solid #3a3a42; background: #151517;">
+        <button role="tab" aria-selected="false" style="display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 14px; margin-bottom: -1px; border: 1px solid transparent; border-radius: 6px 6px 0 0; background: transparent; color: #bdbdc4; font: inherit; font-size: 12.5px; cursor: pointer;">
+Tags</button>
+        <button role="tab" aria-selected="true" style="display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 14px; margin-bottom: -1px; border: 1px solid #8a7440; border-bottom-color: #111111; border-radius: 6px 6px 0 0; background: #111111; color: #eeeeee; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+Parts</button>
+        <span style="margin-left: auto; padding-bottom: 6px; font-size: 10.5px; color: #6f6f78;">Ctrl+Tab でタブ切替</span>
+      </div>
+
+      <!-- toolbar: same grid, same places as the Tags tab; only the choices change -->
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 150px 150px auto; gap: 8px; padding: 10px 12px 6px; align-items: end;">
+        <label style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #aaaaaa;">Search
+          <span style="display: flex; align-items: center; height: 30px; padding: 0 8px; border: 1px solid #4da3ff; border-radius: 5px; background: #222222; box-sizing: border-box; color: #eeeeee; font-size: 13px;">skirt</span>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #aaaaaa;">Category
+          <span style="display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; box-sizing: border-box; color: #eeeeee; font-size: 12.5px;">All <span style="font-size: 9px; color: #8a8a93;">▼</span></span>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: #aaaaaa;">Sample
+          <span style="display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; box-sizing: border-box; color: #eeeeee; font-size: 12.5px;">All <span style="font-size: 9px; color: #8a8a93;">▼</span></span>
+        </label>
+        <button aria-pressed="false" disabled title="Favorites: tags only" style="width: 30px; height: 30px; padding: 0; border: 1px solid #3a3a42; border-radius: 5px; background: #1a1a1d; color: #55555c; font-size: 15px; cursor: default;">★</button>
+      </div>
+
+      <!-- selected (same section, same state) -->
+      <div style="padding: 6px 12px;">
+        <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px;">
+          <span style="font-size: 12.5px; font-weight: 600;">Selected</span>
+          <span style="font-size: 10.5px; color: #8a8a93;">2 tags · 1 part</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px; min-height: 24px;">
+          <span style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px 2px 8px; border: 1px solid #666666; border-radius: 12px; background: #2a2a2f; font-size: 12px;">pleated skirt<button aria-label="Remove" style="border: 0; background: transparent; color: #aaaaaa; font-size: 13px; cursor: pointer; padding: 0 2px;">×</button></span>
+          <span style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px 2px 8px; border: 1px solid #666666; border-radius: 12px; background: #2a2a2f; font-size: 12px;">red eyes<button aria-label="Remove" style="border: 0; background: transparent; color: #aaaaaa; font-size: 13px; cursor: pointer; padding: 0 2px;">×</button></span>
+          <span style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px 2px 8px; border: 1px solid #8a7440; border-radius: 12px; background: #2a2620; font-size: 12px;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>sailor uniform<button aria-label="Remove" style="border: 0; background: transparent; color: #aaaaaa; font-size: 13px; cursor: pointer; padding: 0 2px;">×</button></span>
+        </div>
+      </div>
+
+      <div role="status" style="padding: 3px 12px; font-size: 11px; color: #bdbdc4;">3 of 11 parts match "skirt" · Space で選択切替 · 右パネルはフォーカス中の部品</div>
+
+      <!-- grid + side panel -->
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 224px; gap: 10px; margin: 0 12px 8px; min-height: 0; flex-grow: 1;">
+        <div style="display: flex; flex-direction: column; border: 1px solid #555555; border-radius: 5px; background: #19191c; overflow: hidden;">
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 8px;">
+
+            <button aria-pressed="true" style="position: relative; display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 2px solid #4da3ff; border-radius: 6px; background: #22272f; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+              <span style="position: absolute; top: 6px; left: 6px; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 9px; background: #285f8f; color: #ffffff; font-size: 11px; font-weight: 700;">✓</span>
+              <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M30 32h20l4 40H26z" fill="#2c3e6b"></path><path d="M26 40h28v3H26z" fill="#c0392b"></path><path d="M25 72h30l6 24H19z" fill="#2c3e6b"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#dcdcdc"></path></svg></span>
+              <span style="font-size: 11.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>sailor uniform</span>
+              <span style="font-size: 10px; color: #9a9aa3;">Outfit · Anima</span>
+            </button>
+
+            <button style="display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+              <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M28 32h24l4 30H24z" fill="#3b3b3b"></path><path d="M34 34h12v26H34z" fill="#ffffff"></path><path d="M38 40h4v6h-4z" fill="#8b1a1a"></path><path d="M24 62h32l4 34H20z" fill="#5b6b7a"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#3b3b3b"></path></svg></span>
+              <span style="font-size: 11.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>blazer uniform</span>
+              <span style="font-size: 10px; color: #9a9aa3;">Outfit · Illustrious / Anima</span>
+            </button>
+
+                        <button style="display: flex; flex-direction: column; gap: 4px; padding: 4px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+              <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden; opacity: 0.55;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M28 32h24l6 64H22z" fill="#1c1c1c"></path><path d="M34 36h12v8H34z" fill="#ffffff"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#1c1c1c"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#1c1c1c"></path></svg></span>
+              <span style="font-size: 11.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>gothic dress</span>
+              <span style="font-size: 10px; color: #9a9aa3;">Outfit · Illustrious</span>
+            </button>
+
+                      </div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-top: auto; padding: 6px 8px; border-top: 1px solid #2e2e35; font-size: 10.5px; color: #8a8a93;">
+            <span>←↑↓→ 移動 · Space 選択切替 · Enter で Apply</span>
+            <span style="margin-left: auto;">3 of 11</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid #555555; border-radius: 5px; background: #1c1c20;">
+          <span style="display: block; width: 100%; aspect-ratio: 8 / 11; max-height: 200px; border-radius: 4px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M30 32h20l4 40H26z" fill="#2c3e6b"></path><path d="M26 40h28v3H26z" fill="#c0392b"></path><path d="M25 72h30l6 24H19z" fill="#2c3e6b"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#dcdcdc"></path></svg></span>
+          <span style="font-size: 13px; font-weight: 600; line-height: 1.3;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>sailor uniform</span>
+          <span style="font-size: 10.5px; color: #8a8a93;">Outfit · 5 tags · Anima · マネキン · seed 3</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span style="display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border: 1px solid #5a5a62; border-radius: 10px; background: #222226; font-size: 11px;">serafuku</span>
+            <span style="display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border: 1px solid #5a5a62; border-radius: 10px; background: #222226; font-size: 11px;">pleated skirt</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border: 1px solid #5a5a62; border-radius: 10px; background: #222226; font-size: 11px;">red neckerchief<span style="color: #8a8a93; font-family: Consolas, 'Cascadia Mono', monospace; font-size: 10px;">1.2</span></span>
+            <span style="display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border: 1px solid #5a5a62; border-radius: 10px; background: #222226; font-size: 11px;">white thighhighs</span>
+            <span style="display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border: 1px solid #5a5a62; border-radius: 10px; background: #222226; font-size: 11px; text-decoration: line-through; color: #8a8a93;">loafers</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; margin-top: auto;">
+            <a href="History.dc.html" style="display: inline-flex; align-items: center; gap: 4px; min-height: 22px; font-size: 11.5px; text-decoration: none;"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6"></circle><path d="M8 4.5V8l2.5 1.5"></path></svg>History (2)</a>
+            <a href="SceneChip.dc.html" style="display: inline-flex; align-items: center; gap: 4px; min-height: 22px; font-size: 11.5px; text-decoration: none;">Edit part…</a>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #27272a; border-top: 1px solid #555555;">
+        <button style="display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 12.5px; cursor: pointer;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>New part…</button>
+        <button style="display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 12.5px; cursor: pointer;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3.5" width="9" height="9" rx="1.5"></rect><path d="M4 10.5l2.2-2.4L8 9.9l1.2-1.1 1.8 1.7"></path><path d="M13 1.5v4M11 3.5h4"></path></svg>Generate missing (3)</button>
+        <span style="display: flex; gap: 6px; margin-left: auto;">
+          <button style="min-height: 30px; padding: 0 12px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 12.5px; cursor: pointer;">Cancel</button>
+          <button style="min-height: 30px; padding: 0 12px; border: 1px solid #555555; border-radius: 5px; background: #285f8f; color: #ffffff; font: inherit; font-size: 12.5px; cursor: pointer;">Apply (3)</button>
+        </span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================ explanation -->
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 18px; font-size: 12px; line-height: 1.55; color: #bdbdc4;">
+    <div style="padding: 10px 12px; border: 1px solid #3a3a42; border-radius: 6px; background: #151517;">
+      <div style="margin-bottom: 4px; font-size: 12.5px; font-weight: 600; color: #eeeeee;">入口と 2 つのタブ</div>
+      「+ Add tag」「Choose tags」「Insert part…」「行末の parts ボタン」はすべてこの 1 つのモーダル。前 3 つは Tags タブで、parts ボタンは Parts タブで開く。今の別ウィンドウ「Insert part」ピッカーは Parts タブに吸収して無くす。タブ名は Tags / Parts の文字だけ(アイコン・件数なし)。タブは Ctrl+Tab / Ctrl+1・2 で切替、検索語は 2 つのタブで共通(Tags で打った skirt がそのまま Parts でも効く)。部品が使えない欄(Views / Characters / Action 行、Lists のエントリ編集)はタブ帯を出さず今のまま。
+    </div>
+    <div style="padding: 10px 12px; border: 1px solid #3a3a42; border-radius: 6px; background: #151517;">
+      <div style="margin-bottom: 4px; font-size: 12.5px; font-weight: 600; color: #eeeeee;">Selected と Apply は共通</div>
+      Selected はタブをまたいで 1 つ。タグは今の灰チップ、部品は金枠の <span style="color: #e0c080;">parts:</span> チップ。Parts タブのタイルはクリックで選択切替(複数可、Hair + Background のような組み合わせ向け)。Apply は選んだ順にカーソル位置へ挿入し、部品は <span style="color: #e0c080;">parts:</span> チップ 1 個になる。Apply のラベルは件数付き。
+    </div>
+    <div style="padding: 10px 12px; border: 1px solid #3a3a42; border-radius: 6px; background: #151517;">
+      <div style="margin-bottom: 4px; font-size: 12.5px; font-weight: 600; color: #eeeeee;">Tags タブからの導線</div>
+      ツールバーは Parts タブでも同じ 4 枠。Search はそのまま(名前とタグに一致)、Category の選択肢が Outfit / Hair / Body / Background / Other に、Attribute の枠は Sample(All / 今のモデルで生成済 / 未生成)に変わり、★ は部品にお気に入りが無いので淡色で据え置き。Tags タブで検索語に一致する部品があれば一覧の下に「<span style="color: #e0c080;">parts:</span> 一致 N 件 → Parts タブ」を出す。右パネルは Main ボードのものを縮めた版: 画像・タグ(無効は取り消し線)・History・Edit part…。フッター左に New part…(エディタ)と Generate missing。
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1700,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

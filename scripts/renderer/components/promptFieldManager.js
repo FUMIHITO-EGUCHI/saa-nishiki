@@ -496,6 +496,16 @@ export function setupPromptFieldManager() {
             remove.addEventListener('click', () => deleteField(id));
             tools.append(polarity, remove);
         }
+        // "parts": the picker that puts a parts:<name> chip into this row (partsUi.js)
+        if (globalThis.partsUi?.available?.() && !container.classList.contains('prompt-action-field') && id !== 'views' && id !== 'characters') {
+            const parts = document.createElement('button');
+            parts.type = 'button';
+            parts.className = 'scene-parts-button';
+            parts.textContent = 'parts';
+            parts.title = text('parts_insert_title', 'Insert part…');
+            parts.addEventListener('click', event => { event.stopPropagation(); globalThis.partsUi.openPicker({ fieldKey: id, trigger: parts }); });
+            tools.appendChild(parts);
+        }
         const menu = document.createElement('button');
         menu.type = 'button';
         menu.className = 'scene-menu-button';
@@ -662,6 +672,9 @@ export function setupPromptFieldManager() {
         if (set?.getMode && !container.classList.contains('prompt-action-field') && container.querySelector('.tag-view-toggle')) {
             const chips = set.getMode() === 'capsule';
             item(chips ? text('ui_scene_view_text', 'Show as text') : text('ui_scene_view_chips', 'Show as chips'), () => set.setMode(chips ? 'string' : 'capsule'));
+        }
+        if (globalThis.partsUi?.available?.() && !container.classList.contains('prompt-action-field') && id !== 'views' && id !== 'characters') {
+            item(text('parts_insert_title', 'Insert part…'), () => globalThis.partsUi.openPicker({ fieldKey: id, trigger: anchor }));
         }
         const batch = container.querySelector('.tag-capsule-batch');
         if (batch) item(text('ui_scene_batch', 'Weights per image…'), () => batch.click());

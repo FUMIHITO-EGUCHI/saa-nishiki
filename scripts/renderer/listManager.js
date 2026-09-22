@@ -6,6 +6,9 @@
 // socket, so the trigger button stays hidden in browser mode.
 
 import { openTagPicker } from './tagSelectionModal.js';
+import { PARTS_CHANGED_EVENT, applyPartsChange, partList, partsAvailable } from './partsClient.js';
+import { sampleTile } from './partsUi.js';
+import { PART_CATEGORIES, pickSample, sampleModelLabels } from '../shared/parts.js';
 
 const CAT = '[ListManager]';
 const ROW_LIMIT = 200;
@@ -15,6 +18,8 @@ const LISTS = [
     { id: 'oc', kind: 'keyed', langKey: 'ui_lists_tab_oc', fallback: 'Original characters' },
     { id: 'view_angle', kind: 'value', langKey: 'ui_lists_tab_angle', fallback: 'Angle' },
     { id: 'view_camera', kind: 'value', langKey: 'ui_lists_tab_camera', fallback: 'Camera' },
+    // Parts (partsUi.js): their own store, not the user-diff layer
+    { id: 'part', kind: 'part', langKey: 'ui_lists_tab_parts', fallback: 'Parts' },
 ];
 
 function lang() {
@@ -129,6 +134,88 @@ export function setupListManager() {
 
     overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
     document.addEventListener('keydown', event => { if (!overlay.hidden && event.key === 'Escape') close(); });
+    document.addEventListener(PARTS_CHANGED_EVENT, () => { if (!overlay.hidden && state.list === 'part') render(); });
+
+    // ---- the Parts tab: rows from the parts store, edited through the parts editor ----
+    function renderPartsTab(body) {
+        const toolbar = el('div', 'list-manager-toolbar');
+        const tabs = el('div', 'parts-tabs');
+        const all = partList();
+        const tab = (category, label) => {
+            const button = el('button', `parts-tab${(state.partCategory ?? '') === category ? ' is-active' : ''}`, label);
+            button.type = 'button';
+            button.addEventListener('click', () => { state.partCategory = category; render(); });
+            return button;
+        };
+        tabs.append(tab('', `${text('parts_category_all', 'All')} ${all.length}`));
+        for (const category of PART_CATEGORIES) {
+            const count = all.filter(entry => entry.category === category).length;
+            tabs.append(tab(category, `${text(`parts_category_${category}`, category)} ${count}`));
+        }
+        toolbar.append(tabs);
+        const search = el('input', 'list-manager-search');
+        search.placeholder = text('ui_lists_search', 'Search…');
+        search.value = state.search;
+        search.addEventListener('input', () => { state.search = search.value; render(); if (state.list === 'part') modal.querySelector('.list-manager-search')?.focus(); });
+        toolbar.append(search);
+        const add = el('button', 'list-manager-button is-primary', text('parts_new', '+ New part'));
+        add.type = 'button';
+        add.addEventListener('click', () => globalThis.partsUi?.openEditor({ trigger: add }));
+        toolbar.append(add);
+        const modelType = globalThis.globalSettings?.api_model_type === 'Diffusion' ? 'Diffusion' : 'Checkpoint';
+        const lacking = all.filter(entry => { const sample = pickSample(entry, modelType); return !sample || sample.foreign; }).length;
+        const missing = el('button', 'list-manager-button', text('parts_generate_missing', 'Generate missing ({0})').replace('{0}', String(lacking)));
+        missing.type = 'button';
+        missing.disabled = lacking === 0 || globalThis.generate?.api_interface?.getValue?.() !== 'ComfyUI';
+        missing.addEventListener('click', () => globalThis.partsUi?.generateMissing());
+        toolbar.append(missing);
+        body.append(toolbar);
+
+        const needle = state.search.trim().toLowerCase();
+        const rows = partList(state.partCategory ?? '')
+            .filter(entry => !needle || entry.name.toLowerCase().includes(needle) || entry.tags.toLowerCase().includes(needle))
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+        body.append(el('div', 'list-manager-count', `${rows.length} parts`));
+        const container = el('div', 'list-manager-rows');
+        for (const entry of rows) {
+            const row = el('div', 'parts-lists-row');
+            row.append(sampleTile(entry.id, { className: 'parts-tile-image parts-lists-thumb', empty: '—' }));
+            const name = el('span', 'parts-lists-name');
+            name.append(el('span', 'parts-prefix', 'parts:'), document.createTextNode(entry.name));
+            name.title = entry.name;
+            row.append(name);
+            const category = el('select', 'parts-category-select');
+            category.setAttribute('aria-label', `${text('parts_category', 'Category')}: ${entry.name}`);
+            for (const value of PART_CATEGORIES) {
+                const option = el('option', '', text(`parts_category_${value}`, value));
+                option.value = value;
+                category.append(option);
+            }
+            category.value = entry.category;
+            category.addEventListener('change', () => applyPartsChange({ action: 'set', id: entry.id, entry: { name: entry.name, category: category.value, tags: entry.tags } }));
+            row.append(category);
+            const tags = el('span', 'parts-lists-tags', entry.tags);
+            tags.title = entry.tags;
+            row.append(tags);
+            const labels = sampleModelLabels(entry);
+            const samples = el('button', 'list-manager-button parts-lists-samples', entry.samples.length ? `${entry.samples.length} · ${labels.join(' / ')}` : text('parts_no_sample', 'No sample'));
+            samples.type = 'button';
+            samples.addEventListener('click', () => globalThis.partsUi?.openHistory(entry.id));
+            row.append(samples);
+            const actions = el('span', 'parts-lists-actions');
+            const edit = el('button', 'list-manager-button', text('ui_lists_action_edit', 'Edit'));
+            edit.type = 'button';
+            edit.addEventListener('click', () => globalThis.partsUi?.openEditor({ id: entry.id, trigger: edit }));
+            const remove = el('button', 'list-manager-button is-danger', text('ui_lists_action_delete', 'Delete'));
+            remove.type = 'button';
+            remove.addEventListener('click', () => applyPartsChange({ action: 'remove', id: entry.id }));
+            actions.append(edit, remove);
+            row.append(actions);
+            container.append(row);
+        }
+        container.append(el('div', 'parts-lists-note', text('parts_lists_delete_note', 'Deleting a part leaves its chips as plain text until you replace them')));
+        body.append(container);
+    }
 
     async function applyChange(change) {
         const payload = await globalThis.api.applyUserListChange(state.list, change);
@@ -298,6 +385,7 @@ export function setupListManager() {
         const layout = el('div', 'list-manager-layout');
         const nav = el('div', 'list-manager-nav');
         for (const list of LISTS) {
+            if (list.kind === 'part' && !partsAvailable()) continue;
             const button = el('button', `list-manager-nav-item${state.list === list.id ? ' is-active' : ''}`, text(list.langKey, list.fallback));
             button.type = 'button';
             button.addEventListener('click', () => { state.list = list.id; state.editing = null; state.search = ''; render(); });
@@ -308,7 +396,9 @@ export function setupListManager() {
 
         const body = el('div', 'list-manager-body');
 
-        if (state.editing) {
+        if (state.list === 'part') {
+            renderPartsTab(body);
+        } else if (state.editing) {
             renderEditForm(body);
         } else {
             const toolbar = el('div', 'list-manager-toolbar');

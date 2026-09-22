@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>Parts picker</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #7dbcff; }
+  </style>
+</helmet>
+<div style="width: 960px; height: 660px; box-sizing: border-box; padding: 20px; background: #111111; color: #eeeeee;">
+  <div style="display: flex; flex-direction: column; height: 620px; border: 2px solid #666666; border-radius: 9px; background: #111111; overflow: hidden;">
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px 6px 12px; background: #27272a; border-bottom: 1px solid #555555;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-size: 16px; font-weight: 600;">Insert part</span>
+        <span style="font-size: 11px; color: #aaaaaa;">Positive 行へ · カーソル位置に parts: チップを 1 つ挿入</span>
+      </div>
+      <button aria-label="Close" style="width: 30px; height: 30px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: #aaaaaa; font-size: 20px; line-height: 1; cursor: pointer;">×</button>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px;">
+      <div style="display: flex; gap: 2px; padding: 2px; border: 1px solid #444448; border-radius: 6px; background: #19191c;">
+        <button style="min-height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: #bdbdc4; font: inherit; font-size: 12px; cursor: pointer;">All</button>
+        <button aria-pressed="true" style="min-height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: #285f8f; color: #ffffff; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;">Outfit</button>
+        <button style="min-height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: #bdbdc4; font: inherit; font-size: 12px; cursor: pointer;">Hair</button>
+        <button style="min-height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: #bdbdc4; font: inherit; font-size: 12px; cursor: pointer;">Body</button>
+        <button style="min-height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: #bdbdc4; font: inherit; font-size: 12px; cursor: pointer;">Background</button>
+        <button style="min-height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: #bdbdc4; font: inherit; font-size: 12px; cursor: pointer;">Other</button>
+      </div>
+      <label style="display: flex; align-items: center; gap: 6px; flex-grow: 1; height: 30px; padding: 0 7px; border: 1px solid #4da3ff; border-radius: 5px; background: #222222; box-sizing: border-box;">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#9a9aa3" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="4.5"></circle><path d="M10.5 10.5L14 14"></path></svg>
+        <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);">Search parts by name or tag</span>
+        <input type="search" value="uniform" style="flex-grow: 1; min-width: 0; border: 0; outline: none; background: transparent; color: #eeeeee; font: inherit; font-size: 13px;">
+        <span style="font-size: 10.5px; color: #8a8a93; white-space: nowrap;">3 of 11 outfits</span>
+      </label>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 10px; margin: 0 12px 10px; min-height: 0; flex-grow: 1;">
+
+      <div style="display: flex; flex-direction: column; border: 1px solid #555555; border-radius: 5px; background: #19191c; overflow: hidden;">
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 10px;">
+
+          <button aria-pressed="true" style="display: flex; flex-direction: column; gap: 5px; padding: 5px; border: 2px solid #4da3ff; border-radius: 6px; background: #22272f; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+            <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M30 32h20l4 40H26z" fill="#2c3e6b"></path><path d="M26 40h28v3H26z" fill="#c0392b"></path><path d="M25 72h30l6 24H19z" fill="#2c3e6b"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#dcdcdc"></path></svg></span>
+            <span style="font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>sailor uniform</span>
+            <span style="font-size: 10.5px; color: #9a9aa3;">5 tags · Anima</span>
+          </button>
+
+          <button style="display: flex; flex-direction: column; gap: 5px; padding: 5px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+            <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M28 32h24l4 30H24z" fill="#3b3b3b"></path><path d="M34 34h12v26H34z" fill="#ffffff"></path><path d="M38 40h4v6h-4z" fill="#8b1a1a"></path><path d="M24 62h32l4 34H20z" fill="#5b6b7a"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#3b3b3b"></path></svg></span>
+            <span style="font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>blazer uniform</span>
+            <span style="font-size: 10.5px; color: #9a9aa3;">6 tags · Illustrious / Anima</span>
+          </button>
+
+          <button style="display: flex; flex-direction: column; gap: 5px; padding: 5px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+            <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M30 32h20l3 22H27z" fill="#f5f5f5" stroke="#cfcfcf" stroke-width="1"></path><path d="M26 54h28l8 42H18z" fill="#2f5d3a"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#dcdcdc"></path></svg></span>
+            <span style="font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>gym uniform</span>
+            <span style="font-size: 10.5px; color: #9a9aa3;">4 tags · Anima</span>
+          </button>
+
+          <button style="display: flex; flex-direction: column; gap: 5px; padding: 5px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+            <span style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 100%; aspect-ratio: 8 / 11; border: 1px dashed #5a5a62; border-radius: 3px; background: #16161a; box-sizing: border-box; color: #9a9aa3;"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x="2" y="3.5" width="9" height="9" rx="1.5"></rect><path d="M4 10.5l2.2-2.4L8 9.9l1.2-1.1 1.8 1.7"></path><path d="M13 1.5v4M11 3.5h4"></path></svg><span style="font-size: 10.5px;">No sample</span></span>
+            <span style="font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>maid dress</span>
+            <span style="font-size: 10.5px; color: #9a9aa3;">7 tags · 未生成</span>
+          </button>
+
+          <button style="display: flex; flex-direction: column; gap: 5px; padding: 5px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+            <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden; opacity: 0.55;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M28 32h24l6 64H22z" fill="#1c1c1c"></path><path d="M34 36h12v8H34z" fill="#ffffff"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#1c1c1c"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#1c1c1c"></path></svg></span>
+            <span style="font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>gothic dress</span>
+            <span style="font-size: 10.5px; color: #9a9aa3;">8 tags · Illustrious</span>
+          </button>
+
+          <button style="display: flex; flex-direction: column; gap: 5px; padding: 5px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+            <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M26 32h28l4 36H22z" fill="#9aa5b1"></path><path d="M32 30h16v6H32z" fill="#7d8894"></path><path d="M27 68h26v28H27z" fill="#3a4c66"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#ffffff"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#9aa5b1"></path></svg></span>
+            <span style="font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>casual hoodie</span>
+            <span style="font-size: 10.5px; color: #9a9aa3;">4 tags · Anima</span>
+          </button>
+
+          <button style="display: flex; flex-direction: column; gap: 5px; padding: 5px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+            <span role="img" aria-label="Generating a sample" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; width: 100%; aspect-ratio: 8 / 11; border: 1px solid #5a4a2a; border-radius: 3px; background: #1d1a14; box-sizing: border-box; color: #ffb454;"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="#3a3428"></circle><path d="M8 2a6 6 0 0 1 6 6" stroke="#ffb454"></path></svg><span style="font-size: 10.5px;">Generating</span></span>
+            <span style="font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>summer dress</span>
+            <span style="font-size: 10.5px; color: #9a9aa3;">5 tags · Anima 生成中 12 秒</span>
+          </button>
+
+          <button style="display: flex; flex-direction: column; gap: 5px; padding: 5px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24; color: #eeeeee; font: inherit; text-align: left; cursor: pointer;">
+            <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M30 32h20l4 30H26z" fill="#1e2a44"></path><path d="M38 32h4v30h-4z" fill="#c9a227"></path><path d="M26 62h28l3 34H23z" fill="#1e2a44"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#1e2a44"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#1e2a44"></path></svg></span>
+            <span style="font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>military coat</span>
+            <span style="font-size: 10.5px; color: #9a9aa3;">6 tags · Illustrious / Anima</span>
+          </button>
+
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: auto; padding: 7px 10px; border-top: 1px solid #2e2e35; font-size: 10.5px; color: #8a8a93;">
+          <span>タイルの画像は今のモデル(Anima)のもの。名前の横は生成済みのモデル。今のモデルの分が無いタイルは淡色</span>
+          <span style="margin-left: auto;">8 of 11</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 10px; border: 1px solid #555555; border-radius: 5px; background: #1c1c20;">
+        <div style="display: flex; gap: 10px;">
+          <span style="flex: none; display: block; width: 120px; height: 165px; border-radius: 4px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M30 32h20l4 40H26z" fill="#2c3e6b"></path><path d="M26 40h28v3H26z" fill="#c0392b"></path><path d="M25 72h30l6 24H19z" fill="#2c3e6b"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#dcdcdc"></path></svg></span>
+          <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1; min-width: 0;">
+            <span style="font-size: 13.5px; font-weight: 600; line-height: 1.3;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>sailor uniform</span>
+            <span style="font-size: 10.5px; color: #8a8a93;">Outfit · 5 tags</span>
+            <span style="margin-top: auto; font-size: 10.5px; color: #9a9aa3;">Anima · マネキン · seed 3 · Illustrious も有り</span>
+            <span style="font-size: 10.5px; color: #9a9aa3;">21 Sep 10:14</span>
+            <a href="History.dc.html" style="display: inline-flex; align-items: center; gap: 4px; min-height: 26px; font-size: 12px; text-decoration: none;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6"></circle><path d="M8 4.5V8l2.5 1.5"></path></svg>History (2)</a>
+            <button style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 28px; padding: 0 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 12px; cursor: pointer;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"></path><path d="M12.2 1.6v2.9H9.3"></path></svg>New sample</button>
+            <button style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 28px; padding: 0 8px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 12px; cursor: pointer;">On current character</button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #9a9aa3;">TAGS</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            <span style="display: inline-flex; align-items: center; height: 21px; padding: 0 8px; border: 1px solid #5a5a62; border-radius: 11px; background: #222226; font-size: 11.5px;">serafuku</span>
+            <span style="display: inline-flex; align-items: center; height: 21px; padding: 0 8px; border: 1px solid #5a5a62; border-radius: 11px; background: #222226; font-size: 11.5px;">pleated skirt</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; height: 21px; padding: 0 8px; border: 1px solid #5a5a62; border-radius: 11px; background: #222226; font-size: 11.5px;">red neckerchief<span style="color: #8a8a93; font-family: Consolas, 'Cascadia Mono', monospace; font-size: 10px;">1.2</span></span>
+            <span style="display: inline-flex; align-items: center; height: 21px; padding: 0 8px; border: 1px solid #5a5a62; border-radius: 11px; background: #222226; font-size: 11.5px;">white thighhighs</span>
+            <span style="display: inline-flex; align-items: center; height: 21px; padding: 0 8px; border: 1px solid #5a5a62; border-radius: 11px; background: #222226; font-size: 11.5px;">loafers</span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #9a9aa3;">USED WITH</span>
+          <span style="font-size: 11.5px; color: #bdbdc4; line-height: 1.4;">直近 3 枚で一緒に使った部品: parts:twin tails long, parts:classroom sunset</span>
+        </div>
+
+        <a href="Lists.dc.html" style="margin-top: auto; display: inline-flex; align-items: center; gap: 4px; min-height: 26px; font-size: 12px; text-decoration: none;">Settings › Lists › Parts で編集</a>
+      </div>
+
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #27272a; border-top: 1px solid #555555;">
+      <button style="display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 12.5px; cursor: pointer; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="3.5" width="9" height="9" rx="1.5"></rect><path d="M4 10.5l2.2-2.4L8 9.9l1.2-1.1 1.8 1.7"></path><path d="M13 1.5v4M11 3.5h4"></path></svg>Generate missing (3)</button>
+      <span style="font-size: 10.5px; color: #8a8a93;">←↑↓→ 移動 · Enter 挿入 · Ctrl+D お気に入り</span>
+      <span style="display: flex; gap: 6px; margin-left: auto;">
+        <button style="min-height: 30px; padding: 0 12px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 12.5px; cursor: pointer;">Cancel</button>
+        <button style="min-height: 30px; padding: 0 12px; border: 1px solid #555555; border-radius: 5px; background: #285f8f; color: #ffffff; font: inherit; font-size: 12.5px; cursor: pointer;">Insert parts:sailor uniform</button>
+      </span>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":960,"height":660}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

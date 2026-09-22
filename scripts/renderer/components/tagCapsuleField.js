@@ -41,6 +41,8 @@ import { getBatchWeightDialog } from './batchWeightDialog.js';
 import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
 import { tagText } from './tagUiText.js';
 import { TAG_DICTIONARY_EVENT, tagStatus } from './tagDictionaryStatus.js';
+import { PARTS_CHANGED_EVENT, expandParts, partInfo } from '../partsClient.js';
+import { isPartToken } from '../../shared/parts.js';
 import { customFieldExtras, isCustomFieldId, normalizeCustomFields, normalizeOrder, setCustomFieldExtras } from '../../shared/promptFieldOrder.js';
 import { sideOrder } from '../../shared/regionalSides.js';
 import { castEnabled, isDiffusionFieldId } from '../../shared/castMembers.js';
@@ -389,6 +391,8 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     // dictionary answers arrive after the first paint; the chips are re-marked then
     const onDictionaryEvent = () => { if (mode === 'capsule') render(); };
     document.addEventListener(TAG_DICTIONARY_EVENT, onDictionaryEvent);
+    // a part was made, renamed or removed: its chips change their count / missing mark
+    document.addEventListener(PARTS_CHANGED_EVENT, onDictionaryEvent);
 
     function render() {
         if (mode === 'capsule') {
@@ -398,6 +402,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
                 trailing: addSlot,
                 isFavorite: value => isFavoriteTag(favGroupForKey(key), value),
                 tagStatus,
+                partInfo,
             });
             chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
             updateRoving();
@@ -548,6 +553,11 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         focusIndex = index;
         anchorIndex = index;
         updateRoving();
+        // a part chip opens its card (sample, tags, this row's weight) instead of the weight popover
+        if (isPartToken(capsules[index]?.value) && globalThis.partsUi?.openCard) {
+            globalThis.partsUi.openCard({ anchor: chipAt(index), fieldKey: key, capsuleId: capsules[index].id });
+            return;
+        }
         openPopover(index);
     });
 
@@ -753,7 +763,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             generationSeed: getGenerationSeed(),
             expand: (count, seed) => (typeof expandForBatch === 'function'
                 ? expandForBatch(count, seed, key)
-                : expandAll([{ key, capsules }], seed, count).map(row => ({
+                : expandAll([{ key, capsules }], seed, count, { expandTokens: expandParts }).map(row => ({
                     imageIndex: row.imageIndex,
                     weights: row.weights,
                     terminal: row.terminal,
@@ -802,6 +812,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         if (disposed) return;
         disposed = true;
         document.removeEventListener(TAG_DICTIONARY_EVENT, onDictionaryEvent);
+        document.removeEventListener(PARTS_CHANGED_EVENT, onDictionaryEvent);
         document.removeEventListener(FAVORITE_TAGS_CHANGED_EVENT, onFavoritesChanged);
         document.removeEventListener('drop', onDocumentDrop, true);
         titleObserver.disconnect();
@@ -936,7 +947,7 @@ export function setupTagCapsuleFields(textboxControls = [], options = {}) {
 
     function expandRows(count, seed) {
         // slider ≥ 0: the seed is pinned for the whole batch, weights are the only variable
-        return expandAll(expansionFields(), seed, count, { applyExclude, fixedSeed: getGenerationSeed() >= 0, chain: getChain() });
+        return expandAll(expansionFields(), seed, count, { applyExclude, fixedSeed: getGenerationSeed() >= 0, chain: getChain(), expandTokens: expandParts });
     }
 
     function getBatchExpansion() {

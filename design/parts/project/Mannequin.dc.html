@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>Mannequin base per category</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #7dbcff; }
+  </style>
+</helmet>
+<div style="width: 1200px; height: 1000px; box-sizing: border-box; padding: 24px; background: #111111; color: #eeeeee; display: flex; flex-direction: column; gap: 14px;">
+
+  <div style="display: flex; flex-direction: column; gap: 2px;">
+    <span style="font-size: 14px; font-weight: 600;">台紙、ベンチで決定(2026-09-22、ローカル 4070、seed 3、512×704、Hires 無し)</span>
+    <span style="font-size: 11.5px; color: #9a9aa3;">方式は全カテゴリ txt2img。白画像への img2img は背景カテゴリで白い額縁が残り、Illustrious では人物が崩れた。台紙の文言はモデルごとに別(Illustrious は "white mannequin" をトルソー+実在の少女の 2 体に描くため)。ネガは Artist サンプルのもの + text, logo, 2girls, multiple girls, multiple views, dress form, mannequin stand。</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 90px repeat(4, minmax(0, 1fr)); gap: 12px; align-items: start;">
+    <span></span>
+    <span style="font-size: 12.5px; font-weight: 600;">Outfit · 全身</span>
+    <span style="font-size: 12.5px; font-weight: 600;">Hair · 胸上</span>
+    <span style="font-size: 12.5px; font-weight: 600;">Body · 全身、白ボディスーツ</span>
+    <span style="font-size: 12.5px; font-weight: 600;">Background · 人物なし</span>
+
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 4px;">
+      <span style="font-size: 13px; font-weight: 600;">Anima</span>
+      <span style="font-size: 10.5px; color: #9a9aa3;">WAI-ANIMA · er_sde / simple · 20 steps · cfg 4.5 · 4.6 秒</span>
+    </div>
+    <img src="/_blob/3c08c20c8e5d6496de1ef7763faeed44" alt="Anima の Outfit サンプル: セーラー服を着た白いマネキン" style="display: block; width: 100%; aspect-ratio: 8 / 11; object-fit: cover; border-radius: 4px;">
+    <img src="/_blob/011f3240d1baf08aa5593345d43f83ab" alt="Anima の Hair サンプル: ツインテールの白いマネキン" style="display: block; width: 100%; aspect-ratio: 8 / 11; object-fit: cover; border-radius: 4px;">
+    <img src="/_blob/c9cf8cb1bb5816f6ede6d0f038c2d6ef" alt="Anima の Body サンプル: 筋肉質の白いマネキン" style="display: block; width: 100%; aspect-ratio: 8 / 11; object-fit: cover; border-radius: 4px;">
+    <img src="/_blob/2f9ad859ba51accfa877f37f05227e20" alt="Anima の Background サンプル: 夕焼けの教室" style="display: block; width: 100%; aspect-ratio: 8 / 11; object-fit: cover; border-radius: 4px;">
+
+    <span></span>
+    <span style="font-family: Consolas, 'Cascadia Mono', monospace; font-size: 10px; line-height: 1.45; color: #bdbdc4;">1girl, white mannequin, faceless, bald, standing, arms at sides, full body, simple background, white background, <span style="color: #e0c080;">[part]</span></span>
+    <span style="font-family: Consolas, 'Cascadia Mono', monospace; font-size: 10px; line-height: 1.45; color: #bdbdc4;">1girl, white mannequin, faceless, upper body, facing viewer, simple background, white background, <span style="color: #e0c080;">[part]</span></span>
+    <span style="font-family: Consolas, 'Cascadia Mono', monospace; font-size: 10px; line-height: 1.45; color: #bdbdc4;">1girl, white mannequin, faceless, bald, white bodysuit, standing, full body, simple background, white background, <span style="color: #e0c080;">[part]</span></span>
+    <span style="font-family: Consolas, 'Cascadia Mono', monospace; font-size: 10px; line-height: 1.45; color: #bdbdc4;">no humans, scenery, <span style="color: #e0c080;">[part]</span></span>
+
+    <div style="display: flex; flex-direction: column; gap: 4px; padding-top: 4px;">
+      <span style="font-size: 13px; font-weight: 600;">Illustrious</span>
+      <span style="font-size: 10.5px; color: #9a9aa3;">WAI v17 · euler_a / normal · 24 steps · cfg 5 · clip skip 2 · 3.2 秒</span>
+    </div>
+    <img src="/_blob/27042e75e505986b7885eb93d74ec1f9" alt="Illustrious の Outfit サンプル: セーラー服を着た顔のない白い人物" style="display: block; width: 100%; aspect-ratio: 8 / 11; object-fit: cover; border-radius: 4px;">
+    <img src="/_blob/aa27a65c5214adae9db7e344f1ee4512" alt="Illustrious の Hair サンプル: ツインテールの顔のない白い人物" style="display: block; width: 100%; aspect-ratio: 8 / 11; object-fit: cover; border-radius: 4px;">
+    <img src="/_blob/a853f7c9c5170115b4be867a64bef8d4" alt="Illustrious の Body サンプル: 筋肉質の白い人物" style="display: block; width: 100%; aspect-ratio: 8 / 11; object-fit: cover; border-radius: 4px;">
+    <img src="/_blob/372dd4e045c0f7fa6797dd86c9bd9f56" alt="Illustrious の Background サンプル: 夕焼けの教室" style="display: block; width: 100%; aspect-ratio: 8 / 11; object-fit: cover; border-radius: 4px;">
+
+    <span></span>
+    <span style="font-family: Consolas, 'Cascadia Mono', monospace; font-size: 10px; line-height: 1.45; color: #bdbdc4;">1girl, solo, faceless, bald, white skin, colored skin, standing, facing viewer, looking at viewer, arms at sides, full body, simple background, white background, <span style="color: #e0c080;">[part]</span></span>
+    <span style="font-family: Consolas, 'Cascadia Mono', monospace; font-size: 10px; line-height: 1.45; color: #bdbdc4;">1girl, solo, faceless, white skin, colored skin, upper body, facing viewer, looking at viewer, simple background, white background, <span style="color: #e0c080;">[part]</span></span>
+    <span style="font-family: Consolas, 'Cascadia Mono', monospace; font-size: 10px; line-height: 1.45; color: #bdbdc4;">1girl, solo, faceless, bald, white skin, colored skin, white bodysuit, standing, facing viewer, looking at viewer, full body, simple background, white background, <span style="color: #e0c080;">[part]</span></span>
+    <span style="font-family: Consolas, 'Cascadia Mono', monospace; font-size: 10px; line-height: 1.45; color: #bdbdc4;">no humans, scenery, <span style="color: #e0c080;">[part]</span></span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: auto;">
+    <div style="display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 1px solid #3a3a42; border-radius: 6px; background: #19191c; font-size: 11.5px; color: #bdbdc4; line-height: 1.5;">
+      <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #9a9aa3;">A / B の結果</span>
+      <span>Anima は両方式とも人物は同等。背景は img2img だと白い額縁が残る。Illustrious の img2img は髪・背景が崩れた。→ 全カテゴリ txt2img。</span>
+      <a href="/_blob/d5b1e2c7173ce8c778c742c8d0c8496b" style="font-size: 11px;">Anima のシート</a>
+      <a href="/_blob/e7104a39f29df7ca84917bd2effa0e77" style="font-size: 11px;">Illustrious のシート</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 1px solid #3a3a42; border-radius: 6px; background: #19191c; font-size: 11.5px; color: #bdbdc4; line-height: 1.5;">
+      <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #9a9aa3;">Illustrious の文言探し(3 ラウンド)</span>
+      <span>"white mannequin" → トルソー + 少女の 2 体。"mannequin, doll joints" → 実在の少女。"faceless, bald, white skin, colored skin" + "facing viewer, looking at viewer" + 2 体を否定するネガで 1 体に。seed 3〜5 で安定。</span>
+      <a href="/_blob/273b6d9d40beb33c02804fc011de74ab" style="font-size: 11px;">Round 2</a>
+      <a href="/_blob/735cd3b60416e94f905580056e507f23" style="font-size: 11px;">Round 3</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 1px solid #3a3a42; border-radius: 6px; background: #19191c; font-size: 11.5px; color: #bdbdc4; line-height: 1.5;">
+      <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: #9a9aa3;">大きさ</span>
+      <span>384×528 は Anima で同じ seed が 2 体構図に変わった。512×704 のまま(Anima 4.6 秒 / Illustrious 3.2 秒)。Anima の Illustrious 文言は顔が出る(hair)ので、モデル別の文言を維持。</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

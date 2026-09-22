@@ -1105,6 +1105,13 @@ body {
 /* a sentence, sent as written (an action statement) */
 .tag-capsule-chip.is-sentence { border-style: dashed; }
 .tag-capsule-chip.is-sentence .tag-capsule-chip-name { font-style: italic; }
+/* a part ("parts:<name>", scripts/shared/parts.js): gold frame, the prefix small and gold,
+   the right segment counts its tags; a name no part answers to is struck through */
+.tag-capsule-chip.is-part { border-color: #8a7440; background: #2a2620; }
+.tag-capsule-chip.is-part .tag-capsule-chip-prefix { margin-right: 1px; color: #e0c080; font-size: 0.85em; }
+.tag-capsule-chip.is-part .tag-capsule-chip-weight { background: rgba(224, 192, 128, 0.14); color: #e0c080; border-left-color: rgba(255, 255, 255, 0.08); }
+.tag-capsule-chip.is-part-missing { border-style: dotted; }
+.tag-capsule-chip.is-part-missing .tag-capsule-chip-name { text-decoration: line-through; color: #b0a888; }
 
 /* one-touch enable/disable: the whole left end of the chip is the button (22px wide,
    full height); the 9px dot inside it shows the state */
@@ -2438,3 +2445,5 @@ body {
 .artist-profile-tag mark { color: #9ecbff; }
 .artist-profile-bar i { background: #c8a06a; }
 .selection-modal-option-category { color: #aaa; }
+.selection-modal-chip.is-part { border-color: #8a7440; background: #2a2620; }
+.selection-modal-chip.is-part .selection-modal-chip-prefix { color: #e0c080; }

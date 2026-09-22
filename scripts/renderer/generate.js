@@ -27,6 +27,7 @@ import { completeRefineRunItem, createRefineRunController, recordRefineRunCandid
 import { asFragment, isFieldMuted, joinOrderedUnits, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
 import { castEnabled, isDiffusionFieldId } from '../shared/castMembers.js';
 import { stripDisabledTags } from './components/tagCapsuleLogic.js';
+import { expandParts } from './partsClient.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
 
@@ -206,7 +207,7 @@ function readCustomFieldValue(field) {
     // reaches the prompt like it does for the built-in fields.
     if (field.muted === true) return ''; // the row's ● switch: text kept, nothing sent
     if (globalThis.prompt?.[field.id]?.getValue) return readPromptValue(field.id);
-    return stripDisabledTags(field.text || ''); // "~tag" = toggled off on its capsule
+    return expandParts(stripDisabledTags(field.text || '')); // "~tag" = toggled off on its capsule
 }
 
 export function getCustomFieldTexts(polarity) {
@@ -1067,6 +1068,94 @@ export function getImageSavePrefix(apiInterface, character_prefix) {
     return `${embed_character}`;
 }
 
+/**
+ * A Parts sample (scripts/renderer/partsUi.js): one image of a fixed prompt on the
+ * ordinary queue, no AI request, no Prose, no Hires / ADetailer / ControlNet, the
+ * current model. The image goes to `onImage(dataUrl)` instead of the gallery. The
+ * queue puts a job the user clicks ahead of waiting samples (slots/myQueueSlot.js).
+ */
+// generateData crosses the IPC boundary (structured clone), so the callbacks of a
+// sample stay here, keyed by the job's number that travels in queueManager.sampleJobId.
+const partsSampleHandlers = new Map();
+let partsSampleSequence = 0;
+
+export function attachPartsSampleJob({ label = 'Sample', key = '', positive = '', negative = '', seed = 3, width = 512, height = 704, steps = null, cfg = null, sampler = null, scheduler = null, onImage = null, onDone = null } = {}) {
+    const apiInterface = globalThis.generate.api_interface.getValue();
+    if (apiInterface !== 'ComfyUI') return false;
+    const SETTINGS = globalThis.globalSettings;
+    const sampleJobId = ++partsSampleSequence;
+    partsSampleHandlers.set(sampleJobId, { onImage, onDone });
+    const brownColor = (SETTINGS.css_style === 'dark') ? 'BurlyWood' : 'Brown';
+    const hifix = createHiFix(seed, apiInterface, brownColor);
+    hifix.enable = false;
+    hifix.info = '';
+    const refiner = createRefiner();
+    refiner.enable = false;
+    refiner.info = '';
+    const generateData = {
+        addr: extractHostPort(globalThis.generate.api_address.getValue()),
+        auth: extractAPISecure(apiInterface),
+        uuid: (globalThis.inBrowser) ? globalThis.clientUUID : 'none',
+        refresh: globalThis.generate.api_preview_refresh_time.getValue(),
+        queueManager: {
+            genType: 'partsSample',
+            isRegional: false,
+            apiInterface,
+            finalInfo: `${label}\nPositive:\n${positive}\nNegative:\n${negative}\n`,
+            loop: 0,
+            loops: 1,
+            thumb: null,
+            id: label,
+            label,
+            sampleJobId,
+            sampleKey: key,
+            refineRun: null,
+        },
+        positive,
+        negative,
+        width,
+        height,
+        cfg: Number.isFinite(cfg) ? cfg : globalThis.generate.cfg.getFloat(),
+        step: Number.isFinite(steps) ? steps : globalThis.generate.step.getValue(),
+        seed,
+        sampler: sampler || globalThis.generate.sampler.getValue(),
+        scheduler: scheduler || globalThis.generate.scheduler.getValue(),
+        hifix,
+        adetailer: [],
+        vae: { vae_override: false, vae: globalThis.dropdownList.vae_sdxl.getValue() },
+        ...(SETTINGS.api_model_type === 'Checkpoint' ? {
+            model: globalThis.dropdownList.model.getValue(),
+            vpred: checkVpred(),
+            refiner,
+            controlnet: [],
+        } : {
+            unet: {
+                enable: true,
+                model: globalThis.dropdownList.model.getValue(),
+                dtype: globalThis.dropdownList.diffusion_model_weight_dtype.getValue(),
+                vae_model: globalThis.dropdownList.vae_unet.getValue(),
+                clip_model: globalThis.dropdownList.textencoder.getValue(),
+                clip_type: globalThis.dropdownList.textencoder_type.getValue(),
+                clip_device: globalThis.dropdownList.textencoder_device.getValue(),
+            },
+        }),
+        img_prefix: 'parts-samples/%date',
+    };
+    globalThis.queueManager.attach([label, positive], generateData);
+    if (SETTINGS.generate_auto_start && !globalThis.inGenerating) startQueue();
+    return true;
+}
+
+/** True when a sample with this key (partsUi.js) is still waiting on the queue. */
+export function partsSampleQueued(key) {
+    return (globalThis.queueManager?.getValues?.() ?? []).some(data => data?.queueManager?.genType === 'partsSample' && data.queueManager.sampleKey === key);
+}
+
+function partsSampleHandler(generateData) {
+    const id = generateData?.queueManager?.sampleJobId;
+    return id ? partsSampleHandlers.get(id) ?? null : null;
+}
+
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export async function generateImage(dataPack){
     const {runSame} = dataPack;
@@ -1494,6 +1583,17 @@ export async function startQueue(){
                     ? { ret: 'success', retCopy: '', breakNow: globalThis.generate.cancelClicked === true, cancelled: true }
                     : await seartGenerate(queueManager.apiInterface, generateData);
             }
+        } else if(queueManager.genType === 'partsSample') {
+            // a Parts sample: the prompt is fixed (no AI, no Prose), straight to the sampler
+            globalThis.generate.loadingMessage = String(queueManager.label ?? queueManager.id ?? 'Sample');
+            try {
+                result = jobDropped(generateData)
+                    ? { ret: 'success', retCopy: '', breakNow: false, cancelled: true }
+                    : await seartGenerate(queueManager.apiInterface, generateData);
+            } finally {
+                partsSampleHandler(generateData)?.onDone?.();
+                partsSampleHandlers.delete(queueManager.sampleJobId);
+            }
         } else if(queueManager.genType === 'miraITU') {
             from_renderer_generate_updatePreview(`data:image/png;base64,${generateData.preview}`);
             const ogResolution = `${generateData.taggerOptions.imageWidth}x${generateData.taggerOptions.imageHeight}`;
@@ -1602,6 +1702,13 @@ async function runComfyUI(apiInterface, generateData){
     function sendToGallery(image, generateData){
         if(!image)  // same prompts from backend will return null
             return;
+
+        // a Parts sample keeps its image (partsUi.js stores it); the gallery never sees it
+        const sampleHandler = partsSampleHandler(generateData);
+        if (sampleHandler) {
+            Promise.resolve(sampleHandler.onImage?.(image)).catch(error => console.error('[Generate] sample image handler failed:', error));
+            return;
+        }
 
         if(!keepGallery)
             globalThis.mainGallery.clearGallery();

@@ -1,4 +1,5 @@
 import { stripDisabledTags } from '../components/tagCapsuleLogic.js';
+import { expandParts } from '../partsClient.js';
 import { isFieldMuted } from '../../shared/promptFieldOrder.js';
 
 const FIELD_KEYS = Object.freeze(['common', 'positive', 'positiveRight', 'negative', 'negativeLeft', 'negativeRight', 'exclude']);
@@ -114,7 +115,8 @@ export function refineRequestFields(snapshot) {
     return Object.freeze({
         ...Object.fromEntries(FIELD_KEYS.map(key => [
             key,
-            muted.has(key) ? '' : stripDisabledTags(snapshot?.fields?.[key] ?? ''),
+            // the model sees the part's tags, not the "parts:<name>" token
+            muted.has(key) ? '' : expandParts(stripDisabledTags(snapshot?.fields?.[key] ?? '')),
         ])),
         locked: Object.freeze(FIELD_KEYS.filter(key => key !== 'exclude' && muted.has(key))),
     });

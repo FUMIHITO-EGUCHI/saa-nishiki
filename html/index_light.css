@@ -1104,6 +1104,13 @@ body {
 /* a sentence, sent as written (an action statement) */
 .tag-capsule-chip.is-sentence { border-style: dashed; }
 .tag-capsule-chip.is-sentence .tag-capsule-chip-name { font-style: italic; }
+/* a part ("parts:<name>", scripts/shared/parts.js): gold frame, the prefix small and gold,
+   the right segment counts its tags; a name no part answers to is struck through */
+.tag-capsule-chip.is-part { border-color: #b8962e; background: #fbf4dc; }
+.tag-capsule-chip.is-part .tag-capsule-chip-prefix { margin-right: 1px; color: #9a7413; font-size: 0.85em; }
+.tag-capsule-chip.is-part .tag-capsule-chip-weight { background: rgba(184, 150, 46, 0.16); color: #7a5c0e; border-left-color: rgba(0, 0, 0, 0.08); }
+.tag-capsule-chip.is-part-missing { border-style: dotted; }
+.tag-capsule-chip.is-part-missing .tag-capsule-chip-name { text-decoration: line-through; color: #8a7a4a; }
 
 /* one-touch enable/disable: the whole left end of the chip is the button (22px wide,
    full height); the 9px dot inside it shows the state */
@@ -2436,3 +2443,6 @@ body {
 .artist-profile-tag mark { color: #1d4e77; }
 .artist-profile-bar { background: #e2e2e8; }
 .artist-profile-bar i { background: #a9823f; }
+.selection-modal-chip.is-part { border-color: #b8962e; background: #fbf4dc; }
+.selection-modal-chip.is-part .selection-modal-chip-prefix { color: #9a7413; }
+.selection-modal-crosslink { border-color: #b8962e; color: #9a7413; }

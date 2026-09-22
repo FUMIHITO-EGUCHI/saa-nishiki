@@ -36,6 +36,8 @@ import { setupTagCapsuleFields } from './renderer/components/tagCapsuleField.js'
 import { fetchRelatedTags } from './renderer/tagRelatedClient.js';
 import { setupUiShell } from './renderer/uiShell.js';
 import { setupListManager } from './renderer/listManager.js';
+import { loadParts } from './renderer/partsClient.js';
+import { setupPartsUi } from './renderer/partsUi.js';
 import { filterPrompts } from './renderer/tools/promptFilter.js';
 import { setupRightClickMenu, addSpellCheckSuggestions } from './renderer/components/myRightClickMenu.js';
 import { extractHostPort } from './renderer/generate.js';
@@ -526,6 +528,9 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
         globalThis.prompt.negative_right,
         globalThis.prompt.exclude,
     ], ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
+    // Parts ("parts:<name>" tag bundles): the picker / card / editor the Scene rows and
+    // the chips open; before the fields, whose rows ask for it as they are built
+    setupPartsUi();
     globalThis.prompt.tagCapsuleFields = setupTagCapsuleFields([
         globalThis.prompt.common,
         globalThis.prompt.background,
@@ -791,6 +796,9 @@ async function init(){
 
         // 2026-08-30 layout glue (pipeline rows, AI card, run bar, left panel, status pills)
         setupUiShell();
+
+        // Parts: the document the chips and the prompt expand from
+        loadParts();
 
         // List manager (R3): user-diff editing for the bundled lists (Electron only)
         setupListManager();
