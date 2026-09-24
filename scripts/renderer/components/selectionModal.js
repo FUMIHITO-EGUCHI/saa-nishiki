@@ -840,6 +840,10 @@ export function createSelectionModal({
             pager = null;
             activeIndex = -1;
             applyTabConfig();
+            // the overlays share one z-index, so the last one in the body is on top: a
+            // modal opened from inside another dialog (the part editor's Choose tags…)
+            // goes to the end, above the dialog that opened it
+            if (document.body.lastElementChild !== overlay) document.body.appendChild(overlay);
             overlay.hidden = false;
             overlay.setAttribute('aria-hidden', 'false');
             document.addEventListener('keydown', onDialogKeyDown);

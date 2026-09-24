@@ -128,8 +128,14 @@ function openFrame({ title, className = '', onClose = null }) {
     dialog.append(header, body, footer);
     overlay.append(dialog);
     document.body.append(overlay);
+    // Escape closes this frame only while it is the topmost overlay: a picker opened
+    // from it (Choose tags…) sits above it and takes the key
     const onKey = event => {
-        if (event.key === 'Escape') { event.stopPropagation(); api.close(); }
+        if (event.key !== 'Escape') return;
+        const open = document.querySelectorAll('.selection-modal:not([hidden])');
+        if (open[open.length - 1] !== overlay) return;
+        event.stopPropagation();
+        api.close();
     };
     document.addEventListener('keydown', onKey, true);
     overlay.querySelector('.selection-modal-backdrop').addEventListener('click', () => api.close());

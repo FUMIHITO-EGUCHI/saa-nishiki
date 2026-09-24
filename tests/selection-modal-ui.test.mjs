@@ -743,6 +743,19 @@ test('the modal hands back exactly the handles the callers use, and destroy take
     });
 });
 
+test('open puts the overlay last in the body, so a modal opened from inside another dialog sits on top of it', async () => {
+    await withModal({ mode: 'multiple' }, async ({ document, modal, clock }) => {
+        const dialog = document.createElement('div');
+        dialog.className = 'selection-modal some-other-dialog';
+        document.body.appendChild(dialog);                 // opened after the modal was built
+        assert.equal(document.body.lastElementChild, dialog);
+        modal.open({ options: OPTIONS });
+        await clock.tick(0);
+        assert.equal(document.body.lastElementChild, modal.element, 'the modal moved above the dialog');
+        assert.equal(document.querySelectorAll('.selection-modal').length, 2, 'moved, not copied');
+    });
+});
+
 test('each modal gets its own ids, so two of them on one page do not share a listbox', async () => {
     await withModal({}, async ({ modal, clock, ui }) => {
         const second = createSelectionModal({ mode: 'multiple' });
