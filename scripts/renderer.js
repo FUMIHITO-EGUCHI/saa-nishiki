@@ -638,6 +638,18 @@ export async function createAI(SETTINGS, FILES, LANG) {
             value: SETTINGS.ai_local_addr,
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.ai_local_addr = value;}),
+        prose_student_server: setupTextbox('system-settings-ai-prose-student-server', LANG.ai_prose_student_server, {
+            value: SETTINGS.ai_prose_student_server ?? '',
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.ai_prose_student_server = value.trim(); }),
+        prose_student_model: setupTextbox('system-settings-ai-prose-student-model', LANG.ai_prose_student_model, {
+            value: SETTINGS.ai_prose_student_model ?? '',
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.ai_prose_student_model = value.trim(); }),
+        prose_student_port: setupTextbox('system-settings-ai-prose-student-port', LANG.ai_prose_student_port, {
+            value: String(SETTINGS.ai_prose_student_port ?? 8090),
+            maxLines: 1
+            }, true, (value) => { const port = Number.parseInt(value, 10); globalThis.globalSettings.ai_prose_student_port = Number.isInteger(port) && port > 0 ? port : 8090; }),
         pod_model: setupTextbox('system-settings-ai-pod-model', LANG.ai_pod_model, {
             value: SETTINGS.ai_pod_model,
             maxLines: 1

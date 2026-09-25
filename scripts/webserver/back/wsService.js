@@ -29,6 +29,7 @@ import { runComfyUI, runComfyUI_Regional, runComfyUI_ControlNet, runComfyUI_Mira
 import { runWebUI, runWebUI_Regional, cancelWebUI, startPollingWebUI, stopPollingWebUI, runWebUI_ControlNet, python_runWebUI,
     getControlNetProcessorList, getADetailerModelList, getUpscalersModelList, resetModelLists } from '../../main/generate_backend_webui.js';
 import { remoteAI, localAI } from '../../main/remoteAI_backend.js';
+import { ensureProseStudent } from '../../main/proseStudent.js';
 import { loadFile, readImage, readSafetensors, readBase64Image } from '../../main/fileHandlers.js';
 import { runImageTagger } from '../../main/imageTagger.js';
 import { getAppVersion, compressGzipThenBase64 } from '../../../main-common.js';
@@ -490,6 +491,7 @@ const methodHandlers = {
   // AI
   'remoteAI': (params)=> remoteAI(...params),
   'localAI': (params)=> localAI(...params),
+  'proseStudentEnsure': ()=> ensureProseStudent(getGlobalSettings() ?? {}),
 
   // character thumb
   'getCharacterThumb': (params)=> getCharacterThumb(...params),

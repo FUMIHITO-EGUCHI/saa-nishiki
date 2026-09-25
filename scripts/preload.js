@@ -156,6 +156,8 @@ contextBridge.exposeInMainWorld('api', {
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),
+  // the distilled Prose model's llama-server: started on demand, { ok, apiUrl, message }
+  proseStudentEnsure: async () => ipcRenderer.invoke('prose-student-ensure'),
   
   // generate_backend ComfyUI
   runComfyUI: async (generateData) => ipcRenderer.invoke('generate-backend-comfyui-run', generateData),

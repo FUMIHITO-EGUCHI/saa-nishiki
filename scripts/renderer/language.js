@@ -273,6 +273,9 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.ai.ai_select.setTitle(LANG.batch_generate_rule, LANG.ai_select, LANG.ai_select_title);
     globalThis.ai.ai_prompt_preview.setTitle(LANG.ai_prompt_preview);
     globalThis.ai.local_address.setTitle(LANG.ai_local_addr);
+    globalThis.ai.prose_student_server?.setTitle(LANG.ai_prose_student_server);
+    globalThis.ai.prose_student_model?.setTitle(LANG.ai_prose_student_model);
+    globalThis.ai.prose_student_port?.setTitle(LANG.ai_prose_student_port);
     globalThis.ai.pod_address.setTitle(LANG.ai_pod_addr);
     globalThis.ai.pod_model?.setTitle(LANG.ai_pod_model);
     globalThis.ai.pod_keep_alive?.setTitle(LANG.ai_pod_keep_alive);
@@ -443,6 +446,9 @@ export function updateSettings() {
 
     globalThis.ai.interface.updateDefaults(SETTINGS.ai_interface);
     globalThis.ai.local_address.setValue(SETTINGS.ai_local_addr);
+    globalThis.ai.prose_student_server?.setValue(SETTINGS.ai_prose_student_server ?? '');
+    globalThis.ai.prose_student_model?.setValue(SETTINGS.ai_prose_student_model ?? '');
+    globalThis.ai.prose_student_port?.setValue(String(SETTINGS.ai_prose_student_port ?? 8090));
     globalThis.ai.pod_address.setValue(SETTINGS.ai_pod_addr);
     globalThis.ai.pod_model?.setValue(SETTINGS.ai_pod_model);
     globalThis.ai.pod_keep_alive?.setValue(SETTINGS.ai_pod_keep_alive);

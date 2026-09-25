@@ -183,6 +183,13 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // what the paragraph dissolves: 'cast' (characters + action), 'scene' (+ background /
     // style) or 'all'; the rest goes out as the tags it was (scripts/shared/prosePrompt.js)
     ai_prose_scope: 'cast',
+    // who writes the paragraph: 'llm' = the AI card's Ollama / pod LLM with the full rules,
+    // 'student' = the distilled 2B model (scripts/main/proseStudent.js runs a llama-server
+    // from these two paths on this port; ~1 s a paragraph on a 4070 beside ComfyUI)
+    ai_prose_writer: 'llm',
+    ai_prose_student_server: '',
+    ai_prose_student_model: '',
+    ai_prose_student_port: 8090,
 
     api_interface: 'None',
     api_preview_refresh_time: 1,
@@ -300,6 +307,7 @@ export const SECTION_KEYS = Object.freeze({
         'common_batch', 'positive_batch', 'positive_right_batch', 'negative_batch', 'exclude_batch',
         'background_batch', 'style_batch', 'negative_left_batch', 'negative_right_batch',
         'ai_interface', 'ai_local_prompt_mode', 'ai_prompt_role', 'ai_prompt_preview', 'ai_prose_enable', 'ai_prose_scope',
+        'ai_prose_writer', 'ai_prose_student_server', 'ai_prose_student_model', 'ai_prose_student_port',
     ]),
     generation: Object.freeze([
         'random_seed', 'cfg', 'step', 'width', 'height', 'batch', 'api_image_landscape', 'api_model_sampler', 'api_model_scheduler',

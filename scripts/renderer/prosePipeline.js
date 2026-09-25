@@ -25,6 +25,7 @@ import { normalizeCustomFields } from '../shared/promptFieldOrder.js';
 import {
     PROSE_MODE,
     PROSE_SYSTEM_PROMPT,
+    PROSE_STUDENT_SYSTEM_PROMPT,
     buildProseFields,
     buildProseFieldsFromPositive,
     buildProseUserContent,
@@ -191,13 +192,31 @@ function fieldsFor(job, { positive, aiMode, aiText }) {
 // images go there too, and its GPU takes the LLM), unless the AI card explicitly says
 // Local; otherwise the AI card's local / pod Ollama. Independent of Off / Expand / Refine.
 export function proseEndpoint(settings = {}) {
+    // the distilled student: SAA's own llama-server on the loopback (scripts/main/proseStudent.js)
+    if (proseWriter(settings) === 'student') return { apiUrl: studentApiUrl(settings), apiAuth: '', student: true };
     const explicitLocal = String(settings.ai_interface ?? '') === 'Local';
     if (!explicitLocal && isPodSshLlm(settings)) return { apiUrl: POD_SSH_CHAT_URL, apiAuth: '' };
     return resolveLlmEndpoint(settings);
 }
 
+export const PROSE_WRITERS = Object.freeze(['llm', 'student']);
+
+/** 'llm' (the AI card's model with the full rules) or 'student' (the distilled 2B). */
+export function proseWriter(settings = {}) {
+    return settings?.ai_prose_writer === 'student' ? 'student' : 'llm';
+}
+
+export function studentApiUrl(settings = {}) {
+    const port = Number.parseInt(settings?.ai_prose_student_port, 10) || 8090;
+    return `http://127.0.0.1:${port}/v1/chat/completions`;
+}
+
 /** A short label of where the paragraph is written, for the Prose card. */
 export function describeProseEndpoint(settings = {}) {
+    if (proseWriter(settings) === 'student') {
+        const model = String(settings.ai_prose_student_model ?? '').split(/[\\/]/).pop().replace(/\.gguf$/i, '');
+        return model ? `Student · ${model}` : 'Student';
+    }
     const explicitLocal = String(settings.ai_interface ?? '') === 'Local';
     if (!explicitLocal && isPodSshLlm(settings)) {
         const model = String(settings.ai_pod_model ?? '').split('/').pop();
@@ -214,18 +233,28 @@ function modelMode(settings = {}) {
 
 // The endpoint and model a paragraph is written with: part of its cache key
 function proseTarget(settings = {}) {
-    const { apiUrl } = proseEndpoint(settings);
+    const { apiUrl, student } = proseEndpoint(settings);
+    if (student) return ['student', apiUrl, String(settings.ai_prose_student_model ?? '')].join('|');
     return [apiUrl, modelMode(settings), apiUrl === POD_SSH_CHAT_URL ? String(settings.ai_pod_model ?? '') : ''].join('|');
 }
 
 async function requestParagraph(fields) {
     const SETTINGS = globalThis.globalSettings ?? {};
     const endpoint = proseEndpoint(SETTINGS);
+    if (endpoint.student) {
+        // the student's server is started by the main process on first use; a missing exe or
+        // model is reported on the card (the tags then go out as written, like any failure)
+        const ready = await (globalThis.api?.proseStudentEnsure?.() ?? Promise.resolve({ ok: false, message: 'no bridge' }));
+        if (!ready?.ok) {
+            console.warn(CAT, 'student unavailable:', ready?.message ?? '');
+            return { ok: false, reason: 'student', prompt: '', message: String(ready?.message ?? '') };
+        }
+    }
     const content = await requestLocalAi({
         apiUrl: endpoint.apiUrl,
         apiAuth: endpoint.apiAuth,
         userPrompt: buildProseUserContent(fields),
-        systemPrompt: PROSE_SYSTEM_PROMPT,
+        systemPrompt: endpoint.student ? PROSE_STUDENT_SYSTEM_PROMPT : PROSE_SYSTEM_PROMPT,
         modelMode: modelMode(SETTINGS),
         aiUse: 'prose',
         promptMode: PROSE_MODE,
@@ -433,6 +462,7 @@ const FAIL_REASONS = Object.freeze({
     refusal: ['ai_prose_fail_refusal', 'the LLM declined to write it'],
     refs: ['ai_prose_fail_refs', 'the paragraph still named a character by "@n"'],
     'no-fields': ['ai_prose_fail_no_fields', 'the last run left no fields to write from'],
+    student: ['ai_prose_fail_student', 'the student model could not be started (Settings \u203a AI)'],
 });
 
 /** The image-info lines for a prose report (BBCode colours, like the rest of the info). */

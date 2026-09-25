@@ -11,6 +11,7 @@ import { podOllamaRequest } from './podSshTransport.js';
 import { normalizeKeepAlive } from '../shared/ollamaModels.js';
 import { getGlobalSettings } from './globalSettings.js';
 import { armRequestTimeout } from './requestTimeout.js';
+import { buildLlamaChatRequest } from '../shared/llamaChatRequest.js';
 
 const CAT = '[ModelAPI]';
 
@@ -131,16 +132,7 @@ function requestLocal(options) {
                 n_predict,
                 ...(keepAlive === undefined ? {} : { keepAlive: normalizeKeepAlive(keepAlive, 0) }),
             })
-            : {
-                temperature: temperature,
-                n_predict: n_predict,
-                cache_prompt: true,
-                stop: ["<|im_end|>"],
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: `${userPrompt};Response in English` }
-                ],
-            };
+            : buildLlamaChatRequest({ promptMode, systemPrompt, userPrompt, temperature, n_predict });
         if (isPodSshChatUrl(apiUrl)) {
             // Pod Ollama over the SSH relay: same request body, the reply comes back
             // as JSON from the relay instead of an HTTP response.

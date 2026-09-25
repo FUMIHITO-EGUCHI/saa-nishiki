@@ -37,6 +37,12 @@ Write:
 
 Return JSON: {"prompt": "<quality tags>, <paragraph>"}`;
 
+// The distilled Prose model (experiments/prose-small/distill: a 2B LoRA trained on the
+// 35B's answers) was trained under this short prompt instead of the rules above, and
+// answers without a schema. It must stay byte-for-byte what distill/student-system.txt
+// held at training time.
+export const PROSE_STUDENT_SYSTEM_PROMPT = 'Rewrite this image prompt (Danbooru tags as JSON fields) as: the common tags first, unchanged, then one English paragraph that names each character by the given tags verbatim, describes the action as what the bodies do with the acting character as the subject, and ends with the background and light. English only, nothing that is not in the input. Return JSON: {"prompt": "..."}';
+
 export const PROSE_RESPONSE_FORMAT = Object.freeze({
     type: 'object',
     properties: { prompt: { type: 'string' } },

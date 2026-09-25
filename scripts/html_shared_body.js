@@ -194,6 +194,8 @@ export const sharedBodyHTML = `
                 <div class="system-settings-ai-prose ui-switch" id="ai-prose-switch"></div>
                 <span class="ui-card-sub" id="prose-card-status"></span>
                 <div class="ui-card-tools">
+                  <span class="prose-scope-label" data-ui-text="ui_prose_writer_label">Writer</span>
+                  <div class="ai-mode-segment prose-scope-segment" id="prose-writer-segment" role="radiogroup" aria-label="Prose writer"></div>
                   <span class="prose-scope-label" data-ui-text="ui_prose_scope_label">Dissolve</span>
                   <div class="ai-mode-segment prose-scope-segment" id="prose-scope-segment" role="radiogroup" aria-label="Prose scope"></div>
                 </div>
@@ -605,6 +607,14 @@ export const sharedBodyHTML = `
                   <div class="settings-group-title">Local (Ollama / llama.cpp)</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_ai_local_note">Endpoint: an Ollama /api/chat or llama.cpp server URL. Prompt mode: Expand grows the prompt, Refine edits the existing prompts and weights.</span></span>
                   <div class="settings-grid">
                     <div class="system-settings-ai-local-address"></div>
+                  </div>
+                </div>
+                <div class="settings-group">
+                  <div class="settings-group-title">Prose student (distilled 2B)</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_prose_student_note">The Prose card's Student writer: SAA starts this llama-server with the GGUF on the port when the first paragraph is asked for, and stops it on exit. About 1 s a paragraph on a 12 GB card beside ComfyUI.</span></span>
+                  <div class="settings-grid">
+                    <div class="system-settings-ai-prose-student-server"></div>
+                    <div class="system-settings-ai-prose-student-model"></div>
+                    <div class="system-settings-ai-prose-student-port"></div>
                   </div>
                 </div>
                 <div class="settings-group" data-when-ai="Pod">
