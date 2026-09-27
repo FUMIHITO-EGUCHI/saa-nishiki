@@ -46,11 +46,6 @@ export function addPartSample(id, meta, dataUrl) {
     return getStore().addSample(id, meta ?? {}, png);
 }
 
-/** The bundled starter set merged in: { ok, added, skipped, doc }. */
-export function importPartsDefaults() {
-    return getStore().importDefaults();
-}
-
 export function readPartSample(id, sampleId) {
     const png = getStore().readSample(id, sampleId);
     return png ? `data:image/png;base64,${png.toString('base64')}` : null;
@@ -61,6 +56,5 @@ export function setupPartsBackend() {
     ipcMain.handle('parts-apply', async (event, change) => applyParts(change));
     ipcMain.handle('parts-add-sample', async (event, id, meta, dataUrl) => addPartSample(id, meta, dataUrl));
     ipcMain.handle('parts-sample-image', async (event, id, sampleId) => readPartSample(id, sampleId));
-    ipcMain.handle('parts-import-defaults', async () => importPartsDefaults());
     return true;
 }

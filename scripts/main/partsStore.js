@@ -6,15 +6,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { readJsonWithFallback, writeJsonAtomic } from './settingsStore.js';
-import { PARTS_SCHEMA, PARTS_SECTION, applyPartsChange, mergePartsDefaults, normalizePartsDoc, partFolderName, partId, partsDefaultsDoc } from '../shared/parts.js';
+import { PARTS_SCHEMA, PARTS_SECTION, applyPartsChange, mergePartsDefaults, normalizePartsDoc, partFolderName, partId, starterSetPending } from '../shared/parts.js';
 
 const CAT = '[PartsStore]';
 const FILE_NAME = 'parts.json';
 const IMAGE_DIR = 'parts';
 
 /**
- * `defaultsFile` (data/parts_defaults.json) is the bundled starter set: a settings folder
- * with no parts.json yet starts with it, and importDefaults() adds what a store lacks.
+ * `defaultsFile` (data/parts_defaults.json) is the bundled starter set. Every load merges
+ * it into the document when the document's starterVersion is older than the set's
+ * (scripts/shared/parts.js STARTER_SET_VERSION): the names the store lacks are added, a
+ * part the user has under the same name is left alone, and the version is recorded so a
+ * starter part the user deletes does not come back until the set itself grows.
  */
 export function createPartsStore({ rootDir, defaultsFile = '', saaVersion = '', now = () => new Date(), log = console, fsImpl = fs } = {}) {
     if (!rootDir) throw new Error('createPartsStore: rootDir is required');
@@ -43,24 +46,18 @@ export function createPartsStore({ rootDir, defaultsFile = '', saaVersion = '', 
         if (error) warn(`${FILE_NAME}: ${error.message}${source ? ` (using ${source})` : ''}`);
         const data = value && typeof value === 'object' && value.section === PARTS_SECTION ? value.data : null;
         doc = normalizePartsDoc(data);
-        // a fresh install (no parts.json, not even a .bak): the starter set is its first
-        // parts.json; an existing file, even an empty one, is the user's and stays as it is
-        if (value === null && !error) {
-            const seeded = partsDefaultsDoc(readDefaults(), stamp);
-            if (Object.keys(seeded.parts).length > 0) return save(seeded);
+        // the starter set, whenever this document has not seen the current one: a fresh
+        // install gets the whole set as its first parts.json, an older file gains the
+        // names it lacks. Without a readable bundled file the document stays as read.
+        if (starterSetPending(doc)) {
+            const raw = readDefaults();
+            if (raw) {
+                const { doc: merged, added } = mergePartsDefaults(doc, raw, stamp);
+                log?.info?.(CAT, `starter set v${merged.starterVersion}: ${added} part(s) added`);
+                return save(merged);
+            }
         }
         return doc;
-    }
-
-    /**
-     * Add the starter parts this store lacks; a part of the same name is never touched.
-     * Answers { ok, added, skipped, doc } - ok false when the bundled file cannot be read.
-     */
-    function importDefaults() {
-        const raw = readDefaults();
-        if (!raw) return { ok: false, added: 0, skipped: 0, doc: get() };
-        const { doc: next, added, skipped } = mergePartsDefaults(get(), raw, stamp);
-        return { ok: true, added, skipped, doc: added > 0 ? save(next) : get() };
     }
 
     function get() {
@@ -151,5 +148,5 @@ export function createPartsStore({ rootDir, defaultsFile = '', saaVersion = '', 
         return save({ parts: {} });
     }
 
-    return { file, imageRoot, load, get, save, apply, addSample, readSample, reset, importDefaults };
+    return { file, imageRoot, load, get, save, apply, addSample, readSample, reset };
 }

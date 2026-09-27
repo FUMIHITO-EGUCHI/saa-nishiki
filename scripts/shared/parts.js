@@ -176,7 +176,7 @@ export function expandOnePart(text, id, entry) {
 // ---------------------------------------------------------------- the document
 
 export function emptyPartsDoc() {
-    return { parts: {} };
+    return { parts: {}, starterVersion: 0 };
 }
 
 function cleanSample(raw) {
@@ -220,6 +220,9 @@ export function cleanPart(raw, fallbackId = '') {
 
 export function normalizePartsDoc(raw) {
     const doc = emptyPartsDoc();
+    // which starter set has been merged in (see STARTER_SET_VERSION); 0 = none yet
+    const version = Number(raw?.starterVersion);
+    doc.starterVersion = Number.isInteger(version) && version > 0 ? version : 0;
     const source = raw && typeof raw === 'object' && raw.parts && typeof raw.parts === 'object' ? raw.parts : null;
     if (!source) return doc;
     for (const [key, value] of Object.entries(source)) {
@@ -233,15 +236,33 @@ export function normalizePartsDoc(raw) {
 // ---------------------------------------------------------------- the starter set
 
 /**
+ * The version of the bundled starter set (data/parts_defaults.json). A parts document
+ * records the version it has been merged with (`starterVersion`); the store merges the
+ * set in whenever the document's version is older, adding the names it lacks and never
+ * touching a part the user already has. So every install has the whole set from the
+ * start, and a starter part the user deleted stays deleted until the set itself grows.
+ * Bump this whenever the bundled file gains names.
+ *   1: the first 85 (outfit, hair, body, background, other)
+ *   2: 175 across nine categories (camera, composition, tone, pose, expression added)
+ */
+export const STARTER_SET_VERSION = 2;
+
+/** True when the document has not yet been merged with the current starter set. */
+export function starterSetPending(doc) {
+    return (Number(doc?.starterVersion) || 0) < STARTER_SET_VERSION;
+}
+
+/**
  * The bundled starter parts (data/parts_defaults.json, `{ parts: [{ name, category, tags }] }`,
  * drafted and checked in design/parts/defaults) as a document: what a fresh install's
- * parts.json starts as, and what "Add starter set" merges in. An entry without a name
- * or tags is left out; a repeated name keeps its first entry.
+ * parts.json starts as, and what the store merges into an older document. An entry
+ * without a name or tags is left out; a repeated name keeps its first entry.
  */
 export function partsDefaultsDoc(raw, now = () => new Date().toISOString()) {
     const list = Array.isArray(raw?.parts) ? raw.parts : Array.isArray(raw) ? raw : [];
     const stamp = now();
     const doc = emptyPartsDoc();
+    doc.starterVersion = STARTER_SET_VERSION;
     for (const item of list) {
         const entry = cleanPart(item);
         if (!entry || !entry.tags) continue;
@@ -269,6 +290,7 @@ export function mergePartsDefaults(doc, raw, now = () => new Date().toISOString(
         next.parts[id] = entry;
         added += 1;
     }
+    next.starterVersion = STARTER_SET_VERSION;
     return { doc: next, added, skipped };
 }
 

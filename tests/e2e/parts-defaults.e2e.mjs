@@ -1,7 +1,8 @@
 // The starter set, end to end: a settings folder with no parts.json yet starts with the
 // bundled parts (data/parts_defaults.json), they show as tiles on the Positive row's
-// Parts tab, and the file they were seeded into is the ordinary parts.json. Real app;
-// no image is generated. Run with `npm run test:e2e`.
+// Parts tab, and the file they were seeded into is the ordinary parts.json; a parts.json
+// from before the set gains the names it lacks at launch, the user's own part kept.
+// Real app; no image is generated. Run with `npm run test:e2e`.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -41,4 +42,20 @@ test('a fresh install has the 175 starter parts, stored as its parts.json and of
     assert.ok(names.includes('parts:classroom') || names.some(name => name.startsWith('parts:')), 'tiles are named as parts');
     await page.key('Escape');
     await page.waitFor(`!document.querySelector('${OPEN_MODAL}')`, { label: 'the modal to close' });
+});
+
+test('a parts.json from before the starter set gains the whole set at launch, its own part kept as it was', async () => {
+    const older = await launchApp({ partsDoc: { parts: { 'sailor uniform': { name: 'Sailor Uniform', category: 'outfit', tags: 'serafuku, ~loafers' } } } });
+    try {
+        const { page } = older;
+        await page.waitFor(`globalThis.partsUi?.list?.().length === 175`, { label: 'the starter parts merged into the older store' });
+        const mine = JSON.parse(await page.evaluate(`JSON.stringify(globalThis.partsUi.get('sailor uniform'))`));
+        assert.equal(mine.name, 'Sailor Uniform', 'the user\'s part keeps its name');
+        assert.equal(mine.tags, 'serafuku, ~loafers', 'and its tags');
+        const envelope = JSON.parse(fs.readFileSync(path.join(older.settingsDir, 'parts.json'), 'utf8'));
+        assert.equal(Object.keys(envelope.data.parts).length, 175, 'the merge is saved');
+        assert.ok(envelope.data.starterVersion >= 2, 'and the set version with it, so the next launch merges nothing');
+    } finally {
+        await older.close();
+    }
 });
