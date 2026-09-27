@@ -120,6 +120,7 @@ export const sharedBodyHTML = `
                   <div class="regional-condition-main">
                     <div class="regional-condition-settings-1">
                       <div class="regional-condition-split"></div>
+                      <div class="regional-condition-panels ui-switch"></div>
                       <div class="regional-condition-image-ratio"></div>
                       <div class="regional-condition-overlap-ratio"></div>
                     </div>

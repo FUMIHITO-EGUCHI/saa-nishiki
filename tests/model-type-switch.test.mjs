@@ -293,3 +293,14 @@ test('the regional pair waiting in the settings is not poured into the cast of a
         assert.deepEqual([settings.character_left, settings.character_right], ['A', 'B'], 'the pair still waits');
     });
 });
+
+test('switching to Diffusion keeps Regional as it was: the switch stays enabled and its value is not forced off', async () => {
+    await withSwitchHarness({ api_model_type: 'Checkpoint', regional_condition: true }, async ({ settings, controls }) => {
+        await callback_api_model_type(0, ['Diffusion']);
+        assert.equal(controls.regional.enabled, true, 'Regional runs on a diffusion model too');
+        assert.equal(controls.regional.value, settings.regional_condition, 'the box shows the setting in force');
+        await callback_api_model_type(0, ['Checkpoint']);
+        assert.equal(controls.regional.enabled, true);
+        assert.equal(settings.regional_condition, true, 'the checkpoint\'s Regional came back');
+    });
+});

@@ -600,7 +600,10 @@ export async function createRegional(SETTINGS, FILES, LANG) {
             (index, value) => {
                 globalThis.globalSettings.regional_split = splitFromLabel(value);
                 document.dispatchEvent(new CustomEvent('saa:regional-split-changed'));
-            }, 5, false, true)
+            }, 5, false, true),
+        // "split screen, 2koma, two panels" after Common on both sides: the composition line
+        panels: setupCheckbox('regional-condition-panels', LANG.regional_panels || 'Panels', SETTINGS.regional_panels, true,
+            (value) => { globalThis.globalSettings.regional_panels = value; }),
     }
     globalThis.regional.split?.updateDefaults?.(splitLabel(SETTINGS.regional_split));
 }

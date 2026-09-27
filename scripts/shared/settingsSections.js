@@ -70,6 +70,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     regional_option_right: 'default',
     // 'left-right' | 'top-bottom' (regionalSides.js SPLITS)
     regional_split: 'left-right',
+    // the composition line: "split screen, 2koma, two panels" on both sides (design/composition/bench)
+    regional_panels: false,
     // generation settings remembered per model type (scripts/shared/modelTypeSettings.js)
     model_type_generation: {},
     // the Prompts card remembered per model type (scripts/shared/modelTypePrompts.js): a
@@ -315,7 +317,7 @@ export const SECTION_KEYS = Object.freeze({
         'api_hf_enable', 'api_hf_scale', 'api_hf_denoise', 'api_hf_upscaler_selected', 'api_hf_colortransfer', 'api_hf_random_seed', 'api_hf_steps',
         'api_refiner_enable', 'api_refiner_add_noise', 'api_refiner_model', 'api_refiner_model_vpred', 'api_refiner_ratio',
         'regional_condition', 'regional_swap', 'regional_overlap_ratio', 'regional_image_ratio',
-        'regional_str_left', 'regional_str_right', 'regional_option_left', 'regional_option_right', 'regional_split',
+        'regional_str_left', 'regional_str_right', 'regional_option_left', 'regional_option_right', 'regional_split', 'regional_panels',
     ]),
     lora: Object.freeze(['lora_slot']),
     adetailer: Object.freeze(['api_adetailer_enable', 'ad_slot']),

@@ -294,8 +294,8 @@ function setupProseCard() {
 
 // ------------------------------------------------------- model type (Diffusion) wording
 // With the Diffusion model type the Characters card is the Cast and the Prompts card the
-// Scene; the run bar offers the Anima sampling defaults. Regional / Refiner / ControlNet
-// are hidden through body.cast-mode (index.css); Fast stays (its own Diffusion set).
+// Scene; the run bar offers the Anima sampling defaults. Refiner / ControlNet are hidden
+// through body.cast-mode (index.css); Regional and Fast stay (Fast has its own Diffusion set).
 function setupModelTypeUi() {
     const charactersTitle = document.querySelector('.characters-card [data-ui-text="ui_characters_title"]');
     const charactersSub = document.querySelector('.characters-card [data-ui-text="ui_characters_sub"]');

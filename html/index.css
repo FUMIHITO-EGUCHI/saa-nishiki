@@ -1471,10 +1471,8 @@ html, body {
     gap: 6px;
 }
 
-/* Diffusion (Anima): Regional, Refiner and ControlNet belong to the checkpoint route
-   (Fast mode has a Diffusion set of its own: scripts/shared/fastMode.js) */
-.cast-mode .regional-condition-trigger-dummy,
-.cast-mode .scene-regional,
+/* Diffusion (Anima): Refiner and ControlNet belong to the checkpoint route (Fast mode
+   has a Diffusion set of its own: scripts/shared/fastMode.js); Regional runs on both */
 .cast-mode .pipeline-card .refiner-container,
 .cast-mode .pipeline-card .controlnet-container {
     display: none;

@@ -158,6 +158,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.regional.option_left?.setTitle(LANG.regional_option_left);
     globalThis.regional.option_right?.setTitle(LANG.regional_option_right);
     globalThis.regional.split?.setTitle(LANG.regional_split);
+    globalThis.regional.panels?.setTitle(LANG.regional_panels || 'Panels');
 
     globalThis.generate.seed.setTitle(LANG.random_seed);
     globalThis.generate.cfg.setTitle(LANG.cfg);
@@ -334,6 +335,7 @@ export function updateSettings() {
     globalThis.regional.option_left?.updateDefaults(SETTINGS.regional_option_left);
     globalThis.regional.option_right?.updateDefaults(SETTINGS.regional_option_right);
     globalThis.regional.split?.updateDefaults?.(splitLabel(SETTINGS.regional_split));
+    globalThis.regional.panels?.setValue?.(Boolean(SETTINGS.regional_panels));
     // loaded settings may carry the other split; the side labels follow
     document.dispatchEvent(new CustomEvent('saa:regional-split-changed'));
 

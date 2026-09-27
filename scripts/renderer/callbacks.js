@@ -221,15 +221,11 @@ async function applyModelType(value, previous, { clearPrompts }) {
         globalThis.generate.controlnet.setValue(false);
         globalThis.generate.controlnet.setEnable(false);
 
-        // Regional masking is built on the SDXL checkpoint route; a language-model encoder
-        // takes "who does what to whom" from the sentence instead (Prose on the AI card).
-        if (globalThis.generate.regionalCondition.getValue()) {
-            globalThis.generate.regionalCondition.setValue(false);
-            // the Scene is laid out once, below, after the cast mode is set
-            callback_regional_condition(false, false, { refreshScene: false });
-        }
-        globalThis.generate.regionalCondition.setEnable(false);
-        globalThis.generate.regionalCondition_dummy.setEnable(false);
+        // Regional runs on a diffusion model too: ConditioningSetMask works unchanged in
+        // the Anima workflow (design/composition/bench, 8/8 with the Panels preset), so
+        // the switch stays, each type remembering its own state (modelTypeSettings.js)
+        globalThis.generate.regionalCondition.setEnable(true);
+        globalThis.generate.regionalCondition_dummy.setEnable(true);
 
         //globalThis.generate.adetailer.setValue(false);
         //globalThis.generate.adetailer.setEnable(false);

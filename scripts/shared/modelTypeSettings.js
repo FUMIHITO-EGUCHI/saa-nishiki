@@ -9,7 +9,7 @@ export const MODEL_TYPES = Object.freeze(['Checkpoint', 'Diffusion']);
 export const GENERATION_KEYS = Object.freeze([
     'api_model_sampler', 'api_model_scheduler', 'step', 'cfg', 'width', 'height', 'api_image_landscape',
     'api_hf_enable', 'api_hf_scale', 'api_hf_denoise', 'api_hf_steps', 'api_hf_upscaler_selected',
-    // Regional is a checkpoint feature: it comes back on when the checkpoint comes back
+    // each type remembers whether it was running Regional
     'regional_condition',
 ]);
 

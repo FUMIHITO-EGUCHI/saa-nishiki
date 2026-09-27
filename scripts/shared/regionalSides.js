@@ -20,8 +20,7 @@ const BUILTIN_SIDES = Object.freeze({
     common: 'both',
     background: 'both',
     style: 'both',
-    // Regional is a Checkpoint feature and the Artist card a Diffusion one, so this only
-    // matters for the order list; an artist would apply to the whole image anyway.
+    // an artist applies to the whole image
     artist: 'both',
     negative: 'both',
     positive: 'left',
@@ -56,6 +55,16 @@ export function splitLabel(value) {
 
 export function splitFromLabel(label) {
     return SPLITS.find(split => SPLIT_LABELS[split] === label) ?? 'left-right';
+}
+
+// The Panels preset. The masks alone let the two regions fuse into one picture and the
+// tags alone mix their contents; both together drew a clean two-way split 8/8 on Anima
+// and Illustrious (design/composition/bench/FINDINGS.md). The tags go to both sides,
+// after Common, and only while Regional is on.
+export const PANEL_TAGS = 'split screen, 2koma, two panels';
+
+export function panelTags(settings = {}) {
+    return settings?.regional_condition && settings?.regional_panels ? PANEL_TAGS : '';
 }
 
 export function sideLabel(side, split) {

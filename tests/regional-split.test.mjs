@@ -94,3 +94,33 @@ test('every Refine default that shipped, schema 2 or 3, migrates to the current 
         assert.equal(resolveRefineSystemPrompt(`${prompt}\nMy own rule.`), `${prompt}\nMy own rule.`);
     }
 });
+
+// ---------------------------------------------------------------- Regional on a diffusion model, the Panels preset
+
+test('regional_panels is a stored generation setting, off by default', () => {
+    assert.equal(DEFAULT_SETTINGS.regional_panels, false);
+    assert.ok(SECTION_KEYS.generation.includes('regional_panels'));
+    assert.equal(normalizeSection('generation', { regional_panels: true }).regional_panels, true);
+});
+
+test('the panel tags come only while Regional and the preset are both on', async () => {
+    const { PANEL_TAGS, panelTags } = await import('../scripts/shared/regionalSides.js');
+    assert.equal(PANEL_TAGS, 'split screen, 2koma, two panels');
+    assert.equal(panelTags({ regional_condition: true, regional_panels: true }), PANEL_TAGS);
+    assert.equal(panelTags({ regional_condition: false, regional_panels: true }), '');
+    assert.equal(panelTags({ regional_condition: true }), '');
+    assert.equal(panelTags(), '');
+    assert.equal(summarizeRegional({ regional_image_ratio: 50, regional_panels: true }), 'L/R 50 · panels');
+});
+
+test('a diffusion model keeps Regional: nothing hides the switch or the Scene block, and the type switch leaves it alone', () => {
+    const css = read('html/index.css');
+    assert.doesNotMatch(css, /\.cast-mode \.regional-condition-trigger-dummy/, 'the Regional switch shows in cast mode');
+    assert.doesNotMatch(css, /\.cast-mode \.scene-regional/, 'the Scene\'s Regional block shows in cast mode');
+    assert.match(css, /\.cast-mode \.pipeline-card \.refiner-container/, 'Refiner stays a checkpoint affair');
+    const callbacks = read('scripts/renderer/callbacks.js');
+    assert.doesNotMatch(callbacks, /regionalCondition\.setEnable\(false\)/, 'the Diffusion branch no longer disables Regional');
+    // the regional prompt carries the Artist card tokens on a diffusion run
+    const regional = read('scripts/renderer/generate_regional.js');
+    assert.match(regional, /case 'artist': return \{ text: SETTINGS\.api_model_type === 'Diffusion' \? asFragment\(artistPrompt\(SETTINGS\)\)/);
+});
