@@ -154,6 +154,9 @@ class WebUI {
                     try {
                         const options = JSON.parse(responseData);
                         const isForge = 'forge_additional_modules' in options;
+                        // the modules Forge has loaded now (text encoders, VAE): a VAE
+                        // override is merged into them rather than put in their place
+                        this.forgeModules = Array.isArray(options.forge_additional_modules) ? options.forge_additional_modules.slice() : [];
                         console.log(CAT, `Backend detected: ${isForge ? 'Forge' : 'A1111'}`);
                         resolve(isForge);
                     } catch (error) {
@@ -205,9 +208,10 @@ class WebUI {
                 optionPayload["forge_additional_modules"] = [unet.clip_model, unet.vae_model];
             }
 
-            const vae_key = this.isForge ? "forge_additional_modules" : "sd_vae";
-            if (vae?.vae_override)
-                optionPayload[vae_key] = vae.vae;
+            if (vae?.vae_override) {
+                if (this.isForge) optionPayload["forge_additional_modules"] = this.forgeModulesWith(optionPayload["forge_additional_modules"], vae.vae, unet);
+                else optionPayload["sd_vae"] = vae.vae;
+            }
 
             if(img_prefix !== '[date]') {
                 console.error(CAT, 'Override directories_filename_pattern with:', img_prefix);                
@@ -236,10 +240,10 @@ class WebUI {
                 })
                 response.on('end', () => {
                     if (response.statusCode !== 200) {
-                        console.error(`${CAT} Error: setModel HTTP code: ${response.statusCode} - ${response.Data}`);
+                        console.error(`${CAT} Error: setModel HTTP code: ${response.statusCode} - ${responseData}`);
                         resolve(`Error HTTP ${response.statusCode}`);
+                        return;
                     }
-                    
                     resolve('200');
                 })
             });
@@ -264,9 +268,19 @@ class WebUI {
 
             request.write(body);
             request.end();
-
-            resolve('200');
+            // the answer decides: resolving here let the run start before the options
+            // were applied, and an error reply went unseen
         });
+    }
+
+    // Forge's module list with `vaeFile` as its VAE: the VAE it held (the Diffusion
+    // model's own, one whose file name says "vae", or Flux's ae.safetensors) is replaced,
+    // any other module kept.
+    forgeModulesWith(modules, vaeFile, unet) {
+        const held = Array.isArray(modules) ? modules : (Array.isArray(this.forgeModules) ? this.forgeModules : []);
+        const isVae = entry => (unet?.enable && entry === unet.vae_model) || /vae|^ae[._-]/i.test(String(entry).split(/[\\/]/).pop() ?? '');
+        const kept = held.filter(entry => entry !== vaeFile && !isVae(entry));
+        return [...kept, vaeFile];
     }
 
     create_override_settings_Forge(model, unet, vae, img_prefix = '[date]') {
@@ -282,7 +296,7 @@ class WebUI {
         }
 
         if (vae?.vae_override)
-            override_settings["forge_additional_modules"] = vae.vae;
+            override_settings["forge_additional_modules"] = this.forgeModulesWith(override_settings["forge_additional_modules"], vae.vae, unet);
 
         if(img_prefix !== '[date]') {
             console.error(CAT, 'Override directories_filename_pattern with:', img_prefix);                

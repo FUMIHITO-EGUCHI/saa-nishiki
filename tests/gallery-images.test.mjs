@@ -121,6 +121,29 @@ test('an arriving image takes the info its seed carried, and keeps it when the n
     });
 });
 
+test('the gallery keeps only the newest images, and never drops the one on show', async () => {
+    await withGallery(async ({ container, gallery }) => {
+        globalThis.globalSettings.gallery_max_images = 3;
+        for (const name of ['a', 'b', 'c', 'd', 'e']) gallery.appendImageData(png(name), name, '', 'True', true);
+        assert.equal(gallery.imageCount(), 3, 'two were dropped');
+        const shown = [...previews(container)].map(thumb => thumb.dataset.src);
+        assert.deepEqual(shown, [png('e'), png('d'), png('c')], 'the oldest went first, and the thumbnails were rebuilt');
+        assert.equal(container.querySelector('.cg-main-image').src, png('e'));
+
+        // the oldest is selected; the next arrival drops the one after it instead
+        clickPreview(container, previews(container)[2]);
+        assert.equal(container.querySelector('.cg-main-image').src, png('c'));
+        gallery.appendImageData(png('f'), 'f', '', 'True', false);
+        assert.deepEqual([...previews(container)].map(thumb => thumb.dataset.src), [png('f'), png('e'), png('c')]);
+        assert.equal(container.querySelector('.cg-main-image').src, png('c'), 'still on show');
+
+        // a setting that is not a number falls back to the default, so nothing is lost by mistake
+        globalThis.globalSettings.gallery_max_images = 'many';
+        for (let i = 0; i < 10; i++) gallery.appendImageData(png(`x${i}`), `x${i}`, '', 'True', true);
+        assert.equal(gallery.imageCount(), 13);
+    });
+});
+
 test('an explicit info wins over the seed lookup, and null opts out of it', async () => {
     await withGallery(async ({ container, gallery, info }) => {
         globalThis.generate.infoBySeed.set('42', 'txt2img run');

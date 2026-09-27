@@ -162,10 +162,10 @@ const WS_ONLY = new Map([
 ]);
 
 // Defects, not decisions. Each entry is a bridge that cannot work; the list exists so a
-// new broken bridge fails this test instead of quietly joining them.
-const NO_MAIN_HANDLER = new Map([
-    ['getImageComfyUI', 'scripts/preload.js:157 invokes generate-backend-comfyui-get-image, which no ipcMain.handle registers anywhere; nothing calls the method either'],
-]);
+// new broken bridge fails this test instead of quietly joining them. Empty since
+// getImageComfyUI (invoked a channel no handler registered, and nothing called it) was
+// removed; it stays so the next such bridge is named here or fails the test.
+const NO_MAIN_HANDLER = new Map([]);
 // Empty, and meant to stay that way: downloadURL used to be here (it took no parameters,
 // so `url` and `filePath` were undefined identifiers and the call threw), and now takes
 // the two it passes on. The list stays so a bridge that throws before it reaches IPC
@@ -229,7 +229,7 @@ test('the browser client can reach every bridged method that is not host-only', 
         assert.ok(bridged.has(name), `${name} is still a bridged method`);
         assert.ok(!wsHandlers.has(name), `${name} is on the exception list but wsService now handles it - take it off`);
     }
-    assert.equal(missing.length, 25, 'the size of the gap is known; a new one has to be argued for');
+    assert.equal(missing.length, 24, 'the size of the gap is known; a new one has to be argued for');
 });
 
 test('every websocket handler answers a method some client asks for', opts, () => {

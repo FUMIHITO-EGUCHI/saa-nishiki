@@ -267,6 +267,24 @@ test('a JPEG carries its metadata in the EXIF comment, whichever tool wrote it',
     assert.equal(plain.metadata.format, 'jpeg');
 });
 
+test('a JPEG comment is read in the charset it was written in: UTF-8, Latin-1 or UTF-16', opts, () => {
+    // most tools write the COM segment as UTF-8; this used to be decoded as UTF-16LE and
+    // came out as noise, so a Japanese comment was never found
+    const japanese = `parameters: 1girl, 少女, 笑顔\nNegative prompt: 低画質`;
+    const utf8 = handlers.readImage(jpeg(jpegSegment(0xFE, Buffer.from(japanese, 'utf8'))), 'u.jpg', 'image/jpeg');
+    assert.deepEqual(utf8.metadata, { data: japanese });
+
+    // bytes that are not UTF-8 are Latin-1, not replacement characters
+    const latin = 'parameters: café, naïve';
+    const latin1 = handlers.readImage(jpeg(jpegSegment(0xFE, Buffer.from(latin, 'latin1'))), 'l.jpg', 'image/jpeg');
+    assert.deepEqual(latin1.metadata, { data: latin });
+
+    // UTF-16 with a BOM keeps working, as does the BOM-less ASCII-range text of the test above
+    const bom = Buffer.concat([Buffer.from([0xFF, 0xFE]), Buffer.from(`parameters: ${A1111_TEXT}`, 'utf16le')]);
+    const utf16 = handlers.readImage(jpeg(jpegSegment(0xFE, bom)), 'w.jpg', 'image/jpeg');
+    assert.deepEqual(utf16.metadata, { data: `parameters: ${A1111_TEXT}` });
+});
+
 function webp(...chunks) {
     const body = Buffer.concat([Buffer.from('WEBP', 'ascii'), ...chunks]);
     return Buffer.concat([Buffer.from('RIFF', 'ascii'), (() => { const size = Buffer.alloc(4); size.writeUInt32LE(body.length); return size; })(), body]);

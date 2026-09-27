@@ -115,6 +115,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     api_image_landscape: false,
     scroll_to_last: false,
     keep_gallery: true,
+    gallery_max_images: 200,   // the gallery keeps this many data URLs; older ones are dropped
 
     custom_prompt: '',
     api_prompt: 'masterpiece, best quality, amazing quality',
@@ -290,7 +291,7 @@ export const SECTION_KEYS = Object.freeze({
         'ai_pod_addr', 'ai_pod_share_host', 'ai_pod_auth', 'ai_pod_model', 'ai_pod_keep_alive',
         'remote_ai_base_url', 'remote_ai_model', 'remote_ai_api_key', 'remote_ai_timeout',
         'tag_assist', 'tag_chip_alias', 'wildcard_random',
-        'keep_gallery', 'scroll_to_last', 'generate_auto_start',
+        'keep_gallery', 'scroll_to_last', 'gallery_max_images', 'generate_auto_start',
         'fav_characters',
         'fav_artists',
         'artist_recent',

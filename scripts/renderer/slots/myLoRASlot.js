@@ -134,12 +134,22 @@ function createSlotsFromValues(slotManager, slotValues, options = {}) {
     // Process each set of slot values
     for (let [loraName, modelStrength, clipStrength, enableValue] of slotValues) {
         // Validate LoRA existence if required
-        if (validateLoRA && !FILES.loraList.includes(loraName)) {
+        const loraList = Array.isArray(FILES.loraList) ? FILES.loraList : [];
+        const missing = loraName !== '' && loraList.length > 0 && !loraList.includes(loraName);
+        if (validateLoRA && missing) {
             console.warn(`LoRA "${loraName}" not found in loraList`);
             if (options.skipInvalid) {
                 console.log(`LoRA "${loraName}" skipped due to validation failure.`);
                 continue;
             }
+        }
+        // A name the list does not hold used to fall back to the list's first entry (the
+        // dropdown's default rule), so another LoRA went out in its place. The name stays
+        // as its own option, and the row is switched off until the file is there.
+        const nameOptions = missing ? [loraName, ...loraList] : loraList;
+        if (missing) {
+            console.warn(`LoRA "${loraName}" is not in the model folder: the row is kept by name and switched off`);
+            enableValue = 'OFF';
         }
 
         const className = slotManager.addSlot();
@@ -153,7 +163,7 @@ function createSlotsFromValues(slotManager, slotValues, options = {}) {
             const select1Component = mySimpleList(
                 slot.itemClasses.select1,
                 'LoRA',
-                FILES.loraList,
+                nameOptions,
                 null,
                 15,
                 true,
@@ -579,7 +589,8 @@ class SlotManager {
             let text2 = '0';
             let select2 = 'OFF';
     
-            const loraExists = FILES.loraList.includes(loraName);
+            // a list not read yet (empty) says nothing about the file: the row is kept as written
+            const loraExists = !Array.isArray(FILES.loraList) || FILES.loraList.length === 0 || FILES.loraList.includes(loraName);
             if (!loraExists) {
                 slotValues.push([select1, text1, text2, select2]);
                 continue;
