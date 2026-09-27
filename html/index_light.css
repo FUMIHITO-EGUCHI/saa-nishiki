@@ -1104,6 +1104,11 @@ body {
 /* a sentence, sent as written (an action statement) */
 .tag-capsule-chip.is-sentence { border-style: dashed; }
 .tag-capsule-chip.is-sentence .tag-capsule-chip-name { font-style: italic; }
+/* heat tier (shared/tagHeat.js): a dotted underline for a tag the models barely saw
+   (under 100 posts), a fainter one for a thin tag (under 1,000); a common tag is unmarked */
+.tag-capsule-chip.is-heat-weak .tag-capsule-chip-name { text-decoration: underline dotted #b8721a; text-underline-offset: 3px; }
+.tag-capsule-chip.is-heat-thin .tag-capsule-chip-name { text-decoration: underline dotted #9a9a9a; text-underline-offset: 3px; }
+.tag-weight-popover-title-heat { display: block; font-size: 0.8em; color: #7a7a7a; }
 /* a part ("parts:<name>", scripts/shared/parts.js): gold frame, the prefix small and gold,
    the right segment counts its tags; a name no part answers to is struck through */
 .tag-capsule-chip.is-part { border-color: #b8962e; background: #fbf4dc; }

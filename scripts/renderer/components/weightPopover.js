@@ -17,6 +17,8 @@ import {
 import { createIcon } from './tagCapsuleChip.js';
 import { tagText } from './tagUiText.js';
 import { TAG_ALIASES_EVENT, aliasFor, ensureAliases } from '../tagAliasClient.js';
+import { heatLabel } from '../../shared/tagHeat.js';
+import { tagHeat } from './tagDictionaryStatus.js';
 import { lookupKey, promptTagForm } from '../../shared/tagRelated.js';
 
 const POPOVER_WIDTH = 336;
@@ -72,7 +74,10 @@ export function createWeightPopover({ text = tagText } = {}) {
     const titleName = el('span', 'tag-weight-popover-title-name');
     const titleAlias = el('span', 'tag-weight-popover-title-alias');
     titleAlias.hidden = true;
-    title.append(titleName, titleAlias);
+    // the heat line: the tier wording and the post count (shared/tagHeat.js), when known
+    const titleHeat = el('span', 'tag-weight-popover-title-heat');
+    titleHeat.hidden = true;
+    title.append(titleName, titleAlias, titleHeat);
     root.setAttribute('aria-labelledby', title.id);
     // ★ / ☆: the tag in or out of the field's favorites (favoriteTags.js), when the
     // opener hands over `favorite: { isFavorite(value), toggle(value) }`
@@ -435,9 +440,13 @@ export function createWeightPopover({ text = tagText } = {}) {
     document.addEventListener(TAG_ALIASES_EVENT, onAliasesUpdated);
 
     function applyTitleAlias() {
-        const translation = aliasFor(session?.capsule?.value ?? '');
+        const value = session?.capsule?.value ?? '';
+        const translation = aliasFor(value);
         titleAlias.textContent = translation;
         titleAlias.hidden = !translation;
+        const heat = heatLabel(text, tagHeat(value));
+        titleHeat.textContent = heat;
+        titleHeat.hidden = !heat;
     }
 
     function renderFavButton() {

@@ -18,6 +18,7 @@ export const LOOKUP_BATCH = 2000;
 export const RETRY_AFTER_MS = 30000;
 
 const known = new Map();   // dictionary key -> boolean
+const heats = new Map();   // dictionary key -> post count, for the keys the dictionary knows
 const pending = new Set();
 let timer = null;
 let unavailableUntil = 0;  // Date.now() before which every value is left unmarked
@@ -32,6 +33,19 @@ export function tagStatus(value) {
         request(key);
         return undefined;
     });
+}
+
+/**
+ * The post count of a value's tag once the dictionary answered, else null: the chip's
+ * heat tier (shared/tagHeat.js). Asked for through tagStatus, so the answer is what one
+ * lookup already carried; a value tagStatus skips (not a tag, a Diffusion model) has none.
+ */
+export function tagHeat(value) {
+    if (Date.now() < unavailableUntil) return null;
+    if (globalThis.globalSettings?.api_model_type === 'Diffusion') return null;
+    const key = lintKey(value);
+    if (key === null) return null;
+    return heats.has(key) ? heats.get(key) : null;
 }
 
 // The Electron preload handler, or the same handler over the web front's websocket
@@ -67,7 +81,13 @@ async function flush() {
         const result = lookup ? await lookup(keys) : null;
         if (!result || result.loaded !== true) { pause(); return; }
         const hits = new Set(result.known);
-        for (const key of keys) known.set(key, hits.has(key));
+        const heat = result.heat && typeof result.heat === 'object' ? result.heat : {};
+        for (const key of keys) {
+            known.set(key, hits.has(key));
+            const count = Number(heat[key]);
+            if (hits.has(key) && Number.isFinite(count)) heats.set(key, count);
+            else heats.delete(key);
+        }
     } catch {
         pause();
         return;
@@ -78,6 +98,7 @@ async function flush() {
 /** Forget every answer (the dictionary was reloaded). */
 export function resetTagStatus() {
     known.clear();
+    heats.clear();
     unavailableUntil = 0;
 }
 

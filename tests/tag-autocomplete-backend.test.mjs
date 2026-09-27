@@ -114,7 +114,7 @@ test('the tag channels are registered once the dictionary loaded, and answer thr
     assert.deepEqual(stub.errorBoxes, []);
     const items = await stub.handlers['tag-get-suggestions']({}, 'hatsune');
     assert.deepEqual(names(items), ['hatsune_miku']);
-    assert.deepEqual(await stub.handlers['tag-lookup']({}, ['hatsune_miku', 'nonsense']), { loaded: true, known: ['hatsune_miku'] });
+    assert.deepEqual(await stub.handlers['tag-lookup']({}, ['hatsune_miku', 'nonsense']), { loaded: true, known: ['hatsune_miku'], heat: { hatsune_miku: 900000 } });
 });
 
 test('the dictionary is kept in popularity order', opts, async () => {
@@ -230,7 +230,7 @@ test('a language file that cannot be read leaves the dictionary unusable, not ha
     try {
         assert.equal(await backend.tagReload('ja-JP'), false, 'a language file that cannot be read fails the load');
         assert.deepEqual(backend.tagGet('hair'), [], 'no suggestions out of a dictionary that did not load');
-        assert.deepEqual(backend.tagLookup(['long_hair']), { loaded: false, known: [] });
+        assert.deepEqual(backend.tagLookup(['long_hair']), { loaded: false, known: [], heat: {} });
         assert.deepEqual(backend.getTagAliases(['long_hair']), { loaded: false, aliases: {} });
         assert.deepEqual(backend.getPromptList(), []);
     } finally {

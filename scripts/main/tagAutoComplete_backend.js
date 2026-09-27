@@ -463,15 +463,17 @@ async function setupTagAutoCompleteBackend(language = 'en-US'){
     return false;
 }
 
-// Which dictionary keys ("long_hair", see shared/tagLint.js) exist. `loaded: false`
-// while the tag file is missing, so the renderer never marks tags against an empty
-// dictionary.
-let tagKeySet = null;
+// Which dictionary keys ("long_hair", see shared/tagLint.js) exist, and the heat (post
+// count) of each one that does, for the chips' tier mark (shared/tagHeat.js). `loaded:
+// false` while the tag file is missing, so the renderer never marks tags against an
+// empty dictionary.
+let tagHeatMap = null;
 function tagLookup(keys) {
-    if (!tagBackend.dataLoaded) return { loaded: false, known: [] };
-    tagKeySet ??= new Set(tagBackend.prompts.map(entry => String(entry.prompt).toLocaleLowerCase()));
+    if (!tagBackend.dataLoaded) return { loaded: false, known: [], heat: {} };
+    tagHeatMap ??= new Map(tagBackend.prompts.map(entry => [String(entry.prompt).toLocaleLowerCase(), Number(entry.heat) || 0]));
     const list = Array.isArray(keys) ? keys.filter(key => typeof key === 'string').slice(0, 2000) : [];
-    return { loaded: true, known: list.filter(key => tagKeySet.has(key)) };
+    const known = list.filter(key => tagHeatMap.has(key));
+    return { loaded: true, known, heat: Object.fromEntries(known.map(key => [key, tagHeatMap.get(key)])) };
 }
 
 // Translation of each tag (the chip popover's alias line): { value: alias } from the
@@ -486,7 +488,7 @@ export function getTagAliases(tags) {
 }
 
 async function tagReload(language = activeLanguage){
-    tagKeySet = null;
+    tagHeatMap = null;
     tagEntryMap = null;
     tagBackend.prompts = [];
     tagBackend.lastCustomPrompt = "";

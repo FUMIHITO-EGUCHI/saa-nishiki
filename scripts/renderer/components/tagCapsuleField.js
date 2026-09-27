@@ -40,7 +40,7 @@ import { getWeightPopover } from './weightPopover.js';
 import { getBatchWeightDialog } from './batchWeightDialog.js';
 import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
 import { tagText } from './tagUiText.js';
-import { TAG_DICTIONARY_EVENT, tagStatus } from './tagDictionaryStatus.js';
+import { TAG_DICTIONARY_EVENT, tagHeat, tagStatus } from './tagDictionaryStatus.js';
 import { PARTS_CHANGED_EVENT, expandParts, partInfo } from '../partsClient.js';
 import { isPartToken } from '../../shared/parts.js';
 import { customFieldExtras, isCustomFieldId, normalizeCustomFields, normalizeOrder, setCustomFieldExtras } from '../../shared/promptFieldOrder.js';
@@ -402,6 +402,7 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
                 trailing: addSlot,
                 isFavorite: value => isFavoriteTag(favGroupForKey(key), value),
                 tagStatus,
+                tagHeat,
                 partInfo,
             });
             chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
