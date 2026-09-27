@@ -1,0 +1,251 @@
+{
+  "gpuLayers": 8,
+  "results": [
+    {
+      "model": "qwen35",
+      "lang": "en",
+      "id": "princess-carry",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, score_7, safe, 2girls",
+        "characters": [
+          {
+            "ref": "@1",
+            "tags": "short black hair, red eyes, black suit"
+          },
+          {
+            "ref": "@2",
+            "tags": "long blonde hair, blue eyes, white dress"
+          }
+        ],
+        "view": "full body",
+        "background": "indoors",
+        "style": "",
+        "positive": "",
+        "action": "@1 is carrying @2 in her arms"
+      },
+      "prompt": "masterpiece, best quality, score_7, safe, 2girls, two girls are indoors. The girl with short black hair, red eyes, and a black suit is carrying the girl with long blonde hair, blue eyes, and a white dress in her arms. The scene is indoors with a full body view.",
+      "ok": true,
+      "reason": "",
+      "wallSec": 64.867,
+      "loadSec": 47.5041415,
+      "promptTokens": 894,
+      "promptSec": 10.967821,
+      "outTokens": 75,
+      "outSec": 6.309617,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "hasRef": false,
+        "words": 48
+      }
+    },
+    {
+      "model": "qwen35",
+      "lang": "en",
+      "id": "piggyback",
+      "actor": "blonde",
+      "fields": {
+        "common": "masterpiece, best quality, score_7, safe, 2girls",
+        "characters": [
+          {
+            "ref": "@1",
+            "tags": "short black hair, red eyes, black jacket"
+          },
+          {
+            "ref": "@2",
+            "tags": "long blonde hair, blue eyes, white dress"
+          }
+        ],
+        "view": "full body",
+        "background": "outdoors, park",
+        "style": "",
+        "positive": "",
+        "action": "@2 is giving @1 a piggyback ride on her back"
+      },
+      "prompt": "masterpiece, best quality, score_7, safe, 2girls, two girls are in an outdoor park. The girl with short black hair, red eyes, and a black jacket is on the back of the girl with long blonde hair, blue eyes, and a white dress. The girl with long blonde hair, blue eyes, and a white dress carries the girl with short black hair, red eyes, and a black jacket on her back. The scene is set outdoors in a park with a full body view.",
+      "ok": true,
+      "reason": "",
+      "wallSec": 11.612,
+      "loadSec": 0.0090015,
+      "promptTokens": 901,
+      "promptSec": 2.118641999,
+      "outTokens": 115,
+      "outSec": 9.466373,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "hasRef": false,
+        "words": 83
+      }
+    },
+    {
+      "model": "qwen35",
+      "lang": "en",
+      "id": "headpat",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, score_7, safe, 2girls",
+        "characters": [
+          {
+            "ref": "@1",
+            "tags": "long black hair, red eyes, black coat"
+          },
+          {
+            "ref": "@2",
+            "tags": "short blonde hair, blue eyes, white blouse"
+          }
+        ],
+        "view": "upper body",
+        "background": "indoors",
+        "style": "",
+        "positive": "",
+        "action": "@1 is patting @2 on the head"
+      },
+      "prompt": "masterpiece, best quality, score_7, safe, 2girls, Two girls are indoors. The girl with long black hair, red eyes, and a black coat is patting the girl with short blonde hair, blue eyes, and a white blouse on the head. The scene is an upper body view with an indoor background.",
+      "ok": true,
+      "reason": "",
+      "wallSec": 8.274,
+      "loadSec": 0.0054991,
+      "promptTokens": 895,
+      "promptSec": 2.011501,
+      "outTokens": 78,
+      "outSec": 6.240732,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "hasRef": false,
+        "words": 50
+      }
+    },
+    {
+      "model": "qwen35gpu",
+      "lang": "en",
+      "id": "princess-carry",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, score_7, safe, 2girls",
+        "characters": [
+          {
+            "ref": "@1",
+            "tags": "short black hair, red eyes, black suit"
+          },
+          {
+            "ref": "@2",
+            "tags": "long blonde hair, blue eyes, white dress"
+          }
+        ],
+        "view": "full body",
+        "background": "indoors",
+        "style": "",
+        "positive": "",
+        "action": "@1 is carrying @2 in her arms"
+      },
+      "prompt": "masterpiece, best quality, score_7, safe, 2girls, There are two people indoors. The girl with short black hair, red eyes, and a black suit is carrying the girl with long blonde hair, blue eyes, and a white dress in her arms. The scene is indoors with a full body view.",
+      "ok": true,
+      "reason": "",
+      "wallSec": 25.997,
+      "loadSec": 18.241975,
+      "promptTokens": 894,
+      "promptSec": 2.89924,
+      "outTokens": 76,
+      "outSec": 4.814913,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "hasRef": false,
+        "words": 49
+      }
+    },
+    {
+      "model": "qwen35gpu",
+      "lang": "en",
+      "id": "piggyback",
+      "actor": "blonde",
+      "fields": {
+        "common": "masterpiece, best quality, score_7, safe, 2girls",
+        "characters": [
+          {
+            "ref": "@1",
+            "tags": "short black hair, red eyes, black jacket"
+          },
+          {
+            "ref": "@2",
+            "tags": "long blonde hair, blue eyes, white dress"
+          }
+        ],
+        "view": "full body",
+        "background": "outdoors, park",
+        "style": "",
+        "positive": "",
+        "action": "@2 is giving @1 a piggyback ride on her back"
+      },
+      "prompt": "masterpiece, best quality, score_7, safe, 2girls, Two people are in an outdoor park. The girl with short black hair, red eyes, and a black jacket stands with her arms around the other girl's neck. The girl with long blonde hair, blue eyes, and a white dress carries the first girl on her back. The girl with long blonde hair, blue eyes, and a white dress gives the girl with short black hair, red eyes, and a black jacket a piggyback ride on her back. The scene is set outdoors in a park with a full body view.",
+      "ok": true,
+      "reason": "",
+      "wallSec": 10.419,
+      "loadSec": 0.0090006,
+      "promptTokens": 901,
+      "promptSec": 0.871661,
+      "outTokens": 133,
+      "outSec": 9.523698,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "hasRef": false,
+        "words": 97
+      }
+    },
+    {
+      "model": "qwen35gpu",
+      "lang": "en",
+      "id": "headpat",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, score_7, safe, 2girls",
+        "characters": [
+          {
+            "ref": "@1",
+            "tags": "long black hair, red eyes, black coat"
+          },
+          {
+            "ref": "@2",
+            "tags": "short blonde hair, blue eyes, white blouse"
+          }
+        ],
+        "view": "upper body",
+        "background": "indoors",
+        "style": "",
+        "positive": "",
+        "action": "@1 is patting @2 on the head"
+      },
+      "prompt": "masterpiece, best quality, score_7, safe, 2girls, Two characters are indoors in an upper body view. The girl with long black hair, red eyes, and a black coat stands next to the girl with short blonde hair, blue eyes, and a white blouse. The girl with long black hair, red eyes, and a black coat pats the head of the girl with short blonde hair, blue eyes, and a white blouse.",
+      "ok": true,
+      "reason": "",
+      "wallSec": 7.628,
+      "loadSec": 0.004504,
+      "promptTokens": 895,
+      "promptSec": 0.934366,
+      "outTokens": 102,
+      "outSec": 6.673508,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "hasRef": false,
+        "words": 70
+      }
+    }
+  ]
+}

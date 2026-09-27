@@ -1,0 +1,121 @@
+{
+  "results": [
+    {
+      "model": "student-smoke",
+      "lang": "en",
+      "id": "princess-carry",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, score_7, safe, 2girls",
+        "characters": [
+          {
+            "ref": "@1",
+            "tags": "short black hair, red eyes, black suit"
+          },
+          {
+            "ref": "@2",
+            "tags": "long blonde hair, blue eyes, white dress"
+          }
+        ],
+        "view": "full body",
+        "background": "indoors",
+        "style": "",
+        "positive": "",
+        "action": "@1 is carrying @2 in her arms"
+      },
+      "prompt": "masterpiece, best quality, score_7, safe, 2girls, short black hair, red eyes, black suit, long blonde hair, blue eyes, white dress, indoors, action: @1 is carrying @2 in her arms",
+      "ok": true,
+      "wallSec": 5.832,
+      "promptTokens": 237,
+      "cacheTokens": 0,
+      "outTokens": 55,
+      "outTps": 10.915404202471047,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "hasRef": true,
+        "words": 29
+      }
+    },
+    {
+      "model": "student-smoke",
+      "lang": "en",
+      "id": "piggyback",
+      "actor": "blonde",
+      "fields": {
+        "common": "masterpiece, best quality, score_7, safe, 2girls",
+        "characters": [
+          {
+            "ref": "@1",
+            "tags": "short black hair, red eyes, black jacket"
+          },
+          {
+            "ref": "@2",
+            "tags": "long blonde hair, blue eyes, white dress"
+          }
+        ],
+        "view": "full body",
+        "background": "outdoors, park",
+        "style": "",
+        "positive": "",
+        "action": "@2 is giving @1 a piggyback ride on her back"
+      },
+      "prompt": "masterpiece, best quality, score_7, safe, 2girls, short black hair, red eyes, black jacket, long blonde hair, blue eyes, white dress, outdoors, park, long blonde hair, blue eyes, white dress, action: @2 is giving @1 a piggyback ride on her back",
+      "ok": true,
+      "wallSec": 7.546,
+      "promptTokens": 158,
+      "cacheTokens": 86,
+      "outTokens": 77,
+      "outTps": 11.057269965865043,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "hasRef": true,
+        "words": 40
+      }
+    },
+    {
+      "model": "student-smoke",
+      "lang": "en",
+      "id": "headpat",
+      "actor": "black",
+      "fields": {
+        "common": "masterpiece, best quality, score_7, safe, 2girls",
+        "characters": [
+          {
+            "ref": "@1",
+            "tags": "long black hair, red eyes, black coat"
+          },
+          {
+            "ref": "@2",
+            "tags": "short blonde hair, blue eyes, white blouse"
+          }
+        ],
+        "view": "upper body",
+        "background": "indoors",
+        "style": "",
+        "positive": "",
+        "action": "@1 is patting @2 on the head"
+      },
+      "prompt": "masterpiece, best quality, score_7, safe, 2girls, long black hair, red eyes, black coat, short blonde hair, blue eyes, white blouse, upper body, indoors, one English paragraph that names each character by the given tags verbatim, describes the action as what the bodies do with the acting character as the subject, and ends with the background and light: Two girls are shown in an indoor setting. One girl has long black hair, red eyes, and wears a black coat. The other girl has short blonde hair, blue eyes, and wears a white blouse. The girl in the black coat is patting the head of the girl in the white blouse. The scene is well-lit with soft indoor lighting.",
+      "ok": true,
+      "wallSec": 14.772,
+      "promptTokens": 152,
+      "cacheTokens": 86,
+      "outTokens": 162,
+      "outTps": 11.415520257726996,
+      "check": {
+        "nonEnglish": false,
+        "keepsQuality": true,
+        "missingLooks": [],
+        "saysLeftRight": false,
+        "hasRef": false,
+        "words": 117
+      }
+    }
+  ]
+}

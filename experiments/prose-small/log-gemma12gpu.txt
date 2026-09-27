@@ -1,0 +1,29 @@
+
+=== gemma12gpu (gemma4-12b-uncensored-comfy:latest), num_gpu=24, gpu mem before 6699 MiB ===
+
+[gemma12gpu en princess-carry] wall 30.3s load 9.3s prompt 899t/6.3s out 109t/14.6s (7.4 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=76
+  masterpiece, best quality, score_7, safe, 2girls, There are two people indoors. short black hair, red eyes, black suit is a girl with short black hair, red eyes, and a black suit. long blonde hair, blue eyes, white dress is a girl with long blonde hair, blue eyes, and a white dress. The girl with short black hair carries the girl with long blonde hair in her arms. The scene is a full body view set indoors.
+
+[gemma12gpu en piggyback] wall 108.7s load 90.7s prompt 905t/2.4s out 113t/15.6s (7.2 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=79
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls in a park. @1, a girl with short black hair, red eyes, and a black jacket, and @2, a girl with long blonde hair, blue eyes, and a white dress, are in the scene. The girl with long blonde hair and a white dress carries the girl with short black hair and a black jacket on her back. The scene is outdoors in a park with full body view.
+
+[gemma12gpu en headpat] wall 16.7s load 0.0s prompt 900t/1.7s out 115t/15.0s (7.7 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=82
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls indoors. long black hair, red eyes, black coat is a girl with long black hair, red eyes, and a black coat. short blonde hair, blue eyes, white blouse is a girl with short blonde hair, blue eyes, and a white blouse. The girl with long black hair and red eyes pats the girl with short blonde hair and blue eyes on the head. The scene is an upper body view set indoors.
+
+[gemma12gpu en kneel-and-stand] wall 20.7s load 0.0s prompt 909t/4.8s out 118t/16.0s (7.4 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=83
+  masterpiece, best quality, score_7, safe, 2girls, There are two people indoors. @1, a girl with short black hair, red eyes, and a black coat, and @2, a girl with long blonde hair, blue eyes, and a white dress. The girl with long blonde hair and a white dress kneels on the floor, and the girl with short black hair and a black coat stands in front of her looking down at her. The scene is a full body view in an indoor setting.
+
+[gemma12gpu en hands-apart] wall 128.3s load 109.7s prompt 905t/2.0s out 108t/16.5s (6.5 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=74
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls outdoors. @1, a girl with short black hair, red eyes, and a black jacket, and @2, a girl with long blonde hair, blue eyes, and a white summer dress, face each other. The girl with short black hair and the girl with long blonde hair stretch out their arms toward each other and hold hands. The scene is a full body view set outdoors.
+
+[gemma12gpu en feeding] wall 14.8s load 0.0s prompt 898t/2.1s out 101t/12.7s (7.9 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=68
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls in a cafe. @1, a girl with short black hair, red eyes, and a black jacket, and @2, a girl with long blonde hair, blue eyes, and a white blouse. The girl with short black hair holds a spoon and feeds the girl with long blonde hair. The scene is an upper body view set in a cafe.
+gpu mem while loaded 5190 MiB
+
+wrote C:\Users\kurah\Documents\Git\SAA-regional\experiments\prose-small\results.json

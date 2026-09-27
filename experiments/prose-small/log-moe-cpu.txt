@@ -1,0 +1,17 @@
+
+=== qwen35 (hf.co/HauhauCS/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive:Q4_K_M), num_gpu=0, gpu mem before 6368 MiB ===
+
+[qwen35 en princess-carry] wall 64.9s load 47.5s prompt 894t/11.0s out 75t/6.3s (11.9 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=48
+  masterpiece, best quality, score_7, safe, 2girls, two girls are indoors. The girl with short black hair, red eyes, and a black suit is carrying the girl with long blonde hair, blue eyes, and a white dress in her arms. The scene is indoors with a full body view.
+
+[qwen35 en piggyback] wall 11.6s load 0.0s prompt 901t/2.1s out 115t/9.5s (12.1 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=83
+  masterpiece, best quality, score_7, safe, 2girls, two girls are in an outdoor park. The girl with short black hair, red eyes, and a black jacket is on the back of the girl with long blonde hair, blue eyes, and a white dress. The girl with long blonde hair, blue eyes, and a white dress carries the girl with short black hair, red eyes, and a black jacket on her back. The scene is set outdoors in a park with a full body view.
+
+[qwen35 en headpat] wall 8.3s load 0.0s prompt 895t/2.0s out 78t/6.2s (12.5 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=50
+  masterpiece, best quality, score_7, safe, 2girls, Two girls are indoors. The girl with long black hair, red eyes, and a black coat is patting the girl with short blonde hair, blue eyes, and a white blouse on the head. The scene is an upper body view with an indoor background.
+gpu mem while loaded 6367 MiB
+
+wrote C:\Users\kurah\Documents\Git\SAA-regional\experiments\prose-small\results-moe.json

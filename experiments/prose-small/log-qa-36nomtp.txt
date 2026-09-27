@@ -1,0 +1,50 @@
+
+[qwen36-nomtp en princess-carry] wall 9.9s prompt_n=894 cache_n=0 out 92t (24.9 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=63
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls indoors. The first character is a girl with short black hair, red eyes, and a black suit. The second character is a girl with long blonde hair, blue eyes, and a white dress. The girl with short black hair carries the girl with long blonde hair in her arms. The scene is indoors.
+
+[qwen36-nomtp en piggyback] wall 6.7s prompt_n=158 cache_n=743 out 119t (24.4 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=88
+  masterpiece, best quality, score_7, safe, 2girls, There are two people in the scene. The first character is short black hair, red eyes, black jacket. The second character is long blonde hair, blue eyes, white dress. The girl with long blonde hair and blue eyes carries the girl with short black hair and red eyes on her back, supporting her weight with her arms while the girl with short black hair holds onto her shoulders. The scene is set outdoors in a park, framed as a full body view.
+
+[qwen36-nomtp en headpat] wall 5.1s prompt_n=152 cache_n=743 out 93t (27.8 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=63
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls indoors. The first character is a girl with long black hair, red eyes, and a black coat. The second character is a girl with short blonde hair, blue eyes, and a white blouse. The girl with long black hair pats the head of the girl with short blonde hair. The scene is indoors.
+
+[qwen36-nomtp en kneel-and-stand] wall 5.5s prompt_n=161 cache_n=743 out 100t (26.6 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=69
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls indoors. The first character is a girl with short black hair, red eyes, and a black coat. The second character is a girl with long blonde hair, blue eyes, and a white dress. The girl with long blonde hair kneels on the floor, and the girl with short black hair stands in front of her, looking down at her.
+
+[qwen36-nomtp en hands-apart] wall 5.9s prompt_n=157 cache_n=743 out 98t (23.7 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=68
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls standing outdoors. The first character is short black hair, red eyes, black jacket. The second character is long blonde hair, blue eyes, white summer dress. The girl with short black hair and the girl with long blonde hair face each other with their arms stretched out, holding hands. The scene is set outdoors with a full body view.
+
+[qwen36-nomtp en feeding] wall 4.2s prompt_n=151 cache_n=743 out 65t (26.0 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=38
+  masterpiece, best quality, score_7, safe, 2girls, two girls are in a cafe. short black hair, red eyes, black jacket is feeding long blonde hair, blue eyes, white blouse with a spoon. the scene is set in a cafe.
+
+[qwen36-nomtp ja princess-carry] wall 5.2s prompt_n=154 cache_n=743 out 92t (25.5 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=63
+  masterpiece, best quality, score_7, safe, 2girls, There are two people indoors. The first character is a girl with short black hair, red eyes, and a black suit. The second character is a girl with long blonde hair, blue eyes, and a white dress. The girl with short black hair carries the girl with long blonde hair in her arms. The scene is indoors.
+
+[qwen36-nomtp ja piggyback] wall 5.3s prompt_n=154 cache_n=743 out 99t (26.3 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=70
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls in the scene. The first character is short black hair, red eyes, black jacket. The second character is long blonde hair, blue eyes, white dress. The girl with long blonde hair and blue eyes carries the girl with short black hair and red eyes on her back. The scene is set outdoors in a park with a full body view.
+
+[qwen36-nomtp ja headpat] wall 5.7s prompt_n=153 cache_n=743 out 107t (26.5 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=74
+  masterpiece, best quality, score_7, safe, 2girls, Two girls are indoors. The girl with long black hair, red eyes, and a black coat is present. The girl with short blonde hair, blue eyes, and a white blouse is present. The girl with long black hair, red eyes, and a black coat strokes the head of the girl with short blonde hair, blue eyes, and a white blouse. The scene is an upper body view indoors.
+
+[qwen36-nomtp ja kneel-and-stand] wall 5.5s prompt_n=163 cache_n=743 out 100t (25.9 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=69
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls indoors. The first character is a girl with short black hair, red eyes, and a black coat. The second character is a girl with long blonde hair, blue eyes, and a white dress. The girl with long blonde hair kneels on the floor, and the girl with short black hair stands in front of her, looking down at her.
+
+[qwen36-nomtp ja hands-apart] wall 5.2s prompt_n=159 cache_n=743 out 89t (24.3 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=55
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls standing outdoors. gotoh hitori, a girl with short black hair, red eyes, and a black jacket, stands facing the other girl. the second girl, with long blonde hair, blue eyes, and a white summer dress, stands facing her. they extend their arms and hold hands.
+
+[qwen36-nomtp ja feeding] wall 4.0s prompt_n=155 cache_n=743 out 68t (28.3 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=41
+  masterpiece, best quality, score_7, safe, 2girls, two girls are in a cafe. short black hair, red eyes, black jacket is feeding long blonde hair, blue eyes, white blouse with a spoon. the scene is an upper body view in a cafe.
+
+wrote C:\Users\kurah\Documents\Git\SAA-regional\experiments\prose-small\results-qa-36nomtp.json
