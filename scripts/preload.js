@@ -153,6 +153,7 @@ contextBridge.exposeInMainWorld('api', {
   partsApply: async (change) => ipcRenderer.invoke('parts-apply', change),
   partsAddSample: async (id, meta, dataUrl) => ipcRenderer.invoke('parts-add-sample', id, meta, dataUrl),
   partsSampleImage: async (id, sampleId) => ipcRenderer.invoke('parts-sample-image', id, sampleId),
+  partsImportDefaults: async () => ipcRenderer.invoke('parts-import-defaults'),
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),

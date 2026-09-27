@@ -368,11 +368,14 @@ const RECORDER = `(() => {
 
 const READY = `Boolean(globalThis.generate?.generate_single && globalThis.mainGallery?.appendImageData && globalThis.globalSettings && document.querySelector('.model-type .mydropdown-input'))`;
 
-export async function launchApp({ settings = {}, startTimeoutMs = 90_000 } = {}) {
+export async function launchApp({ settings = {}, startTimeoutMs = 90_000, starterParts = false } = {}) {
     const flat = e2eSettings(settings);
     const runDir = fs.mkdtempSync(path.join(os.tmpdir(), 'saa-e2e-'));
     const settingsDir = path.join(runDir, 'settings');
     writeSettings(settingsDir, flat);
+    // a settings folder without parts.json starts with the bundled starter set; the tests
+    // that make their own parts start from an empty store instead
+    if (!starterParts) fs.writeFileSync(path.join(settingsDir, 'parts.json'), JSON.stringify(makeEnvelope('parts', { parts: {} }), null, 2));
     const port = await freePort();
     const log = fs.createWriteStream(path.join(runDir, 'app.log'));
     const child = spawn(await electronBinary(), ['.', `--saa-cdp-port=${port}`, `--saa-settings-dir=${settingsDir}`], {

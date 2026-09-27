@@ -23,7 +23,7 @@ import { updateWildcards, loadWildcard } from '../../main/wildCards.js';
 import { tagReload, tagGet, tagSearch, tagLookup, getTagAliases } from '../../main/tagAutoComplete_backend.js';
 import { getRelatedTags, hasRelatedDictionary } from '../../main/tagRelated_backend.js';
 import { getArtistProfile, hasArtistProfiles, searchArtists } from '../../main/artist_backend.js';
-import { addPartSample, applyParts, getPartsDoc, readPartSample } from '../../main/parts_backend.js';
+import { addPartSample, applyParts, getPartsDoc, importPartsDefaults, readPartSample } from '../../main/parts_backend.js';
 import { runComfyUI, runComfyUI_Regional, runComfyUI_ControlNet, runComfyUI_MiraITU, 
     openWsComfyUI, closeWsComfyUI, cancelComfyUI, python_runComfyUI } from '../../main/generate_backend_comfyui.js';
 import { runWebUI, runWebUI_Regional, cancelWebUI, startPollingWebUI, stopPollingWebUI, runWebUI_ControlNet, python_runWebUI,
@@ -487,6 +487,7 @@ const methodHandlers = {
   'partsApply': (params = [])=> applyParts(...params),
   'partsAddSample': (params = [])=> addPartSample(...params),
   'partsSampleImage': (params = [])=> readPartSample(...params),
+  'partsImportDefaults': ()=> importPartsDefaults(),
 
   // AI
   'remoteAI': (params)=> remoteAI(...params),

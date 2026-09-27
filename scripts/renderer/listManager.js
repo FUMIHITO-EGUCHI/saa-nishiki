@@ -6,7 +6,7 @@
 // socket, so the trigger button stays hidden in browser mode.
 
 import { openTagPicker } from './tagSelectionModal.js';
-import { PARTS_CHANGED_EVENT, applyPartsChange, partList, partsAvailable } from './partsClient.js';
+import { PARTS_CHANGED_EVENT, applyPartsChange, importPartsDefaults, partList, partsAvailable } from './partsClient.js';
 import { sampleTile } from './partsUi.js';
 import { PART_CATEGORIES, pickSample, sampleModelLabels } from '../shared/parts.js';
 
@@ -169,7 +169,20 @@ export function setupListManager() {
         missing.disabled = lacking === 0 || globalThis.generate?.api_interface?.getValue?.() !== 'ComfyUI';
         missing.addEventListener('click', () => globalThis.partsUi?.generateMissing());
         toolbar.append(missing);
+        // the bundled starter set, for a store that was emptied or an update that added names
+        const starter = el('button', 'list-manager-button parts-starter-button', text('parts_import_defaults', 'Add starter set'));
+        starter.type = 'button';
+        starter.addEventListener('click', async () => {
+            starter.disabled = true;
+            const result = await importPartsDefaults();
+            state.partsNote = result.ok
+                ? text('parts_import_defaults_result', 'Starter set: {0} added, {1} already there').replace('{0}', String(result.added)).replace('{1}', String(result.skipped))
+                : text('parts_import_defaults_failed', 'The starter set could not be read');
+            render();
+        });
+        toolbar.append(starter);
         body.append(toolbar);
+        if (state.partsNote) body.append(el('div', 'parts-lists-note parts-starter-note', state.partsNote));
 
         const needle = state.search.trim().toLowerCase();
         const rows = partList(state.partCategory ?? '')

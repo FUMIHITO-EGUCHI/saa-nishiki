@@ -54,3 +54,57 @@ test('a sample is written under the part folder, read back, and removed with its
     assert.deepEqual(store.get(), { parts: {} });
     fs.rmSync(rootDir, { recursive: true, force: true });
 });
+
+const DEFAULTS_FILE = path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..', 'data', 'parts_defaults.json');
+
+test('a settings folder without parts.json starts with the bundled starter set, written as its parts.json', () => {
+    const rootDir = tempRoot();
+    const store = createPartsStore({ rootDir, defaultsFile: DEFAULTS_FILE, now: () => new Date('2026-09-27T08:00:00Z'), log: null });
+    const doc = store.load();
+    assert.equal(Object.keys(doc.parts).length, 85);
+    assert.equal(doc.parts['sailor uniform'].created, '2026-09-27T08:00:00.000Z');
+    const envelope = JSON.parse(fs.readFileSync(path.join(rootDir, 'parts.json'), 'utf8'));
+    assert.equal(envelope.section, 'parts');
+    assert.equal(Object.keys(envelope.data.parts).length, 85, 'the seeded set is on disk, so a later launch does not seed again');
+    // without a starter file the store starts empty, as before
+    const bare = createPartsStore({ rootDir: tempRoot(), log: null });
+    assert.deepEqual(bare.get(), { parts: {} });
+    fs.rmSync(rootDir, { recursive: true, force: true });
+});
+
+test('an existing parts.json, even an empty one, is the user\'s and is not seeded', () => {
+    const rootDir = tempRoot();
+    const first = createPartsStore({ rootDir, log: null });
+    first.reset();
+    const store = createPartsStore({ rootDir, defaultsFile: DEFAULTS_FILE, log: null });
+    assert.deepEqual(store.load(), { parts: {} });
+    // a .bak alone counts as the user's file too
+    const withBak = tempRoot();
+    fs.writeFileSync(path.join(withBak, 'parts.json.bak'), JSON.stringify({ schema: 1, section: 'parts', data: { parts: { mine: { name: 'mine', category: 'hair', tags: 'bob cut' } } } }));
+    const fromBak = createPartsStore({ rootDir: withBak, defaultsFile: DEFAULTS_FILE, log: null });
+    assert.deepEqual(Object.keys(fromBak.load().parts), ['mine']);
+    fs.rmSync(rootDir, { recursive: true, force: true });
+    fs.rmSync(withBak, { recursive: true, force: true });
+});
+
+test('importDefaults adds the starter parts the store lacks and leaves a same-named part alone', () => {
+    const rootDir = tempRoot();
+    const store = createPartsStore({ rootDir, defaultsFile: DEFAULTS_FILE, now: () => new Date('2026-09-27T09:00:00Z'), log: null });
+    store.reset();
+    store.apply({ action: 'set', entry: { name: 'Sailor Uniform', category: 'outfit', tags: 'serafuku, ~loafers' } });
+    const result = store.importDefaults();
+    assert.deepEqual([result.ok, result.added, result.skipped], [true, 84, 1]);
+    assert.equal(result.doc.parts['sailor uniform'].tags, 'serafuku, ~loafers');
+    assert.equal(result.doc.parts['sailor uniform'].name, 'Sailor Uniform');
+    assert.equal(Object.keys(store.get().parts).length, 85);
+    const again = store.importDefaults();
+    assert.deepEqual([again.ok, again.added, again.skipped], [true, 0, 85]);
+    const reloaded = createPartsStore({ rootDir, log: null });
+    assert.equal(Object.keys(reloaded.get().parts).length, 85, 'the merge was saved');
+    // no starter file, or an unreadable one: refused, the store untouched
+    const none = createPartsStore({ rootDir: tempRoot(), log: null });
+    assert.deepEqual(none.importDefaults(), { ok: false, added: 0, skipped: 0, doc: { parts: {} } });
+    const broken = createPartsStore({ rootDir: tempRoot(), defaultsFile: path.join(rootDir, 'nope.json'), log: null });
+    assert.equal(broken.importDefaults().ok, false);
+    fs.rmSync(rootDir, { recursive: true, force: true });
+});

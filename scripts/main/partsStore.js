@@ -6,13 +6,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { readJsonWithFallback, writeJsonAtomic } from './settingsStore.js';
-import { PARTS_SCHEMA, PARTS_SECTION, applyPartsChange, normalizePartsDoc, partFolderName, partId } from '../shared/parts.js';
+import { PARTS_SCHEMA, PARTS_SECTION, applyPartsChange, mergePartsDefaults, normalizePartsDoc, partFolderName, partId, partsDefaultsDoc } from '../shared/parts.js';
 
 const CAT = '[PartsStore]';
 const FILE_NAME = 'parts.json';
 const IMAGE_DIR = 'parts';
 
-export function createPartsStore({ rootDir, saaVersion = '', now = () => new Date(), log = console, fsImpl = fs } = {}) {
+/**
+ * `defaultsFile` (data/parts_defaults.json) is the bundled starter set: a settings folder
+ * with no parts.json yet starts with it, and importDefaults() adds what a store lacks.
+ */
+export function createPartsStore({ rootDir, defaultsFile = '', saaVersion = '', now = () => new Date(), log = console, fsImpl = fs } = {}) {
     if (!rootDir) throw new Error('createPartsStore: rootDir is required');
     const file = path.join(rootDir, FILE_NAME);
     const imageRoot = path.join(rootDir, IMAGE_DIR);
@@ -24,12 +28,39 @@ export function createPartsStore({ rootDir, saaVersion = '', now = () => new Dat
 
     let doc = null;
 
+    function readDefaults() {
+        if (!defaultsFile) return null;
+        try {
+            return JSON.parse(fsImpl.readFileSync(defaultsFile, 'utf8'));
+        } catch (error) {
+            warn(`starter set ${defaultsFile}: ${error.message}`);
+            return null;
+        }
+    }
+
     function load() {
         const { value, source, error } = readJsonWithFallback(file, fsImpl);
         if (error) warn(`${FILE_NAME}: ${error.message}${source ? ` (using ${source})` : ''}`);
         const data = value && typeof value === 'object' && value.section === PARTS_SECTION ? value.data : null;
         doc = normalizePartsDoc(data);
+        // a fresh install (no parts.json, not even a .bak): the starter set is its first
+        // parts.json; an existing file, even an empty one, is the user's and stays as it is
+        if (value === null && !error) {
+            const seeded = partsDefaultsDoc(readDefaults(), stamp);
+            if (Object.keys(seeded.parts).length > 0) return save(seeded);
+        }
         return doc;
+    }
+
+    /**
+     * Add the starter parts this store lacks; a part of the same name is never touched.
+     * Answers { ok, added, skipped, doc } - ok false when the bundled file cannot be read.
+     */
+    function importDefaults() {
+        const raw = readDefaults();
+        if (!raw) return { ok: false, added: 0, skipped: 0, doc: get() };
+        const { doc: next, added, skipped } = mergePartsDefaults(get(), raw, stamp);
+        return { ok: true, added, skipped, doc: added > 0 ? save(next) : get() };
     }
 
     function get() {
@@ -120,5 +151,5 @@ export function createPartsStore({ rootDir, saaVersion = '', now = () => new Dat
         return save({ parts: {} });
     }
 
-    return { file, imageRoot, load, get, save, apply, addSample, readSample, reset };
+    return { file, imageRoot, load, get, save, apply, addSample, readSample, reset, importDefaults };
 }

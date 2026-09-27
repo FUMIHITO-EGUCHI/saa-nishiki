@@ -26,6 +26,7 @@ async function call(method, params = []) {
         case 'partsApply': return api?.partsApply?.(...params);
         case 'partsAddSample': return api?.partsAddSample?.(...params);
         case 'partsSampleImage': return api?.partsSampleImage?.(...params);
+        case 'partsImportDefaults': return api?.partsImportDefaults?.();
         default: return null;
     }
 }
@@ -82,6 +83,14 @@ export async function applyPartsChange(change) {
     const result = await call('partsApply', [change]);
     if (!result || typeof result !== 'object') return null;
     return replaceDoc(result);
+}
+
+/** Add the bundled starter parts the store lacks; answers { ok, added, skipped }. */
+export async function importPartsDefaults() {
+    const result = await call('partsImportDefaults');
+    if (!result || typeof result !== 'object') return { ok: false, added: 0, skipped: 0 };
+    if (result.doc && typeof result.doc === 'object') replaceDoc(result.doc);
+    return { ok: Boolean(result.ok), added: Number(result.added) || 0, skipped: Number(result.skipped) || 0 };
 }
 
 /** Store one sample image (a data URL from the generator) on a part. */

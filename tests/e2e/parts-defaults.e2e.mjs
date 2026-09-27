@@ -1,0 +1,44 @@
+// The starter set, end to end: a settings folder with no parts.json yet starts with the
+// bundled parts (data/parts_defaults.json), they show as tiles on the Positive row's
+// Parts tab, and the file they were seeded into is the ordinary parts.json. Real app;
+// no image is generated. Run with `npm run test:e2e`.
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import test from 'node:test';
+
+import { launchApp } from './harness.mjs';
+
+let app = null;
+
+test.before(async () => { app = await launchApp({ starterParts: true }); });
+test.after(async () => { await app?.close(); });
+
+const OPEN_MODAL = '.selection-modal:not([hidden])';
+
+test('a fresh install has the 85 starter parts, stored as its parts.json and offered on the Parts tab', async () => {
+    const { page } = app;
+    await page.waitFor(`globalThis.partsUi?.list?.().length === 85`, { label: 'the starter parts in the renderer' });
+    const entry = JSON.parse(await page.evaluate(`JSON.stringify(globalThis.partsUi.get('sailor uniform'))`));
+    assert.equal(entry.name, 'sailor uniform');
+    assert.equal(entry.category, 'outfit');
+    assert.match(entry.tags, /^serafuku, /);
+    assert.equal(entry.samples.length, 0, 'no sample ships with the set');
+    const categories = JSON.parse(await page.evaluate(`JSON.stringify(globalThis.partsUi.list().reduce((acc, part) => ({ ...acc, [part.category]: (acc[part.category] ?? 0) + 1 }), {}))`));
+    assert.deepEqual(categories, { outfit: 28, hair: 17, body: 12, background: 18, other: 10 });
+
+    const file = path.join(app.settingsDir, 'parts.json');
+    assert.ok(fs.existsSync(file), `${file} was written at first launch`);
+    const envelope = JSON.parse(fs.readFileSync(file, 'utf8'));
+    assert.equal(envelope.section, 'parts');
+    assert.equal(Object.keys(envelope.data.parts).length, 85);
+
+    // the row's "parts" button opens the row's tag modal on its Parts tab with every starter part a tile
+    await page.click('.prompt-positive .scene-parts-button');
+    await page.waitFor(`document.querySelectorAll('${OPEN_MODAL} .selection-modal-tile').length === 85`, { label: 'the row modal on its Parts tab with the starter tiles' });
+    const names = JSON.parse(await page.evaluate(`JSON.stringify([...document.querySelectorAll('${OPEN_MODAL} .parts-tile-name')].map(node => node.textContent))`));
+    assert.ok(names.includes('parts:sailor uniform'), 'the sailor uniform is among the tiles');
+    assert.ok(names.includes('parts:classroom') || names.some(name => name.startsWith('parts:')), 'tiles are named as parts');
+    await page.key('Escape');
+    await page.waitFor(`!document.querySelector('${OPEN_MODAL}')`, { label: 'the modal to close' });
+});

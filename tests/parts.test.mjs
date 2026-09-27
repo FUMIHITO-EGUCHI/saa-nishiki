@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 
 import {
     applyPartsChange,
@@ -16,6 +17,9 @@ import {
     renamePartTokens,
     sampleModelLabels,
     samplePrompt,
+    SAMPLE_PROMPT_VERSION,
+    partsDefaultsDoc,
+    mergePartsDefaults,
 } from '../scripts/shared/parts.js';
 
 const doc = normalizePartsDoc({
@@ -143,8 +147,17 @@ test('the sample prompt is the fixed base of the category and model plus the tag
     assert.match(anima.negative, /dress form/);
     assert.equal(anima.base, 'mannequin');
     const ill = samplePrompt({ category: 'hair', tags: 'twin tails', modelType: 'Checkpoint' });
-    assert.match(ill.positive, /faceless, white skin, colored skin, upper body/);
+    assert.match(ill.positive, /faceless, white skin, colored skin, white shirt, upper body/);
     assert.ok(!ill.positive.includes('mannequin'));
+    // the starter-set run (design/parts/defaults/SEEDING.md): a hair figure wears a shirt,
+    // a composition part is not overridden by "full body"
+    assert.match(samplePrompt({ category: 'hair', tags: 'ponytail', modelType: 'Diffusion' }).positive, /white mannequin, faceless, white shirt, upper body/);
+    for (const modelType of ['Diffusion', 'Checkpoint']) {
+        const other = samplePrompt({ category: 'other', tags: 'cowboy shot', modelType });
+        assert.doesNotMatch(other.positive, /full body/, `${modelType}: the composition tags decide the framing`);
+        assert.match(other.positive, /standing, .*cowboy shot$/);
+    }
+    assert.equal(SAMPLE_PROMPT_VERSION, 2, 'the bases changed, so samples of the old bases are told apart');
     const scenery = samplePrompt({ category: 'background', tags: 'classroom', modelType: 'Diffusion' });
     assert.match(scenery.positive, /no humans, scenery, classroom$/);
     const onChar = samplePrompt({ category: 'outfit', tags: 'serafuku', modelType: 'Diffusion', character: 'hatsune miku, aqua hair' });
@@ -152,4 +165,39 @@ test('the sample prompt is the fixed base of the category and model plus the tag
     assert.equal(onChar.base, 'character');
     assert.equal(partFolderName('Sailor  Uniform!'), 'sailor-uniform');
     assert.equal(partFolderName('日本'), 'part');
+});
+
+test('the bundled starter set is 85 parts in five categories, and merging never touches a part the user has', () => {
+    const raw = JSON.parse(readFileSync(new URL('../data/parts_defaults.json', import.meta.url), 'utf8'));
+    const defaults = partsDefaultsDoc(raw, () => '2026-09-27T00:00:00.000Z');
+    const ids = Object.keys(defaults.parts);
+    assert.equal(ids.length, 85);
+    const byCategory = {};
+    for (const entry of Object.values(defaults.parts)) byCategory[entry.category] = (byCategory[entry.category] ?? 0) + 1;
+    assert.deepEqual(byCategory, { outfit: 28, hair: 17, body: 12, background: 18, other: 10 });
+    assert.equal(defaults.parts['sailor uniform'].category, 'outfit');
+    assert.match(defaults.parts['sailor uniform'].tags, /^serafuku, /);
+    assert.deepEqual(defaults.parts['sailor uniform'].samples, []);
+    assert.equal(defaults.parts['sailor uniform'].created, '2026-09-27T00:00:00.000Z');
+    assert.ok(!('note' in defaults.parts['sailor uniform']), 'the draft\'s notes are not part of an entry');
+    for (const entry of Object.values(defaults.parts)) assert.ok(entry.tags, `${entry.name} has tags`);
+
+    // a user's "sailor uniform" (other tags, a sample, a pin) survives a merge; the rest is added
+    const mine = { parts: { 'sailor uniform': { name: 'Sailor Uniform', category: 'outfit', tags: 'serafuku, ~loafers', samples: [{ id: 's1', file: 's1.png' }], pinned: 's1', created: '2026-01-01T00:00:00.000Z', updated: '2026-01-02T00:00:00.000Z' } } };
+    const merged = mergePartsDefaults(mine, raw, () => '2026-09-27T00:00:00.000Z');
+    assert.equal(merged.added, 84);
+    assert.equal(merged.skipped, 1);
+    assert.equal(Object.keys(merged.doc.parts).length, 85);
+    assert.equal(merged.doc.parts['sailor uniform'].tags, 'serafuku, ~loafers');
+    assert.equal(merged.doc.parts['sailor uniform'].pinned, 's1');
+    assert.equal(merged.doc.parts['sailor uniform'].updated, '2026-01-02T00:00:00.000Z');
+    assert.equal(merged.doc.parts['blazer uniform'].created, '2026-09-27T00:00:00.000Z');
+    // a second merge adds nothing
+    const again = mergePartsDefaults(merged.doc, raw);
+    assert.deepEqual([again.added, again.skipped], [0, 85]);
+    // an entry without a name or tags, or a repeated name, is left out of the set
+    const odd = partsDefaultsDoc({ parts: [{ name: 'a', category: 'hair', tags: 'bob cut' }, { name: 'A', category: 'hair', tags: 'other' }, { name: '', tags: 'x' }, { name: 'b', category: 'body' }] });
+    assert.deepEqual(Object.keys(odd.parts), ['a']);
+    assert.equal(odd.parts.a.tags, 'bob cut');
+    assert.deepEqual(partsDefaultsDoc(null).parts, {});
 });

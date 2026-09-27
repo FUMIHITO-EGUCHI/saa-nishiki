@@ -14,7 +14,7 @@ let store = null;
 
 function getStore() {
     if (!store) {
-        store = createPartsStore({ rootDir: resolveSettingsRoot(appPath), saaVersion: app.getVersion?.() ?? '', log: console });
+        store = createPartsStore({ rootDir: resolveSettingsRoot(appPath), defaultsFile: path.join(appPath, 'data', 'parts_defaults.json'), saaVersion: app.getVersion?.() ?? '', log: console });
         store.load();
         console.log(CAT, `${Object.keys(store.get().parts).length} parts loaded from ${store.file}`);
     }
@@ -46,6 +46,11 @@ export function addPartSample(id, meta, dataUrl) {
     return getStore().addSample(id, meta ?? {}, png);
 }
 
+/** The bundled starter set merged in: { ok, added, skipped, doc }. */
+export function importPartsDefaults() {
+    return getStore().importDefaults();
+}
+
 export function readPartSample(id, sampleId) {
     const png = getStore().readSample(id, sampleId);
     return png ? `data:image/png;base64,${png.toString('base64')}` : null;
@@ -56,5 +61,6 @@ export function setupPartsBackend() {
     ipcMain.handle('parts-apply', async (event, change) => applyParts(change));
     ipcMain.handle('parts-add-sample', async (event, id, meta, dataUrl) => addPartSample(id, meta, dataUrl));
     ipcMain.handle('parts-sample-image', async (event, id, sampleId) => readPartSample(id, sampleId));
+    ipcMain.handle('parts-import-defaults', async () => importPartsDefaults());
     return true;
 }

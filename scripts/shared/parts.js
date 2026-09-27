@@ -230,6 +230,48 @@ export function normalizePartsDoc(raw) {
     return doc;
 }
 
+// ---------------------------------------------------------------- the starter set
+
+/**
+ * The bundled starter parts (data/parts_defaults.json, `{ parts: [{ name, category, tags }] }`,
+ * drafted and checked in design/parts/defaults) as a document: what a fresh install's
+ * parts.json starts as, and what "Add starter set" merges in. An entry without a name
+ * or tags is left out; a repeated name keeps its first entry.
+ */
+export function partsDefaultsDoc(raw, now = () => new Date().toISOString()) {
+    const list = Array.isArray(raw?.parts) ? raw.parts : Array.isArray(raw) ? raw : [];
+    const stamp = now();
+    const doc = emptyPartsDoc();
+    for (const item of list) {
+        const entry = cleanPart(item);
+        if (!entry || !entry.tags) continue;
+        const id = partId(entry.name);
+        if (doc.parts[id]) continue;
+        doc.parts[id] = { ...entry, samples: [], pinned: null, created: stamp, updated: stamp };
+    }
+    return doc;
+}
+
+/**
+ * The starter parts a document lacks, added to it. A part the user already has under
+ * that name keeps its tags, samples and pin, whatever the starter set says.
+ * Answers { doc, added, skipped }.
+ */
+export function mergePartsDefaults(doc, raw, now = () => new Date().toISOString()) {
+    const next = normalizePartsDoc(doc);
+    let added = 0;
+    let skipped = 0;
+    for (const [id, entry] of Object.entries(partsDefaultsDoc(raw, now).parts)) {
+        if (next.parts[id]) {
+            skipped += 1;
+            continue;
+        }
+        next.parts[id] = entry;
+        added += 1;
+    }
+    return { doc: next, added, skipped };
+}
+
 /** Entries as a list, newest first by `updated`, then by name. */
 export function listParts(doc, category = '') {
     const wanted = category ? normalizeCategory(category) : '';
@@ -345,7 +387,11 @@ export function pickSample(entry, modelType) {
 // shop dress form beside a real girl for that wording, so it gets a faceless
 // white-skinned figure and a negative against a second one. Bump SAMPLE_PROMPT_VERSION
 // when any of these change: History tells samples of different versions apart.
-export const SAMPLE_PROMPT_VERSION = 1;
+// v2 (2026-09-27, the starter-set run of design/parts/defaults): the hair figure wears a
+// white shirt (an upper-body mannequin with no clothes named came out topless for six of
+// seventeen hairstyles), and the `other` figure is no longer "full body", which overrode
+// composition parts such as upper body, cowboy shot and close-up.
+export const SAMPLE_PROMPT_VERSION = 2;
 export const SAMPLE_SIZE = Object.freeze({ width: 512, height: 704 });
 export const SAMPLE_SEED = 3;
 // the bench's sampler settings, not the run bar's (a sample looks the same whatever the
@@ -358,17 +404,17 @@ export const SAMPLE_GENERATION = Object.freeze({
 const MANNEQUIN = Object.freeze({
     Diffusion: Object.freeze({
         outfit: '1girl, white mannequin, faceless, bald, standing, arms at sides, full body, simple background, white background',
-        hair: '1girl, white mannequin, faceless, upper body, facing viewer, simple background, white background',
+        hair: '1girl, white mannequin, faceless, white shirt, upper body, facing viewer, simple background, white background',
         body: '1girl, white mannequin, faceless, bald, white bodysuit, standing, full body, simple background, white background',
         background: 'no humans, scenery',
-        other: '1girl, white mannequin, faceless, standing, full body, simple background, white background',
+        other: '1girl, white mannequin, faceless, standing, simple background, white background',
     }),
     Checkpoint: Object.freeze({
         outfit: '1girl, solo, faceless, bald, white skin, colored skin, standing, facing viewer, looking at viewer, arms at sides, full body, simple background, white background',
-        hair: '1girl, solo, faceless, white skin, colored skin, upper body, facing viewer, looking at viewer, simple background, white background',
+        hair: '1girl, solo, faceless, white skin, colored skin, white shirt, upper body, facing viewer, looking at viewer, simple background, white background',
         body: '1girl, solo, faceless, bald, white skin, colored skin, white bodysuit, standing, facing viewer, looking at viewer, full body, simple background, white background',
         background: 'no humans, scenery',
-        other: '1girl, solo, faceless, white skin, colored skin, standing, facing viewer, looking at viewer, full body, simple background, white background',
+        other: '1girl, solo, faceless, white skin, colored skin, standing, facing viewer, looking at viewer, simple background, white background',
     }),
 });
 
