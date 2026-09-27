@@ -157,7 +157,7 @@ test('the sample prompt is the fixed base of the category and model plus the tag
         assert.doesNotMatch(other.positive, /full body/, `${modelType}: the composition tags decide the framing`);
         assert.match(other.positive, /standing, .*cowboy shot$/);
     }
-    assert.equal(SAMPLE_PROMPT_VERSION, 2, 'the bases changed, so samples of the old bases are told apart');
+    assert.equal(SAMPLE_PROMPT_VERSION, 3, 'the bases changed, so samples of the old bases are told apart');
     const scenery = samplePrompt({ category: 'background', tags: 'classroom', modelType: 'Diffusion' });
     assert.match(scenery.positive, /no humans, scenery, classroom$/);
     const onChar = samplePrompt({ category: 'outfit', tags: 'serafuku', modelType: 'Diffusion', character: 'hatsune miku, aqua hair' });
@@ -167,14 +167,14 @@ test('the sample prompt is the fixed base of the category and model plus the tag
     assert.equal(partFolderName('日本'), 'part');
 });
 
-test('the bundled starter set is 85 parts in five categories, and merging never touches a part the user has', () => {
+test('the bundled starter set is 175 parts in nine categories, and merging never touches a part the user has', () => {
     const raw = JSON.parse(readFileSync(new URL('../data/parts_defaults.json', import.meta.url), 'utf8'));
     const defaults = partsDefaultsDoc(raw, () => '2026-09-27T00:00:00.000Z');
     const ids = Object.keys(defaults.parts);
-    assert.equal(ids.length, 85);
+    assert.equal(ids.length, 175);
     const byCategory = {};
     for (const entry of Object.values(defaults.parts)) byCategory[entry.category] = (byCategory[entry.category] ?? 0) + 1;
-    assert.deepEqual(byCategory, { outfit: 28, hair: 17, body: 12, background: 18, other: 10 });
+    assert.deepEqual(byCategory, { outfit: 28, hair: 17, body: 12, background: 18, camera: 24, composition: 14, tone: 24, pose: 20, expression: 18 });
     assert.equal(defaults.parts['sailor uniform'].category, 'outfit');
     assert.match(defaults.parts['sailor uniform'].tags, /^serafuku, /);
     assert.deepEqual(defaults.parts['sailor uniform'].samples, []);
@@ -185,19 +185,44 @@ test('the bundled starter set is 85 parts in five categories, and merging never 
     // a user's "sailor uniform" (other tags, a sample, a pin) survives a merge; the rest is added
     const mine = { parts: { 'sailor uniform': { name: 'Sailor Uniform', category: 'outfit', tags: 'serafuku, ~loafers', samples: [{ id: 's1', file: 's1.png' }], pinned: 's1', created: '2026-01-01T00:00:00.000Z', updated: '2026-01-02T00:00:00.000Z' } } };
     const merged = mergePartsDefaults(mine, raw, () => '2026-09-27T00:00:00.000Z');
-    assert.equal(merged.added, 84);
+    assert.equal(merged.added, 174);
     assert.equal(merged.skipped, 1);
-    assert.equal(Object.keys(merged.doc.parts).length, 85);
+    assert.equal(Object.keys(merged.doc.parts).length, 175);
     assert.equal(merged.doc.parts['sailor uniform'].tags, 'serafuku, ~loafers');
     assert.equal(merged.doc.parts['sailor uniform'].pinned, 's1');
     assert.equal(merged.doc.parts['sailor uniform'].updated, '2026-01-02T00:00:00.000Z');
     assert.equal(merged.doc.parts['blazer uniform'].created, '2026-09-27T00:00:00.000Z');
     // a second merge adds nothing
     const again = mergePartsDefaults(merged.doc, raw);
-    assert.deepEqual([again.added, again.skipped], [0, 85]);
+    assert.deepEqual([again.added, again.skipped], [0, 175]);
     // an entry without a name or tags, or a repeated name, is left out of the set
     const odd = partsDefaultsDoc({ parts: [{ name: 'a', category: 'hair', tags: 'bob cut' }, { name: 'A', category: 'hair', tags: 'other' }, { name: '', tags: 'x' }, { name: 'b', category: 'body' }] });
     assert.deepEqual(Object.keys(odd.parts), ['a']);
     assert.equal(odd.parts.a.tags, 'bob cut');
     assert.deepEqual(partsDefaultsDoc(null).parts, {});
+});
+
+test('the five template categories have a mannequin base that lets the part decide, and unique starter names', async () => {
+    const { PART_CATEGORIES, samplePrompt, partsDefaultsDoc } = await import('../scripts/shared/parts.js');
+    assert.deepEqual(PART_CATEGORIES, ['outfit', 'hair', 'body', 'background', 'camera', 'composition', 'tone', 'pose', 'expression', 'other']);
+    for (const modelType of ['Diffusion', 'Checkpoint']) {
+        const camera = samplePrompt({ category: 'camera', tags: 'from above', modelType }).positive;
+        assert.doesNotMatch(camera, /facing viewer|looking at viewer/, 'the camera part decides the gaze and the angle');
+        assert.match(camera, /wooden floor/, 'a floor so the angle reads');
+        const composition = samplePrompt({ category: 'composition', tags: 'multiple views', modelType });
+        assert.doesNotMatch(composition.positive, /full body|upper body|solo/, 'no framing and no single-view tag for a composition part');
+        assert.doesNotMatch(composition.negative, /multiple views|2girls|multiple girls/, 'the composition negative does not refuse a second view');
+        assert.match(samplePrompt({ category: 'outfit', tags: 'x', modelType }).negative, /multiple views/, 'every other category keeps it');
+        const pose = samplePrompt({ category: 'pose', tags: 'kneeling', modelType }).positive;
+        assert.doesNotMatch(pose, /standing|arms at sides/, 'the pose part decides the pose');
+        const expression = samplePrompt({ category: 'expression', tags: 'smile', modelType }).positive;
+        assert.doesNotMatch(expression, /faceless/, 'an expression needs a face');
+        assert.match(expression, /upper body/);
+        assert.match(samplePrompt({ category: 'tone', tags: 'sepia', modelType }).positive, /white bodysuit/, 'the tone sample keeps the figure fixed so only the colour changes');
+    }
+    const raw = JSON.parse(readFileSync(new URL('../data/parts_defaults.json', import.meta.url), 'utf8'));
+    const names = raw.parts.map(part => part.name.toLowerCase());
+    assert.equal(new Set(names).size, names.length, 'starter names are unique across categories');
+    assert.equal(Object.keys(partsDefaultsDoc(raw).parts).length, 175);
+    assert.ok(raw.parts.some(part => part.name === 'split screen' && part.tags === 'split screen, 2koma, two panels'), 'the bench-proven split tags ship as written');
 });

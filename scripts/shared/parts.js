@@ -25,7 +25,7 @@ export const PARTS_SCHEMA = 1;
 export const PARTS_SECTION = 'parts';
 export const PART_PREFIX = 'parts:';
 export const PART_MAX_DEPTH = 4;
-export const PART_CATEGORIES = Object.freeze(['outfit', 'hair', 'body', 'background', 'other']);
+export const PART_CATEGORIES = Object.freeze(['outfit', 'hair', 'body', 'background', 'camera', 'composition', 'tone', 'pose', 'expression', 'other']);
 export const PART_NAME_MAX = 80;
 
 const WEIGHTED = /^\((.*):\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\)$/;
@@ -391,7 +391,7 @@ export function pickSample(entry, modelType) {
 // white shirt (an upper-body mannequin with no clothes named came out topless for six of
 // seventeen hairstyles), and the `other` figure is no longer "full body", which overrode
 // composition parts such as upper body, cowboy shot and close-up.
-export const SAMPLE_PROMPT_VERSION = 2;
+export const SAMPLE_PROMPT_VERSION = 3;
 export const SAMPLE_SIZE = Object.freeze({ width: 512, height: 704 });
 export const SAMPLE_SEED = 3;
 // the bench's sampler settings, not the run bar's (a sample looks the same whatever the
@@ -407,6 +407,14 @@ const MANNEQUIN = Object.freeze({
         hair: '1girl, white mannequin, faceless, white shirt, upper body, facing viewer, simple background, white background',
         body: '1girl, white mannequin, faceless, bald, white bodysuit, standing, full body, simple background, white background',
         background: 'no humans, scenery',
+        // the part decides the angle and the framing, so neither the view nor the gaze is fixed
+        camera: '1girl, white mannequin, faceless, bald, white bodysuit, standing, arms at sides, indoors, wooden floor, simple background',
+        // no framing, no count of views: a split or a sheet part fights any single-view tag
+        composition: '1girl, white mannequin, faceless, bald, white bodysuit, standing, simple background, white background',
+        tone: '1girl, white mannequin, faceless, bald, white bodysuit, standing, simple background, white background',
+        pose: '1girl, white mannequin, faceless, bald, white bodysuit, full body, simple background, white background',
+        // a face is needed for an expression; the mannequin keeps its white skin
+        expression: '1girl, white mannequin, bald, white skin, colored skin, white shirt, upper body, facing viewer, looking at viewer, simple background, white background',
         other: '1girl, white mannequin, faceless, standing, simple background, white background',
     }),
     Checkpoint: Object.freeze({
@@ -414,6 +422,11 @@ const MANNEQUIN = Object.freeze({
         hair: '1girl, solo, faceless, white skin, colored skin, white shirt, upper body, facing viewer, looking at viewer, simple background, white background',
         body: '1girl, solo, faceless, bald, white skin, colored skin, white bodysuit, standing, facing viewer, looking at viewer, full body, simple background, white background',
         background: 'no humans, scenery',
+        camera: '1girl, solo, faceless, bald, white skin, colored skin, white bodysuit, standing, arms at sides, indoors, wooden floor, simple background',
+        composition: '1girl, faceless, bald, white skin, colored skin, white bodysuit, standing, simple background, white background',
+        tone: '1girl, solo, faceless, bald, white skin, colored skin, white bodysuit, standing, facing viewer, looking at viewer, simple background, white background',
+        pose: '1girl, solo, faceless, bald, white skin, colored skin, white bodysuit, full body, simple background, white background',
+        expression: '1girl, solo, bald, white skin, colored skin, white shirt, upper body, facing viewer, looking at viewer, simple background, white background',
         other: '1girl, solo, faceless, white skin, colored skin, standing, facing viewer, looking at viewer, simple background, white background',
     }),
 });
@@ -424,6 +437,11 @@ const CHARACTER_BASE = Object.freeze({
     hair: 'solo, upper body, facing viewer, looking at viewer, simple background, white background',
     body: 'solo, standing, facing viewer, looking at viewer, full body, simple background, white background',
     background: 'solo, standing, full body',
+    camera: 'solo, standing, arms at sides, indoors, wooden floor, simple background',
+    composition: 'standing, simple background, white background',
+    tone: 'solo, standing, facing viewer, looking at viewer, full body, simple background, white background',
+    pose: 'solo, full body, simple background, white background',
+    expression: 'solo, upper body, facing viewer, looking at viewer, simple background, white background',
     other: 'solo, standing, facing viewer, looking at viewer, full body, simple background, white background',
 });
 
@@ -449,7 +467,10 @@ export function samplePrompt({ category, tags, modelType, character = '' }) {
         ? `${character}, ${CHARACTER_BASE[cat]}`
         : MANNEQUIN[type][cat];
     const positive = [QUALITY[type], base, String(tags ?? '').trim()].filter(Boolean).join(', ');
-    return { positive, negative: NEGATIVE[type], base: character ? 'character' : 'mannequin', promptVersion: SAMPLE_PROMPT_VERSION };
+    // a composition part asks for the very things the negative refuses elsewhere (a second
+    // view of the figure, panels), so it gets a negative without the view and count terms
+    const negative = cat === 'composition' ? NEGATIVE[type].replace(/, (2girls|multiple girls|multiple views)/g, '') : NEGATIVE[type];
+    return { positive, negative, base: character ? 'character' : 'mannequin', promptVersion: SAMPLE_PROMPT_VERSION };
 }
 
 /** A file-safe folder name for a part: "sailor uniform" → "sailor-uniform", never empty. */
