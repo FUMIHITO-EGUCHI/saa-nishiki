@@ -391,43 +391,48 @@ export function pickSample(entry, modelType) {
 // white shirt (an upper-body mannequin with no clothes named came out topless for six of
 // seventeen hairstyles), and the `other` figure is no longer "full body", which overrode
 // composition parts such as upper body, cowboy shot and close-up.
-export const SAMPLE_PROMPT_VERSION = 3;
+export const SAMPLE_PROMPT_VERSION = 4;
 export const SAMPLE_SIZE = Object.freeze({ width: 512, height: 704 });
 export const SAMPLE_SEED = 3;
 // the bench's sampler settings, not the run bar's (a sample looks the same whatever the
-// user is tuning); Fast mode, when on, still applies as it does to every run
+// user is tuning); Fast mode is skipped for a sample (fastMode.js applyFastMode)
 export const SAMPLE_GENERATION = Object.freeze({
     Diffusion: Object.freeze({ steps: 20, cfg: 4.5, sampler: 'er_sde', scheduler: 'simple' }),
     Checkpoint: Object.freeze({ steps: 24, cfg: 5, sampler: 'euler_ancestral', scheduler: 'normal' }),
 });
 
+// The figure: a bald, faceless, pale human in a white leotard. "white mannequin" with a
+// "white bodysuit" drew a plugsuit android on Anima (2026-09-28, the user's samples), and
+// the bench of five bases (design/parts/defaults/SEEDING.md) found the leotard on plain
+// skin the cleanest at showing a body, a pose or an angle. Categories that dress the
+// figure (outfit, hair, expression) leave the leotard out.
 const MANNEQUIN = Object.freeze({
     Diffusion: Object.freeze({
-        outfit: '1girl, white mannequin, faceless, bald, standing, arms at sides, full body, simple background, white background',
-        hair: '1girl, white mannequin, faceless, white shirt, upper body, facing viewer, simple background, white background',
-        body: '1girl, white mannequin, faceless, bald, white bodysuit, standing, full body, simple background, white background',
+        outfit: '1girl, faceless, bald, white skin, colored skin, standing, arms at sides, full body, simple background, white background',
+        hair: '1girl, faceless, white skin, colored skin, white shirt, upper body, facing viewer, simple background, white background',
+        body: '1girl, faceless, bald, white skin, colored skin, white leotard, standing, full body, simple background, white background',
         background: 'no humans, scenery',
         // the part decides the angle and the framing, so neither the view nor the gaze is fixed
-        camera: '1girl, white mannequin, faceless, bald, white bodysuit, standing, arms at sides, indoors, wooden floor, simple background',
+        camera: '1girl, faceless, bald, white skin, colored skin, white leotard, standing, arms at sides, indoors, wooden floor, simple background',
         // no framing, no count of views: a split or a sheet part fights any single-view tag
-        composition: '1girl, white mannequin, faceless, bald, white bodysuit, standing, simple background, white background',
-        tone: '1girl, white mannequin, faceless, bald, white bodysuit, standing, simple background, white background',
-        pose: '1girl, white mannequin, faceless, bald, white bodysuit, full body, simple background, white background',
-        // a face is needed for an expression; the mannequin keeps its white skin
-        expression: '1girl, white mannequin, bald, white skin, colored skin, white shirt, upper body, facing viewer, looking at viewer, simple background, white background',
-        other: '1girl, white mannequin, faceless, standing, simple background, white background',
+        composition: '1girl, faceless, bald, white skin, colored skin, white leotard, standing, simple background, white background',
+        tone: '1girl, faceless, bald, white skin, colored skin, white leotard, standing, simple background, white background',
+        pose: '1girl, faceless, bald, white skin, colored skin, white leotard, full body, simple background, white background',
+        // a face is needed for an expression
+        expression: '1girl, bald, white skin, colored skin, white shirt, upper body, facing viewer, looking at viewer, simple background, white background',
+        other: '1girl, faceless, bald, white skin, colored skin, standing, simple background, white background',
     }),
     Checkpoint: Object.freeze({
         outfit: '1girl, solo, faceless, bald, white skin, colored skin, standing, facing viewer, looking at viewer, arms at sides, full body, simple background, white background',
         hair: '1girl, solo, faceless, white skin, colored skin, white shirt, upper body, facing viewer, looking at viewer, simple background, white background',
-        body: '1girl, solo, faceless, bald, white skin, colored skin, white bodysuit, standing, facing viewer, looking at viewer, full body, simple background, white background',
+        body: '1girl, solo, faceless, bald, white skin, colored skin, white leotard, standing, facing viewer, looking at viewer, full body, simple background, white background',
         background: 'no humans, scenery',
-        camera: '1girl, solo, faceless, bald, white skin, colored skin, white bodysuit, standing, arms at sides, indoors, wooden floor, simple background',
-        composition: '1girl, faceless, bald, white skin, colored skin, white bodysuit, standing, simple background, white background',
-        tone: '1girl, solo, faceless, bald, white skin, colored skin, white bodysuit, standing, facing viewer, looking at viewer, simple background, white background',
-        pose: '1girl, solo, faceless, bald, white skin, colored skin, white bodysuit, full body, simple background, white background',
+        camera: '1girl, solo, faceless, bald, white skin, colored skin, white leotard, standing, arms at sides, indoors, wooden floor, simple background',
+        composition: '1girl, faceless, bald, white skin, colored skin, white leotard, standing, simple background, white background',
+        tone: '1girl, solo, faceless, bald, white skin, colored skin, white leotard, standing, facing viewer, looking at viewer, simple background, white background',
+        pose: '1girl, solo, faceless, bald, white skin, colored skin, white leotard, full body, simple background, white background',
         expression: '1girl, solo, bald, white skin, colored skin, white shirt, upper body, facing viewer, looking at viewer, simple background, white background',
-        other: '1girl, solo, faceless, white skin, colored skin, standing, facing viewer, looking at viewer, simple background, white background',
+        other: '1girl, solo, faceless, bald, white skin, colored skin, standing, facing viewer, looking at viewer, simple background, white background',
     }),
 });
 
@@ -451,8 +456,8 @@ const QUALITY = Object.freeze({
 });
 
 const NEGATIVE = Object.freeze({
-    Diffusion: 'worst quality, low quality, score_1, score_2, score_3, artist name, signature, watermark, text, logo, 2girls, multiple girls, multiple views, dress form, mannequin stand',
-    Checkpoint: 'worst quality, low quality, bad anatomy, bad hands, artist name, signature, watermark, text, logo, 2girls, multiple girls, multiple views, dress form, mannequin stand',
+    Diffusion: 'worst quality, low quality, score_1, score_2, score_3, artist name, signature, watermark, text, logo, 2girls, multiple girls, multiple views, dress form, mannequin stand, android, cyborg, robot, mecha, plugsuit, bodysuit, armor, glowing',
+    Checkpoint: 'worst quality, low quality, bad anatomy, bad hands, artist name, signature, watermark, text, logo, 2girls, multiple girls, multiple views, dress form, mannequin stand, android, cyborg, robot, mecha, plugsuit, bodysuit, armor, glowing',
 });
 
 /**

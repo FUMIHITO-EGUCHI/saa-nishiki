@@ -33,6 +33,9 @@ test('fast mode off returns the generateData untouched', () => {
     const data = sampleGenerateData();
     assert.equal(applyFastMode(data, { api_fast_enable: false }), data);
     assert.equal(applyFastMode(data, {}), data);
+    // a parts sample keeps the bench's steps and CFG even while Fast is on
+    const sample = { ...data, queueManager: { genType: 'partsSample' } };
+    assert.equal(applyFastMode(sample, { api_fast_enable: true, api_fast_lora: 'x.safetensors' }), sample);
 });
 
 const DIFF_SETTINGS = {

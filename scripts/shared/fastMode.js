@@ -87,6 +87,10 @@ export function missingFastLora(generateData, settings, loraList) {
  */
 export function applyFastMode(generateData, settings) {
     if (!isFastModeActive(settings) || !generateData || typeof generateData !== 'object') return generateData;
+    // a parts sample (partsUi.js) is drawn with the bench's own steps and CFG so every
+    // sample looks alike; under the Turbo LoRA at CFG 1.5 the negative prompt no longer
+    // held and the mannequin came out as three views of an android (2026-09-28)
+    if (generateData.queueManager?.genType === 'partsSample') return generateData;
     const fast = fastModeConfig(settings, { diffusion: isDiffusionGeneration(generateData) });
 
     const tag = fastLoraTag(fast);

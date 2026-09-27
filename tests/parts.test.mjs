@@ -143,7 +143,7 @@ test('samples pin, unpin and remove; the tile picks pinned, then the current mod
 
 test('the sample prompt is the fixed base of the category and model plus the tags', () => {
     const anima = samplePrompt({ category: 'outfit', tags: 'serafuku', modelType: 'Diffusion' });
-    assert.match(anima.positive, /^masterpiece, best quality, score_7, safe, 1girl, white mannequin, .*, serafuku$/);
+    assert.match(anima.positive, /^masterpiece, best quality, score_7, safe, 1girl, faceless, bald, white skin, colored skin, .*, serafuku$/);
     assert.match(anima.negative, /dress form/);
     assert.equal(anima.base, 'mannequin');
     const ill = samplePrompt({ category: 'hair', tags: 'twin tails', modelType: 'Checkpoint' });
@@ -151,13 +151,13 @@ test('the sample prompt is the fixed base of the category and model plus the tag
     assert.ok(!ill.positive.includes('mannequin'));
     // the starter-set run (design/parts/defaults/SEEDING.md): a hair figure wears a shirt,
     // a composition part is not overridden by "full body"
-    assert.match(samplePrompt({ category: 'hair', tags: 'ponytail', modelType: 'Diffusion' }).positive, /white mannequin, faceless, white shirt, upper body/);
+    assert.match(samplePrompt({ category: 'hair', tags: 'ponytail', modelType: 'Diffusion' }).positive, /faceless, white skin, colored skin, white shirt, upper body/);
     for (const modelType of ['Diffusion', 'Checkpoint']) {
         const other = samplePrompt({ category: 'other', tags: 'cowboy shot', modelType });
         assert.doesNotMatch(other.positive, /full body/, `${modelType}: the composition tags decide the framing`);
         assert.match(other.positive, /standing, .*cowboy shot$/);
     }
-    assert.equal(SAMPLE_PROMPT_VERSION, 3, 'the bases changed, so samples of the old bases are told apart');
+    assert.equal(SAMPLE_PROMPT_VERSION, 4, 'the bases changed, so samples of the old bases are told apart');
     const scenery = samplePrompt({ category: 'background', tags: 'classroom', modelType: 'Diffusion' });
     assert.match(scenery.positive, /no humans, scenery, classroom$/);
     const onChar = samplePrompt({ category: 'outfit', tags: 'serafuku', modelType: 'Diffusion', character: 'hatsune miku, aqua hair' });
@@ -218,7 +218,7 @@ test('the five template categories have a mannequin base that lets the part deci
         const expression = samplePrompt({ category: 'expression', tags: 'smile', modelType }).positive;
         assert.doesNotMatch(expression, /faceless/, 'an expression needs a face');
         assert.match(expression, /upper body/);
-        assert.match(samplePrompt({ category: 'tone', tags: 'sepia', modelType }).positive, /white bodysuit/, 'the tone sample keeps the figure fixed so only the colour changes');
+        assert.match(samplePrompt({ category: 'tone', tags: 'sepia', modelType }).positive, /white leotard/, 'the tone sample keeps the figure fixed so only the colour changes');
     }
     const raw = JSON.parse(readFileSync(new URL('../data/parts_defaults.json', import.meta.url), 'utf8'));
     const names = raw.parts.map(part => part.name.toLowerCase());
