@@ -26,6 +26,7 @@ import {
     PROSE_MODE,
     PROSE_SYSTEM_PROMPT,
     PROSE_STUDENT_SYSTEM_PROMPT,
+    collapseRepeatedSentences,
     buildProseFields,
     buildProseFieldsFromPositive,
     buildProseUserContent,
@@ -267,7 +268,10 @@ async function requestParagraph(fields) {
     });
     // half a paragraph is no paragraph, but the image info says which of the two it was
     if (content === AI_REPLY_CUT_OFF) return { ok: false, reason: 'truncated', prompt: '' };
-    return parseProseResponse(content, { verbatim: proseVerbatimText(fields), refs: proseRefs(fields) });
+    const parsed = parseProseResponse(content, { verbatim: proseVerbatimText(fields), refs: proseRefs(fields) });
+    // the student restates itself once per action line; a repeat adds nothing to the picture
+    if (parsed.ok && endpoint.student) parsed.prompt = collapseRepeatedSentences(parsed.prompt);
+    return parsed;
 }
 
 // One LLM call per key at a time: a second asker (the queue while Regenerate runs, or

@@ -255,6 +255,35 @@ function findJsonObject(text) {
  * `verbatim` (the text the LLM copies, which may carry it); or a handle from `refs`
  * ("@1") that is not in `verbatim`.
  */
+/**
+ * Drops a sentence that only says again what an earlier one said: eight words or more,
+ * and four in five of them already in one earlier sentence. The distilled student (v1,
+ * 2026-09-26) restated its subject once per line of a multi-line action, and on one input
+ * looped on a single sentence four times. The tags before the first sentence and the
+ * first of each pair stay as written; a short sentence is never dropped, so "The scene
+ * has pale colors." after a long sentence that named the colours is kept.
+ */
+export function collapseRepeatedSentences(prompt) {
+    const text = String(prompt ?? '');
+    const parts = text.split(/(?<=[.!?])\s+/);
+    if (parts.length < 2) return text;
+    const wordsOf = part => new Set(part.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean));
+    const kept = [];
+    const seen = [];
+    for (const part of parts) {
+        const words = wordsOf(part);
+        const repeat = words.size >= 8 && seen.some(earlier => {
+            let common = 0;
+            for (const word of words) if (earlier.has(word)) common++;
+            return common / words.size >= 0.8;
+        });
+        if (repeat) continue;
+        kept.push(part);
+        seen.push(words);
+    }
+    return kept.join(' ');
+}
+
 export function parseProseResponse(content, { verbatim = '', refs = [] } = {}) {
     let text = String(content ?? '').replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim();
     if (text === '') return { ok: false, reason: 'empty', prompt: '' };

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { studentServerArgs, studentSpec, studentUrl } from '../scripts/main/proseStudent.js';
 import { buildLlamaChatRequest } from '../scripts/shared/llamaChatRequest.js';
-import { PROSE_MODE, PROSE_STUDENT_SYSTEM_PROMPT } from '../scripts/shared/prosePrompt.js';
+import { PROSE_MODE, PROSE_STUDENT_SYSTEM_PROMPT, collapseRepeatedSentences } from '../scripts/shared/prosePrompt.js';
 import { describeProseEndpoint, proseEndpoint, proseWriter, studentApiUrl } from '../scripts/renderer/prosePipeline.js';
 
 const HERE = fileURLToPath(import.meta.url);   // an existing file, standing in for the exe and the model
@@ -38,6 +38,23 @@ test('the launch line puts every layer on the GPU with one slot and no web UI', 
     assert.deepEqual(args.slice(0, 4), ['-m', 'm.gguf', '--port', '8090']);
     for (const flag of ['-ngl', '-np', '--jinja', '--no-webui', '--reasoning-budget']) assert.ok(args.includes(flag), flag);
     assert.equal(args[args.indexOf('-np') + 1], '1');
+});
+
+test('a sentence the student already said is dropped, the rest stays as written', () => {
+    const tags = 'masterpiece, best quality, nsfw, (@asanagi:1.3), ';
+    const one = 'rice shower (umamusume) is a girl with long pink hair and a pink track jacket, standing in a dimly lit bedroom with pale colors and flat colors.';
+    // the loop seen on 2026-09-26: the same sentence four times after the tags
+    assert.equal(collapseRepeatedSentences(`${tags}${one} ${one} ${one} ${one}`), `${tags}${one}`);
+    // a restatement with one new word goes too; a sentence that says something new stays
+    const restated = 'rice shower (umamusume) is a girl with long pink hair and a pink track jacket, standing in a dimly lit bedroom with pale colors and flat colors, facing the camera.';
+    const fresh = 'The girl holds up her skirt with both hands to reveal black lingerie underneath.';
+    assert.equal(collapseRepeatedSentences(`${tags}${one} ${restated} ${fresh}`), `${tags}${one} ${fresh}`);
+    // short sentences are never dropped, even when every word was said before
+    const short = 'The scene has pale colors.';
+    assert.equal(collapseRepeatedSentences(`${tags}${one} ${short}`), `${tags}${one} ${short}`);
+    // one sentence, or no sentence at all, comes back untouched
+    assert.equal(collapseRepeatedSentences('1girl, solo, white background'), '1girl, solo, white background');
+    assert.equal(collapseRepeatedSentences(''), '');
 });
 
 test('a Prose request to a llama.cpp server sends the fields JSON untouched and no grammar', () => {
