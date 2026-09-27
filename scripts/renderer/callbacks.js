@@ -56,7 +56,7 @@ export function applyPromptsForModelType(type) {
         prompt?.background?.setValue?.(SETTINGS.prompt_background);
         prompt?.style?.setValue?.(SETTINGS.prompt_style);
         prompt?.exclude?.setValue?.(SETTINGS.prompt_ban);
-        globalThis.viewList?.updateDefaults?.(SETTINGS.view_angle, SETTINGS.view_camera);
+        prompt?.views?.setValue?.(SETTINGS.view_tags);
         // custom field texts and the chip rows follow the settings (language.js updateSettings)
         prompt?.fieldManager?.refresh?.();
         prompt?.tagCapsuleFields?.loadFromSettings?.(SETTINGS);
@@ -406,14 +406,6 @@ export async function callback_myCharacterList_updateThumb(){
     globalThis.thumbGallery.update(imgData);
     // the "@alias" prompt rows and the Regional boxes follow the slots
     globalThis.prompt?.fieldManager?.refresh?.();
-}
-
-export function callback_myViewList_Update(){
-    const v1 = globalThis.viewList.getValue()[0];
-    const v2 = globalThis.viewList.getValue()[1];
-
-    globalThis.globalSettings.view_angle = v1;
-    globalThis.globalSettings.view_camera = v2;
 }
 
 export async function callback_generate_start(runType='normal', dataPack=null){    

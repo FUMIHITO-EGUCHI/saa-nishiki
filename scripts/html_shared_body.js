@@ -111,7 +111,6 @@ export const sharedBodyHTML = `
               <div class="ui-card-body">
                 <div class="dropdown-character"></div>
                 <div class="dropdown-character-regional"></div>
-                <div class="dropdown-view"></div>
                 <div class="regional-condition-container">
                   <div class="regional-condition-header" hidden>
                     <span id="regional-condition-span"></span>
@@ -160,6 +159,7 @@ export const sharedBodyHTML = `
               </div>
               <div class="ui-card-body prompt-fields">
                 <div class="prompt-common prompt-field" data-stripe="common">common</div>
+                <div class="prompt-view prompt-field" data-stripe="view">view</div>
                 <div class="prompt-background prompt-field" data-stripe="view">background</div>
                 <div class="prompt-style prompt-field" data-stripe="view">style</div>
                 <div class="prompt-positive prompt-field" data-stripe="positive">positive</div>

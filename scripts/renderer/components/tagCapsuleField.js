@@ -72,7 +72,7 @@ export function chainFromSettings(stored = {}) {
     };
 }
 
-export const PROMPT_FIELD_KEYS = Object.freeze(['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
+export const PROMPT_FIELD_KEYS = Object.freeze(['common', 'views', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
 
 function el(tag, className, text = '') {
     const node = document.createElement(tag);

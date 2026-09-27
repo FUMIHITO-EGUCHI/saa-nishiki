@@ -194,6 +194,7 @@ export function createSelectionModal({
         const favoritesOf = tab.favorites && typeof tab.favorites.isFavorite === 'function' ? tab.favorites : null;
         return {
             categories: Array.isArray(tab.categories) ? tab.categories : [],
+            defaultCategory: typeof tab.defaultCategory === 'string' ? tab.defaultCategory : '',
             attributes: Array.isArray(tab.attributes) ? tab.attributes : [],
             categoryLabel: tab.categoryLabel ?? 'Category',
             attributeLabel: tab.attributeLabel ?? 'Attribute',
@@ -387,7 +388,10 @@ export function createSelectionModal({
         attributeSelect.setAttribute('aria-label', attributeText.textContent);
         setFilterOptions(categorySelect, activeConfig.categories, activeConfig.categoryAll ?? 'All categories');
         setFilterOptions(attributeSelect, activeConfig.attributes, activeConfig.attributeAll ?? 'All attributes');
-        categorySelect.value = '';
+        // a tab may open on one of its categories (the Parts tab of the View row: camera)
+        const preset = typeof activeConfig.defaultCategory === 'string' && activeConfig.defaultCategory !== ''
+            && (activeConfig.categories ?? []).some(entry => (typeof entry === 'string' ? entry : entry?.value) === activeConfig.defaultCategory);
+        categorySelect.value = preset ? activeConfig.defaultCategory : '';
         attributeSelect.value = '';
         listbox.classList.toggle('is-grid', activeConfig.view === 'grid');
         panel.hidden = !activeConfig.panel;

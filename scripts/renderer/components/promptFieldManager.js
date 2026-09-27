@@ -43,6 +43,7 @@ const BUILTIN_LABELS = {
 // Units with a text container inside .prompt-fields (structural units live elsewhere).
 const BUILTIN_CONTAINERS = {
     common: '.prompt-common',
+    views: '.prompt-view',
     background: '.prompt-background',
     style: '.prompt-style',
     positive: '.prompt-positive',
@@ -60,6 +61,7 @@ const BUILTIN_STRIPES = {
 
 // Built-in fields whose text a preset can replace, and where the value lives.
 const PRESETABLE_BUILTINS = {
+    views: 'view_tags',
     background: 'prompt_background',
     style: 'prompt_style',
 };
@@ -237,7 +239,6 @@ export function setupPromptFieldManager() {
     }
 
     function unitContainer(id) {
-        if (id === 'views') return viewsRow;
         if (BUILTIN_CONTAINERS[id]) return fieldsHost.querySelector(BUILTIN_CONTAINERS[id]);
         return fieldsHost.querySelector(`.prompt-${id}`);
     }
@@ -257,7 +258,6 @@ export function setupPromptFieldManager() {
     }
 
     function fieldValue(id) {
-        if (id === 'views') return '';
         return String(globalThis.prompt?.[id]?.getValue?.() ?? '');
     }
 
@@ -284,7 +284,7 @@ export function setupPromptFieldManager() {
     }
 
     function isMovable(id) {
-        return !PINNED_UNITS.has(id) && !STRUCTURAL_UNITS.has(id) || id === 'views';
+        return !PINNED_UNITS.has(id) && !STRUCTURAL_UNITS.has(id);
     }
 
     // Fixed rows: no rename, no delete. The rows the app owns are fixed - a cast row follows
@@ -381,7 +381,6 @@ export function setupPromptFieldManager() {
     // ---------------------------------------------------------------- the rows
 
     let scene = null;      // .prompt-scene, the rows host
-    let viewsRow = null;   // the View row (Angle / Camera dropdowns)
     let group = null;      // the Regional block (built once, attached while Regional is on)
     let addFooter = null;  // "+ Add field"
 
@@ -405,31 +404,6 @@ export function setupPromptFieldManager() {
 
     function sceneRows() {
         return scene ? [...scene.querySelectorAll('.prompt-field[data-scene-row]')] : [];
-    }
-
-    // In the Scene the Angle / Camera dropdowns are the View row at the chain's "views"
-    // slot (the Characters card keeps only the slots).
-    function ensureViewsRow() {
-        if (viewsRow) return viewsRow;
-        const view = document.querySelector('.dropdown-view');
-        if (!view) return null;
-        viewsRow = document.createElement('div');
-        viewsRow.className = 'prompt-views-row prompt-field';
-        viewsRow.dataset.fieldId = 'views';
-        viewsRow.dataset.stripe = 'view';
-        const wrapper = document.createElement('div');
-        wrapper.className = 'myTextbox-wrapper';
-        const header = document.createElement('div');
-        header.className = 'tag-field-header';
-        const label = document.createElement('span');
-        label.className = 'tag-field-label';
-        label.textContent = text('ui_field_views', 'View');
-        const tools = document.createElement('div');
-        tools.className = 'tag-field-tools';
-        header.append(label, tools);
-        wrapper.append(header, view);
-        viewsRow.appendChild(wrapper);
-        return viewsRow;
     }
 
     // Row chrome, added once per container: grip · chevron · ● before the label,
@@ -497,7 +471,7 @@ export function setupPromptFieldManager() {
             tools.append(polarity, remove);
         }
         // "parts": the picker that puts a parts:<name> chip into this row (partsUi.js)
-        if (globalThis.partsUi?.available?.() && !container.classList.contains('prompt-action-field') && id !== 'views' && id !== 'characters') {
+        if (globalThis.partsUi?.available?.() && !container.classList.contains('prompt-action-field') && id !== 'characters') {
             const parts = document.createElement('button');
             parts.type = 'button';
             parts.className = 'scene-parts-button';
@@ -673,7 +647,7 @@ export function setupPromptFieldManager() {
             const chips = set.getMode() === 'capsule';
             item(chips ? text('ui_scene_view_text', 'Show as text') : text('ui_scene_view_chips', 'Show as chips'), () => set.setMode(chips ? 'string' : 'capsule'));
         }
-        if (globalThis.partsUi?.available?.() && !container.classList.contains('prompt-action-field') && id !== 'views' && id !== 'characters') {
+        if (globalThis.partsUi?.available?.() && !container.classList.contains('prompt-action-field') && id !== 'characters') {
             item(text('parts_insert_title', 'Insert part…'), () => globalThis.partsUi.openPicker({ fieldKey: id, trigger: anchor }));
         }
         const batch = container.querySelector('.tag-capsule-batch');
@@ -1089,7 +1063,6 @@ export function setupPromptFieldManager() {
     // the block sits where the (left) Positive would be; everything else is shared.
     function layoutScene() {
         const host = ensureScene();
-        ensureViewsRow();
         const regional = isRegional();
         const placed = new Set();
         const sequence = []; // { id } | { block: true }
@@ -1109,7 +1082,7 @@ export function setupPromptFieldManager() {
         const unitSide = id => (regional && id !== 'exclude' ? sideOf(id, fields) : 'both');
 
         for (const id of SETTINGS.prompt_positive_order) {
-            if (STRUCTURAL_UNITS.has(id) && id !== 'views') continue;
+            if (STRUCTURAL_UNITS.has(id)) continue;
             put(id, unitSide(id));
             if (id === 'positive' && regional) put('positive_right', 'right');
         }
@@ -1394,7 +1367,7 @@ export function setupPromptFieldManager() {
         },
         // visible prompt fields in Scene order (right-click "Move to" targets)
         listFields: () => sceneRows()
-            .filter(container => isAvailable(container) && idOfContainer(container) !== 'views')
+            .filter(container => isAvailable(container))
             .map(container => ({ id: idOfContainer(container), label: fieldLabel(idOfContainer(container)) })),
     };
 }

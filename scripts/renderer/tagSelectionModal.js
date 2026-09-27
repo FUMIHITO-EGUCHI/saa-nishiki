@@ -9,9 +9,9 @@ import { PART_PREFIX, partNameOf } from '../shared/parts.js';
 
 const DETAILED_TAG_FILTERS = TAG_FILTERS.filter(filter => filter.options?.category);
 
-// The rows whose tag modal carries no Parts tab: a part is a bundle of looks, not a
-// view, a cast list or an Action sentence (promptFieldManager marks those rows)
-const NO_PARTS_FIELDS = new Set(['views', 'characters']);
+// The rows whose tag modal carries no Parts tab: a part is a bundle of tags, not a
+// cast list or an Action sentence (promptFieldManager marks those rows)
+const NO_PARTS_FIELDS = new Set(['characters']);
 
 // The Parts tab of a row's modal, from partsUi.js when it is set up (globalThis, as the
 // row tools reach it: partsUi imports this module for its own tag picker)

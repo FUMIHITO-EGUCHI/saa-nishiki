@@ -141,9 +141,6 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     setDropdownLanguage('dropdown-character-regional', [LANG.regional_character_left, LANG.regional_character_right]);
     globalThis.characterListRegional.setValueOnly(globalThis.globalSettings.language === 'en-US');
 
-    // View List
-    setDropdownLanguage('dropdown-view', [LANG.view_angle, LANG.view_camera]);
-
     // Gallery Thumb
     let labels = document.querySelector('#gallery-thumb-span');
     if (labels) labels.textContent = LANG.gallery_thumb_span;
@@ -238,6 +235,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.prompt.negative.setTitle(LANG.api_neg_prompt);
     globalThis.prompt.negative_left?.setTitle(LANG.api_neg_prompt_left);
     globalThis.prompt.negative_right?.setTitle(LANG.api_neg_prompt_right);
+    globalThis.prompt.views?.setTitle(LANG.prompt_view);
     globalThis.prompt.background.setTitle(LANG.prompt_background);
     globalThis.prompt.style.setTitle(LANG.prompt_style);
     globalThis.prompt.ai.setTitle(LANG.ai_prompt);
@@ -363,9 +361,6 @@ export function updateSettings() {
     globalThis.generate.tag_chip_alias?.setValue(SETTINGS.tag_chip_alias !== false);
     globalThis.generate.wildcard_random.setValue(SETTINGS.wildcard_random);
 
-    globalThis.viewList.updateDefaults(SETTINGS.view_angle, SETTINGS.view_camera);
-    globalThis.viewList.setTextValue(0, SETTINGS.weights4dropdownlist[0]);  // tag_angle
-    globalThis.viewList.setTextValue(1, SETTINGS.weights4dropdownlist[1]);  // tag_camera
 
     // need more careful for sampler and scheduler due to different list
     if (SETTINGS.api_interface==='ComfyUI') {
@@ -433,6 +428,7 @@ export function updateSettings() {
     globalThis.prompt.negative.setValue(SETTINGS.api_neg_prompt);
     globalThis.prompt.negative_left?.setValue(SETTINGS.api_neg_prompt_left);
     globalThis.prompt.negative_right?.setValue(SETTINGS.api_neg_prompt_right);
+    globalThis.prompt.views?.setValue(SETTINGS.view_tags);
     globalThis.prompt.background.setValue(SETTINGS.prompt_background);
     globalThis.prompt.style.setValue(SETTINGS.prompt_style);
     globalThis.prompt.ai.setValue(SETTINGS.ai_prompt);

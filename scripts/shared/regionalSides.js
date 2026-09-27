@@ -84,7 +84,7 @@ export function sideOf(id, customFields) {
 // Expands a chain order into the unit ids that make up one side's prompt, in chain
 // order. Side-specific built-ins that are not part of the stored order follow their
 // shared counterpart: positive_right after positive, negative_left / negative_right
-// after negative. Structural units (views, ai, characters) are kept so the caller
+// after negative. Structural units (ai, artist, characters) are kept so the caller
 // can splice in their text.
 export function sideOrder(order, side, customFields) {
     const result = [];

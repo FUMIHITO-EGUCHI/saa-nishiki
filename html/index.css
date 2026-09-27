@@ -401,13 +401,6 @@ html, body {
     margin-right: 0;
 }
 
-#right-settings-panel .dropdown-view {
-    margin: 0;
-    padding-left: 0;
-    padding-right: 0;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(128, 128, 128, 0.55);
-}
 
 
 .model-select{
@@ -867,21 +860,6 @@ html, body {
     box-shadow: none;
 }
 
-.prompt-scene .prompt-views-row > .myTextbox-wrapper > .dropdown-view {
-    margin: 0;
-    padding: 0;
-    border-top: none;
-}
-
-.prompt-views-row.is-collapsed > .myTextbox-wrapper > .dropdown-view {
-    display: none !important;
-}
-
-/* the row's own label says View; the Angle / Camera captions go into the dropdown titles */
-.prompt-scene .prompt-views-row .view-labels {
-    display: none;
-}
-
 /* the Action sentence reads as its own block at the end of the chain */
 .prompt-scene .prompt-field.prompt-action-field {
     margin-top: 8px;
@@ -1006,8 +984,7 @@ html, body {
 }
 
 .prompt-field.is-muted .tag-capsule-view,
-.prompt-field.is-muted [class^="myTextbox-"][class*="-textarea"],
-.prompt-field.is-muted .dropdown-view {
+.prompt-field.is-muted [class^="myTextbox-"][class*="-textarea"] {
     opacity: 0.45;
 }
 

@@ -157,33 +157,6 @@ function setupPipelineRows() {
 }
 
 // ------------------------------------------------------------------ characters & views
-// myViewsList renders two unlabeled dropdowns; add a label row above them (Angle / Camera).
-function setupCharactersCard() {
-    // the Angle / Camera dropdowns sit in the Scene's View row (promptFieldManager moves them)
-    const view = document.querySelector('.dropdown-view');
-    if (!view) return null;
-    let labels = view.querySelector('.view-labels');
-    function render() {
-        const LANG = lang();
-        const names = [LANG.view_angle || 'Angle', LANG.view_camera || 'Camera'];
-        if (!labels) {
-            labels = document.createElement('div');
-            labels.className = 'view-labels';
-            view.prepend(labels);
-        }
-        labels.replaceChildren(...names.map(name => {
-            const span = document.createElement('span');
-            span.textContent = name;
-            return span;
-        }));
-    }
-    render();
-    // setOptions() rebuilds the dropdown markup; keep the label row on top.
-    const observer = new MutationObserver(() => { if (!view.contains(labels)) render(); else if (view.firstElementChild !== labels) view.prepend(labels); });
-    observer.observe(view, { childList: true });
-    return { render };
-}
-
 // ------------------------------------------------------------------ Prose card
 // Diffusion (Anima) only: the switch, where the paragraph is written, how much of the
 // prompt it dissolves, and the paragraph of the last image - editable, revertible,
@@ -910,7 +883,6 @@ export function setupUiShell() {
         shell.proseCard?.render?.();
     };
 
-    shell.characters = setupCharactersCard();
     shell.pipeline = setupPipelineRows();
     shell.aiCard = setupAiCard();
     shell.proseCard = setupProseCard();

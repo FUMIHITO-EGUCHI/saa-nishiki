@@ -136,6 +136,8 @@ export function generateRandomSeed() {
     return array[0];
 }
 
+// `random` in the Background / Style field: one tag of that view-tag list per seed
+// (the Angle / Camera dropdowns that also used this are the View row now, plain tags).
 function createViewTag(view_list, in_tag, seed, weight) {
     let out_tag = '';
 
@@ -174,17 +176,14 @@ export function readViewPromptField(view_list, key, seed) {
 }
 
 export function getViewTags(seed, includeFields = true) {
-    // the View row can be muted like any other Scene row
+    // the View row (view_tags): angle, camera, composition tags and parts: chips, read
+    // like every other row - parts expanded, "~tag" left out, muted (the row's ●) = nothing
     const viewsMuted = isFieldMuted(globalThis.globalSettings, 'views');
-    const tag_angle = viewsMuted ? '' : createViewTag('angle', globalThis.viewList.getValue()[0], seed, globalThis.viewList.getTextValue(0));
-    const tag_camera = viewsMuted ? '' : createViewTag('camera', globalThis.viewList.getValue()[1], seed, globalThis.viewList.getTextValue(1));
+    const tag_views = viewsMuted ? '' : readPromptValue('views').trim().replace(/,\s*$/, '');
 
     let combo = '';
-    if(tag_angle !== '')
-        combo += `${tag_angle}, `;
-
-    if(tag_camera !== '')
-        combo += `${tag_camera}, `;
+    if(tag_views !== '')
+        combo += `${tag_views}, `;
 
     // The regional path still folds background / style into the view combo; the
     // standard path passes includeFields=false and orders them as separate units.

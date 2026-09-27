@@ -4,7 +4,7 @@ import { setupGallery } from './renderer/customGallery.js';
 import { setupThumbOverlay, setupThumb } from './renderer/customThumbGallery.js';
 import { setupSuggestionSystem } from './renderer/tagAutoComplete.js';
 import { setupButtonOverlay, customCommonOverlay } from './renderer/customOverlay.js';
-import { myCharacterList, myRegionalCharacterList, myViewsList, myLanguageList, mySimpleList } from './renderer/components/myDropdown.js';
+import { myCharacterList, myRegionalCharacterList, myLanguageList, mySimpleList } from './renderer/components/myDropdown.js';
 import { myArtistList } from './renderer/components/artistSelectionModal.js';
 import { callback_artistList_changed,
     callback_api_model_select, callback_api_model_type, callback_api_interface, 
@@ -135,7 +135,6 @@ export async function setupHeader(SETTINGS, FILES, LANG){
 
 export async function setupLeftRight(SETTINGS, FILES, LANG) {
     // Init Left
-    globalThis.viewList = myViewsList('dropdown-view', FILES.viewTags);        
     setupGallery('gallery-main-main');        
     globalThis.infoBox = {
         image: setupInfoBox('image-infobox-main', LANG.output_info, '', true, 320),            
@@ -473,6 +472,12 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
             minLines: 3,
             maxLines: 50
             }, false, (value) => { globalThis.globalSettings.api_prompt_right = value; }),
+        // the View row: angle, camera, composition - tags and parts: chips, like Background
+        views: setupTextbox('prompt-view', LANG.prompt_view, {
+            value: SETTINGS.view_tags,
+            defaultTextColor: 'BurlyWood',
+            maxLines: 10
+            }, false, (value) => { globalThis.globalSettings.view_tags = value; }),
         background: setupTextbox('prompt-background', LANG.prompt_background, {
             value: SETTINGS.prompt_background,
             defaultTextColor: 'BurlyWood',
@@ -519,6 +524,7 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
     setupSuggestionSystem();
     globalThis.prompt.tagSelectionModals = setupTagSelectionModal([
         globalThis.prompt.common,
+        globalThis.prompt.views,
         globalThis.prompt.background,
         globalThis.prompt.style,
         globalThis.prompt.positive,
@@ -527,12 +533,13 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
         globalThis.prompt.negative_left,
         globalThis.prompt.negative_right,
         globalThis.prompt.exclude,
-    ], ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
+    ], ['common', 'views', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
     // Parts ("parts:<name>" tag bundles): the picker / card / editor the Scene rows and
     // the chips open; before the fields, whose rows ask for it as they are built
     setupPartsUi();
     globalThis.prompt.tagCapsuleFields = setupTagCapsuleFields([
         globalThis.prompt.common,
+        globalThis.prompt.views,
         globalThis.prompt.background,
         globalThis.prompt.style,
         globalThis.prompt.positive,
@@ -542,7 +549,7 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
         globalThis.prompt.negative_right,
         globalThis.prompt.exclude,
     ], {
-        keys: ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude'],
+        keys: ['common', 'views', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude'],
         applyExclude: (prompt, exclude) => filterPrompts(prompt, prompt, exclude).positivePrompt,
         fetchRelated: value => fetchRelatedTags(value),
         finalPromptContainer: document.querySelector('#prompt-text-container .prompt-fields') ?? document.querySelector('#prompt-text-container'),

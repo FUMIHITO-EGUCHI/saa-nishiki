@@ -611,6 +611,8 @@ export function partsPickerTab({ fieldKey = null, trigger = null } = {}) {
         label: text('parts_tab', 'Parts'),
         view: 'grid',
         categories: PART_CATEGORIES.map(category => ({ value: category, label: categoryLabel(category) })),
+        // the View row opens on the camera parts (the category filter is still free to change)
+        defaultCategory: fieldKey === 'views' && PART_CATEGORIES.includes('camera') ? 'camera' : '',
         categoryLabel: text('parts_category', 'Category'),
         categoryAll: text('parts_category_all', 'All'),
         attributes: [
