@@ -1625,11 +1625,22 @@ html, body {
 }
 
 .selection-modal-toolbar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(130px, 0.35fr) minmax(130px, 0.35fr) auto;
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     padding: 10px 12px 6px;
     align-items: end;
+}
+.selection-modal-toolbar > [hidden] {
+    display: none;
+}
+.selection-modal-toolbar .selection-modal-search-label {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+.selection-modal-toolbar .selection-modal-filter-label {
+    flex: 0 1 190px;
+    min-width: 130px;
 }
 
 .selection-modal-favonly {
@@ -1700,23 +1711,105 @@ html, body {
     font: inherit;
 }
 
+/* the Selected row: one line high whatever the count; the chips scroll sideways, the
+   "Selected N" button unfolds them all in a popover, Clear empties the selection */
 .selection-modal-selected {
+    position: relative;
     flex: 0 0 auto;
-    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    box-sizing: border-box;
+    padding: 0 12px;
 }
-
 .selection-modal-section-title {
     margin-bottom: 5px;
     font-size: 0.8rem;
 }
-
+.selection-modal-selected-toggle,
+.selection-modal-clear {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    box-sizing: border-box;
+    padding: 0 9px;
+    border: 1px solid var(--saa-border-ctl);
+    border-radius: 6px;
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+.selection-modal-selected-toggle::after {
+    content: '▾';
+    font-size: 0.7em;
+    opacity: 0.7;
+}
+.selection-modal-selected-toggle.is-open::after {
+    content: '▴';
+}
+.selection-modal-selected-toggle:disabled,
+.selection-modal-clear:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.selection-modal-selected-toggle:not(:disabled):hover,
+.selection-modal-clear:not(:disabled):hover {
+    background: var(--saa-bg-hover);
+}
+.selection-modal-clear {
+    background: transparent;
+    color: var(--saa-muted2);
+}
+.selection-modal-selected-count {
+    padding: 0 6px;
+    border-radius: 8px;
+    background: var(--saa-accent);
+    color: #ffffff;
+    font-size: 0.72rem;
+    line-height: 16px;
+}
 .selection-modal-selected-list {
+    flex: 1 1 auto;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+.selection-modal-selected-list > .selection-modal-chip {
+    flex: 0 0 auto;
+    max-width: 320px;
+}
+.selection-modal-selected-popover {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: calc(100% + 2px);
+    z-index: 3;
     display: flex;
     flex-wrap: wrap;
+    align-content: flex-start;
     gap: 4px;
-    min-height: 24px;
+    max-height: 240px;
+    overflow: auto;
+    padding: 8px;
+    border: 1px solid var(--saa-border-strong);
+    border-radius: 6px;
+    background: var(--saa-bg-panel);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
-
+.selection-modal-selected-popover[hidden] {
+    display: none;
+}
 .selection-modal-chip {
     display: inline-flex;
     align-items: center;
@@ -1726,6 +1819,7 @@ html, body {
     border-radius: 12px;
     padding: 2px 5px 2px 8px;
     font-size: 0.78rem;
+    white-space: nowrap;
 }
 
 .selection-modal-chip-label {
@@ -1749,6 +1843,192 @@ html, body {
     border: 1px solid;
     border-radius: 5px;
     outline: none;
+}
+/* ---- the window-sized dialog (the row's Tags | Parts modal) ----
+   calc(100vw - 48px) by calc(100vh - 48px), at most 1800 by 1200; the list or grid takes
+   the height left after the header, toolbar, Selected row and footer. A dragged size
+   comes as inline width/height (selectionModal.js); .is-narrow = under 1400px wide */
+.selection-modal-dialog.is-window-sized {
+    width: min(1800px, calc(100vw - 48px));
+    height: min(1200px, calc(100vh - 48px));
+    max-height: none;
+    min-width: 640px;
+    min-height: 480px;
+}
+.selection-modal-dialog.is-window-sized .selection-modal-status {
+    flex: 0 0 auto;
+}
+.selection-modal-dialog.is-window-sized .selection-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.selection-modal-dialog.is-window-sized .selection-modal-list {
+    max-height: none;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+.selection-modal-dialog.is-window-sized .selection-modal-panel {
+    flex: 0 0 360px;
+    max-height: none;
+}
+.selection-modal-dialog.is-window-sized.is-narrow .selection-modal-panel {
+    flex-basis: 300px;
+}
+.selection-modal-header-tools {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.selection-modal-fit {
+    min-width: 28px;
+    height: 26px;
+    padding: 0 6px;
+    border: 1px solid var(--saa-border-ctl);
+    border-radius: 4px;
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.selection-modal-fit:hover {
+    background: var(--saa-bg-hover);
+}
+.selection-modal-fit[hidden],
+.selection-modal-resize[hidden],
+.selection-modal-rail[hidden],
+.selection-modal-sort-label[hidden],
+.selection-modal-size[hidden] {
+    display: none;
+}
+.selection-modal-resize {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 16px;
+    height: 16px;
+    border-right: 2px solid var(--saa-muted);
+    border-bottom: 2px solid var(--saa-muted);
+    border-radius: 0 0 5px 0;
+    cursor: nwse-resize;
+    touch-action: none;
+}
+/* the category rail beside the list (a tab that asks for it: the Parts tab) */
+.selection-modal-rail {
+    flex: 0 0 196px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 0;
+    padding: 8px;
+    box-sizing: border-box;
+    overflow: auto;
+    border: 1px solid var(--saa-border-strong);
+    border-radius: 5px;
+    background: var(--saa-bg-panel);
+}
+.selection-modal-dialog.is-narrow .selection-modal-rail {
+    flex-basis: 132px;
+}
+.selection-modal-rail-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--saa-muted2);
+    font: inherit;
+    font-size: 12.5px;
+    text-align: left;
+    cursor: pointer;
+}
+.selection-modal-rail-item:hover {
+    background: var(--saa-bg-hover);
+}
+.selection-modal-rail-item.is-active {
+    background: var(--saa-bg-selected);
+    color: var(--saa-text);
+    font-weight: 600;
+}
+.selection-modal-rail-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.selection-modal-rail-dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--saa-muted);
+}
+.selection-modal-rail-dot.is-blank {
+    background: transparent;
+    border: 1px solid var(--saa-muted);
+    box-sizing: border-box;
+}
+.selection-modal-rail-count {
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: var(--saa-muted);
+}
+.selection-modal-rail-item.is-active .selection-modal-rail-count {
+    color: var(--saa-text);
+}
+/* the sort box and the tile-size segment of a grid tab */
+.selection-modal-sort-label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 0 1 150px;
+    min-width: 120px;
+    font-size: 0.78rem;
+}
+.selection-modal-sort {
+    min-height: 30px;
+    box-sizing: border-box;
+    border: 1px solid var(--saa-border-ctl);
+    border-radius: 5px;
+    padding: 4px 7px;
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
+    font: inherit;
+}
+.selection-modal-size {
+    display: flex;
+    gap: 2px;
+    align-self: end;
+    padding: 2px;
+    border: 1px solid var(--saa-border-ctl);
+    border-radius: 6px;
+    background: var(--saa-bg-panel);
+}
+.selection-modal-size-button {
+    min-width: 28px;
+    height: 24px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--saa-muted2);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.selection-modal-size-button:hover {
+    background: var(--saa-bg-hover);
+}
+.selection-modal-size-button.is-on {
+    background: var(--saa-bg-selected);
+    color: var(--saa-text);
+    font-weight: 600;
 }
 
 .selection-modal-list:focus-visible,
@@ -2441,12 +2721,25 @@ html, body {
 /* a grid tab: the rows are tiles, the tick sits on a selected one */
 /* max-content rows: the box has a definite height (the dialog's), and auto rows would
    be squeezed into it, the sample images shrinking with them, instead of scrolling */
-.selection-modal-list.is-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); grid-auto-rows: max-content; gap: 8px; align-content: start; padding: 8px; min-height: 280px; }
+.selection-modal-list.is-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--selection-tile, 128px), 1fr)); grid-auto-rows: max-content; gap: 8px; align-content: start; padding: 8px; min-height: 280px; }
 .selection-modal-tile .parts-tile-image { flex: none; }
 .selection-modal-tile.selection-modal-option { position: relative; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 4px; padding: 4px; border: 1px solid var(--saa-border); border-radius: 6px; background: var(--saa-bg-control); font-weight: 400; }
 .selection-modal-tile.selection-modal-option[aria-selected="true"] { border: 2px solid var(--saa-accent); padding: 3px; font-weight: 400; }
 .selection-modal-tile.selection-modal-option[aria-selected="true"]::before { content: '✓'; position: absolute; top: 6px; left: 6px; z-index: 1; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 9px; background: var(--saa-accent); color: #fff; font-size: 11px; font-weight: 700; }
 .selection-modal-list.is-grid .selection-modal-option:hover { background: var(--saa-bg-hover); }
+/* the tile the panel shows (a click), told from the ones picked (a double click) */
+.selection-modal-list.is-preview-click .selection-modal-option.is-previewed { outline: 2px solid var(--saa-accent); outline-offset: -2px; }
+.parts-tile-image.is-missing, .parts-panel-image.is-missing { border-style: dashed; color: var(--saa-muted); font-size: 11px; text-align: center; }
+.parts-tile-tags { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the Parts tab's panel (pickerPanel in partsUi.js) */
+.parts-picker-panel { gap: 10px; }
+.parts-picker-head { display: flex; flex-direction: column; gap: 2px; }
+.parts-picker-sample { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.parts-picker-sample .parts-panel-image { width: 64%; height: auto; max-width: 220px; }
+.parts-picker-token { display: block; padding: 7px 9px; border-radius: 6px; background: var(--saa-bg-app); color: var(--saa-text); font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.parts-picker-actions { display: flex; gap: 6px; margin-top: auto; }
+.parts-picker-add { flex: 1 1 auto; min-width: 0; min-height: 30px; border: 1px solid; border-radius: 5px; padding: 4px 10px; font: inherit; cursor: pointer; }
+.parts-picker-add.is-selected { opacity: 0.85; }
 .parts-tile-body { display: contents; }
 /* under the main tab's list: the same search on another tab */
 .selection-modal-crosslink { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; margin: -2px 12px 8px; padding: 2px 9px; border: 1px solid #8a7440; border-radius: 10px; background: transparent; color: #e0c080; font: inherit; font-size: 11px; cursor: pointer; }

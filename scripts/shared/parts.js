@@ -215,6 +215,8 @@ export function cleanPart(raw, fallbackId = '') {
         pinned,
         created: typeof source.created === 'string' ? source.created : '',
         updated: typeof source.updated === 'string' ? source.updated : '',
+        // from the bundled starter set (the picker says "starter" instead of "yours")
+        starter: source.starter === true,
     };
 }
 
@@ -268,7 +270,7 @@ export function partsDefaultsDoc(raw, now = () => new Date().toISOString()) {
         if (!entry || !entry.tags) continue;
         const id = partId(entry.name);
         if (doc.parts[id]) continue;
-        doc.parts[id] = { ...entry, samples: [], pinned: null, created: stamp, updated: stamp };
+        doc.parts[id] = { ...entry, samples: [], pinned: null, created: stamp, updated: stamp, starter: true };
     }
     return doc;
 }

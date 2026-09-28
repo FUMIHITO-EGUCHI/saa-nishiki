@@ -721,7 +721,7 @@ test('the caller is told which row is under the pointer, which row is active, an
 
 test('the modal hands back exactly the handles the callers use, and destroy takes it off the page', async () => {
     await withModal({ mode: 'multiple' }, async ({ document, modal, clock, ui }) => {
-        assert.deepEqual(Object.keys(modal).sort(), ['activeTab', 'apply', 'close', 'destroy', 'element', 'isOpen', 'open', 'selectTab']);
+        assert.deepEqual(Object.keys(modal).sort(), ['activeTab', 'apply', 'category', 'close', 'destroy', 'element', 'isOpen', 'open', 'selectTab']);
         assert.equal(typeof modal.open, 'function');
         assert.equal(document.body.contains(modal.element), true);
 
@@ -825,7 +825,8 @@ test('tabs: the strip appears only when open() brings tabs; the toolbar stays in
         assert.deepEqual(tabsOf(ui), ['Tags*', 'Parts']);
         assert.equal(modal.activeTab(), null);
         const toolbar = ui.root.querySelector('.selection-modal-toolbar');
-        const TOOLBAR = ['selection-modal-search-label', 'selection-modal-filter-label', 'selection-modal-filter-label', 'selection-modal-favonly'];
+        // the sort box and the tile-size segment sit hidden between the filters and the star
+        const TOOLBAR = ['selection-modal-search-label', 'selection-modal-filter-label', 'selection-modal-filter-label', 'selection-modal-sort-label', 'selection-modal-size', 'selection-modal-favonly'];
         assert.deepEqual(toolbar.children.map(child => child.className), TOOLBAR);
         assert.equal(ui.favOnly.hidden, false, 'with tabs the star keeps its place…');
         assert.equal(ui.favOnly.disabled, true, '…greyed while the tab has no favourites');

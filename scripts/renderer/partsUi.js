@@ -534,6 +534,84 @@ function lackingSamples() {
     return partList().filter(entry => { const sample = pickSample(entry, type); return !sample || sample.foreign; }).length;
 }
 
+// The rail's colour per category (the modal's category rail, selectionModal.js)
+const CATEGORY_COLORS = Object.freeze({
+    outfit: '#e0a72f', hair: '#d97757', body: '#c084fc', background: '#4ade80', camera: '#7fb0ff',
+    composition: '#38bdf8', tone: '#f472b6', pose: '#facc15', expression: '#fb923c', other: '#9aa0a6',
+});
+
+// The sample of the model in use, or null: a sample of the other model is not shown
+// in the picker (the tile says "No sample yet" instead)
+function sampleInUse(entry) {
+    const sample = pickSample(entry, modelType());
+    return sample && !sample.foreign ? sample : null;
+}
+
+// A tile of the row modal's Parts tab: the sample of the model in use (or "No sample
+// yet"), "parts:<name>", and the tags on one line
+function pickerTile(id) {
+    const entry = getPart(id);
+    const box = el('span', 'parts-tile-body');
+    if (!entry) return box;
+    if (sampleInUse(entry)) {
+        box.append(sampleTile(id));
+    } else {
+        const holder = el('span', 'parts-tile-image is-empty is-missing');
+        holder.append(el('span', 'parts-tile-empty', text('parts_no_sample_yet', 'No sample yet')));
+        box.append(holder);
+    }
+    const name = el('span', 'parts-tile-name');
+    name.append(el('span', 'parts-prefix', 'parts:'), document.createTextNode(entry.name));
+    box.append(name, el('span', 'parts-tile-meta parts-tile-tags', entry.tags));
+    return box;
+}
+
+// The panel beside the grid of the row modal's Parts tab: the name, where the part
+// came from, the sample of the model in use, the tags, what the chip sends, and Add
+// to selection / Edit / Sample
+function pickerPanel(id, { trigger = null, api = null, toOption = null, onChanged = null } = {}) {
+    const entry = id ? getPart(id) : null;
+    const panel = el('div', 'parts-panel-content parts-picker-panel');
+    if (!entry) {
+        panel.append(el('p', 'parts-panel-empty', partList().length ? text('parts_panel_pick', 'Pick a part to see its tags and sample.') : text('parts_panel_none', 'No parts yet. Select chips in a row and choose "Save as part…", or press New part.')));
+        return panel;
+    }
+    const head = el('div', 'parts-picker-head');
+    head.append(
+        el('span', 'parts-panel-name', entry.name),
+        el('span', 'parts-panel-sub', `${categoryLabel(entry.category)} · ${entry.starter ? text('parts_origin_starter', 'starter') : text('parts_origin_user', 'yours')}`),
+    );
+    panel.append(head);
+    const figure = el('div', 'parts-picker-sample');
+    const sample = sampleInUse(entry);
+    if (sample) {
+        figure.append(sampleTile(id, { className: 'parts-panel-image' }));
+        figure.append(el('span', 'parts-card-meta', `${modelTypeLabel(modelType())} · v${sample.promptVersion}`));
+    } else {
+        const holder = el('span', 'parts-panel-image is-empty is-missing');
+        holder.append(el('span', 'parts-tile-empty', text('parts_no_sample_yet', 'No sample yet')));
+        figure.append(holder, el('span', 'parts-card-meta', modelTypeLabel(modelType())));
+    }
+    panel.append(figure);
+    panel.append(el('span', 'parts-section-label', text('parts_tags', 'Tags').toUpperCase()));
+    const chips = el('div', 'parts-card-tags');
+    for (const member of parsePromptToCapsules(entry.tags)) chips.append(el('span', `parts-card-tag${member.disabled ? ' is-off' : ''}`, member.value));
+    panel.append(chips);
+    panel.append(el('span', 'parts-section-label', text('parts_sends_as', 'Sends as').toUpperCase()));
+    panel.append(el('code', 'parts-picker-token', partToken(entry.name)));
+    const actions = el('div', 'parts-picker-actions');
+    const option = toOption ? toOption(entry) : null;
+    const selected = Boolean(option && api?.isSelected?.(option));
+    const add = button(`parts-picker-add${selected ? ' is-selected' : ''}`, selected ? text('parts_remove_from_selection', 'Remove from selection') : text('parts_add_to_selection', 'Add to selection'), () => { if (option) api?.toggle?.(option); });
+    add.disabled = !option;
+    const edit = button('list-manager-button parts-picker-edit', text('parts_edit_short', 'Edit'), () => openPartEditor({ id, trigger, onSaved: () => onChanged?.() }));
+    const sampleButton = button('list-manager-button parts-picker-sample', text('parts_sample_short', 'Sample'), () => queuePartSample(id, { base: 'mannequin' }), { title: text('parts_new_sample', 'New sample') });
+    sampleButton.disabled = !comfyInterface();
+    actions.append(add, edit, sampleButton);
+    panel.append(actions);
+    return panel;
+}
+
 // One part's tile: the sample, "parts:<name>", the category and the models it has samples for
 function tileContent(id) {
     const entry = getPart(id);
@@ -587,6 +665,10 @@ function panelContent(id, { trigger = null, onChanged = null } = {}) {
  * tile joins the modal's selection as its parts: token and Apply inserts it like a
  * tag. Null when parts are not available.
  */
+function optionLabelOf(option) {
+    return String(option?.label ?? option?.value ?? '');
+}
+
 export function partsPickerTab({ fieldKey = null, trigger = null } = {}) {
     if (!partsAvailable()) return null;
     const type = modelType();
@@ -606,21 +688,31 @@ export function partsPickerTab({ fieldKey = null, trigger = null } = {}) {
         const needle = String(query).trim().toLowerCase();
         return partList().filter(entry => entry.name.toLowerCase().includes(needle) || entry.tags.toLowerCase().includes(needle)).length;
     };
+    const created = item => getPart(item.part)?.created ?? '';
     return {
         id: 'parts',
         label: text('parts_tab', 'Parts'),
         view: 'grid',
-        categories: PART_CATEGORIES.map(category => ({ value: category, label: categoryLabel(category) })),
-        // the View row opens on the camera parts (the category filter is still free to change)
+        // the categories as a rail beside the grid, All first, each with its colour
+        rail: true,
+        categories: PART_CATEGORIES.map(category => ({ value: category, label: categoryLabel(category), color: CATEGORY_COLORS[category] ?? '' })),
+        // the View row opens on the camera parts (the rail is still free to change)
         defaultCategory: fieldKey === 'views' && PART_CATEGORIES.includes('camera') ? 'camera' : '',
         categoryLabel: text('parts_category', 'Category'),
         categoryAll: text('parts_category_all', 'All'),
-        attributes: [
-            { value: 'sampled', label: text('parts_filter_sampled', 'Sampled for {0}', modelTypeLabel(type)) },
-            { value: 'missing', label: text('parts_filter_missing', 'No sample') },
+        // no Sample box: a tile without a sample of the model in use says so itself
+        attributes: [],
+        // one click shows the tile in the panel, a double click (or Enter) picks it
+        clickPreviews: true,
+        sorts: [
+            { value: 'name', label: text('parts_sort_name', 'Name'), compare: (a, b) => optionLabelOf(a).localeCompare(optionLabelOf(b)) },
+            { value: 'newest', label: text('parts_sort_newest', 'Newest'), compare: (a, b) => created(b).localeCompare(created(a)) || optionLabelOf(a).localeCompare(optionLabelOf(b)) },
         ],
-        attributeLabel: text('parts_filter_sample', 'Sample'),
-        attributeAll: text('parts_category_all', 'All'),
+        tileSizes: [
+            { value: 's', label: 'S', px: 120, title: text('parts_tile_size_s', 'Small tiles') },
+            { value: 'm', label: 'M', px: 168, default: true, title: text('parts_tile_size_m', 'Medium tiles') },
+            { value: 'l', label: 'L', px: 220, title: text('parts_tile_size_l', 'Large tiles') },
+        ],
         emptyMessage: text('parts_grid_empty', 'No part matches.'),
         searchPrompt: text('parts_panel_none', 'No parts yet. Select chips in a row and choose "Save as part…", or press New part.'),
         refreshEvent: PARTS_CHANGED_EVENT,
@@ -628,8 +720,8 @@ export function partsPickerTab({ fieldKey = null, trigger = null } = {}) {
             await loadParts();
             return partList().map(option);
         },
-        renderOption: item => tileContent(item.part),
-        panel: (item, api) => panelContent(item?.part ?? null, { trigger, onChanged: () => api.refresh() }),
+        renderOption: item => pickerTile(item.part),
+        panel: (item, api) => pickerPanel(item?.part ?? null, { trigger, api, toOption: option, onChanged: () => api.refresh() }),
         actions: [
             { label: text('parts_new', '+ New part'), onClick: api => openPartEditor({ trigger, onSaved: () => api.refresh() }) },
             {

@@ -89,5 +89,6 @@ test('generation reads the View row like every other row, on both paths, and Pro
 test('a selection-modal tab may open on one of its categories, and the main tab never does', async () => {
     const modal = read('scripts/renderer/components/selectionModal.js');
     assert.match(modal, /defaultCategory: typeof tab\.defaultCategory === 'string' \? tab\.defaultCategory : ''/);
-    assert.match(modal, /categorySelect\.value = preset \? activeConfig\.defaultCategory : '';/);
+    assert.match(modal, /categorySelect\.value = preset && !activeConfig\.rail \? activeConfig\.defaultCategory : '';/);
+    assert.match(modal, /railCategory = preset && activeConfig\.rail \? activeConfig\.defaultCategory : '';/, 'a tab with the category rail opens the rail on it');
 });

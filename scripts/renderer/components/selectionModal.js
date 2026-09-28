@@ -1,11 +1,19 @@
 import { pagedCountText, tagText } from './tagUiText.js';
 import {
+    clampDialogSize,
+    dialogSizeKey,
     filterSelectionOptions,
     limitSelectionOptions,
     normalizeSelectionKey,
+    readStoredPreference,
+    readStoredSize,
     removeSelectedOption,
     selectOption,
+    writeStoredPreference,
+    writeStoredSize,
 } from './selectionModalLogic.js';
+
+const NARROW_DIALOG = 1400;    // under this width the rail and the panel take their narrow widths
 
 const FOCUSABLE_SELECTOR = [
     'button:not([disabled])',
@@ -58,6 +66,9 @@ export function createSelectionModal({
     onActiveOption = null,
     onOptionLeave = null,
     loadOptions = null,
+    // the dialog fills the window (design/parts, the row's Tags | Parts modal): sized by
+    // the window, shrinkable from its corner, the size kept per tab; see selectionModalLogic
+    fitWindow = false,
 } = {}) {
     const id = `selection-modal-${++modalSequence}`;
     const overlay = createElement('div', 'selection-modal');
@@ -69,15 +80,23 @@ export function createSelectionModal({
     dialog.setAttribute('aria-modal', 'true');
     dialog.setAttribute('aria-labelledby', `${id}-title`);
     dialog.tabIndex = -1;
+    dialog.classList.toggle('is-window-sized', fitWindow);
 
     const header = createElement('header', 'selection-modal-header');
     const heading = createElement('h2', 'selection-modal-title');
     heading.id = `${id}-title`;
     header.appendChild(heading);
+    const headerTools = createElement('div', 'selection-modal-header-tools');
+    // back to the window-sized rule after the corner was dragged
+    const fitButton = createElement('button', 'selection-modal-fit', '⛶');
+    fitButton.type = 'button';
+    fitButton.hidden = !fitWindow;
+    headerTools.appendChild(fitButton);
     const closeButton = createElement('button', 'selection-modal-close', '×');
     closeButton.type = 'button';
     closeButton.setAttribute('aria-label', 'Close');
-    header.appendChild(closeButton);
+    headerTools.appendChild(closeButton);
+    header.appendChild(headerTools);
     dialog.appendChild(header);
 
     // the tab strip: shown only when open() brings extra tabs (a caller's own view of
@@ -114,6 +133,20 @@ export function createSelectionModal({
     attributeLabel.append(attributeText, attributeSelect);
     toolbar.appendChild(attributeLabel);
 
+    // a tab may offer sort orders and tile sizes (the Parts grid); both stay hidden on a
+    // tab that has none, and the star keeps the last place so nothing shifts between tabs
+    const sortLabel = createElement('label', 'selection-modal-sort-label');
+    const sortText = createElement('span', 'selection-modal-filter-text', 'Sort');
+    const sortSelect = createElement('select', 'selection-modal-sort');
+    sortSelect.id = `${id}-sort`;
+    sortLabel.append(sortText, sortSelect);
+    sortLabel.hidden = true;
+    toolbar.appendChild(sortLabel);
+    const sizeSegment = createElement('div', 'selection-modal-size');
+    sizeSegment.setAttribute('role', 'group');
+    sizeSegment.hidden = true;
+    toolbar.appendChild(sizeSegment);
+
     const favOnlyButton = createElement('button', 'selection-modal-favonly', '★');
     favOnlyButton.type = 'button';
     favOnlyButton.hidden = true;
@@ -121,12 +154,19 @@ export function createSelectionModal({
     toolbar.appendChild(favOnlyButton);
     dialog.appendChild(toolbar);
 
+    // the Selected row is one line high whatever the count: the chips scroll sideways,
+    // the "Selected N" button opens the whole list in a popover, Clear empties it
     const selectedSection = createElement('section', 'selection-modal-selected');
-    const selectedHeading = createElement('h3', 'selection-modal-section-title', 'Selected');
-    selectedSection.appendChild(selectedHeading);
+    const selectedToggle = createElement('button', 'selection-modal-selected-toggle');
+    selectedToggle.type = 'button';
+    selectedToggle.setAttribute('aria-expanded', 'false');
     const selectedList = createElement('div', 'selection-modal-selected-list');
     selectedList.setAttribute('aria-label', 'Selected items');
-    selectedSection.appendChild(selectedList);
+    const clearButton = createElement('button', 'selection-modal-clear');
+    clearButton.type = 'button';
+    const selectedPopover = createElement('div', 'selection-modal-selected-popover');
+    selectedPopover.hidden = true;
+    selectedSection.append(selectedToggle, selectedList, clearButton, selectedPopover);
     dialog.appendChild(selectedSection);
 
     const status = createElement('div', 'selection-modal-status');
@@ -139,8 +179,12 @@ export function createSelectionModal({
     listbox.setAttribute('role', 'listbox');
     listbox.tabIndex = 0;
     if (mode === 'multiple') listbox.setAttribute('aria-multiselectable', 'true');
-    // the list and, for a tab that has one, the panel beside it about the active row
+    // the list and, for a tab that has one, the panel beside it about the active row,
+    // and before the list the category rail of a tab that asks for one
     const body = createElement('div', 'selection-modal-body');
+    const rail = createElement('nav', 'selection-modal-rail');
+    rail.hidden = true;
+    body.appendChild(rail);
     body.appendChild(listbox);
     const panel = createElement('aside', 'selection-modal-panel');
     panel.hidden = true;
@@ -163,6 +207,11 @@ export function createSelectionModal({
     applyButton.type = 'button';
     footer.append(footerActions, footerNote, cancelButton, applyButton);
     dialog.appendChild(footer);
+    // the corner a window-sized dialog is dragged smaller by
+    const resizeHandle = createElement('div', 'selection-modal-resize');
+    resizeHandle.hidden = !fitWindow;
+    resizeHandle.setAttribute('aria-hidden', 'true');
+    dialog.appendChild(resizeHandle);
 
     overlay.appendChild(createElement('div', 'selection-modal-backdrop'));
     overlay.appendChild(dialog);
@@ -185,7 +234,11 @@ export function createSelectionModal({
     let staticOptions = [];        // the main tab's options when there is no loader
     let refreshHook = null;        // { type, listener } while a tab asked to follow an event
     let crosslinkTab = null;
-    let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, onActiveOption, favorites: null };
+    let railCategory = '';         // the rail's category on a tab that has the rail
+    let sortValue = '';            // the sort order on a tab that offers some
+    let tileSize = '';             // the tile size on a grid tab that offers some
+    let popoverOpen = false;       // the Selected list unfolded
+    let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, onActiveOption, favorites: null, sorts: [], tileSizes: [] };
 
     // Everything a tab can set: its filters (and what they are called), its loader, its
     // favourites, and for a grid its tile renderer, its side panel and its footer actions.
@@ -212,8 +265,78 @@ export function createSelectionModal({
             emptyMessage: tab.emptyMessage ?? emptyMessage,
             searchPrompt: tab.searchPrompt ?? searchPrompt,
             refreshEvent: typeof tab.refreshEvent === 'string' ? tab.refreshEvent : null,
+            // the categories as a rail beside the list instead of the Category box
+            rail: tab.rail === true,
+            // a click on a tile shows it in the panel; a double click (or Enter) picks it
+            clickPreviews: tab.clickPreviews === true,
+            sorts: Array.isArray(tab.sorts) ? tab.sorts.filter(sort => sort && sort.value) : [],
+            tileSizes: Array.isArray(tab.tileSizes) ? tab.tileSizes.filter(size => size && size.value && size.px > 0) : [],
         };
     }
+
+    // the category the list is narrowed to: the rail's on a tab with the rail, else the box's
+    function currentCategory() {
+        return activeConfig.rail ? railCategory : categorySelect.value;
+    }
+
+    // ---------------------------------------------------------------- the window-sized dialog
+
+    const storage = () => globalThis.localStorage ?? null;
+    const viewport = () => ({ width: globalThis.innerWidth || 0, height: globalThis.innerHeight || 0 });
+    const tabKey = () => activeTab?.id ?? 'main';
+
+    function updateNarrow() {
+        const width = dialog.getBoundingClientRect?.().width || 0;
+        dialog.classList.toggle('is-narrow', width > 0 && width < NARROW_DIALOG);
+    }
+
+    // the CSS rule sizes the dialog by the window; a size the user dragged is kept per
+    // tab and put back, clamped to the window it is opened in
+    function applySize() {
+        if (!fitWindow) return;
+        const saved = readStoredSize(storage(), dialogSizeKey(tabKey()));
+        if (saved) {
+            const size = clampDialogSize(saved, viewport());
+            dialog.style.width = `${size.width}px`;
+            dialog.style.height = `${size.height}px`;
+        } else {
+            dialog.style.width = '';
+            dialog.style.height = '';
+        }
+        updateNarrow();
+    }
+
+    function onWindowResize() {
+        if (isOpen()) applySize();
+    }
+
+    let drag = null;
+    resizeHandle.addEventListener('pointerdown', event => {
+        if (!fitWindow) return;
+        event.preventDefault();
+        const rect = dialog.getBoundingClientRect();
+        drag = { x: event.clientX, y: event.clientY, width: rect.width, height: rect.height, pointerId: event.pointerId };
+        resizeHandle.setPointerCapture?.(event.pointerId);
+    });
+    resizeHandle.addEventListener('pointermove', event => {
+        if (!drag) return;
+        const size = clampDialogSize({ width: drag.width + (event.clientX - drag.x), height: drag.height + (event.clientY - drag.y) }, viewport());
+        dialog.style.width = `${size.width}px`;
+        dialog.style.height = `${size.height}px`;
+        updateNarrow();
+    });
+    const endDrag = event => {
+        if (!drag) return;
+        drag = null;
+        writeStoredSize(storage(), dialogSizeKey(tabKey()), { width: Number.parseFloat(dialog.style.width), height: Number.parseFloat(dialog.style.height) });
+        resizeHandle.releasePointerCapture?.(event?.pointerId);
+    };
+    resizeHandle.addEventListener('pointerup', endDrag);
+    resizeHandle.addEventListener('pointercancel', endDrag);
+    fitButton.addEventListener('click', () => {
+        writeStoredSize(storage(), dialogSizeKey(tabKey()), null);
+        applySize();
+    });
 
     function isFavoriteOption(option) {
         return Boolean(activeConfig.favorites?.isFavorite?.(optionKey(option)));
@@ -268,31 +391,175 @@ export function createSelectionModal({
         footerNote.textContent = tagText('tag_ui_modal_note');
     }
 
+    function selectedChip(option) {
+        const chip = createElement('span', 'selection-modal-chip');
+        // an option may dress its chip (a part: gold frame, "parts:" small in front)
+        if (option.chipClass) chip.classList.add(option.chipClass);
+        const label = createElement('span', 'selection-modal-chip-label', optionLabel(option));
+        if (option.prefix) label.prepend(createElement('span', 'selection-modal-chip-prefix', option.prefix));
+        chip.appendChild(label);
+        const removeButton = createElement('button', 'selection-modal-chip-remove', '×');
+        removeButton.type = 'button';
+        removeButton.setAttribute('aria-label', `Remove ${optionLabel(option)}`);
+        removeButton.addEventListener('click', () => {
+            selectedOptions = removeSelectedOption(selectedOptions, optionKey(option));
+            renderSelected();
+            renderOptions();
+        });
+        chip.appendChild(removeButton);
+        return chip;
+    }
+
     function renderSelected() {
         renderApplyLabel();
+        const count = selectedOptions.length;
+        selectedToggle.replaceChildren(
+            createElement('span', 'selection-modal-selected-word', tagText('tag_ui_selected')),
+            createElement('span', 'selection-modal-selected-count', String(count)),
+        );
+        selectedToggle.title = tagText('tag_ui_selected_all');
+        selectedToggle.setAttribute('aria-label', `${tagText('tag_ui_selected')} ${count}`);
+        selectedToggle.disabled = count === 0;
+        clearButton.textContent = tagText('tag_ui_clear_selection');
+        clearButton.disabled = count === 0;
         selectedList.replaceChildren();
-        if (selectedOptions.length === 0) {
-            selectedList.appendChild(createElement('span', 'selection-modal-no-selection', 'None'));
+        selectedPopover.replaceChildren();
+        if (count === 0) {
+            popoverOpen = false;
+            selectedList.appendChild(createElement('span', 'selection-modal-no-selection', tagText('tag_ui_selected_none')));
+        } else {
+            for (const option of selectedOptions) selectedList.appendChild(selectedChip(option));
+        }
+        renderPopover();
+    }
+
+    // the unfolded list holds its chips only while it is open
+    function renderPopover() {
+        selectedPopover.replaceChildren();
+        if (popoverOpen) for (const option of selectedOptions) selectedPopover.appendChild(selectedChip(option));
+        selectedPopover.hidden = !popoverOpen;
+        selectedToggle.setAttribute('aria-expanded', String(popoverOpen));
+        selectedToggle.classList.toggle('is-open', popoverOpen);
+    }
+
+    function setPopover(open) {
+        popoverOpen = Boolean(open) && selectedOptions.length > 0;
+        renderPopover();
+    }
+
+    // ---------------------------------------------------------------- the category rail
+
+    // the rail: All and every category the tab named, each with the number of options
+    // it holds for the current search (the category itself does not narrow the count)
+    function renderRail() {
+        rail.hidden = !activeConfig.rail;
+        if (!activeConfig.rail) {
+            rail.replaceChildren();
             return;
         }
-        for (const option of selectedOptions) {
-            const chip = createElement('span', 'selection-modal-chip');
-            // an option may dress its chip (a part: gold frame, "parts:" small in front)
-            if (option.chipClass) chip.classList.add(option.chipClass);
-            const label = createElement('span', 'selection-modal-chip-label', optionLabel(option));
-            if (option.prefix) label.prepend(createElement('span', 'selection-modal-chip-prefix', option.prefix));
-            chip.appendChild(label);
-            const removeButton = createElement('button', 'selection-modal-chip-remove', '×');
-            removeButton.type = 'button';
-            removeButton.setAttribute('aria-label', `Remove ${optionLabel(option)}`);
-            removeButton.addEventListener('click', () => {
-                selectedOptions = removeSelectedOption(selectedOptions, optionKey(option));
-                renderSelected();
-                renderOptions();
-            });
-            chip.appendChild(removeButton);
-            selectedList.appendChild(chip);
+        const { query, favoritesOnly } = effectiveSearch();
+        let pool = filterSelectionOptions(currentOptions, { query, attribute: attributeSelect.value });
+        if (favoritesOnly && activeConfig.favorites) pool = pool.filter(option => isFavoriteOption(option));
+        const counts = new Map();
+        for (const option of pool) {
+            const key = String(option.category ?? '');
+            counts.set(key, (counts.get(key) ?? 0) + 1);
         }
+        const entries = [{ value: '', label: activeConfig.categoryAll ?? 'All', color: '' }, ...normalizeSelectOptions(activeConfig.categories).map(option => {
+            const source = activeConfig.categories.find(entry => entry && typeof entry === 'object' && entry.value === option.value);
+            return { ...option, color: source?.color ?? '' };
+        })];
+        rail.replaceChildren();
+        rail.setAttribute('aria-label', activeConfig.categoryLabel ?? 'Category');
+        for (const entry of entries) {
+            const button = createElement('button', 'selection-modal-rail-item');
+            button.type = 'button';
+            button.dataset.category = entry.value;
+            const on = entry.value === railCategory;
+            button.classList.toggle('is-active', on);
+            button.setAttribute('aria-pressed', String(on));
+            const name = createElement('span', 'selection-modal-rail-name');
+            const dot = createElement('span', 'selection-modal-rail-dot');
+            if (entry.color) dot.style.background = entry.color;
+            dot.classList.toggle('is-blank', !entry.color);
+            name.append(dot, document.createTextNode(entry.label));
+            const count = entry.value === '' ? pool.length : (counts.get(entry.value) ?? 0);
+            button.append(name, createElement('span', 'selection-modal-rail-count', String(count)));
+            button.addEventListener('click', () => {
+                if (railCategory === entry.value) return;
+                railCategory = entry.value;
+                scheduleRefresh();
+                renderRail();
+            });
+            rail.appendChild(button);
+        }
+    }
+
+    // ---------------------------------------------------------------- sort and tile size
+
+    function renderSortSelect() {
+        const sorts = activeConfig.sorts ?? [];
+        sortLabel.hidden = sorts.length === 0;
+        sortText.textContent = tagText('tag_ui_sort');
+        sortSelect.setAttribute('aria-label', sortText.textContent);
+        sortSelect.replaceChildren();
+        if (sorts.length === 0) {
+            sortValue = '';
+            return;
+        }
+        for (const sort of sorts) {
+            const element = document.createElement('option');
+            element.value = sort.value;
+            element.textContent = typeof sort.label === 'function' ? sort.label() : sort.label ?? sort.value;
+            sortSelect.appendChild(element);
+        }
+        const stored = readStoredPreference(storage(), `selection-modal-sort:${tabKey()}`);
+        sortValue = sorts.some(sort => sort.value === stored) ? stored : sorts[0].value;
+        sortSelect.value = sortValue;
+    }
+
+    function applyTileSize() {
+        const sizes = activeConfig.tileSizes ?? [];
+        const chosen = sizes.find(size => size.value === tileSize) ?? null;
+        for (const size of sizes) listbox.classList.remove(`is-tile-${size.value}`);
+        if (chosen) {
+            listbox.style.setProperty('--selection-tile', `${chosen.px}px`);
+            listbox.classList.add(`is-tile-${chosen.value}`);
+        } else {
+            listbox.style.removeProperty('--selection-tile');
+        }
+        for (const button of sizeSegment.children) {
+            const on = button.dataset.size === tileSize;
+            button.classList.toggle('is-on', on);
+            button.setAttribute('aria-pressed', String(on));
+        }
+    }
+
+    function renderSizeSegment() {
+        const sizes = activeConfig.tileSizes ?? [];
+        sizeSegment.hidden = sizes.length === 0;
+        sizeSegment.setAttribute('aria-label', tagText('tag_ui_tile_size'));
+        sizeSegment.replaceChildren();
+        if (sizes.length === 0) {
+            tileSize = '';
+            applyTileSize();
+            return;
+        }
+        const stored = readStoredPreference(storage(), `selection-modal-tile-size:${tabKey()}`);
+        tileSize = sizes.some(size => size.value === stored) ? stored : (sizes.find(size => size.default)?.value ?? sizes[0].value);
+        for (const size of sizes) {
+            const button = createElement('button', 'selection-modal-size-button', typeof size.label === 'function' ? size.label() : size.label ?? size.value);
+            button.type = 'button';
+            button.dataset.size = size.value;
+            if (size.title) button.title = size.title;
+            button.addEventListener('click', () => {
+                tileSize = size.value;
+                writeStoredPreference(storage(), `selection-modal-tile-size:${tabKey()}`, tileSize);
+                applyTileSize();
+            });
+            sizeSegment.appendChild(button);
+        }
+        applyTileSize();
     }
 
     function renderPanel(option) {
@@ -306,13 +573,18 @@ export function createSelectionModal({
         const item = visibleOptions[activeIndex];
         activeConfig.onActiveOption?.(item ?? null);
         renderPanel(item ?? null);
+        for (const previewed of listbox.querySelectorAll('.is-previewed')) previewed.classList.remove('is-previewed');
         if (!item) {
             listbox.removeAttribute('aria-activedescendant');
             return;
         }
         const itemId = `${id}-option-${activeIndex}`;
         listbox.setAttribute('aria-activedescendant', itemId);
-        if (scroll) listbox.querySelector(`#${CSS.escape(itemId)}`)?.scrollIntoView({ block: 'nearest' });
+        // the rows are the list's children in the order of visibleOptions; the active one
+        // wears a frame in a grid where a click previews (the panel is about it)
+        const element = listbox.children[activeIndex] ?? null;
+        element?.classList.add('is-previewed');
+        if (scroll) element?.scrollIntoView?.({ block: 'nearest' });
     }
 
     // ---------------------------------------------------------------- tabs
@@ -386,14 +658,19 @@ export function createSelectionModal({
         attributeText.textContent = activeConfig.attributeLabel ?? 'Attribute';
         categorySelect.setAttribute('aria-label', categoryText.textContent);
         attributeSelect.setAttribute('aria-label', attributeText.textContent);
-        setFilterOptions(categorySelect, activeConfig.categories, activeConfig.categoryAll ?? 'All categories');
+        // a tab with the rail keeps the Category box empty (and so hidden)
+        setFilterOptions(categorySelect, activeConfig.rail ? [] : activeConfig.categories, activeConfig.categoryAll ?? 'All categories');
         setFilterOptions(attributeSelect, activeConfig.attributes, activeConfig.attributeAll ?? 'All attributes');
         // a tab may open on one of its categories (the Parts tab of the View row: camera)
         const preset = typeof activeConfig.defaultCategory === 'string' && activeConfig.defaultCategory !== ''
             && (activeConfig.categories ?? []).some(entry => (typeof entry === 'string' ? entry : entry?.value) === activeConfig.defaultCategory);
-        categorySelect.value = preset ? activeConfig.defaultCategory : '';
+        categorySelect.value = preset && !activeConfig.rail ? activeConfig.defaultCategory : '';
+        railCategory = preset && activeConfig.rail ? activeConfig.defaultCategory : '';
         attributeSelect.value = '';
+        renderSortSelect();
+        renderSizeSegment();
         listbox.classList.toggle('is-grid', activeConfig.view === 'grid');
+        listbox.classList.toggle('is-preview-click', activeConfig.clickPreviews);
         panel.hidden = !activeConfig.panel;
         if (!activeConfig.panel) panel.replaceChildren();
         renderActions();
@@ -411,6 +688,7 @@ export function createSelectionModal({
         pager = null;
         activeIndex = -1;
         applyTabConfig();
+        applySize();
         hookRefreshEvent();
         renderOptions();
         if (activeConfig.loadOptions) {
@@ -494,9 +772,11 @@ export function createSelectionModal({
         const { query, favoritesOnly } = effectiveSearch();
         let filteredOptions = filterSelectionOptions(currentOptions, {
             query,
-            category: categorySelect.value,
+            category: currentCategory(),
             attribute: attributeSelect.value,
         });
+        const sort = (activeConfig.sorts ?? []).find(entry => entry.value === sortValue);
+        if (typeof sort?.compare === 'function') filteredOptions = filteredOptions.slice().sort(sort.compare);
         if (activeConfig.favorites) {
             if (favoritesOnly) filteredOptions = filteredOptions.filter(option => isFavoriteOption(option));
             // stable sort: favorites first, source order preserved otherwise
@@ -558,6 +838,7 @@ export function createSelectionModal({
         updateActiveDescendant({ scroll: scrollActive });
         renderStatus(filteredOptions.length, limited.hasMore);
         renderCrosslink();
+        renderRail();
     }
 
     // `keep`: the list is reloaded in place (a tab's store changed), the active row and
@@ -566,7 +847,7 @@ export function createSelectionModal({
         const generation = ++requestGeneration;
         const config = {
             query: effectiveSearch().query.trim(),
-            category: categorySelect.value,
+            category: currentCategory(),
             attribute: attributeSelect.value,
         };
         let nextOptions = currentOptions;
@@ -615,6 +896,8 @@ export function createSelectionModal({
         overlay.hidden = true;
         overlay.setAttribute('aria-hidden', 'true');
         document.removeEventListener('keydown', onDialogKeyDown);
+        globalThis.removeEventListener?.('resize', onWindowResize);
+        setPopover(false);
         clearTimeout(searchTimer);
         if (typeof onClose === 'function') onClose({ apply });
         restoreFocus();
@@ -652,6 +935,11 @@ export function createSelectionModal({
         if (event.key === 'Escape') {
             if (event.isComposing || event.keyCode === 229) return;
             event.preventDefault();
+            // the unfolded Selected list goes first, the dialog on the next Escape
+            if (popoverOpen) {
+                setPopover(false);
+                return;
+            }
             close({ apply: false });
             return;
         }
@@ -729,6 +1017,23 @@ export function createSelectionModal({
     });
     categorySelect.addEventListener('change', scheduleRefresh);
     attributeSelect.addEventListener('change', scheduleRefresh);
+    sortSelect.addEventListener('change', () => {
+        sortValue = sortSelect.value;
+        writeStoredPreference(storage(), `selection-modal-sort:${tabKey()}`, sortValue);
+        renderOptions();
+    });
+    selectedToggle.addEventListener('click', () => setPopover(!popoverOpen));
+    clearButton.addEventListener('click', () => {
+        selectedOptions = [];
+        renderSelected();
+        renderOptions();
+    });
+    // a click outside the unfolded Selected list folds it
+    dialog.addEventListener('pointerdown', event => {
+        if (!popoverOpen) return;
+        if (event.target.closest?.('.selection-modal-selected-popover, .selection-modal-selected-toggle')) return;
+        setPopover(false);
+    });
     listbox.addEventListener('click', event => {
         const item = event.target.closest('[role="option"]');
         if (!item) return;
@@ -742,6 +1047,19 @@ export function createSelectionModal({
             return;
         }
         activeIndex = index;
+        if (activeConfig.clickPreviews) {
+            // a tile: one click shows it in the panel, a double click (below) picks it
+            updateActiveDescendant({ scroll: false });
+            listbox.focus();
+            return;
+        }
+        toggleActive();
+    });
+    listbox.addEventListener('dblclick', event => {
+        if (!activeConfig.clickPreviews) return;
+        const item = event.target.closest('[role="option"]');
+        if (!item) return;
+        activeIndex = Number.parseInt(item.dataset.index, 10);
         toggleActive();
     });
     listbox.addEventListener('scroll', () => {
@@ -830,6 +1148,10 @@ export function createSelectionModal({
                 emptyMessage,
                 searchPrompt,
                 refreshEvent: null,
+                rail: false,
+                clickPreviews: false,
+                sorts: [],
+                tileSizes: [],
             };
             tabs = (Array.isArray(extraTabs) ? extraTabs : []).filter(tab => tab && typeof tab === 'object' && tab.id);
             mainTabLabel = tabLabel;
@@ -843,6 +1165,9 @@ export function createSelectionModal({
             currentOptions = activeTab ? [] : staticOptions.slice();
             pager = null;
             activeIndex = -1;
+            popoverOpen = false;
+            fitButton.title = tagText('tag_ui_fit_window');
+            fitButton.setAttribute('aria-label', fitButton.title);
             applyTabConfig();
             // the overlays share one z-index, so the last one in the body is on top: a
             // modal opened from inside another dialog (the part editor's Choose tags…)
@@ -850,7 +1175,9 @@ export function createSelectionModal({
             if (document.body.lastElementChild !== overlay) document.body.appendChild(overlay);
             overlay.hidden = false;
             overlay.setAttribute('aria-hidden', 'false');
+            applySize();
             document.addEventListener('keydown', onDialogKeyDown);
+            globalThis.addEventListener?.('resize', onWindowResize);
             hookRefreshEvent();
             if (typeof onOpen === 'function') onOpen();
             renderSelected();
@@ -877,5 +1204,7 @@ export function createSelectionModal({
         // the tab strip from outside: a caller's own button opens the modal on a tab
         selectTab: tabId => selectTab(tabs.find(tab => tab.id === tabId) ?? null),
         activeTab: () => activeTab?.id ?? null,
+        // the rail's category on a tab with one (tests and callers that follow it)
+        category: () => currentCategory(),
     };
 }

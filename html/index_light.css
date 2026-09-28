@@ -163,7 +163,8 @@ body {
 .character-selection-alias,
 .tag-selection-trigger,
 .selection-modal-cancel,
-.selection-modal-apply {
+.selection-modal-apply,
+.parts-picker-add {
     background: #fffdf5;
     border-color: #D2CBB8;
     color: #4A403A;
@@ -195,12 +196,14 @@ body {
     border-color: #D2CBB8;
 }
 
-.selection-modal-apply {
+.selection-modal-apply,
+.parts-picker-add {
     background: #d8b08c;
 }
 
 .selection-modal-cancel:hover,
 .selection-modal-apply:hover,
+.parts-picker-add:hover,
 .character-selection-trigger:hover,
 .tag-selection-trigger:hover {
     background: #e4decd;

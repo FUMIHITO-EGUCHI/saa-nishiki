@@ -232,6 +232,8 @@ export function setupTagSelectionModal(textboxes = [], keys = []) {
             emptyMessage: 'No matching tags.',
             searchPrompt: tagText('tag_ui_modal_search_prompt'),
             allowFreeInput: true,
+            // the row's modal (Tags | Parts) is sized by the window; the Parts grid needs the room
+            fitWindow: true,
             onOpen: () => trigger.setAttribute('aria-expanded', 'true'),
             onClose: () => trigger.setAttribute('aria-expanded', 'false'),
             onApply: selected => applyTagsToTextbox(
