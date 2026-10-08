@@ -246,8 +246,10 @@ export function normalizePartsDoc(raw) {
  * Bump this whenever the bundled file gains names.
  *   1: the first 85 (outfit, hair, body, background, other)
  *   2: 175 across nine categories (camera, composition, tone, pose, expression added)
+ *   3: 295 across ten categories (120 additional outfit, expression, background, camera,
+ *      pose, tone, composition, hair and other parts)
  */
-export const STARTER_SET_VERSION = 2;
+export const STARTER_SET_VERSION = 3;
 
 /** True when the document has not yet been merged with the current starter set. */
 export function starterSetPending(doc) {

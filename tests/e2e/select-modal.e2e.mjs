@@ -71,10 +71,10 @@ test('the Selected row keeps its one line however many chips it holds, and the P
     const { page } = app;
     await openPositiveModal(page);
     await page.click(`${OPEN} .selection-modal-tab:nth-child(2)`);
-    await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-tile').length === 175`, { label: 'the 175 starter tiles' });
+    await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-tile').length === 295`, { label: 'the 295 starter tiles' });
     const rail = JSON.parse(await page.evaluate(`JSON.stringify([...document.querySelectorAll('${OPEN} .selection-modal-rail-item')].map(item => item.querySelector('.selection-modal-rail-name').textContent + ':' + item.querySelector('.selection-modal-rail-count').textContent))`));
-    assert.equal(rail[0], 'All:175');
-    assert.ok(rail.includes('Camera:24'), `the camera category with its count: ${rail.join(' ')}`);
+    assert.equal(rail[0], 'All:295');
+    assert.ok(rail.includes('Camera:35'), `the camera category with its count: ${rail.join(' ')}`);
     assert.equal(await page.evaluate(`document.querySelector('${OPEN} .selection-modal-filter-label').hidden`), true, 'no Category box beside the rail');
     const rowHeight = await page.evaluate(`document.querySelector('${OPEN} .selection-modal-selected').getBoundingClientRect().height`);
     assert.equal(Math.round(rowHeight), 40, 'the Selected row is 40px with two chips');

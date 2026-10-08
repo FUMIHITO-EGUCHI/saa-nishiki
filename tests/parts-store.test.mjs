@@ -62,12 +62,12 @@ test('a settings folder without parts.json starts with the whole starter set, wr
     const rootDir = tempRoot();
     const store = createPartsStore({ rootDir, defaultsFile: DEFAULTS_FILE, now: () => new Date('2026-09-27T08:00:00Z'), log: null });
     const doc = store.load();
-    assert.equal(Object.keys(doc.parts).length, 175);
+    assert.equal(Object.keys(doc.parts).length, 295);
     assert.equal(doc.starterVersion, STARTER_SET_VERSION);
     assert.equal(doc.parts['sailor uniform'].created, '2026-09-27T08:00:00.000Z');
     const envelope = JSON.parse(fs.readFileSync(path.join(rootDir, 'parts.json'), 'utf8'));
     assert.equal(envelope.section, 'parts');
-    assert.equal(Object.keys(envelope.data.parts).length, 175);
+    assert.equal(Object.keys(envelope.data.parts).length, 295);
     assert.equal(envelope.data.starterVersion, STARTER_SET_VERSION, 'the version on disk stops the next launch from merging again');
     // without a starter file the store starts empty and writes nothing
     const bareRoot = tempRoot();
@@ -86,19 +86,19 @@ test('an existing parts.json older than the starter set gains the names it lacks
     first.apply({ action: 'set', entry: { name: 'mine', category: 'hair', tags: 'bob cut' } });
     const store = createPartsStore({ rootDir, defaultsFile: DEFAULTS_FILE, now: () => new Date('2026-09-28T09:00:00Z'), log: null });
     const doc = store.load();
-    assert.equal(Object.keys(doc.parts).length, 176, '174 starter parts added beside the two of the user');
+    assert.equal(Object.keys(doc.parts).length, 296, '294 starter parts added beside the two of the user');
     assert.equal(doc.parts['sailor uniform'].tags, 'serafuku, ~loafers', 'the user\'s tags win');
     assert.equal(doc.parts['sailor uniform'].name, 'Sailor Uniform');
     assert.equal(doc.parts.mine.tags, 'bob cut');
     assert.equal(doc.parts.classroom.created, '2026-09-28T09:00:00.000Z');
     assert.equal(doc.starterVersion, STARTER_SET_VERSION);
     const envelope = JSON.parse(fs.readFileSync(path.join(rootDir, 'parts.json'), 'utf8'));
-    assert.equal(Object.keys(envelope.data.parts).length, 176, 'the merge is saved');
+    assert.equal(Object.keys(envelope.data.parts).length, 296, 'the merge is saved');
     // a .bak alone is read the same way
     const withBak = tempRoot();
     fs.writeFileSync(path.join(withBak, 'parts.json.bak'), JSON.stringify({ schema: 1, section: 'parts', data: { parts: { mine: { name: 'mine', category: 'hair', tags: 'bob cut' } } } }));
     const fromBak = createPartsStore({ rootDir: withBak, defaultsFile: DEFAULTS_FILE, log: null });
-    assert.equal(Object.keys(fromBak.load().parts).length, 176);
+    assert.equal(Object.keys(fromBak.load().parts).length, 296);
     fs.rmSync(rootDir, { recursive: true, force: true });
     fs.rmSync(withBak, { recursive: true, force: true });
 });
@@ -108,17 +108,17 @@ test('a starter part the user deleted stays deleted: a document at the set versi
     const store = createPartsStore({ rootDir, defaultsFile: DEFAULTS_FILE, log: null });
     store.load();
     store.apply({ action: 'remove', id: 'sailor uniform' });
-    assert.equal(Object.keys(store.get().parts).length, 174);
+    assert.equal(Object.keys(store.get().parts).length, 294);
     const again = createPartsStore({ rootDir, defaultsFile: DEFAULTS_FILE, log: null });
     const doc = again.load();
-    assert.equal(Object.keys(doc.parts).length, 174, 'nothing came back');
+    assert.equal(Object.keys(doc.parts).length, 294, 'nothing came back');
     assert.equal(doc.parts['sailor uniform'], undefined);
     // an older version on disk is merged once more, so a grown set reaches the store
     const older = JSON.parse(fs.readFileSync(path.join(rootDir, 'parts.json'), 'utf8'));
     older.data.starterVersion = STARTER_SET_VERSION - 1;
     fs.writeFileSync(path.join(rootDir, 'parts.json'), JSON.stringify(older));
     const grown = createPartsStore({ rootDir, defaultsFile: DEFAULTS_FILE, log: null });
-    assert.equal(Object.keys(grown.load().parts).length, 175, 'the deleted starter part is back only when the set moved on');
+    assert.equal(Object.keys(grown.load().parts).length, 295, 'the deleted starter part is back only when the set moved on');
     // an unreadable bundled file: the document is read as it is, nothing written
     const brokenRoot = tempRoot();
     const broken = createPartsStore({ rootDir: brokenRoot, defaultsFile: path.join(rootDir, 'nope.json'), log: null });

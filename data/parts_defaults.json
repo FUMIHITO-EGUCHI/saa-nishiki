@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "section": "parts_defaults",
-  "note": "同梱スターターセット草案。name は parts:<name> の表示名、tags はチップと同じ書式(空白区切り Danbooru タグ、(tag:1.2) と ~tag 可)。全タグは data/danbooru_e621_merged.csv で照合済(未検出は unverified.txt)。SFW のみ、キャラ名・作者名なし。 2026-09-28: camera / composition / tone / pose / expression を追加(旧 other の 10 件は camera / pose へ移動)。",
+  "note": "同梱スターターセット草案。name は parts:<name> の表示名、tags はチップと同じ書式(空白区切り Danbooru タグ、(tag:1.2) と ~tag 可)。全タグは data/danbooru_e621_merged.csv で照合済(未検出は unverified.txt)。SFW のみ、キャラ名・作者名なし。 2026-09-28: camera / composition / tone / pose / expression を追加(旧 other の 10 件は camera / pose へ移動)。 2026-10-09: 120 extra parts adapted from the prompt-parts collection; existing names and richer entries are kept unchanged.",
   "parts": [
     {
       "name": "sailor uniform",
@@ -962,6 +962,606 @@
       "name": "scared",
       "category": "expression",
       "tags": "scared, wide-eyed"
+    },
+    {
+      "name": "school uniform",
+      "category": "outfit",
+      "tags": "school uniform"
+    },
+    {
+      "name": "t-shirt and jeans",
+      "category": "outfit",
+      "tags": "t-shirt, jeans"
+    },
+    {
+      "name": "hoodie",
+      "category": "outfit",
+      "tags": "hoodie"
+    },
+    {
+      "name": "sweater",
+      "category": "outfit",
+      "tags": "sweater"
+    },
+    {
+      "name": "cardigan",
+      "category": "outfit",
+      "tags": "cardigan"
+    },
+    {
+      "name": "dress",
+      "category": "outfit",
+      "tags": "dress"
+    },
+    {
+      "name": "suit",
+      "category": "outfit",
+      "tags": "suit"
+    },
+    {
+      "name": "coat",
+      "category": "outfit",
+      "tags": "coat"
+    },
+    {
+      "name": "maid outfit",
+      "category": "outfit",
+      "tags": "maid"
+    },
+    {
+      "name": "armored dress",
+      "category": "outfit",
+      "tags": "dress, armor"
+    },
+    {
+      "name": "tracksuit",
+      "category": "outfit",
+      "tags": "track suit"
+    },
+    {
+      "name": "swimsuit",
+      "category": "outfit",
+      "tags": "swimsuit"
+    },
+    {
+      "name": "big smile",
+      "category": "expression",
+      "tags": "smile, open mouth"
+    },
+    {
+      "name": "blushing smile",
+      "category": "expression",
+      "tags": "smile, blush"
+    },
+    {
+      "name": "closed-eye smile",
+      "category": "expression",
+      "tags": "smile, closed eyes"
+    },
+    {
+      "name": "confused",
+      "category": "expression",
+      "tags": "confused"
+    },
+    {
+      "name": "smirk",
+      "category": "expression",
+      "tags": "smirk"
+    },
+    {
+      "name": "simple background",
+      "category": "background",
+      "tags": "simple background"
+    },
+    {
+      "name": "white background",
+      "category": "background",
+      "tags": "white background"
+    },
+    {
+      "name": "gradient background",
+      "category": "background",
+      "tags": "gradient background"
+    },
+    {
+      "name": "abstract background",
+      "category": "background",
+      "tags": "abstract background"
+    },
+    {
+      "name": "kitchen",
+      "category": "background",
+      "tags": "kitchen"
+    },
+    {
+      "name": "city",
+      "category": "background",
+      "tags": "city"
+    },
+    {
+      "name": "alley",
+      "category": "background",
+      "tags": "alley"
+    },
+    {
+      "name": "rooftop",
+      "category": "background",
+      "tags": "rooftop"
+    },
+    {
+      "name": "train station",
+      "category": "background",
+      "tags": "train station"
+    },
+    {
+      "name": "park",
+      "category": "background",
+      "tags": "park"
+    },
+    {
+      "name": "garden",
+      "category": "background",
+      "tags": "garden"
+    },
+    {
+      "name": "mountain",
+      "category": "background",
+      "tags": "mountain"
+    },
+    {
+      "name": "flower field",
+      "category": "background",
+      "tags": "flower field"
+    },
+    {
+      "name": "castle",
+      "category": "background",
+      "tags": "castle"
+    },
+    {
+      "name": "ruins",
+      "category": "background",
+      "tags": "ruins"
+    },
+    {
+      "name": "profile",
+      "category": "camera",
+      "tags": "profile"
+    },
+    {
+      "name": "three-quarter view",
+      "category": "camera",
+      "tags": "three-quarter view"
+    },
+    {
+      "name": "over shoulder",
+      "category": "camera",
+      "tags": "over shoulder"
+    },
+    {
+      "name": "isometric",
+      "category": "camera",
+      "tags": "isometric"
+    },
+    {
+      "name": "hand focus",
+      "category": "camera",
+      "tags": "hand focus"
+    },
+    {
+      "name": "headshot",
+      "category": "camera",
+      "tags": "headshot"
+    },
+    {
+      "name": "full body",
+      "category": "camera",
+      "tags": "full body"
+    },
+    {
+      "name": "background blur",
+      "category": "camera",
+      "tags": "blurry background, depth of field"
+    },
+    {
+      "name": "foreground and background blur",
+      "category": "camera",
+      "tags": "blurry foreground, blurry background"
+    },
+    {
+      "name": "motion blur",
+      "category": "camera",
+      "tags": "motion blur"
+    },
+    {
+      "name": "multiple views",
+      "category": "camera",
+      "tags": "multiple views"
+    },
+    {
+      "name": "standing",
+      "category": "pose",
+      "tags": "standing"
+    },
+    {
+      "name": "lying",
+      "category": "pose",
+      "tags": "lying"
+    },
+    {
+      "name": "on back",
+      "category": "pose",
+      "tags": "on back"
+    },
+    {
+      "name": "on stomach",
+      "category": "pose",
+      "tags": "on stomach"
+    },
+    {
+      "name": "waving",
+      "category": "pose",
+      "tags": "waving"
+    },
+    {
+      "name": "leaning",
+      "category": "pose",
+      "tags": "leaning"
+    },
+    {
+      "name": "backlight",
+      "category": "tone",
+      "tags": "backlighting"
+    },
+    {
+      "name": "rim light",
+      "category": "tone",
+      "tags": "rim lighting"
+    },
+    {
+      "name": "sunlight",
+      "category": "tone",
+      "tags": "sunlight"
+    },
+    {
+      "name": "light rays",
+      "category": "tone",
+      "tags": "light rays"
+    },
+    {
+      "name": "shadow",
+      "category": "tone",
+      "tags": "shadow"
+    },
+    {
+      "name": "lens flare",
+      "category": "tone",
+      "tags": "lens flare"
+    },
+    {
+      "name": "spotlight",
+      "category": "tone",
+      "tags": "spotlight"
+    },
+    {
+      "name": "morning",
+      "category": "tone",
+      "tags": "morning"
+    },
+    {
+      "name": "dawn",
+      "category": "tone",
+      "tags": "dawn"
+    },
+    {
+      "name": "day",
+      "category": "tone",
+      "tags": "day"
+    },
+    {
+      "name": "sunset",
+      "category": "tone",
+      "tags": "sunset"
+    },
+    {
+      "name": "night",
+      "category": "tone",
+      "tags": "night"
+    },
+    {
+      "name": "blue sky",
+      "category": "tone",
+      "tags": "blue sky"
+    },
+    {
+      "name": "cloudy sky",
+      "category": "tone",
+      "tags": "cloudy sky"
+    },
+    {
+      "name": "rain",
+      "category": "tone",
+      "tags": "rain"
+    },
+    {
+      "name": "fog",
+      "category": "tone",
+      "tags": "fog"
+    },
+    {
+      "name": "starry sky",
+      "category": "tone",
+      "tags": "starry sky"
+    },
+    {
+      "name": "rainbow",
+      "category": "tone",
+      "tags": "rainbow"
+    },
+    {
+      "name": "solo focus",
+      "category": "composition",
+      "tags": "solo focus"
+    },
+    {
+      "name": "scenery",
+      "category": "composition",
+      "tags": "scenery"
+    },
+    {
+      "name": "border",
+      "category": "composition",
+      "tags": "border"
+    },
+    {
+      "name": "saturated",
+      "category": "tone",
+      "tags": "saturated"
+    },
+    {
+      "name": "warm colors",
+      "category": "tone",
+      "tags": "warm colors"
+    },
+    {
+      "name": "cool colors",
+      "category": "tone",
+      "tags": "cool colors"
+    },
+    {
+      "name": "muted colors",
+      "category": "tone",
+      "tags": "muted colors"
+    },
+    {
+      "name": "greyscale",
+      "category": "tone",
+      "tags": "greyscale"
+    },
+    {
+      "name": "colorful",
+      "category": "tone",
+      "tags": "colorful"
+    },
+    {
+      "name": "short hair",
+      "category": "hair",
+      "tags": "short hair"
+    },
+    {
+      "name": "long hair",
+      "category": "hair",
+      "tags": "long hair"
+    },
+    {
+      "name": "twintails",
+      "category": "hair",
+      "tags": "twintails"
+    },
+    {
+      "name": "braid",
+      "category": "hair",
+      "tags": "braid"
+    },
+    {
+      "name": "hair bun",
+      "category": "hair",
+      "tags": "hair bun"
+    },
+    {
+      "name": "wavy hair",
+      "category": "hair",
+      "tags": "wavy hair"
+    },
+    {
+      "name": "brown hair",
+      "category": "hair",
+      "tags": "brown hair"
+    },
+    {
+      "name": "blonde hair",
+      "category": "hair",
+      "tags": "blonde hair"
+    },
+    {
+      "name": "white hair",
+      "category": "hair",
+      "tags": "white hair"
+    },
+    {
+      "name": "red hair",
+      "category": "hair",
+      "tags": "red hair"
+    },
+    {
+      "name": "blue hair",
+      "category": "hair",
+      "tags": "blue hair"
+    },
+    {
+      "name": "anime coloring",
+      "category": "other",
+      "tags": "anime coloring"
+    },
+    {
+      "name": "anime screencap",
+      "category": "other",
+      "tags": "anime screenshot"
+    },
+    {
+      "name": "painterly",
+      "category": "other",
+      "tags": "painterly"
+    },
+    {
+      "name": "lineart",
+      "category": "other",
+      "tags": "lineart"
+    },
+    {
+      "name": "no lineart",
+      "category": "other",
+      "tags": "no lineart"
+    },
+    {
+      "name": "sketch",
+      "category": "other",
+      "tags": "sketch"
+    },
+    {
+      "name": "oil painting",
+      "category": "other",
+      "tags": "oil painting (medium)"
+    },
+    {
+      "name": "ink wash painting",
+      "category": "other",
+      "tags": "ink wash painting"
+    },
+    {
+      "name": "pixel art",
+      "category": "other",
+      "tags": "pixel art"
+    },
+    {
+      "name": "realistic",
+      "category": "other",
+      "tags": "realistic"
+    },
+    {
+      "name": "chibi",
+      "category": "other",
+      "tags": "chibi"
+    },
+    {
+      "name": "comic",
+      "category": "other",
+      "tags": "comic"
+    },
+    {
+      "name": "screentones",
+      "category": "other",
+      "tags": "screentones"
+    },
+    {
+      "name": "ukiyo-e",
+      "category": "other",
+      "tags": "ukiyo-e"
+    },
+    {
+      "name": "cable knit",
+      "category": "outfit",
+      "tags": "cable knit"
+    },
+    {
+      "name": "metal",
+      "category": "outfit",
+      "tags": "metal"
+    },
+    {
+      "name": "transparent",
+      "category": "outfit",
+      "tags": "transparent"
+    },
+    {
+      "name": "lace",
+      "category": "outfit",
+      "tags": "lace"
+    },
+    {
+      "name": "leather",
+      "category": "outfit",
+      "tags": "leather"
+    },
+    {
+      "name": "denim",
+      "category": "outfit",
+      "tags": "denim"
+    },
+    {
+      "name": "fur trim",
+      "category": "outfit",
+      "tags": "fur trim"
+    },
+    {
+      "name": "see-through fabric",
+      "category": "outfit",
+      "tags": "translucent clothing"
+    },
+    {
+      "name": "shiny clothes",
+      "category": "outfit",
+      "tags": "shiny clothes"
+    },
+    {
+      "name": "latex",
+      "category": "outfit",
+      "tags": "latex"
+    },
+    {
+      "name": "petals",
+      "category": "other",
+      "tags": "petals"
+    },
+    {
+      "name": "autumn leaves",
+      "category": "other",
+      "tags": "autumn leaves"
+    },
+    {
+      "name": "snowflakes",
+      "category": "other",
+      "tags": "snowflakes"
+    },
+    {
+      "name": "sparkles",
+      "category": "other",
+      "tags": "sparkles"
+    },
+    {
+      "name": "bokeh",
+      "category": "other",
+      "tags": "bokeh"
+    },
+    {
+      "name": "dust",
+      "category": "other",
+      "tags": "dust"
+    },
+    {
+      "name": "smoke",
+      "category": "other",
+      "tags": "smoke"
+    },
+    {
+      "name": "fireflies",
+      "category": "other",
+      "tags": "fireflies"
+    },
+    {
+      "name": "fireworks",
+      "category": "other",
+      "tags": "fireworks"
     }
   ]
 }
