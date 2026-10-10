@@ -124,3 +124,23 @@ test('Checkpoint with IP-Adapter: the hires pass keeps its LoRAs, on top of the 
     assert.deepEqual(wf['34'].inputs.model, [adapter[0], 0], 'the first pass samples through the adapter');
     assert.deepEqual(wf['20'].inputs.model, ['34', 0], 'was wired to the adapter directly, skipping every LoRA');
 });
+
+test('Checkpoint with IP-Adapter and a refiner: each pass keeps its own checkpoint under the adapter', () => {
+    const ipa = { preModel: 'ip-adapter->clip_vision_vit_h.safetensors', postModel: 'IPA->ip-adapter-plus_sdxl_vit-h.safetensors', postStr: 0.6, postStart: 0, postEnd: 1, image: 'H4sI' };
+    const refiner = { enable: true, model: 'refiner.safetensors', vpred: 0, ratio: 0.8, addnoise: false };
+    for (const [build, extra] of [
+        ['createWorkflow', { positive: '1girl, <lora:a:1:1>' }],
+        ['createWorkflowRegional', { regional, positive_left: '1girl, <lora:a:1:1>', positive_right: '1boy' }],
+    ]) {
+        const wf = builder[build](checkpoint({ ...extra, controlnet: [ipa], refiner }));
+        const adapters = Object.entries(wf).filter(([, node]) => node.class_type === 'AV_IPAdapter');
+        assert.equal(adapters.length, 2, `${build}: one adapter per checkpoint`);
+        const [[baseId, base], [refinerId, refined]] = adapters;
+        assert.equal(wf['35'].inputs.model[0], '45', 'node 35 samples the base checkpoint');
+        assert.deepEqual(base.inputs.model, ['35', 0], `${build}: the first pass's adapter sits on the base checkpoint, not the refiner's 44`);
+        assert.deepEqual(wf['34'].inputs.model, [baseId, 0]);
+        assert.deepEqual(refined.inputs.model, ['44', 0]);
+        assert.deepEqual(wf['39'].inputs.model, [refinerId, 0]);
+        assert.deepEqual(wf['20'].inputs.model, ['39', 0], `${build}: hires follows the refiner`);
+    }
+});

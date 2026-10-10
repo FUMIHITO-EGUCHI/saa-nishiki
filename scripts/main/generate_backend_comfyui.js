@@ -131,8 +131,10 @@ function applyControlnet(workflow, controlnet, workflowInfo){
             "end_at": slot.postEnd,
             "weight_type": "standard",
             "enabled": true,
+            // the base checkpoint's sampling node (35); 44 is the refiner's, which put
+            // the refiner checkpoint under the first pass whenever a refiner ran
             "model": [
-              "44",
+              "35",
               0
             ],
             "image": [
