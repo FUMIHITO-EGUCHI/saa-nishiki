@@ -14,8 +14,32 @@
 // reads the whole model file again: ~4 GB, ~40 s per switch from a hard disk (measured
 // 2026-10-10). When no tag gives the hires pass other strengths, both outputs hold the
 // same weights and every pass shares output 0 — one patch set for the whole run.
+//
+// The node also runs again whenever its text input changes, and every run makes new
+// clones. Fed the whole prompt, it gave each new prompt a new patch set: the model and
+// the text encoder read from disk again, ~6.3 GB / ~70 s per image for an SDXL
+// checkpoint on a hard disk (measured 2026-10-12). So it is fed the <lora:…> tags only
+// (splitLoraText), and the text encoders take the rest of the prompt: a run reuses the
+// last run's clones as long as the tags stay the same.
 
 export const LORA_FROM_TEXT_OUTPUT = Object.freeze({ model: 0, clip: 1, hiresModel: 2, hiresClip: 3, text: 4 });
+
+const LORA_TAG = /<lora:[^>]*>/g;
+// str.strip() in Python takes off what str.isspace() calls whitespace
+const PY_STRIP = /^[\t\n\v\f\r \x1c-\x1f\x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[\t\n\v\f\r \x1c-\x1f\x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/g;
+
+/**
+ * The positive prompt split the way LoRAfromText splits it: `tags`, the <lora:…> tags
+ * alone (what the node loads LoRAs from), and `plain`, the prompt without them (the
+ * node's plain_text output, remove_brackets in Lora.py).
+ */
+export function splitLoraText(text) {
+    const source = String(text ?? '');
+    return {
+        tags: (source.match(LORA_TAG) ?? []).join(''),
+        plain: source.replace(LORA_TAG, '').replace(PY_STRIP, ''),
+    };
+}
 
 // float() in Python takes more than this (inf, nan, 1_0); a tag with such a number is
 // left to the node to read and counted as one whose strengths may differ
@@ -30,7 +54,7 @@ const PLAIN_NUMBER = /^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\s*$/;
  */
 export function parseLoraTags(text) {
     const tags = [];
-    for (const [content] of String(text ?? '').matchAll(/<lora:[^>]*>/g)) {
+    for (const [content] of String(text ?? '').matchAll(LORA_TAG)) {
         const parts = content.slice(6, -1).split(':');
         const name = parts[0];
         if (!name) continue;

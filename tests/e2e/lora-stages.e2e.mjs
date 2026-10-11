@@ -66,6 +66,8 @@ test('Fast mode: hires and ADetailer sample from the first pass\'s Turbo LoRA mo
     assert.deepEqual(models.first[1], 0);
     assert.deepEqual(models.hires, models.first, 'one model for the whole run: no reload between passes');
     assert.deepEqual(models.detailer, models.first);
+    // the LoRA node is fed the tags only, so the next prompt with the same LoRAs reuses it
+    assert.equal(wf[models.first[0]].inputs.text, `<lora:${TURBO}:0.8:0.8>`);
     await app.page.evaluate(`document.querySelector('#fast-mode-toggle').click()`);
     assert.equal(await app.setting('api_fast_enable'), false);
 });

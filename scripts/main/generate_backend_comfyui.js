@@ -13,7 +13,7 @@ import { buildParametersText, embedPngParameters, findDiskWriterNodes, toWebsock
 import { interruptPodWorkflow, isPodSshEnabled, runPodWorkflow } from './podSshTransport.js';
 import { getGlobalSettings } from './globalSettings.js';
 import { applyFastMode, isDiffusionGeneration, missingFastLora } from '../shared/fastMode.js';
-import { loraStageModels } from '../shared/loraStageModels.js';
+import { loraStageModels, splitLoraText } from '../shared/loraStageModels.js';
 import { ensureComfyLaunchArgs } from './comfyProcess.js';
 import { getLoRAList, getLoRAListSource } from './modelList.js';
 import { remoteModelSource } from './remoteModelList.js';
@@ -1223,6 +1223,13 @@ class ComfyUI {
     
     // Set Positive prompt
     workflow["32"].inputs.text = positive;        
+    // the LoRA nodes read the tags only, the encoders the rest, so a new prompt with the
+    // same LoRAs keeps the last run's model in VRAM (loraStageModels.js)
+    const loraText = splitLoraText(positive);
+    workflow["34"].inputs.text = loraText.tags;
+    workflow["39"].inputs.text = loraText.tags;
+    workflow["2"].inputs.text = loraText.plain;
+    workflow["41"].inputs.text = loraText.plain;
     // Set Negative prompt
     workflow["33"].inputs.text = negative;
     
@@ -1387,6 +1394,10 @@ class ComfyUI {
     
     // Set Positive prompt
     workflow["32"].inputs.text = positive;        
+    // the LoRA node reads the tags only, the encoder the rest (loraStageModels.js)
+    const loraText = splitLoraText(positive);
+    workflow["34"].inputs.text = loraText.tags;
+    workflow["2"].inputs.text = loraText.plain;
     // Set Negative prompt
     workflow["33"].inputs.text = negative;    
 
@@ -1551,6 +1562,12 @@ class ComfyUI {
     // Set Positive prompt
     workflow["32"].inputs.text = positive_left;
     workflow["46"].inputs.text = positive_right;
+    // the LoRA nodes read the left prompt's tags only, its encoders the rest (loraStageModels.js)
+    const loraText = splitLoraText(positive_left);
+    workflow["34"].inputs.text = loraText.tags;
+    workflow["39"].inputs.text = loraText.tags;
+    workflow["2"].inputs.text = loraText.plain;
+    workflow["41"].inputs.text = loraText.plain;
     // Combine prompt
     workflow["29"].inputs.positive = `${positive_left}\n${positive_right}`;
     
@@ -1740,6 +1757,10 @@ class ComfyUI {
     // Set Positive prompt
     workflow["32"].inputs.text = positive_left;
     workflow["46"].inputs.text = positive_right;    
+    // the LoRA node reads the left prompt's tags only, its encoder the rest (loraStageModels.js)
+    const loraText = splitLoraText(positive_left);
+    workflow["39"].inputs.text = loraText.tags;
+    workflow["41"].inputs.text = loraText.plain;
     
     // Set Negative prompt
     workflow["33"].inputs.text = negative_left;

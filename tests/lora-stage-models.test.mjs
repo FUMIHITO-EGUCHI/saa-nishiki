@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { register } from 'node:module';
 import test from 'node:test';
 
-import { hiresModelOutput, loraStageModels, parseLoraTags } from '../scripts/shared/loraStageModels.js';
+import { hiresModelOutput, loraStageModels, parseLoraTags, splitLoraText } from '../scripts/shared/loraStageModels.js';
 
 test('tags are read the way ComfyUI_Mira parse_content reads them', () => {
     assert.deepEqual(parseLoraTags('1girl, <lora:a.safetensors:0.8:0.6>, smile'), [
@@ -33,6 +33,14 @@ test('the hires pass shares the first-pass model unless a tag gives it other str
     assert.deepEqual(loraStageModels(34, { text: '<lora:a:1:1>', hires: true }), { first: ['34', 0], hires: ['34', 0], last: ['34', 0] });
     assert.deepEqual(loraStageModels('39', { text: '<lora:a:0:0:1:1>', hires: true }), { first: ['39', 0], hires: ['39', 2], last: ['39', 2] });
     assert.deepEqual(loraStageModels('34', { text: '<lora:a:0:0:1:1>', hires: false }).last, ['34', 0], 'no hires: ADetailer follows the first pass');
+});
+
+test('the prompt splits into the tags and the plain_text the node would give', () => {
+    assert.deepEqual(splitLoraText('1girl, smile, \n<lora:dmd2_sdxl_4step_lora_fp16.safetensors:1:1>'),
+        { tags: '<lora:dmd2_sdxl_4step_lora_fp16.safetensors:1:1>', plain: '1girl, smile,' }, 'remove_brackets(...).strip()');
+    assert.deepEqual(splitLoraText(' <lora:a:1> 1girl <lora:b:0:0:1:1>, smile \u3000'), { tags: '<lora:a:1><lora:b:0:0:1:1>', plain: '1girl , smile' });
+    assert.deepEqual(splitLoraText('1girl, \ufeff'), { tags: '', plain: '1girl, \ufeff' }, 'Python\'s strip() keeps a BOM');
+    assert.deepEqual(splitLoraText(undefined), { tags: '', plain: '' });
 });
 
 // --- the builders --------------------------------------------------------------------
@@ -115,6 +123,34 @@ test('Checkpoint: ADetailer samples from the LoRA\'d model, hires shares it when
     const regionalWf = builder.createWorkflowRegional(checkpoint({ regional, positive_left: `1girl, ${HIFIX_ONLY}`, positive_right: '1boy' }));
     assert.deepEqual(regionalWf['20'].inputs.model, ['34', 2]);
     assert.deepEqual(detailerModels(regionalWf), [['34', 2]]);
+});
+
+test('the LoRA nodes read the tags only: a new prompt with the same LoRAs gives them the same inputs', () => {
+    // LoRAfromText runs again on any change of its inputs and makes new clones, which
+    // ComfyUI's dynamic VRAM reloads from disk (2026-10-12: ~70 s per image, SDXL on a hard disk)
+    const builds = [
+        ['createWorkflow', text => checkpoint({ positive: text }), ['34', '39'], ['2', '41']],
+        ['createWorkflowRegional', text => checkpoint({ regional, positive_left: text, positive_right: '1boy' }), ['34', '39'], ['2', '41']],
+        ['createWorkflowUNet', text => common({ unet, positive: text }), ['34'], ['2']],
+        ['createWorkflowRegionalUnet', text => common({ unet, regional, positive_left: text, positive_right: '1boy' }), ['39'], ['41']],
+    ];
+    for (const [build, data, loraNodes, encoders] of builds) {
+        const one = builder[build](data(`1girl, smile, ${FAST_TAG}`));
+        const two = builder[build](data(`1boy, ${FAST_TAG}, from below`));
+        for (const id of loraNodes) {
+            assert.equal(one[id].class_type, 'LoRAfromText', `${build}: ${id}`);
+            assert.equal(one[id].inputs.text, FAST_TAG, `${build}: ${id} reads the tags`);
+            assert.deepEqual(one[id].inputs, two[id].inputs, `${build}: ${id} is the same node for both prompts`);
+        }
+        for (const id of encoders) {
+            assert.equal(one[id].class_type, 'CLIPTextEncode');
+            assert.equal(one[id].inputs.text, '1girl, smile,', `${build}: encoder ${id} takes the prompt without the tags`);
+            assert.equal(two[id].inputs.text, '1boy, , from below');
+        }
+        const saver = ofType(one, 'ImageSaverMira')[0];
+        const saved = Array.isArray(saver.inputs.positive) ? one[saver.inputs.positive[0]].inputs.text : saver.inputs.positive;
+        assert.ok(saved.includes(FAST_TAG), `${build}: the saved metadata keeps the tags`);
+    }
 });
 
 test('Checkpoint with IP-Adapter: the hires pass keeps its LoRAs, on top of the adapter', () => {
