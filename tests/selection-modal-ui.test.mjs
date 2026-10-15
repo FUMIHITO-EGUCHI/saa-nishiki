@@ -931,3 +931,20 @@ test('tabs: a tile toggles into the shared selection as a dressed chip, the pane
         assert.equal(modal.isOpen(), false);
     });
 });
+
+test('tabs: a tab can lift the modal\'s row limit, so a store larger than it is all tiles', async () => {
+    // the Parts tab does: the starter set's 295 parts were cut to the modal's 200 in All
+    await withModal({ mode: 'multiple', optionLimit: 1 }, async ({ document, modal, clock, ui }) => {
+        modal.open({ options: OPTIONS, tabs: [partsTab(document)], tabLabel: 'Tags', tab: 'parts' });
+        await clock.tick(120);
+        assert.deepEqual(ui.keys(), ['parts:sailor uniform'], 'the modal\'s own limit');
+        modal.close();
+
+        modal.open({ options: OPTIONS, tabs: [{ ...partsTab(document), optionLimit: Number.MAX_SAFE_INTEGER }], tabLabel: 'Tags', tab: 'parts' });
+        await clock.tick(120);
+        assert.deepEqual(ui.keys(), ['parts:sailor uniform', 'parts:twin tails']);
+        fire(ui.root.querySelectorAll('.selection-modal-tab')[0], 'click');
+        await clock.tick(120);
+        assert.deepEqual(ui.keys(), ['blue hair'], 'the main tab keeps the modal\'s limit');
+    });
+});

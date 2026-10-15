@@ -713,6 +713,9 @@ export function partsPickerTab({ fieldKey = null, trigger = null } = {}) {
             { value: 'm', label: 'M', px: 168, default: true, title: text('parts_tile_size_m', 'Medium tiles') },
             { value: 'l', label: 'L', px: 220, title: text('parts_tile_size_l', 'Large tiles') },
         ],
+        // every part is a tile: the modal's cut of 200 rows hid the rest of the 295 starter
+        // parts from All, with no way to page to them
+        optionLimit: Number.MAX_SAFE_INTEGER,
         emptyMessage: text('parts_grid_empty', 'No part matches.'),
         searchPrompt: text('parts_panel_none', 'No parts yet. Select chips in a row and choose "Save as part…", or press New part.'),
         refreshEvent: PARTS_CHANGED_EVENT,

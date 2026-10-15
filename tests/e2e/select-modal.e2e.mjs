@@ -15,6 +15,8 @@ test.after(async () => { await app?.close(); });
 
 const OPEN = '.selection-modal:not([hidden])';
 const DIALOG = `${OPEN} .selection-modal-dialog`;
+// the camera parts of the starter set (data/parts_defaults.json)
+const CAMERA = 35;
 
 async function openPositiveModal(page) {
     await page.click('.prompt-positive .tag-capsule-add');
@@ -74,14 +76,14 @@ test('the Selected row keeps its one line however many chips it holds, and the P
     await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-tile').length === 295`, { label: 'the 295 starter tiles' });
     const rail = JSON.parse(await page.evaluate(`JSON.stringify([...document.querySelectorAll('${OPEN} .selection-modal-rail-item')].map(item => item.querySelector('.selection-modal-rail-name').textContent + ':' + item.querySelector('.selection-modal-rail-count').textContent))`));
     assert.equal(rail[0], 'All:295');
-    assert.ok(rail.includes('Camera:35'), `the camera category with its count: ${rail.join(' ')}`);
+    assert.ok(rail.includes(`Camera:${CAMERA}`), `the camera category with its count: ${rail.join(' ')}`);
     assert.equal(await page.evaluate(`document.querySelector('${OPEN} .selection-modal-filter-label').hidden`), true, 'no Category box beside the rail');
     const rowHeight = await page.evaluate(`document.querySelector('${OPEN} .selection-modal-selected').getBoundingClientRect().height`);
     assert.equal(Math.round(rowHeight), 40, 'the Selected row is 40px with two chips');
 
     // the rail narrows the grid; a click previews in the panel, the panel's button picks
     await page.click(`${OPEN} .selection-modal-rail-item[data-category="camera"]`);
-    await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-tile').length === 24`, { label: 'the camera tiles' });
+    await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-tile').length === ${CAMERA}`, { label: 'the camera tiles' });
     await page.click(`${OPEN} .selection-modal-tile`);
     await page.waitFor(`document.querySelector('${OPEN} .selection-modal-tile.is-previewed') && document.querySelector('${OPEN} .parts-picker-add')`, { label: 'the tile previewed in the panel' });
     assert.equal(await page.evaluate(`document.querySelectorAll('${OPEN} .selection-modal-chip.is-part').length`), 0, 'a click does not pick');
@@ -91,16 +93,16 @@ test('the Selected row keeps its one line however many chips it holds, and the P
     await page.click(`${OPEN} .parts-picker-add`);
     await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-chip.is-part').length === 1`, { label: 'the part among the selected chips' });
     // every other camera tile too: the strip fills but the row does not grow
-    for (let i = 1; i < 24; i++) {
+    for (let i = 1; i < CAMERA; i++) {
         await page.evaluate(`document.querySelectorAll('${OPEN} .selection-modal-tile')[${i}].dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`);
     }
-    await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-selected-list .selection-modal-chip').length === 26`, { label: '26 chips in the strip' });
-    assert.equal(Math.round(await page.evaluate(`document.querySelector('${OPEN} .selection-modal-selected').getBoundingClientRect().height`)), 40, 'still 40px with 26 chips');
+    await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-selected-list .selection-modal-chip').length === ${CAMERA + 2}`, { label: `${CAMERA + 2} chips in the strip` });
+    assert.equal(Math.round(await page.evaluate(`document.querySelector('${OPEN} .selection-modal-selected').getBoundingClientRect().height`)), 40, `still 40px with ${CAMERA + 2} chips`);
     assert.equal(await page.evaluate(`(() => { const s = document.querySelector('${OPEN} .selection-modal-selected-list'); return s.scrollWidth > s.clientWidth; })()`), true, 'the strip scrolls sideways');
-    assert.equal(await page.evaluate(`document.querySelector('${OPEN} .selection-modal-selected-count').textContent`), '26');
+    assert.equal(await page.evaluate(`document.querySelector('${OPEN} .selection-modal-selected-count').textContent`), String(CAMERA + 2));
     await page.click(`${OPEN} .selection-modal-selected-toggle`);
     await page.waitFor(`!document.querySelector('${OPEN} .selection-modal-selected-popover').hidden`, { label: 'the popover' });
-    assert.equal(await page.evaluate(`document.querySelectorAll('${OPEN} .selection-modal-selected-popover .selection-modal-chip').length`), 26);
+    assert.equal(await page.evaluate(`document.querySelectorAll('${OPEN} .selection-modal-selected-popover .selection-modal-chip').length`), CAMERA + 2);
     await page.key('Escape');
     await page.waitFor(`document.querySelector('${OPEN} .selection-modal-selected-popover').hidden`, { label: 'the popover folded' });
     assert.equal(await page.evaluate(`Boolean(document.querySelector('${OPEN}'))`), true, 'the modal stayed open');
@@ -109,6 +111,6 @@ test('the Selected row keeps its one line however many chips it holds, and the P
     await page.waitFor(`!document.querySelector('${OPEN}')`, { label: 'the modal closed' });
     const value = await page.evaluate(`document.querySelector('.myTextbox-prompt-positive-textarea').value`);
     assert.match(value, /^1girl, smile, parts:/, `the chips landed after the tags: ${value.slice(0, 60)}`);
-    assert.equal(value.split(',').filter(piece => piece.trim().startsWith('parts:')).length, 24, `every camera part is in the row: ${value.slice(0, 80)}`);
+    assert.equal(value.split(',').filter(piece => piece.trim().startsWith('parts:')).length, CAMERA, `every camera part is in the row: ${value.slice(0, 80)}`);
     assert.ok(value.includes(first.replace(/^parts:/, 'parts:').toLowerCase()) || value.toLowerCase().includes(first.toLowerCase()), 'the previewed part is among them');
 });

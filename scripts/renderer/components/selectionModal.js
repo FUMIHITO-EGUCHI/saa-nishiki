@@ -238,7 +238,7 @@ export function createSelectionModal({
     let sortValue = '';            // the sort order on a tab that offers some
     let tileSize = '';             // the tile size on a grid tab that offers some
     let popoverOpen = false;       // the Selected list unfolded
-    let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, onActiveOption, favorites: null, sorts: [], tileSizes: [] };
+    let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, onActiveOption, favorites: null, sorts: [], tileSizes: [], optionLimit };
 
     // Everything a tab can set: its filters (and what they are called), its loader, its
     // favourites, and for a grid its tile renderer, its side panel and its footer actions.
@@ -271,6 +271,8 @@ export function createSelectionModal({
             clickPreviews: tab.clickPreviews === true,
             sorts: Array.isArray(tab.sorts) ? tab.sorts.filter(sort => sort && sort.value) : [],
             tileSizes: Array.isArray(tab.tileSizes) ? tab.tileSizes.filter(size => size && size.value && size.px > 0) : [],
+            // how many rows a list without a pager shows; the modal's own by default
+            optionLimit: Number.isInteger(tab.optionLimit) && tab.optionLimit > 0 ? tab.optionLimit : optionLimit,
         };
     }
 
@@ -785,7 +787,7 @@ export function createSelectionModal({
                 .sort((a, b) => a.fav - b.fav || a.index - b.index)
                 .map(entry => entry.option);
         }
-        const limited = limitSelectionOptions(filteredOptions, pager ? Number.MAX_SAFE_INTEGER : optionLimit);
+        const limited = limitSelectionOptions(filteredOptions, pager ? Number.MAX_SAFE_INTEGER : activeConfig.optionLimit);
         visibleOptions = limited.items;
         // the list is redrawn in place (a page arrived, a row was toggled): the redraw
         // empties the box, which drops its scroll, so the position is put back after
@@ -1152,6 +1154,7 @@ export function createSelectionModal({
                 clickPreviews: false,
                 sorts: [],
                 tileSizes: [],
+                optionLimit,
             };
             tabs = (Array.isArray(extraTabs) ? extraTabs : []).filter(tab => tab && typeof tab === 'object' && tab.id);
             mainTabLabel = tabLabel;
