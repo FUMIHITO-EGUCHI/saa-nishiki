@@ -48,6 +48,7 @@ import { setupEditHistoryUi } from './renderer/editHistoryUi.js';
 import { get_prompt_textBox_Heights, set_prompt_textBox_Heights } from './renderer/components/componentsManager.js';
 import { hiresCalculate } from './renderer/tools/hiresCalculation.js';
 import { SIZE_HARD_MAX, SIZE_LIMIT_STEP, SIZE_MIN, SIZE_STEP } from './shared/sizeLimits.js';
+import { refinerModelOptions } from './shared/refinerModel.js';
 import { applySizeRange } from './renderer/callbacks.js';
 
 function afterDOMinit() {
@@ -576,7 +577,7 @@ export async function createHifixRefiner(SETTINGS, FILES, LANG) {
 
     console.log('Creating globalThis.refiner');
     globalThis.refiner = {
-        model: mySimpleList('refiner-model', LANG.api_refiner_model, FILES.modelListAll, 
+        model: mySimpleList('refiner-model', LANG.api_refiner_model, refinerModelOptions(FILES.modelListAll), 
             (index, value) => { globalThis.globalSettings.api_refiner_model = value; }, 15, true, true),
         vpred: mySimpleList('refiner-vpred', LANG.vpred, [LANG.vpred_auto, LANG.vpred_on, LANG.vpred_on_zsnr, LANG.vpred_off], 
             (index, value) => { globalThis.globalSettings.api_refiner_model_vpred = value; }, 5, false, false),

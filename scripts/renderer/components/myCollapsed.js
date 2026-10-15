@@ -2,6 +2,7 @@ import { setBlur, setNormal, showDialog } from './myDialog.js';
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
 import { setADetailerModelList } from '../slots/myADetailerSlot.js';
 import { addFavorites, delFavorites } from './favoriteCharacters.js';
+import { refinerModelOptions } from '../../shared/refinerModel.js';
 
 const CAT = '[myCollapsed]'
 
@@ -150,7 +151,10 @@ export async function reloadFiles(){
     globalThis.dropdownList.vae_sdxl.setValue(LANG.api_ckpt_vae_model, globalThis.cachedFiles.vaeList);
     globalThis.dropdownList.textencoder.setValue(LANG.api_text_encoder, globalThis.cachedFiles.textEncoderList);
 
-    globalThis.refiner.model.setValue(LANG.api_refiner_model, globalThis.cachedFiles.modelListAll);
+    // setValue selects the list's first entry: put the stored choice back ("Default", the
+    // base checkpoint, when that file is gone)
+    globalThis.refiner.model.setValue(LANG.api_refiner_model, refinerModelOptions(globalThis.cachedFiles.modelListAll));
+    globalThis.refiner.model.updateDefaults(SETTINGS.api_refiner_model);
 }
 
 export function setupFuctionKeys() {

@@ -26,6 +26,7 @@ import { applyRefineEditorPatch, describeRefineCandidate } from './tools/refineE
 import { completeRefineRunItem, createRefineRunController, recordRefineRunCandidate } from './tools/refineRunState.js';
 import { asFragment, isFieldMuted, joinOrderedUnits, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
 import { castEnabled, isDiffusionFieldId } from '../shared/castMembers.js';
+import { resolveRefinerModel } from '../shared/refinerModel.js';
 import { stripDisabledTags } from './components/tagCapsuleLogic.js';
 import { expandParts } from './partsClient.js';
 
@@ -769,15 +770,17 @@ export function createRefiner(){
     else if(refinerVpred == globalThis.cachedFiles.language[globalThis.globalSettings.language].vpred_off)
         vPred = 2;   
 
+    const baseModel = globalThis.dropdownList.model.getValue();
     const refiner = {
         enable: globalThis.generate.refiner.getValue(),
-        model: globalThis.refiner.model.getValue(),
+        // "Default" refines with the base checkpoint (refinerModel.js)
+        model: resolveRefinerModel(globalThis.refiner.model.getValue(), baseModel),
         vpred: vPred,
         addnoise: globalThis.refiner.addnoise.getValue(),
         ratio: globalThis.refiner.ratio.getFloat(),
         info: ''
     }
-    if(refiner.enable && refiner.model !== globalThis.dropdownList.model.getValue())
+    if(refiner.enable && refiner.model !== baseModel)
     {
         const brownColor = (globalThis.globalSettings.css_style==='dark')?'BurlyWood':'Brown';
         refiner.info = `Refiner Model: [[color=${brownColor}]${refiner.model}[/color]]\n`;
