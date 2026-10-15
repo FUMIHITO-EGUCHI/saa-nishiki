@@ -381,7 +381,11 @@ export async function launchApp({ settings = {}, startTimeoutMs = 90_000, starte
     else if (!starterParts) fs.writeFileSync(path.join(settingsDir, 'parts.json'), JSON.stringify(makeEnvelope('parts', { parts: {}, starterVersion: STARTER_SET_VERSION }), null, 2));
     const port = await freePort();
     const log = fs.createWriteStream(path.join(runDir, 'app.log'));
-    const child = spawn(await electronBinary(), ['.', `--saa-cdp-port=${port}`, `--saa-settings-dir=${settingsDir}`], {
+    // Chromium stops animation frames in a window other windows cover (Windows occlusion
+    // tracking), and the app focuses and lays out in requestAnimationFrame: a run on a
+    // desktop in use timed out with the window "hidden" behind the developer's own
+    const keepRunningWhenCovered = ['--disable-features=CalculateNativeWinOcclusion', '--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding'];
+    const child = spawn(await electronBinary(), ['.', `--saa-cdp-port=${port}`, `--saa-settings-dir=${settingsDir}`, ...keepRunningWhenCovered], {
         cwd: REPO_ROOT, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
     });
     child.stdout.pipe(log);
