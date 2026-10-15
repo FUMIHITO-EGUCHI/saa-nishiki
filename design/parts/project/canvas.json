@@ -1,0 +1,124 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "AddTag.dc.html": {
+      "h": 959,
+      "title": "Add tag / Choose tags モーダルのタブ(Tags · Parts)",
+      "w": 1731,
+      "x": 0,
+      "y": 2560
+    },
+    "History.dc.html": {
+      "h": 520,
+      "title": "部品 1 つのサンプル履歴",
+      "w": 760,
+      "x": 840,
+      "y": 780
+    },
+    "Lists.dc.html": {
+      "h": 560,
+      "title": "Settings > Lists > Parts",
+      "w": 960,
+      "x": 1260,
+      "y": 1420
+    },
+    "Main.dc.html": {
+      "h": 660,
+      "title": "Insert part: マネキン サンプル付きピッカー",
+      "w": 960,
+      "x": 0,
+      "y": 0
+    },
+    "Mannequin.dc.html": {
+      "h": 1000,
+      "title": "カテゴリ別のマネキン台紙(ベンチ結果)",
+      "w": 1200,
+      "x": 0,
+      "y": 1420
+    },
+    "SaveAsPart.dc.html": {
+      "h": 440,
+      "title": "選んだチップを部品として保存",
+      "w": 760,
+      "x": 0,
+      "y": 780
+    },
+    "SceneChip.dc.html": {
+      "h": 640,
+      "title": "Scene 行の中の部品チップ・クリック後のカード・エディタ",
+      "w": 1180,
+      "x": 1040,
+      "y": 0
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-21T02:30:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "brief": {
+      "color": "blue",
+      "maxH": 700,
+      "text": "Parts の決定事項(2026-09-21)\n- 部品 = 名前 + カテゴリ(Outfit / Hair / Body / Background / Other)+ タグ + サンプル履歴\n- プロンプト上は parts: チップ 1 つ。生成時に展開する(旧タググループと同じ方式)。チップの重みは中のタグへ配分、無効化は部品ごと\n- サンプルは白いマネキン + 白背景 + 同じ seed + カテゴリ別の固定プロンプト。変わるのは部品だけ\n- 「今のキャラで生成」も可。同じ履歴に入り、台紙・モデル・プロンプト版・日時で区別\n- 部品の保存時にサンプルを 1 枚キューに入れる(手動生成が優先)。ピッカーと Lists に「Generate missing」\n- サンプルはモデルごとに持つ。ピッカーは今のモデルを優先し、他は淡色\n- Prose(Diffusion)は部品を展開してから文章化\n- 保存先は settings/parts.json(部品の定義)と settings/parts/<名前>/(サンプル画像)。user_lists.json の差分機構には合わないので独立ストア(実装時に変更、2026-09-22)",
+      "w": 480,
+      "x": -620,
+      "y": 0
+    },
+    "open": {
+      "color": "orange",
+      "maxH": 600,
+      "text": "実装済み(2026-09-22、SAA-regional、未コミット): ピッカー・カード・エディタ・履歴・Lists タブ・サンプル生成。Add tag モーダルの Tags | Parts タブも実装済(2026-09-23、AddTag ボードどおり。行の parts ボタンもこのモーダルの Parts タブを開く。別窓ピッカーは Swap だけに残る)。エディタのタグ入力は当面 textarea + Choose tags…\n\nベンチで決定(2026-09-22)\n- 方式: 全カテゴリ txt2img(白画像 img2img は背景に額縁が残り、Illustrious で崩れる)\n- 台紙の文言はモデル別(Mannequin ボード)。Anima は white mannequin、Illustrious は faceless + white skin + 2 体否定ネガ\n- 大きさ: 512×704 のまま(384×528 は構図が変わる)\n\n決定\n- ピッカーの入口: 行末の parts ボタンと行の ⋯ メニュー(タグ検索の Part グループは未実装)\n- 使用中の部品を削除: チップは残り、取り消し線で「無い部品」を示す。生成時は素の名前を送る",
+      "w": 480,
+      "x": -620,
+      "y": 780
+    },
+    "row1": {
+      "kind": "title1",
+      "maxW": 1800,
+      "text": "部品を選ぶ・行の中でどう見えるか",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "row2": {
+      "kind": "title1",
+      "maxW": 1600,
+      "text": "部品を作る・サンプル履歴",
+      "w": 240,
+      "x": -902,
+      "y": 497
+    },
+    "row3": {
+      "kind": "title1",
+      "maxW": 2220,
+      "text": "マネキン台紙と Parts 一覧",
+      "w": 240,
+      "x": -10,
+      "y": 1265
+    },
+    "row4": {
+      "kind": "title1",
+      "maxW": 2220,
+      "text": "Add tag モーダルにタブ(2026-09-22)",
+      "w": 240,
+      "x": -10,
+      "y": 2480
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "SceneChip.dc.html",
+    "SaveAsPart.dc.html",
+    "History.dc.html",
+    "Mannequin.dc.html",
+    "Lists.dc.html",
+    "AddTag.dc.html"
+  ],
+  "pages": [],
+  "title": "SAA Parts Design"
+}

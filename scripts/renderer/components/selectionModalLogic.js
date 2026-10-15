@@ -156,3 +156,74 @@ export function insertTagsAtCursor(value, tags, start, end = start) {
         cursor: before.length + prefix.length + inserted.length,
     };
 }
+
+// ---------------------------------------------------------------- the window-sized dialog
+// A row's Tags | Parts modal fills the window: calc(100vw - 48px) by calc(100vh - 48px),
+// no larger than 1800 by 1200 and no smaller than 640 by 480. The user may drag it
+// smaller from its corner; that size is kept per tab and clamped to the window it is
+// opened in next time.
+export const DIALOG_FIT = Object.freeze({ margin: 24, maxWidth: 1800, maxHeight: 1200, minWidth: 640, minHeight: 480 });
+
+function clampNumber(value, low, high) {
+    return Math.max(low, Math.min(high, Number(value) || 0));
+}
+
+/** The size the rule gives for a viewport `{ width, height }`. */
+export function fitDialogSize(viewport = {}) {
+    const width = Math.max(DIALOG_FIT.minWidth, Math.min(DIALOG_FIT.maxWidth, (Number(viewport.width) || 0) - 2 * DIALOG_FIT.margin));
+    const height = Math.max(DIALOG_FIT.minHeight, Math.min(DIALOG_FIT.maxHeight, (Number(viewport.height) || 0) - 2 * DIALOG_FIT.margin));
+    return { width, height };
+}
+
+/** A remembered or dragged size, no smaller than the minimum and no larger than the fit. */
+export function clampDialogSize(size = {}, viewport = {}) {
+    const fit = fitDialogSize(viewport);
+    return {
+        width: Math.round(clampNumber(size.width, DIALOG_FIT.minWidth, fit.width)),
+        height: Math.round(clampNumber(size.height, DIALOG_FIT.minHeight, fit.height)),
+    };
+}
+
+/** The storage key of a tab's remembered size ('main' for the tag list). */
+export function dialogSizeKey(tab) {
+    return `selection-modal-size:${tab || 'main'}`;
+}
+
+/** The stored size under `key`, or null (a missing, foreign or unreadable value). */
+export function readStoredSize(storage, key) {
+    try {
+        const parsed = JSON.parse(storage?.getItem?.(key) ?? 'null');
+        if (!parsed || !Number.isFinite(parsed.width) || !Number.isFinite(parsed.height)) return null;
+        return { width: parsed.width, height: parsed.height };
+    } catch {
+        return null;
+    }
+}
+
+export function writeStoredSize(storage, key, size) {
+    try {
+        if (size) storage?.setItem?.(key, JSON.stringify({ width: size.width, height: size.height }));
+        else storage?.removeItem?.(key);
+    } catch {
+        // storage may be unavailable (a private window, a full or blocked store): the size is just not kept
+    }
+}
+
+/** A small remembered preference (the tile size, the sort) under `key`; null when none. */
+export function readStoredPreference(storage, key) {
+    try {
+        const value = storage?.getItem?.(key);
+        return typeof value === 'string' && value !== '' ? value : null;
+    } catch {
+        return null;
+    }
+}
+
+export function writeStoredPreference(storage, key, value) {
+    try {
+        if (value) storage?.setItem?.(key, String(value));
+        else storage?.removeItem?.(key);
+    } catch {
+        // see writeStoredSize
+    }
+}

@@ -19,7 +19,6 @@ import { normalizeCustomFields } from './promptFieldOrder.js';
 export const PROMPT_STATE_KEYS = Object.freeze([
     ...PROMPT_TEXT_KEYS,
     ...PROMPT_PLAN_KEYS,
-    'view_angle', 'view_camera',
     'prompt_custom_fields', 'prompt_positive_order', 'prompt_negative_order',
     'prompt_field_muted', 'prompt_field_collapsed',
     'character_slots', 'artist_slots',

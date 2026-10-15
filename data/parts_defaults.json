@@ -1,0 +1,1567 @@
+{
+  "schema": 1,
+  "section": "parts_defaults",
+  "note": "同梱スターターセット草案。name は parts:<name> の表示名、tags はチップと同じ書式(空白区切り Danbooru タグ、(tag:1.2) と ~tag 可)。全タグは data/danbooru_e621_merged.csv で照合済(未検出は unverified.txt)。SFW のみ、キャラ名・作者名なし。 2026-09-28: camera / composition / tone / pose / expression を追加(旧 other の 10 件は camera / pose へ移動)。 2026-10-09: 120 extra parts adapted from the prompt-parts collection; existing names and richer entries are kept unchanged.",
+  "parts": [
+    {
+      "name": "sailor uniform",
+      "category": "outfit",
+      "tags": "serafuku, school uniform, sailor collar, red neckerchief, pleated skirt, white shirt, kneehighs, loafers",
+      "note": "定番セーラー服。赤スカーフ・プリーツスカート・紺ハイソックス・ローファー"
+    },
+    {
+      "name": "blazer uniform",
+      "category": "outfit",
+      "tags": "school uniform, blazer, necktie, white shirt, plaid skirt, pleated skirt, kneehighs, loafers",
+      "note": "ブレザー制服。ネクタイ・チェック柄スカート"
+    },
+    {
+      "name": "summer uniform",
+      "category": "outfit",
+      "tags": "school uniform, white shirt, short sleeves, collared shirt, ribbon, pleated skirt, socks, loafers",
+      "note": "夏服。半袖シャツにリボン、薄手の軽装"
+    },
+    {
+      "name": "winter uniform",
+      "category": "outfit",
+      "tags": "school uniform, cardigan, sweater, collared shirt, necktie, plaid skirt, black pantyhose, scarf",
+      "note": "冬服。カーディガン・セーターとマフラー、黒タイツ"
+    },
+    {
+      "name": "gym uniform",
+      "category": "outfit",
+      "tags": "gym uniform, gym shirt, buruma, white shirt, short sleeves, socks, sneakers",
+      "note": "体操服とブルマ。運動会・体育の場面"
+    },
+    {
+      "name": "track suit",
+      "category": "outfit",
+      "tags": "track suit, track jacket, track pants, sportswear, sneakers, zipper",
+      "note": "ジャージ上下。部活・ランニング"
+    },
+    {
+      "name": "school swimsuit",
+      "category": "outfit",
+      "tags": "school swimsuit, one-piece swimsuit, blue one-piece swimsuit, name tag, barefoot",
+      "note": "紺のスクール水着。名札付き"
+    },
+    {
+      "name": "bikini",
+      "category": "outfit",
+      "tags": "bikini, frilled bikini, white bikini, halterneck, navel, barefoot",
+      "note": "白いフリルビキニ。海・プール"
+    },
+    {
+      "name": "maid",
+      "category": "outfit",
+      "tags": "maid, maid headdress, maid apron, black dress, white apron, frills, long sleeves, thighhighs",
+      "note": "クラシックな黒ワンピースの長袖メイド服"
+    },
+    {
+      "name": "casual hoodie",
+      "category": "outfit",
+      "tags": "hoodie, casual, denim shorts, shorts, socks, sneakers",
+      "note": "パーカーにデニムショートパンツの普段着"
+    },
+    {
+      "name": "sundress",
+      "category": "outfit",
+      "tags": "sundress, white dress, sleeveless dress, straw hat, sun hat, sandals, casual",
+      "note": "白いワンピースと麦わら帽子。夏の外出着"
+    },
+    {
+      "name": "jeans and tee",
+      "category": "outfit",
+      "tags": "t-shirt, white shirt, denim, jeans, pants, sneakers, casual",
+      "note": "Tシャツにジーンズ。ラフな普段着"
+    },
+    {
+      "name": "gothic lolita",
+      "category": "outfit",
+      "tags": "gothic lolita, lolita fashion, black dress, frills, lace, bonnet, mary janes, lolita hairband",
+      "note": "黒基調のゴシックロリータ。ボンネットとメリージェーン"
+    },
+    {
+      "name": "sweet lolita",
+      "category": "outfit",
+      "tags": "lolita fashion, pink dress, frilled dress, frills, lace, bow, lolita hairband, mary janes",
+      "note": "ピンク基調の甘ロリ。フリル・リボン多め"
+    },
+    {
+      "name": "kimono",
+      "category": "outfit",
+      "tags": "kimono, japanese clothes, obi, wide sleeves, floral print, sandals, tabi",
+      "note": "花柄の振袖風着物。帯・足袋・草履"
+    },
+    {
+      "name": "yukata",
+      "category": "outfit",
+      "tags": "yukata, japanese clothes, obi, floral print, sash, sandals, hair flower",
+      "note": "夏祭りの浴衣。髪飾りの花付き"
+    },
+    {
+      "name": "miko",
+      "category": "outfit",
+      "tags": "miko, japanese clothes, hakama, red hakama, hakama skirt, white kimono, wide sleeves",
+      "note": "巫女装束。白衣に緋袴"
+    },
+    {
+      "name": "office lady",
+      "category": "outfit",
+      "tags": "office lady, business suit, black jacket, white shirt, collared shirt, pencil skirt, pantyhose, high heels",
+      "note": "OL風のジャケット・タイトスカート・ストッキング"
+    },
+    {
+      "name": "business suit",
+      "category": "outfit",
+      "tags": "suit, business suit, black jacket, dress shirt, white shirt, necktie, pants, high heels",
+      "note": "パンツスーツにネクタイ。ビジネス・フォーマル"
+    },
+    {
+      "name": "nurse",
+      "category": "outfit",
+      "tags": "nurse, nurse cap, white dress, short sleeves, white thighhighs, id card, white footwear",
+      "note": "白衣ワンピースのナース。ナースキャップ付き"
+    },
+    {
+      "name": "knight armor",
+      "category": "outfit",
+      "tags": "armor, plate armor, knight, breastplate, shoulder armor, gauntlets, cape, sword",
+      "note": "板金鎧の女騎士。肩当て・籠手・マント・剣"
+    },
+    {
+      "name": "mage robe",
+      "category": "outfit",
+      "tags": "wizard, robe, witch hat, cape, holding staff, staff, magic, long sleeves",
+      "note": "とんがり帽子とローブの魔法使い。杖持ち"
+    },
+    {
+      "name": "idol costume",
+      "category": "outfit",
+      "tags": "idol, idol clothes, frills, ribbon, detached sleeves, miniskirt, thighhighs, microphone",
+      "note": "ステージ衣装のアイドル。フリル・リボン・マイク"
+    },
+    {
+      "name": "pajamas",
+      "category": "outfit",
+      "tags": "pajamas, striped pajamas, long sleeves, pants, barefoot, buttons",
+      "note": "ストライプのパジャマ上下。就寝前・寝起き"
+    },
+    {
+      "name": "cheerleader",
+      "category": "outfit",
+      "tags": "cheerleader, crop top, midriff, pleated skirt, navel, sneakers, socks",
+      "note": "チアリーダー。クロップトップにプリーツスカート"
+    },
+    {
+      "name": "winter coat",
+      "category": "outfit",
+      "tags": "winter clothes, coat, winter coat, scarf, mittens, boots, earmuffs",
+      "note": "厚手コートとマフラー・ミトン・耳当ての冬の外出着"
+    },
+    {
+      "name": "wedding dress",
+      "category": "outfit",
+      "tags": "wedding dress, bride, bridal veil, veil, white dress, elbow gloves, tiara, flower",
+      "note": "純白のウェディングドレス。ベール・ティアラ・手袋"
+    },
+    {
+      "name": "china dress",
+      "category": "outfit",
+      "tags": "china dress, chinese clothes, side slit, short sleeves, floral print, pelvic curtain",
+      "note": "花柄チャイナドレス。サイドスリット"
+    },
+    {
+      "name": "twintails long",
+      "category": "hair",
+      "tags": "twintails, long hair, hair ribbon",
+      "note": "長いツインテール。リボン留め"
+    },
+    {
+      "name": "twintails short",
+      "category": "hair",
+      "tags": "short twintails, short hair, hair bobbles",
+      "note": "短いツインテール。ヘアゴム留め"
+    },
+    {
+      "name": "low twintails",
+      "category": "hair",
+      "tags": "low twintails, long hair, hair ribbon",
+      "note": "低い位置で結んだツインテール"
+    },
+    {
+      "name": "ponytail",
+      "category": "hair",
+      "tags": "ponytail, long hair, scrunchie",
+      "note": "後ろで束ねたポニーテール。シュシュ留め"
+    },
+    {
+      "name": "high ponytail",
+      "category": "hair",
+      "tags": "high ponytail, long hair, hair ribbon",
+      "note": "高い位置のポニーテール"
+    },
+    {
+      "name": "side ponytail",
+      "category": "hair",
+      "tags": "side ponytail, long hair, hair bow",
+      "note": "片側に寄せたポニーテール"
+    },
+    {
+      "name": "bob cut",
+      "category": "hair",
+      "tags": "bob cut, short hair, blunt bangs",
+      "note": "ボブカットにぱっつん前髪"
+    },
+    {
+      "name": "wavy long",
+      "category": "hair",
+      "tags": "wavy hair, long hair, very long hair",
+      "note": "ゆるくウェーブした超ロング"
+    },
+    {
+      "name": "hime cut",
+      "category": "hair",
+      "tags": "hime cut, straight hair, long hair, blunt bangs, sidelocks",
+      "note": "姫カット。直毛ロングにぱっつん前髪と姫髪"
+    },
+    {
+      "name": "single braid",
+      "category": "hair",
+      "tags": "single braid, braid, long hair",
+      "note": "一本の三つ編み"
+    },
+    {
+      "name": "twin braids",
+      "category": "hair",
+      "tags": "twin braids, braid, long hair, hair over shoulder",
+      "note": "左右の三つ編みを前に垂らす"
+    },
+    {
+      "name": "double bun",
+      "category": "hair",
+      "tags": "double bun, hair bun, cone hair bun, short hair",
+      "note": "お団子ツイン(チャイナ風)"
+    },
+    {
+      "name": "drill hair",
+      "category": "hair",
+      "tags": "drill hair, twin drills, long hair",
+      "note": "縦ロールのお嬢様風"
+    },
+    {
+      "name": "blonde",
+      "category": "hair",
+      "tags": "blonde hair",
+      "note": "髪色だけ: 金髪。髪型パーツと組み合わせる"
+    },
+    {
+      "name": "black hair",
+      "category": "hair",
+      "tags": "black hair",
+      "note": "髪色だけ: 黒髪"
+    },
+    {
+      "name": "silver hair",
+      "category": "hair",
+      "tags": "grey hair, white hair",
+      "note": "髪色だけ: 銀髪〜白髪"
+    },
+    {
+      "name": "pink hair",
+      "category": "hair",
+      "tags": "pink hair",
+      "note": "髪色だけ: ピンク髪"
+    },
+    {
+      "name": "petite",
+      "category": "body",
+      "tags": "petite, flat chest, narrow waist",
+      "note": "小柄で華奢な体型"
+    },
+    {
+      "name": "slender",
+      "category": "body",
+      "tags": "slim, skinny, narrow waist, long legs",
+      "note": "細身で脚長のすらりとした体型"
+    },
+    {
+      "name": "curvy",
+      "category": "body",
+      "tags": "curvy, wide hips, large breasts, thick thighs",
+      "note": "グラマーな体型"
+    },
+    {
+      "name": "muscular",
+      "category": "body",
+      "tags": "muscular, muscular female, abs, biceps",
+      "note": "筋肉質。腹筋・二の腕が出る"
+    },
+    {
+      "name": "athletic",
+      "category": "body",
+      "tags": "toned, toned female, narrow waist",
+      "note": "引き締まった運動選手風の体型"
+    },
+    {
+      "name": "tall",
+      "category": "body",
+      "tags": "tall, tall female, long legs",
+      "note": "高身長"
+    },
+    {
+      "name": "plump",
+      "category": "body",
+      "tags": "plump, slightly chubby, thick thighs, wide hips",
+      "note": "ぽっちゃり体型"
+    },
+    {
+      "name": "mature",
+      "category": "body",
+      "tags": "mature female, curvy, narrow waist",
+      "note": "大人の女性の体型"
+    },
+    {
+      "name": "dark skin",
+      "category": "body",
+      "tags": "dark skin, dark-skinned female",
+      "note": "肌色だけ: 褐色肌"
+    },
+    {
+      "name": "pale skin",
+      "category": "body",
+      "tags": "pale skin",
+      "note": "肌色だけ: 色白"
+    },
+    {
+      "name": "elf",
+      "category": "body",
+      "tags": "elf, pointy ears",
+      "note": "エルフ耳"
+    },
+    {
+      "name": "cat girl",
+      "category": "body",
+      "tags": "cat ears, cat tail, animal ears, animal ear fluff",
+      "note": "猫耳と尻尾"
+    },
+    {
+      "name": "classroom",
+      "category": "background",
+      "tags": "classroom, indoors, school, desk, chair, chalkboard, window",
+      "note": "教室。机と黒板、窓からの光"
+    },
+    {
+      "name": "school hallway",
+      "category": "background",
+      "tags": "hallway, indoors, school, window, sunlight, tile floor",
+      "note": "学校の廊下。窓際の日差し"
+    },
+    {
+      "name": "city street night",
+      "category": "background",
+      "tags": "city, street, night, outdoors, building, city lights, neon lights",
+      "note": "夜の繁華街。ネオンと街灯"
+    },
+    {
+      "name": "city street day",
+      "category": "background",
+      "tags": "city, street, outdoors, building, day, road, blue sky",
+      "note": "昼間の市街地"
+    },
+    {
+      "name": "beach",
+      "category": "background",
+      "tags": "beach, ocean, sand, horizon, blue sky, cloud, day, outdoors",
+      "note": "晴れた海辺"
+    },
+    {
+      "name": "forest",
+      "category": "background",
+      "tags": "forest, tree, nature, outdoors, grass, sunlight, dappled sunlight",
+      "note": "木漏れ日の森"
+    },
+    {
+      "name": "cafe",
+      "category": "background",
+      "tags": "cafe, indoors, table, chair, cup, coffee, window",
+      "note": "カフェの席。テーブルとコーヒー"
+    },
+    {
+      "name": "bedroom",
+      "category": "background",
+      "tags": "bedroom, indoors, bed, pillow, curtains, window, lamp",
+      "note": "寝室。ベッドとカーテン"
+    },
+    {
+      "name": "shrine",
+      "category": "background",
+      "tags": "shrine, torii, outdoors, stairs, tree, stone lantern, lantern",
+      "note": "神社の参道と鳥居"
+    },
+    {
+      "name": "rooftop sunset",
+      "category": "background",
+      "tags": "rooftop, sunset, orange sky, sky, cloud, railing, outdoors, evening",
+      "note": "夕焼けの屋上。フェンス越しの空"
+    },
+    {
+      "name": "rainy street",
+      "category": "background",
+      "tags": "rain, street, night, outdoors, wet, puddle, reflection, city lights",
+      "note": "雨の夜道。濡れた路面の反射"
+    },
+    {
+      "name": "snow",
+      "category": "background",
+      "tags": "snow, snowing, winter, outdoors, bare tree, sky",
+      "note": "降雪の冬景色"
+    },
+    {
+      "name": "space",
+      "category": "background",
+      "tags": "space, science fiction, planet, starry sky, spacecraft, star",
+      "note": "宇宙。惑星と星空、宇宙船"
+    },
+    {
+      "name": "cyberpunk city",
+      "category": "background",
+      "tags": "cyberpunk, city, night, neon lights, rain, building, science fiction",
+      "note": "サイバーパンク都市。雨とネオン"
+    },
+    {
+      "name": "library",
+      "category": "background",
+      "tags": "library, indoors, bookshelf, book, table, window",
+      "note": "図書館。本棚と閲覧机"
+    },
+    {
+      "name": "cherry blossoms",
+      "category": "background",
+      "tags": "cherry blossoms, tree, petals, outdoors, park, day, blue sky",
+      "note": "桜並木と舞う花びら"
+    },
+    {
+      "name": "fantasy castle",
+      "category": "background",
+      "tags": "castle, fantasy, outdoors, mountain, sky, cloud, tower",
+      "note": "山際の城。ファンタジー背景"
+    },
+    {
+      "name": "flower field sunset",
+      "category": "background",
+      "tags": "flower field, field, flower, sunset, sky, outdoors, wind",
+      "note": "夕暮れの花畑。風になびく"
+    },
+    {
+      "name": "full body standing",
+      "category": "camera",
+      "tags": "full body, standing, looking at viewer",
+      "note": "構図: 全身立ち絵、カメラ目線"
+    },
+    {
+      "name": "upper body",
+      "category": "camera",
+      "tags": "upper body, looking at viewer, smile",
+      "note": "構図: 上半身、笑顔でカメラ目線"
+    },
+    {
+      "name": "cowboy shot",
+      "category": "camera",
+      "tags": "cowboy shot, looking at viewer, hand on hip",
+      "note": "構図: 腿上まで、腰に手"
+    },
+    {
+      "name": "close-up",
+      "category": "camera",
+      "tags": "close-up, portrait, looking at viewer",
+      "note": "構図: 顔のクローズアップ"
+    },
+    {
+      "name": "from above",
+      "category": "camera",
+      "tags": "from above, looking at viewer, looking up",
+      "note": "構図: 俯瞰、見上げる視線"
+    },
+    {
+      "name": "from below",
+      "category": "camera",
+      "tags": "from below, looking at viewer, looking down",
+      "note": "構図: あおり、見下ろす視線"
+    },
+    {
+      "name": "from behind",
+      "category": "camera",
+      "tags": "from behind, looking back, looking at viewer",
+      "note": "構図: 後ろ姿で振り返り"
+    },
+    {
+      "name": "dynamic pose",
+      "category": "pose",
+      "tags": "dutch angle, dynamic pose, foreshortening, motion blur",
+      "note": "構図: 傾いたカメラで動きのある決めポーズ"
+    },
+    {
+      "name": "jumping",
+      "category": "pose",
+      "tags": "jumping, dynamic pose, outstretched arms, motion lines, full body",
+      "note": "構図: 両腕を広げてジャンプ、全身"
+    },
+    {
+      "name": "sitting",
+      "category": "pose",
+      "tags": "sitting, full body, looking at viewer, knees together feet apart",
+      "note": "構図: 座り姿の全身"
+    },
+    {
+      "name": "from side",
+      "category": "camera",
+      "tags": "from side, profile"
+    },
+    {
+      "name": "dutch angle",
+      "category": "camera",
+      "tags": "dutch angle"
+    },
+    {
+      "name": "wide shot",
+      "category": "camera",
+      "tags": "wide shot, full body"
+    },
+    {
+      "name": "fisheye",
+      "category": "camera",
+      "tags": "fisheye, from below"
+    },
+    {
+      "name": "portrait",
+      "category": "camera",
+      "tags": "portrait, close-up"
+    },
+    {
+      "name": "pov",
+      "category": "camera",
+      "tags": "pov, looking at viewer"
+    },
+    {
+      "name": "looking back",
+      "category": "camera",
+      "tags": "looking back"
+    },
+    {
+      "name": "looking at viewer",
+      "category": "camera",
+      "tags": "looking at viewer, facing viewer"
+    },
+    {
+      "name": "looking up",
+      "category": "camera",
+      "tags": "looking up, from below"
+    },
+    {
+      "name": "looking down",
+      "category": "camera",
+      "tags": "looking down, from above"
+    },
+    {
+      "name": "foreshortening",
+      "category": "camera",
+      "tags": "foreshortening, reaching towards viewer"
+    },
+    {
+      "name": "straight-on",
+      "category": "camera",
+      "tags": "straight-on, facing viewer"
+    },
+    {
+      "name": "bird's-eye view",
+      "category": "camera",
+      "tags": "bird's-eye view, from above"
+    },
+    {
+      "name": "worm's-eye view",
+      "category": "camera",
+      "tags": "worm's-eye view, from below"
+    },
+    {
+      "name": "feet out of frame",
+      "category": "camera",
+      "tags": "feet out of frame"
+    },
+    {
+      "name": "head out of frame",
+      "category": "camera",
+      "tags": "head out of frame"
+    },
+    {
+      "name": "depth of field",
+      "category": "camera",
+      "tags": "depth of field, blurry background"
+    },
+    {
+      "name": "split screen",
+      "category": "composition",
+      "tags": "split screen, 2koma, two panels"
+    },
+    {
+      "name": "4koma",
+      "category": "composition",
+      "tags": "4koma, multiple views"
+    },
+    {
+      "name": "three views",
+      "category": "composition",
+      "tags": "multiple views, reference sheet, turnaround"
+    },
+    {
+      "name": "reference sheet",
+      "category": "composition",
+      "tags": "reference sheet, multiple views, white background"
+    },
+    {
+      "name": "turnaround",
+      "category": "composition",
+      "tags": "turnaround, multiple views, from side, from behind"
+    },
+    {
+      "name": "expression sheet",
+      "category": "composition",
+      "tags": "expressions, multiple views"
+    },
+    {
+      "name": "symmetry",
+      "category": "composition",
+      "tags": "symmetry"
+    },
+    {
+      "name": "silhouette",
+      "category": "composition",
+      "tags": "silhouette, backlighting"
+    },
+    {
+      "name": "letterboxed",
+      "category": "composition",
+      "tags": "letterboxed"
+    },
+    {
+      "name": "pillarboxed",
+      "category": "composition",
+      "tags": "pillarboxed"
+    },
+    {
+      "name": "white border",
+      "category": "composition",
+      "tags": "white border, border"
+    },
+    {
+      "name": "rounded corners",
+      "category": "composition",
+      "tags": "rounded corners, border"
+    },
+    {
+      "name": "negative space",
+      "category": "composition",
+      "tags": "negative space, simple background"
+    },
+    {
+      "name": "inset",
+      "category": "composition",
+      "tags": "inset"
+    },
+    {
+      "name": "pale color",
+      "category": "tone",
+      "tags": "pale color"
+    },
+    {
+      "name": "flat colors",
+      "category": "tone",
+      "tags": "flat colors"
+    },
+    {
+      "name": "monochrome",
+      "category": "tone",
+      "tags": "monochrome, greyscale"
+    },
+    {
+      "name": "sepia",
+      "category": "tone",
+      "tags": "sepia, monochrome"
+    },
+    {
+      "name": "high contrast",
+      "category": "tone",
+      "tags": "high contrast"
+    },
+    {
+      "name": "muted color",
+      "category": "tone",
+      "tags": "muted color"
+    },
+    {
+      "name": "pastel colors",
+      "category": "tone",
+      "tags": "pastel colors"
+    },
+    {
+      "name": "backlighting",
+      "category": "tone",
+      "tags": "backlighting"
+    },
+    {
+      "name": "dramatic lighting",
+      "category": "tone",
+      "tags": "dramatic lighting, cinematic lighting"
+    },
+    {
+      "name": "soft lighting",
+      "category": "tone",
+      "tags": "soft lighting, sunlight"
+    },
+    {
+      "name": "night lighting",
+      "category": "tone",
+      "tags": "night, dark"
+    },
+    {
+      "name": "sunset lighting",
+      "category": "tone",
+      "tags": "sunset, evening"
+    },
+    {
+      "name": "golden hour",
+      "category": "tone",
+      "tags": "golden hour, sunset, sunlight"
+    },
+    {
+      "name": "moonlight",
+      "category": "tone",
+      "tags": "moonlight, night"
+    },
+    {
+      "name": "neon lights",
+      "category": "tone",
+      "tags": "neon lights, night"
+    },
+    {
+      "name": "dappled sunlight",
+      "category": "tone",
+      "tags": "dappled sunlight"
+    },
+    {
+      "name": "blue theme",
+      "category": "tone",
+      "tags": "blue theme"
+    },
+    {
+      "name": "red theme",
+      "category": "tone",
+      "tags": "red theme"
+    },
+    {
+      "name": "pink theme",
+      "category": "tone",
+      "tags": "pink theme"
+    },
+    {
+      "name": "green theme",
+      "category": "tone",
+      "tags": "green theme"
+    },
+    {
+      "name": "purple theme",
+      "category": "tone",
+      "tags": "purple theme"
+    },
+    {
+      "name": "limited palette",
+      "category": "tone",
+      "tags": "limited palette"
+    },
+    {
+      "name": "spot color",
+      "category": "tone",
+      "tags": "spot color"
+    },
+    {
+      "name": "watercolor",
+      "category": "tone",
+      "tags": "watercolor (medium)"
+    },
+    {
+      "name": "kneeling",
+      "category": "pose",
+      "tags": "kneeling"
+    },
+    {
+      "name": "lying on back",
+      "category": "pose",
+      "tags": "lying, on back"
+    },
+    {
+      "name": "lying on stomach",
+      "category": "pose",
+      "tags": "lying, on stomach"
+    },
+    {
+      "name": "crossed arms",
+      "category": "pose",
+      "tags": "standing, crossed arms"
+    },
+    {
+      "name": "hands on hips",
+      "category": "pose",
+      "tags": "standing, hands on hips"
+    },
+    {
+      "name": "arms up",
+      "category": "pose",
+      "tags": "standing, arms up"
+    },
+    {
+      "name": "peace sign",
+      "category": "pose",
+      "tags": "standing, v"
+    },
+    {
+      "name": "hugging own legs",
+      "category": "pose",
+      "tags": "sitting, hugging own legs"
+    },
+    {
+      "name": "leaning forward",
+      "category": "pose",
+      "tags": "standing, leaning forward"
+    },
+    {
+      "name": "running",
+      "category": "pose",
+      "tags": "running"
+    },
+    {
+      "name": "walking",
+      "category": "pose",
+      "tags": "walking"
+    },
+    {
+      "name": "squatting",
+      "category": "pose",
+      "tags": "squatting"
+    },
+    {
+      "name": "wariza",
+      "category": "pose",
+      "tags": "sitting, wariza"
+    },
+    {
+      "name": "seiza",
+      "category": "pose",
+      "tags": "sitting, seiza"
+    },
+    {
+      "name": "arms behind back",
+      "category": "pose",
+      "tags": "standing, arms behind back"
+    },
+    {
+      "name": "all fours",
+      "category": "pose",
+      "tags": "all fours"
+    },
+    {
+      "name": "heart hands",
+      "category": "pose",
+      "tags": "standing, heart hands"
+    },
+    {
+      "name": "smile",
+      "category": "expression",
+      "tags": "smile"
+    },
+    {
+      "name": "grin",
+      "category": "expression",
+      "tags": "grin"
+    },
+    {
+      "name": "laughing",
+      "category": "expression",
+      "tags": "laughing, open mouth, closed eyes"
+    },
+    {
+      "name": "blush",
+      "category": "expression",
+      "tags": "blush, nose blush"
+    },
+    {
+      "name": "crying",
+      "category": "expression",
+      "tags": "crying, tears"
+    },
+    {
+      "name": "angry",
+      "category": "expression",
+      "tags": "angry, frown"
+    },
+    {
+      "name": "pout",
+      "category": "expression",
+      "tags": "pout"
+    },
+    {
+      "name": "surprised",
+      "category": "expression",
+      "tags": "surprised, wide-eyed, open mouth"
+    },
+    {
+      "name": "closed eyes",
+      "category": "expression",
+      "tags": "closed eyes"
+    },
+    {
+      "name": "wink",
+      "category": "expression",
+      "tags": "wink, one eye closed"
+    },
+    {
+      "name": "embarrassed",
+      "category": "expression",
+      "tags": "embarrassed, blush, nervous"
+    },
+    {
+      "name": "smug",
+      "category": "expression",
+      "tags": "smug"
+    },
+    {
+      "name": "sleepy",
+      "category": "expression",
+      "tags": "sleepy, half-closed eyes"
+    },
+    {
+      "name": "serious",
+      "category": "expression",
+      "tags": "serious"
+    },
+    {
+      "name": "sad",
+      "category": "expression",
+      "tags": "sad, frown"
+    },
+    {
+      "name": "expressionless",
+      "category": "expression",
+      "tags": "expressionless"
+    },
+    {
+      "name": "tongue out",
+      "category": "expression",
+      "tags": "tongue out, :p"
+    },
+    {
+      "name": "scared",
+      "category": "expression",
+      "tags": "scared, wide-eyed"
+    },
+    {
+      "name": "school uniform",
+      "category": "outfit",
+      "tags": "school uniform"
+    },
+    {
+      "name": "t-shirt and jeans",
+      "category": "outfit",
+      "tags": "t-shirt, jeans"
+    },
+    {
+      "name": "hoodie",
+      "category": "outfit",
+      "tags": "hoodie"
+    },
+    {
+      "name": "sweater",
+      "category": "outfit",
+      "tags": "sweater"
+    },
+    {
+      "name": "cardigan",
+      "category": "outfit",
+      "tags": "cardigan"
+    },
+    {
+      "name": "dress",
+      "category": "outfit",
+      "tags": "dress"
+    },
+    {
+      "name": "suit",
+      "category": "outfit",
+      "tags": "suit"
+    },
+    {
+      "name": "coat",
+      "category": "outfit",
+      "tags": "coat"
+    },
+    {
+      "name": "maid outfit",
+      "category": "outfit",
+      "tags": "maid"
+    },
+    {
+      "name": "armored dress",
+      "category": "outfit",
+      "tags": "dress, armor"
+    },
+    {
+      "name": "tracksuit",
+      "category": "outfit",
+      "tags": "track suit"
+    },
+    {
+      "name": "swimsuit",
+      "category": "outfit",
+      "tags": "swimsuit"
+    },
+    {
+      "name": "big smile",
+      "category": "expression",
+      "tags": "smile, open mouth"
+    },
+    {
+      "name": "blushing smile",
+      "category": "expression",
+      "tags": "smile, blush"
+    },
+    {
+      "name": "closed-eye smile",
+      "category": "expression",
+      "tags": "smile, closed eyes"
+    },
+    {
+      "name": "confused",
+      "category": "expression",
+      "tags": "confused"
+    },
+    {
+      "name": "smirk",
+      "category": "expression",
+      "tags": "smirk"
+    },
+    {
+      "name": "simple background",
+      "category": "background",
+      "tags": "simple background"
+    },
+    {
+      "name": "white background",
+      "category": "background",
+      "tags": "white background"
+    },
+    {
+      "name": "gradient background",
+      "category": "background",
+      "tags": "gradient background"
+    },
+    {
+      "name": "abstract background",
+      "category": "background",
+      "tags": "abstract background"
+    },
+    {
+      "name": "kitchen",
+      "category": "background",
+      "tags": "kitchen"
+    },
+    {
+      "name": "city",
+      "category": "background",
+      "tags": "city"
+    },
+    {
+      "name": "alley",
+      "category": "background",
+      "tags": "alley"
+    },
+    {
+      "name": "rooftop",
+      "category": "background",
+      "tags": "rooftop"
+    },
+    {
+      "name": "train station",
+      "category": "background",
+      "tags": "train station"
+    },
+    {
+      "name": "park",
+      "category": "background",
+      "tags": "park"
+    },
+    {
+      "name": "garden",
+      "category": "background",
+      "tags": "garden"
+    },
+    {
+      "name": "mountain",
+      "category": "background",
+      "tags": "mountain"
+    },
+    {
+      "name": "flower field",
+      "category": "background",
+      "tags": "flower field"
+    },
+    {
+      "name": "castle",
+      "category": "background",
+      "tags": "castle"
+    },
+    {
+      "name": "ruins",
+      "category": "background",
+      "tags": "ruins"
+    },
+    {
+      "name": "profile",
+      "category": "camera",
+      "tags": "profile"
+    },
+    {
+      "name": "three-quarter view",
+      "category": "camera",
+      "tags": "three-quarter view"
+    },
+    {
+      "name": "over shoulder",
+      "category": "camera",
+      "tags": "over shoulder"
+    },
+    {
+      "name": "isometric",
+      "category": "camera",
+      "tags": "isometric"
+    },
+    {
+      "name": "hand focus",
+      "category": "camera",
+      "tags": "hand focus"
+    },
+    {
+      "name": "headshot",
+      "category": "camera",
+      "tags": "headshot"
+    },
+    {
+      "name": "full body",
+      "category": "camera",
+      "tags": "full body"
+    },
+    {
+      "name": "background blur",
+      "category": "camera",
+      "tags": "blurry background, depth of field"
+    },
+    {
+      "name": "foreground and background blur",
+      "category": "camera",
+      "tags": "blurry foreground, blurry background"
+    },
+    {
+      "name": "motion blur",
+      "category": "camera",
+      "tags": "motion blur"
+    },
+    {
+      "name": "multiple views",
+      "category": "camera",
+      "tags": "multiple views"
+    },
+    {
+      "name": "standing",
+      "category": "pose",
+      "tags": "standing"
+    },
+    {
+      "name": "lying",
+      "category": "pose",
+      "tags": "lying"
+    },
+    {
+      "name": "on back",
+      "category": "pose",
+      "tags": "on back"
+    },
+    {
+      "name": "on stomach",
+      "category": "pose",
+      "tags": "on stomach"
+    },
+    {
+      "name": "waving",
+      "category": "pose",
+      "tags": "waving"
+    },
+    {
+      "name": "leaning",
+      "category": "pose",
+      "tags": "leaning"
+    },
+    {
+      "name": "backlight",
+      "category": "tone",
+      "tags": "backlighting"
+    },
+    {
+      "name": "rim light",
+      "category": "tone",
+      "tags": "rim lighting"
+    },
+    {
+      "name": "sunlight",
+      "category": "tone",
+      "tags": "sunlight"
+    },
+    {
+      "name": "light rays",
+      "category": "tone",
+      "tags": "light rays"
+    },
+    {
+      "name": "shadow",
+      "category": "tone",
+      "tags": "shadow"
+    },
+    {
+      "name": "lens flare",
+      "category": "tone",
+      "tags": "lens flare"
+    },
+    {
+      "name": "spotlight",
+      "category": "tone",
+      "tags": "spotlight"
+    },
+    {
+      "name": "morning",
+      "category": "tone",
+      "tags": "morning"
+    },
+    {
+      "name": "dawn",
+      "category": "tone",
+      "tags": "dawn"
+    },
+    {
+      "name": "day",
+      "category": "tone",
+      "tags": "day"
+    },
+    {
+      "name": "sunset",
+      "category": "tone",
+      "tags": "sunset"
+    },
+    {
+      "name": "night",
+      "category": "tone",
+      "tags": "night"
+    },
+    {
+      "name": "blue sky",
+      "category": "tone",
+      "tags": "blue sky"
+    },
+    {
+      "name": "cloudy sky",
+      "category": "tone",
+      "tags": "cloudy sky"
+    },
+    {
+      "name": "rain",
+      "category": "tone",
+      "tags": "rain"
+    },
+    {
+      "name": "fog",
+      "category": "tone",
+      "tags": "fog"
+    },
+    {
+      "name": "starry sky",
+      "category": "tone",
+      "tags": "starry sky"
+    },
+    {
+      "name": "rainbow",
+      "category": "tone",
+      "tags": "rainbow"
+    },
+    {
+      "name": "solo focus",
+      "category": "composition",
+      "tags": "solo focus"
+    },
+    {
+      "name": "scenery",
+      "category": "composition",
+      "tags": "scenery"
+    },
+    {
+      "name": "border",
+      "category": "composition",
+      "tags": "border"
+    },
+    {
+      "name": "saturated",
+      "category": "tone",
+      "tags": "saturated"
+    },
+    {
+      "name": "warm colors",
+      "category": "tone",
+      "tags": "warm colors"
+    },
+    {
+      "name": "cool colors",
+      "category": "tone",
+      "tags": "cool colors"
+    },
+    {
+      "name": "muted colors",
+      "category": "tone",
+      "tags": "muted colors"
+    },
+    {
+      "name": "greyscale",
+      "category": "tone",
+      "tags": "greyscale"
+    },
+    {
+      "name": "colorful",
+      "category": "tone",
+      "tags": "colorful"
+    },
+    {
+      "name": "short hair",
+      "category": "hair",
+      "tags": "short hair"
+    },
+    {
+      "name": "long hair",
+      "category": "hair",
+      "tags": "long hair"
+    },
+    {
+      "name": "twintails",
+      "category": "hair",
+      "tags": "twintails"
+    },
+    {
+      "name": "braid",
+      "category": "hair",
+      "tags": "braid"
+    },
+    {
+      "name": "hair bun",
+      "category": "hair",
+      "tags": "hair bun"
+    },
+    {
+      "name": "wavy hair",
+      "category": "hair",
+      "tags": "wavy hair"
+    },
+    {
+      "name": "brown hair",
+      "category": "hair",
+      "tags": "brown hair"
+    },
+    {
+      "name": "blonde hair",
+      "category": "hair",
+      "tags": "blonde hair"
+    },
+    {
+      "name": "white hair",
+      "category": "hair",
+      "tags": "white hair"
+    },
+    {
+      "name": "red hair",
+      "category": "hair",
+      "tags": "red hair"
+    },
+    {
+      "name": "blue hair",
+      "category": "hair",
+      "tags": "blue hair"
+    },
+    {
+      "name": "anime coloring",
+      "category": "other",
+      "tags": "anime coloring"
+    },
+    {
+      "name": "anime screencap",
+      "category": "other",
+      "tags": "anime screenshot"
+    },
+    {
+      "name": "painterly",
+      "category": "other",
+      "tags": "painterly"
+    },
+    {
+      "name": "lineart",
+      "category": "other",
+      "tags": "lineart"
+    },
+    {
+      "name": "no lineart",
+      "category": "other",
+      "tags": "no lineart"
+    },
+    {
+      "name": "sketch",
+      "category": "other",
+      "tags": "sketch"
+    },
+    {
+      "name": "oil painting",
+      "category": "other",
+      "tags": "oil painting (medium)"
+    },
+    {
+      "name": "ink wash painting",
+      "category": "other",
+      "tags": "ink wash painting"
+    },
+    {
+      "name": "pixel art",
+      "category": "other",
+      "tags": "pixel art"
+    },
+    {
+      "name": "realistic",
+      "category": "other",
+      "tags": "realistic"
+    },
+    {
+      "name": "chibi",
+      "category": "other",
+      "tags": "chibi"
+    },
+    {
+      "name": "comic",
+      "category": "other",
+      "tags": "comic"
+    },
+    {
+      "name": "screentones",
+      "category": "other",
+      "tags": "screentones"
+    },
+    {
+      "name": "ukiyo-e",
+      "category": "other",
+      "tags": "ukiyo-e"
+    },
+    {
+      "name": "cable knit",
+      "category": "outfit",
+      "tags": "cable knit"
+    },
+    {
+      "name": "metal",
+      "category": "outfit",
+      "tags": "metal"
+    },
+    {
+      "name": "transparent",
+      "category": "outfit",
+      "tags": "transparent"
+    },
+    {
+      "name": "lace",
+      "category": "outfit",
+      "tags": "lace"
+    },
+    {
+      "name": "leather",
+      "category": "outfit",
+      "tags": "leather"
+    },
+    {
+      "name": "denim",
+      "category": "outfit",
+      "tags": "denim"
+    },
+    {
+      "name": "fur trim",
+      "category": "outfit",
+      "tags": "fur trim"
+    },
+    {
+      "name": "see-through fabric",
+      "category": "outfit",
+      "tags": "translucent clothing"
+    },
+    {
+      "name": "shiny clothes",
+      "category": "outfit",
+      "tags": "shiny clothes"
+    },
+    {
+      "name": "latex",
+      "category": "outfit",
+      "tags": "latex"
+    },
+    {
+      "name": "petals",
+      "category": "other",
+      "tags": "petals"
+    },
+    {
+      "name": "autumn leaves",
+      "category": "other",
+      "tags": "autumn leaves"
+    },
+    {
+      "name": "snowflakes",
+      "category": "other",
+      "tags": "snowflakes"
+    },
+    {
+      "name": "sparkles",
+      "category": "other",
+      "tags": "sparkles"
+    },
+    {
+      "name": "bokeh",
+      "category": "other",
+      "tags": "bokeh"
+    },
+    {
+      "name": "dust",
+      "category": "other",
+      "tags": "dust"
+    },
+    {
+      "name": "smoke",
+      "category": "other",
+      "tags": "smoke"
+    },
+    {
+      "name": "fireflies",
+      "category": "other",
+      "tags": "fireflies"
+    },
+    {
+      "name": "fireworks",
+      "category": "other",
+      "tags": "fireworks"
+    }
+  ]
+}

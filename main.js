@@ -22,9 +22,11 @@ import { setupModelList } from './scripts/main/modelList.js';
 import { setupTagAutoCompleteBackend } from './scripts/main/tagAutoComplete_backend.js';
 import { setupTagRelatedBackend } from './scripts/main/tagRelated_backend.js';
 import { setupArtistBackend } from './scripts/main/artist_backend.js';
+import { setupPartsBackend } from './scripts/main/parts_backend.js';
 import { setupModelApi } from './scripts/main/remoteAI_backend.js';
 import { setupGenerateBackendComfyUI, sendToRenderer } from './scripts/main/generate_backend_comfyui.js';
 import { stopPodSshSession } from './scripts/main/podSshTransport.js';
+import { registerProseStudent, stopProseStudent } from './scripts/main/proseStudent.js';
 import { setupGenerateBackendWebUI } from './scripts/main/generate_backend_webui.js';
 import { getCachedFiles, setupCachedFiles } from './scripts/main/cachedFiles.js';
 import { setupWildcardsHandlers } from './scripts/main/wildCards.js';
@@ -109,6 +111,7 @@ async function initializeApp() {
   setupTagRelatedBackend();
   // after the tag list: the artist index is built from it
   setupArtistBackend();
+  setupPartsBackend();
   setupModelApi();
   setupGenerateBackendComfyUI();
   setupGenerateBackendWebUI();  
@@ -138,6 +141,8 @@ async function initializeApp() {
     return languages[getGlobalSettings()?.language] ?? languages['en-US'] ?? {};
   });
   registerComfyProcess(ipcMain, getGlobalSettings);
+  // the distilled Prose model's llama-server (started on the first paragraph, stopped with SAA)
+  registerProseStudent(ipcMain, getGlobalSettings);
   setTimeout(() => {
     autostartComfy(getGlobalSettings()).catch(error => console.warn('[ComfyProcess] autostart failed:', error?.message ?? error));
   }, 1500);
@@ -174,6 +179,8 @@ async function initializeApp() {
 app.on('window-all-closed', async function () {
   // close the WebSocket server
   closeWebSocketServer();
+
+  stopProseStudent();
 
   // Drop the pod SSH relay (if any) so no orphan ssh.exe lingers.
   try {

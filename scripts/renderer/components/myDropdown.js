@@ -1,5 +1,5 @@
 import { updateLanguage } from '../language.js';
-import { callback_myCharacterList_updateThumb, callback_myViewList_Update } from '../callbacks.js'
+import { callback_myCharacterList_updateThumb } from '../callbacks.js'
 import { generateGUID } from '../slots/myLoRASlot.js'
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
 import { clearTagAliasCache } from '../tagAliasClient.js';
@@ -98,54 +98,6 @@ export function myRegionalCharacterList(containerId, wai_characters, oc_characte
         oc_characters,
         callback_myCharacterList_updateThumb,
     );
-}
-
-function handleViewOptions(options, filteredOptions, args, dropdownCount) {
-    const [data] = args;
-    // view_tags.json still ships all four lists; only angle / camera stay dropdowns
-    // (background / style moved into the prompt fields).
-    if (typeof data !== 'object' || data === null || Object.keys(data).length < dropdownCount) return;
-
-    const keys = ['angle', 'camera'];
-    for (let index = 0; index < options.length; index++) {
-        const key = keys[index];
-        // merged lists carry { key, value } pairs (a user label may stand for several
-        // tags); plain strings are the upstream shape where key === value.
-        options[index] = [
-            { key: 'random', value: 'random' },
-            { key: 'none', value: 'none' }
-        ].concat(data[key].map(item => typeof item === 'string'
-            ? { key: item, value: item }
-            : { key: item.key, value: item.value }));
-        filteredOptions[index] = [...options[index]];
-    }
-}
-
-export function myViewsList(containerId, view_tags) {
-    const dropdown = createDropdown({
-        containerId: containerId,
-        dropdownCount: 2,
-        labelPrefixList: ['angle', 'camera'],
-        textboxIds: ['cd-view-angle', 'cd-view-camera'],
-        optionHandler: handleViewOptions,
-        callback_func: callback_myViewList_Update,
-        enableSearch: true,
-        // labels, not values: a user entry's label can stand for a multi-tag prompt
-        isValueOnly: false,
-        height: 30,
-        enableNumberInput: true
-    });
-
-    if (view_tags && dropdown) {
-        const labelPrefixList = `
-        ${globalThis.cachedFiles.language[globalThis.globalSettings.language].view_angle},
-        ${globalThis.cachedFiles.language[globalThis.globalSettings.language].view_camera}`;
-        dropdown.setOptions(view_tags, null, labelPrefixList, 'None', 'None', false);
-    } else if (!dropdown) {
-        console.error(CAT, `[myViewsList] Dropdown with containerId "${containerId}" not found.`);
-    }
-    
-    return dropdown;
 }
 
 export function myLanguageList(language) {

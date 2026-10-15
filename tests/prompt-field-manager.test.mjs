@@ -74,7 +74,10 @@ test('Scene: every unit is a row edited in place (drag, rename, mute, add), Regi
   assert.match(css, /\.prompt-scene \.prompt-field > \.myTextbox-wrapper \{\s*display: grid;/);
   assert.match(css, /\.prompt-field\.is-muted \.tag-capsule-chip \{\s*border-style: dashed;/);
   assert.match(css, /\.scene-side\.is-right \{\s*border-left-color: var\(--saa-warn, #e0a458\);/);
-  assert.match(css, /\.cast-mode \.regional-condition-trigger-dummy,\s*\.cast-mode \.scene-regional,/);
+  // Regional runs on a diffusion model too (2026-09-27): cast mode hides Refiner and ControlNet only
+  assert.doesNotMatch(css, /\.cast-mode \.regional-condition-trigger-dummy/);
+  assert.doesNotMatch(css, /\.cast-mode \.scene-regional/);
+  assert.match(css, /\.cast-mode \.pipeline-card \.refiner-container,\s*\.cast-mode \.pipeline-card \.controlnet-container/);
 });
 
 test('muted units leave the prompt but keep their text', () => {

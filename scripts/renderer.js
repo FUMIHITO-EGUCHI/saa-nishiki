@@ -4,7 +4,7 @@ import { setupGallery } from './renderer/customGallery.js';
 import { setupThumbOverlay, setupThumb } from './renderer/customThumbGallery.js';
 import { setupSuggestionSystem } from './renderer/tagAutoComplete.js';
 import { setupButtonOverlay, customCommonOverlay } from './renderer/customOverlay.js';
-import { myCharacterList, myRegionalCharacterList, myViewsList, myLanguageList, mySimpleList } from './renderer/components/myDropdown.js';
+import { myCharacterList, myRegionalCharacterList, myLanguageList, mySimpleList } from './renderer/components/myDropdown.js';
 import { myArtistList } from './renderer/components/artistSelectionModal.js';
 import { callback_artistList_changed,
     callback_api_model_select, callback_api_model_type, callback_api_interface, 
@@ -36,6 +36,8 @@ import { setupTagCapsuleFields } from './renderer/components/tagCapsuleField.js'
 import { fetchRelatedTags } from './renderer/tagRelatedClient.js';
 import { setupUiShell } from './renderer/uiShell.js';
 import { setupListManager } from './renderer/listManager.js';
+import { loadParts } from './renderer/partsClient.js';
+import { setupPartsUi } from './renderer/partsUi.js';
 import { filterPrompts } from './renderer/tools/promptFilter.js';
 import { setupRightClickMenu, addSpellCheckSuggestions } from './renderer/components/myRightClickMenu.js';
 import { extractHostPort } from './renderer/generate.js';
@@ -46,6 +48,7 @@ import { setupEditHistoryUi } from './renderer/editHistoryUi.js';
 import { get_prompt_textBox_Heights, set_prompt_textBox_Heights } from './renderer/components/componentsManager.js';
 import { hiresCalculate } from './renderer/tools/hiresCalculation.js';
 import { SIZE_HARD_MAX, SIZE_LIMIT_STEP, SIZE_MIN, SIZE_STEP } from './shared/sizeLimits.js';
+import { refinerModelOptions } from './shared/refinerModel.js';
 import { applySizeRange } from './renderer/callbacks.js';
 
 function afterDOMinit() {
@@ -133,7 +136,6 @@ export async function setupHeader(SETTINGS, FILES, LANG){
 
 export async function setupLeftRight(SETTINGS, FILES, LANG) {
     // Init Left
-    globalThis.viewList = myViewsList('dropdown-view', FILES.viewTags);        
     setupGallery('gallery-main-main');        
     globalThis.infoBox = {
         image: setupInfoBox('image-infobox-main', LANG.output_info, '', true, 320),            
@@ -471,6 +473,12 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
             minLines: 3,
             maxLines: 50
             }, false, (value) => { globalThis.globalSettings.api_prompt_right = value; }),
+        // the View row: angle, camera, composition - tags and parts: chips, like Background
+        views: setupTextbox('prompt-view', LANG.prompt_view, {
+            value: SETTINGS.view_tags,
+            defaultTextColor: 'BurlyWood',
+            maxLines: 10
+            }, false, (value) => { globalThis.globalSettings.view_tags = value; }),
         background: setupTextbox('prompt-background', LANG.prompt_background, {
             value: SETTINGS.prompt_background,
             defaultTextColor: 'BurlyWood',
@@ -517,6 +525,7 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
     setupSuggestionSystem();
     globalThis.prompt.tagSelectionModals = setupTagSelectionModal([
         globalThis.prompt.common,
+        globalThis.prompt.views,
         globalThis.prompt.background,
         globalThis.prompt.style,
         globalThis.prompt.positive,
@@ -525,9 +534,13 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
         globalThis.prompt.negative_left,
         globalThis.prompt.negative_right,
         globalThis.prompt.exclude,
-    ], ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
+    ], ['common', 'views', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
+    // Parts ("parts:<name>" tag bundles): the picker / card / editor the Scene rows and
+    // the chips open; before the fields, whose rows ask for it as they are built
+    setupPartsUi();
     globalThis.prompt.tagCapsuleFields = setupTagCapsuleFields([
         globalThis.prompt.common,
+        globalThis.prompt.views,
         globalThis.prompt.background,
         globalThis.prompt.style,
         globalThis.prompt.positive,
@@ -537,7 +550,7 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
         globalThis.prompt.negative_right,
         globalThis.prompt.exclude,
     ], {
-        keys: ['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude'],
+        keys: ['common', 'views', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude'],
         applyExclude: (prompt, exclude) => filterPrompts(prompt, prompt, exclude).positivePrompt,
         fetchRelated: value => fetchRelatedTags(value),
         finalPromptContainer: document.querySelector('#prompt-text-container .prompt-fields') ?? document.querySelector('#prompt-text-container'),
@@ -564,7 +577,7 @@ export async function createHifixRefiner(SETTINGS, FILES, LANG) {
 
     console.log('Creating globalThis.refiner');
     globalThis.refiner = {
-        model: mySimpleList('refiner-model', LANG.api_refiner_model, FILES.modelListAll, 
+        model: mySimpleList('refiner-model', LANG.api_refiner_model, refinerModelOptions(FILES.modelListAll), 
             (index, value) => { globalThis.globalSettings.api_refiner_model = value; }, 15, true, true),
         vpred: mySimpleList('refiner-vpred', LANG.vpred, [LANG.vpred_auto, LANG.vpred_on, LANG.vpred_on_zsnr, LANG.vpred_off], 
             (index, value) => { globalThis.globalSettings.api_refiner_model_vpred = value; }, 5, false, false),
@@ -595,7 +608,10 @@ export async function createRegional(SETTINGS, FILES, LANG) {
             (index, value) => {
                 globalThis.globalSettings.regional_split = splitFromLabel(value);
                 document.dispatchEvent(new CustomEvent('saa:regional-split-changed'));
-            }, 5, false, true)
+            }, 5, false, true),
+        // "split screen, 2koma, two panels" after Common on both sides: the composition line
+        panels: setupCheckbox('regional-condition-panels', LANG.regional_panels || 'Panels', SETTINGS.regional_panels, true,
+            (value) => { globalThis.globalSettings.regional_panels = value; }),
     }
     globalThis.regional.split?.updateDefaults?.(splitLabel(SETTINGS.regional_split));
 }
@@ -633,6 +649,18 @@ export async function createAI(SETTINGS, FILES, LANG) {
             value: SETTINGS.ai_local_addr,
             maxLines: 1
             }, true, (value) => { globalThis.globalSettings.ai_local_addr = value;}),
+        prose_student_server: setupTextbox('system-settings-ai-prose-student-server', LANG.ai_prose_student_server, {
+            value: SETTINGS.ai_prose_student_server ?? '',
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.ai_prose_student_server = value.trim(); }),
+        prose_student_model: setupTextbox('system-settings-ai-prose-student-model', LANG.ai_prose_student_model, {
+            value: SETTINGS.ai_prose_student_model ?? '',
+            maxLines: 1
+            }, true, (value) => { globalThis.globalSettings.ai_prose_student_model = value.trim(); }),
+        prose_student_port: setupTextbox('system-settings-ai-prose-student-port', LANG.ai_prose_student_port, {
+            value: String(SETTINGS.ai_prose_student_port ?? 8090),
+            maxLines: 1
+            }, true, (value) => { const port = Number.parseInt(value, 10); globalThis.globalSettings.ai_prose_student_port = Number.isInteger(port) && port > 0 ? port : 8090; }),
         pod_model: setupTextbox('system-settings-ai-pod-model', LANG.ai_pod_model, {
             value: SETTINGS.ai_pod_model,
             maxLines: 1
@@ -791,6 +819,9 @@ async function init(){
 
         // 2026-08-30 layout glue (pipeline rows, AI card, run bar, left panel, status pills)
         setupUiShell();
+
+        // Parts: the document the chips and the prompt expand from
+        loadParts();
 
         // List manager (R3): user-diff editing for the bundled lists (Electron only)
         setupListManager();

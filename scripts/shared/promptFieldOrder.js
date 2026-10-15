@@ -1,7 +1,7 @@
 // User-orderable prompt chain (pure, shared by renderer and tests).
 //
 // The positive prompt is assembled from ordered "units": the built-in blocks
-// (common, views = angle+camera, background, style, ai, characters, positive)
+// (common, views, background, style, ai, characters, positive)
 // plus any user-defined custom fields; the negative prompt likewise starts from
 // the built-in negative field. The stored order arrays list unit ids; anything
 // missing is appended in default order so old settings and partial data stay
@@ -11,7 +11,7 @@ export const POSITIVE_BUILTIN_ORDER = Object.freeze(['common', 'views', 'backgro
 export const NEGATIVE_BUILTIN_ORDER = Object.freeze(['negative']);
 
 // Fixed structural blocks that carry no user text of their own.
-export const STRUCTURAL_UNITS = Object.freeze(new Set(['views', 'ai', 'artist', 'characters']));
+export const STRUCTURAL_UNITS = Object.freeze(new Set(['ai', 'artist', 'characters']));
 
 const CUSTOM_ID_PATTERN = /^cf_[a-z0-9]{1,32}$/;
 

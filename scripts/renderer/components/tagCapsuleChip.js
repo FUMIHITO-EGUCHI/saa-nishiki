@@ -1,5 +1,7 @@
 // One chip = name [+ weight] [+ ×]. Pure rendering; the field owns events and focus.
 import { chipKind, describePlan, formatTagWeight, normalizeWeightPlan, weightWarning } from './tagCapsuleLogic.js';
+import { PART_PREFIX, isPartToken, partNameOf } from '../../shared/parts.js';
+import { heatLabel, heatTier } from '../../shared/tagHeat.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -93,12 +95,14 @@ export function modeIconName(mode) {
 
 export function chipSignature(capsule, options = {}) {
     const plan = normalizeWeightPlan(capsule.weightPlan);
+    const part = options.part ? `${options.part.exists ? 1 : 0}:${options.part.count}` : '';
     return [capsule.id, capsule.value, plan.mode, plan.min, plan.max, plan.step, plan.seed,
-        options.excluded ? 1 : 0, options.favorite ? 1 : 0, capsule.disabled ? 1 : 0, options.status ?? ''].join('|');
+        options.excluded ? 1 : 0, options.favorite ? 1 : 0, capsule.disabled ? 1 : 0, options.status ?? '', part,
+        options.heat ?? ''].join('|');
 }
 
 export function createChip(capsule, options = {}) {
-    const { text, excluded = false, favorite = false, status = '' } = options;
+    const { text, excluded = false, favorite = false, status = '', part = null, heat = null } = options;
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'tag-capsule-chip';
@@ -124,22 +128,29 @@ export function createChip(capsule, options = {}) {
     chip.appendChild(weight);
     // no × on the chip: a tag is removed from the context menu or with Delete
 
-    updateChip(chip, capsule, { text, excluded, favorite, status });
+    updateChip(chip, capsule, { text, excluded, favorite, status, part, heat });
     return chip;
 }
 
 export function updateChip(chip, capsule, options = {}) {
-    const { text, excluded = false, favorite = false, status = '' } = options;
+    const { text, excluded = false, favorite = false, status = '', part = null, heat = null } = options;
     const plan = normalizeWeightPlan(capsule.weightPlan);
     const kind = chipKind(plan);
     const description = describePlan(plan);
     const modeIcon = modeIconName(plan.mode);
 
     chip.dataset.capsuleId = capsule.id;
-    chip.dataset.signature = chipSignature(capsule, { excluded, favorite, status });
+    chip.dataset.signature = chipSignature(capsule, { excluded, favorite, status, part, heat });
+    // a "parts:<name>" token: the gold prefix, the name, and the member count at the right
+    chip.classList.toggle('is-part', Boolean(part));
+    chip.classList.toggle('is-part-missing', Boolean(part) && !part.exists);
     // dictionary marks (tagDictionaryStatus.js): a value no tag matches, or a sentence
-    chip.classList.toggle('is-unknown', status === 'unknown');
-    chip.classList.toggle('is-sentence', status === 'sentence');
+    chip.classList.toggle('is-unknown', !part && status === 'unknown');
+    chip.classList.toggle('is-sentence', !part && status === 'sentence');
+    // the heat tier (shared/tagHeat.js): a tag the models have barely seen, or seen little of
+    const tier = part ? null : heatTier(heat);
+    chip.classList.toggle('is-heat-weak', tier === 'weak');
+    chip.classList.toggle('is-heat-thin', tier === 'thin');
     chip.classList.toggle('is-up', kind === 'up');
     chip.classList.toggle('is-down', kind === 'down');
     chip.classList.toggle('is-plan', kind === 'plan');
@@ -162,7 +173,14 @@ export function updateChip(chip, capsule, options = {}) {
     if (favMark) favMark.hidden = !favorite;
 
     const name = chip.querySelector('.tag-capsule-chip-name');
-    name.textContent = capsule.value;
+    if (part) {
+        const prefix = document.createElement('span');
+        prefix.className = 'tag-capsule-chip-prefix';
+        prefix.textContent = PART_PREFIX;
+        name.replaceChildren(prefix, document.createTextNode(partNameOf(capsule.value) ?? capsule.value));
+    } else {
+        name.textContent = capsule.value;
+    }
     name.title = capsule.value;
 
     const weight = chip.querySelector('.tag-capsule-chip-weight');
@@ -171,8 +189,11 @@ export function updateChip(chip, capsule, options = {}) {
         if (modeIcon) weight.appendChild(createIcon(modeIcon, 12));
         // the segment shows the number alone; the token's ":" is for the prompt text
         weight.appendChild(document.createTextNode(description.replace(/^:/, '')));
+    } else if (part?.exists) {
+        // a part at weight 1: the right segment counts its tags instead
+        weight.appendChild(document.createTextNode(String(part.count)));
     }
-    weight.hidden = !description;
+    weight.hidden = !description && !part?.exists;
 
     const labelParts = [capsule.value];
     if (kind === 'plan') {
@@ -182,15 +203,23 @@ export function updateChip(chip, capsule, options = {}) {
     }
     if (excluded && typeof text === 'function') labelParts.push(text('tag_ui_excluded'));
     if (capsule.disabled && typeof text === 'function') labelParts.push(text('tag_ui_disabled'));
+    // the tooltip: the value, the exclusion, then the tier wording with the exact count
+    const titleParts = [capsule.value];
+    if (excluded && typeof text === 'function') titleParts.push(text('tag_ui_excluded'));
+    const heatText = tier ? heatLabel(text, heat) : '';
+    if (heatText) {
+        labelParts.push(heatText);
+        titleParts.push(heatText);
+    }
     chip.setAttribute('aria-label', labelParts.join(', '));
-    chip.title = excluded && typeof text === 'function' ? `${capsule.value} — ${text('tag_ui_excluded')}` : capsule.value;
+    chip.title = titleParts.join(' — ');
     return chip;
 }
 
 // Keyed diff: reuses chip elements by capsule id, re-renders only changed ones,
 // and keeps `trailing` (the add-tag slot) as the last child.
 export function renderChips(container, capsules, options = {}) {
-    const { text, excludedSet = new Set(), trailing = null, isFavorite = null, tagStatus = null } = options;
+    const { text, excludedSet = new Set(), trailing = null, isFavorite = null, tagStatus = null, tagHeat = null, partInfo = null } = options;
     const existing = new Map();
     for (const child of container.querySelectorAll(':scope > .tag-capsule-chip')) {
         existing.set(child.dataset.capsuleId, child);
@@ -200,13 +229,16 @@ export function renderChips(container, capsules, options = {}) {
     for (const capsule of capsules) {
         const excluded = excludedSet.has(String(capsule.value ?? '').trim().replaceAll(/\s+/g, ' ').toLocaleLowerCase());
         const favorite = typeof isFavorite === 'function' && isFavorite(capsule.value);
-        const status = typeof tagStatus === 'function' ? tagStatus(capsule.value) : '';
+        // a part token is neither looked up in the dictionary nor a favorite candidate
+        const part = typeof partInfo === 'function' && isPartToken(capsule.value) ? partInfo(capsule.value) : null;
+        const status = !part && typeof tagStatus === 'function' ? tagStatus(capsule.value) : '';
+        const heat = !part && status === 'known' && typeof tagHeat === 'function' ? tagHeat(capsule.value) : null;
         let chip = existing.get(capsule.id);
         if (chip) {
             existing.delete(capsule.id);
-            if (chip.dataset.signature !== chipSignature(capsule, { excluded, favorite, status })) updateChip(chip, capsule, { text, excluded, favorite, status });
+            if (chip.dataset.signature !== chipSignature(capsule, { excluded, favorite, status, part, heat })) updateChip(chip, capsule, { text, excluded, favorite, status, part, heat });
         } else {
-            chip = createChip(capsule, { text, excluded, favorite, status });
+            chip = createChip(capsule, { text, excluded, favorite, status, part, heat });
         }
         ordered.push(chip);
     }

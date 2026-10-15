@@ -339,6 +339,7 @@ class FakeDocument extends FakeNode {
 
 const BUILTINS = [
     ['common', 'prompt-common', 'custom_prompt'],
+    ['views', 'prompt-view', 'view_tags'],
     ['background', 'prompt-background', 'prompt_background'],
     ['style', 'prompt-style', 'prompt_style'],
     ['positive', 'prompt-positive', 'api_prompt'],
@@ -382,7 +383,7 @@ function bootScene(settings) {
     });
     document.body.innerHTML = `<section id="prompt-text-container"><div class="ui-card-head"><div class="ui-card-tools"></div></div>`
         + `<div class="ui-card-body prompt-fields">${BUILTINS.map(([, className]) => `<div class="${className} prompt-field"></div>`).join('')}`
-        + '<div class="ai-card"></div></div></section><div class="dropdown-view"></div>';
+        + '<div class="ai-card"></div></div></section>';
     const controls = BUILTINS.map(([key, className, settingsKey]) => {
         const control = setupTextbox(className, key, { value: settings[settingsKey] }, false, value => { settings[settingsKey] = value; });
         globalThis.prompt[key] = control;
@@ -405,6 +406,7 @@ const rowOf = (document, id) => document.querySelector(`.prompt-scene .prompt-fi
 test('a muted row keeps its text but leaves generation, the Final prompt preview and the batch plan', () => {
     const settings = sceneSettings({
         custom_prompt: 'masterpiece',
+        view_tags: 'from above',
         api_prompt: 'smile',
         api_neg_prompt: 'lowres',
         prompt_custom_fields: [{ id: 'cf_hat', name: 'Hat', polarity: 'positive', text: 'hat' }],
@@ -412,9 +414,9 @@ test('a muted row keeps its text but leaves generation, the Final prompt preview
         positive_batch: { enabled: true, count: 3 },
     });
     const { manager, set } = bootScene(settings);
-    globalThis.viewList = { getValue: () => ['from above', 'None'], getTextValue: () => 1 };
 
-    assert.match(set.expandAll(1, 0)[0].positive, /^masterpiece, smile, hat$/);
+    // the View row is a chain unit like the others: its tags sit after Common
+    assert.match(set.expandAll(1, 0)[0].positive, /^masterpiece, from above, smile, hat$/);
     assert.equal(set.getBatchExpansion().variable, 1);
     assert.equal(readPromptValue('positive'), 'smile');
     assert.equal(getViewTags(0, false), 'from above, ');

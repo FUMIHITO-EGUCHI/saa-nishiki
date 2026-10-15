@@ -141,9 +141,6 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     setDropdownLanguage('dropdown-character-regional', [LANG.regional_character_left, LANG.regional_character_right]);
     globalThis.characterListRegional.setValueOnly(globalThis.globalSettings.language === 'en-US');
 
-    // View List
-    setDropdownLanguage('dropdown-view', [LANG.view_angle, LANG.view_camera]);
-
     // Gallery Thumb
     let labels = document.querySelector('#gallery-thumb-span');
     if (labels) labels.textContent = LANG.gallery_thumb_span;
@@ -158,6 +155,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.regional.option_left?.setTitle(LANG.regional_option_left);
     globalThis.regional.option_right?.setTitle(LANG.regional_option_right);
     globalThis.regional.split?.setTitle(LANG.regional_split);
+    globalThis.regional.panels?.setTitle(LANG.regional_panels || 'Panels');
 
     globalThis.generate.seed.setTitle(LANG.random_seed);
     globalThis.generate.cfg.setTitle(LANG.cfg);
@@ -237,6 +235,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.prompt.negative.setTitle(LANG.api_neg_prompt);
     globalThis.prompt.negative_left?.setTitle(LANG.api_neg_prompt_left);
     globalThis.prompt.negative_right?.setTitle(LANG.api_neg_prompt_right);
+    globalThis.prompt.views?.setTitle(LANG.prompt_view);
     globalThis.prompt.background.setTitle(LANG.prompt_background);
     globalThis.prompt.style.setTitle(LANG.prompt_style);
     globalThis.prompt.ai.setTitle(LANG.ai_prompt);
@@ -273,6 +272,9 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.ai.ai_select.setTitle(LANG.batch_generate_rule, LANG.ai_select, LANG.ai_select_title);
     globalThis.ai.ai_prompt_preview.setTitle(LANG.ai_prompt_preview);
     globalThis.ai.local_address.setTitle(LANG.ai_local_addr);
+    globalThis.ai.prose_student_server?.setTitle(LANG.ai_prose_student_server);
+    globalThis.ai.prose_student_model?.setTitle(LANG.ai_prose_student_model);
+    globalThis.ai.prose_student_port?.setTitle(LANG.ai_prose_student_port);
     globalThis.ai.pod_address.setTitle(LANG.ai_pod_addr);
     globalThis.ai.pod_model?.setTitle(LANG.ai_pod_model);
     globalThis.ai.pod_keep_alive?.setTitle(LANG.ai_pod_keep_alive);
@@ -331,6 +333,7 @@ export function updateSettings() {
     globalThis.regional.option_left?.updateDefaults(SETTINGS.regional_option_left);
     globalThis.regional.option_right?.updateDefaults(SETTINGS.regional_option_right);
     globalThis.regional.split?.updateDefaults?.(splitLabel(SETTINGS.regional_split));
+    globalThis.regional.panels?.setValue?.(Boolean(SETTINGS.regional_panels));
     // loaded settings may carry the other split; the side labels follow
     document.dispatchEvent(new CustomEvent('saa:regional-split-changed'));
 
@@ -358,9 +361,6 @@ export function updateSettings() {
     globalThis.generate.tag_chip_alias?.setValue(SETTINGS.tag_chip_alias !== false);
     globalThis.generate.wildcard_random.setValue(SETTINGS.wildcard_random);
 
-    globalThis.viewList.updateDefaults(SETTINGS.view_angle, SETTINGS.view_camera);
-    globalThis.viewList.setTextValue(0, SETTINGS.weights4dropdownlist[0]);  // tag_angle
-    globalThis.viewList.setTextValue(1, SETTINGS.weights4dropdownlist[1]);  // tag_camera
 
     // need more careful for sampler and scheduler due to different list
     if (SETTINGS.api_interface==='ComfyUI') {
@@ -428,6 +428,7 @@ export function updateSettings() {
     globalThis.prompt.negative.setValue(SETTINGS.api_neg_prompt);
     globalThis.prompt.negative_left?.setValue(SETTINGS.api_neg_prompt_left);
     globalThis.prompt.negative_right?.setValue(SETTINGS.api_neg_prompt_right);
+    globalThis.prompt.views?.setValue(SETTINGS.view_tags);
     globalThis.prompt.background.setValue(SETTINGS.prompt_background);
     globalThis.prompt.style.setValue(SETTINGS.prompt_style);
     globalThis.prompt.ai.setValue(SETTINGS.ai_prompt);
@@ -443,6 +444,9 @@ export function updateSettings() {
 
     globalThis.ai.interface.updateDefaults(SETTINGS.ai_interface);
     globalThis.ai.local_address.setValue(SETTINGS.ai_local_addr);
+    globalThis.ai.prose_student_server?.setValue(SETTINGS.ai_prose_student_server ?? '');
+    globalThis.ai.prose_student_model?.setValue(SETTINGS.ai_prose_student_model ?? '');
+    globalThis.ai.prose_student_port?.setValue(String(SETTINGS.ai_prose_student_port ?? 8090));
     globalThis.ai.pod_address.setValue(SETTINGS.ai_pod_addr);
     globalThis.ai.pod_model?.setValue(SETTINGS.ai_pod_model);
     globalThis.ai.pod_keep_alive?.setValue(SETTINGS.ai_pod_keep_alive);

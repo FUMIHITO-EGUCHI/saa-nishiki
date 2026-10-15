@@ -3,6 +3,7 @@
 
 export const TAG_UI_DEFAULTS = Object.freeze({
     tag_ui_choose_tags: 'Choose tags',
+    tag_ui_tab_tags: 'Tags',
     tag_ui_view: 'View',
     tag_ui_view_text: 'Text',
     tag_ui_view_capsules: 'Capsules',
@@ -47,6 +48,14 @@ export const TAG_UI_DEFAULTS = Object.freeze({
     tag_ui_cancel: 'Cancel',
     tag_ui_apply: 'Apply',
     tag_ui_apply_count: 'Apply ({0})',
+    // the selection modal's Selected row and window-sized dialog (selectionModal.js)
+    tag_ui_selected: 'Selected',
+    tag_ui_selected_all: 'Show every selected item',
+    tag_ui_selected_none: 'None',
+    tag_ui_clear_selection: 'Clear',
+    tag_ui_fit_window: 'Fit the window',
+    tag_ui_sort: 'Sort',
+    tag_ui_tile_size: 'Tile size',
     tag_ui_close: 'Close',
     tag_ui_decrease: 'Decrease',
     tag_ui_increase: 'Increase',

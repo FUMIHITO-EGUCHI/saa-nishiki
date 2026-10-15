@@ -6,6 +6,7 @@
 import { getAiPrompt } from '../remoteAI.js';
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
 import { appendTagsToText, removeTagsFromText, splitPromptTokens } from './tagCapsuleLogic.js';
+import { partNameOf } from '../../shared/parts.js';
 
 function debounce(func, wait) {
     let timeout;
@@ -649,6 +650,34 @@ function registerDefaultMenuItems() {
         },
     });
     rc.append('separator_tag_3', null, { selector: '.tag-capsule-chip' });
+    // Parts (partsUi.js): a selection becomes one part; a part chip can be edited or expanded
+    rc.append('tag_save_part', LANG.parts_save_as ?? 'Save as part…', {
+        selector: '.tag-capsule-chip',
+        visible: chip => Boolean(globalThis.partsUi?.available?.()) && !chip.classList.contains('is-part'),
+        label: chip => countLabel(lang().parts_save_as ?? 'Save as part…', chipContext(chip).ids.length),
+        func: (chip) => {
+            const { key, ids } = chipContext(chip);
+            if (key && ids.length) globalThis.partsUi.saveFromSelection(key, ids, chip);
+        },
+    });
+    rc.append('tag_edit_part', LANG.parts_edit ?? 'Edit part…', {
+        selector: '.tag-capsule-chip',
+        visible: chip => Boolean(globalThis.partsUi?.available?.()) && chip.classList.contains('is-part') && !chip.classList.contains('is-part-missing'),
+        func: (chip) => {
+            const { capsule } = chipContext(chip);
+            const name = capsule ? partNameOf(capsule.value) : null;
+            if (name !== null) globalThis.partsUi.openEditor({ id: name, trigger: chip });
+        },
+    });
+    rc.append('tag_expand_part', LANG.parts_expand ?? 'Expand to tags', {
+        selector: '.tag-capsule-chip',
+        visible: chip => Boolean(globalThis.partsUi?.available?.()) && chip.classList.contains('is-part'),
+        func: (chip) => {
+            const { key, capsule } = chipContext(chip);
+            if (key && capsule) globalThis.partsUi.expandChip(key, capsule.id);
+        },
+    });
+    rc.append('separator_tag_4', null, { selector: '.tag-capsule-chip' });
 
     // ---------------------------------------------------------------- prompt field
     // (textarea in text mode, chip row / capsule view in capsule mode; custom fields included)

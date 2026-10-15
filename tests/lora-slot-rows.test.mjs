@@ -171,13 +171,48 @@ test('a LoRA the installation does not have still gets a row, switched off', asy
             assert.deepEqual(rows[1], ['detail.safetensors', '0.5', '0.5', 'ALL'], 'the one that is installed is untouched');
             assert.equal(getLoRAs('ComfyUI'), '<lora:detail.safetensors:0.5:0.5>', 'so the missing one cannot reach a backend');
             assert.ok(warnings.some(line => line.includes('gone.safetensors')), 'and it is reported');
-            // the dropdown has no entry for a model that is not installed, so the row shows
-            // the first installed one instead of the name the prompt carried
-            assert.equal(rows[0][0], LORA_LIST[0]);
+            // the dropdown used to have no entry for a model that is not installed and showed
+            // the first installed one instead: another LoRA in place of the one the prompt named
+            assert.equal(rows[0][0], 'gone.safetensors', 'the row keeps the name the prompt carried');
         });
     } finally {
         console.warn = realWarn;
     }
+});
+
+test('a saved row naming a LoRA that is not in the folder keeps its name, switched off, never another file', async () => {
+    const warnings = [];
+    const realWarn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(' '));
+    try {
+        await withLoRASlot(async ({ manager }) => {
+            globalThis.globalSettings.lora_slot = [
+                ['moved-away.safetensors', '0.8', '0.8', 'ALL'],
+                ['detail.safetensors', '0.5', '0.5', 'ALL'],
+            ];
+            manager.flush();
+            await flush();
+            assert.deepEqual(manager.getValues(), [
+                // the strengths of a row that is off are not kept (flush goes through the tag form)
+                ['moved-away.safetensors', '0', '0', 'OFF'],
+                ['detail.safetensors', '0.5', '0.5', 'ALL'],
+            ], 'the missing one is named and off; the installed one runs');
+            assert.equal(getLoRAs('ComfyUI'), '<lora:detail.safetensors:0.5:0.5>', 'no substitute reaches the backend');
+            assert.ok(warnings.some(line => line.includes('moved-away.safetensors') && line.includes('switched off')), 'and the user is told');
+        });
+    } finally {
+        console.warn = realWarn;
+    }
+});
+
+test('an empty LoRA list (not read yet) switches nothing off', async () => {
+    await withLoRASlot(async ({ manager }) => {
+        globalThis.cachedFiles.loraList = [];
+        globalThis.globalSettings.lora_slot = [['detail.safetensors', '0.5', '0.5', 'ALL']];
+        manager.flush();
+        await flush();
+        assert.deepEqual(manager.getValues(), [['detail.safetensors', '0.5', '0.5', 'ALL']]);
+    });
 });
 
 test('flush rebuilds the rows saved in the settings, including an enable value it does not know', async () => {

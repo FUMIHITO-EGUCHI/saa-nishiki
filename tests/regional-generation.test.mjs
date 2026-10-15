@@ -378,3 +378,30 @@ test('taking the last side off the cast forgets the stored pair', async () => {
     adoptRegionalCharacters();
     assert.deepEqual(settings.character_slots.map(slot => slot.key), ['C', 'D']);
 });
+
+// ---------------------------------------------------------------- the Panels preset, Regional on a diffusion model
+
+test('the Panels preset puts the split tags after Common on both sides, and only while it is on', () => {
+    const fields = { common: 'masterpiece', positive: '1girl, smile', positive_right: '1boy, sad' };
+    stubPromptCard({ fields, settings: { regional_condition: true, regional_panels: true, api_model_type: 'Diffusion', prompt_custom_fields: [] } });
+    const on = getPrompts('', '', '', '', 'ComfyUI', -1, 1);
+    assert.equal(on.posL, 'masterpiece, split screen, 2koma, two panels, 1girl, smile');
+    assert.equal(on.posR, 'masterpiece, split screen, 2koma, two panels, 1boy, sad');
+
+    stubPromptCard({ fields, settings: { regional_condition: true, regional_panels: false, api_model_type: 'Diffusion', prompt_custom_fields: [] } });
+    const off = getPrompts('', '', '', '', 'ComfyUI', -1, 1);
+    assert.equal(off.posL, 'masterpiece, 1girl, smile');
+    assert.equal(off.posR, 'masterpiece, 1boy, sad');
+});
+
+test('on a diffusion model the regional prompt carries the Artist card tokens on both sides', () => {
+    const fields = { common: 'masterpiece', positive: '1girl', positive_right: '1boy' };
+    const artist_slots = [{ key: 'asanagi', weight: 1.3, side: 'both' }];
+    stubPromptCard({ fields, settings: { regional_condition: true, api_model_type: 'Diffusion', prompt_custom_fields: [], artist_slots } });
+    const diffusion = getPrompts('', '', '', '', 'ComfyUI', -1, 1);
+    assert.match(diffusion.posL, /@asanagi/);
+    assert.match(diffusion.posR, /@asanagi/);
+    stubPromptCard({ fields, settings: { regional_condition: true, api_model_type: 'Checkpoint', prompt_custom_fields: [], artist_slots } });
+    const checkpoint = getPrompts('', '', '', '', 'ComfyUI', -1, 1);
+    assert.doesNotMatch(checkpoint.posL, /@asanagi/, 'a checkpoint has no Artist card');
+});

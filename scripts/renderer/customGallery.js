@@ -201,6 +201,10 @@ export function setupGallery(containerId) {
             currentIndex = images.length - 1;
             incremental = false;
         }
+        // Every image is a data URL held in memory; a long session with Keep Gallery on
+        // used to grow without bound. The oldest go first, never the one on show, and the
+        // thumbnails are rebuilt since their indices shifted.
+        if (trimToLimit()) incremental = false;
 
         if (isGridMode) {
             gallery_renderGridMode(true);
@@ -208,6 +212,31 @@ export function setupGallery(containerId) {
             gallery_renderSplitMode(incremental);
         }
     };
+
+    function galleryLimit() {
+        const raw = Number.parseInt(globalThis.globalSettings?.gallery_max_images, 10);
+        return Number.isFinite(raw) && raw >= 1 ? raw : 200;
+    }
+
+    // Drops the oldest images beyond the limit, keeping the current one; true when
+    // anything was dropped (the rendered thumbnails then no longer match the indices).
+    function trimToLimit() {
+        const limit = galleryLimit();
+        let dropped = 0;
+        while (images.length > limit) {
+            const victim = currentIndex === 0 ? 1 : 0;
+            if (victim >= images.length) break;
+            images.splice(victim, 1);
+            seeds.splice(victim, 1);
+            tags.splice(victim, 1);
+            infos.splice(victim, 1);
+            if (victim < currentIndex) currentIndex -= 1;
+            dropped += 1;
+        }
+        if (dropped > 0) renderedImageCount = 0;
+        return dropped > 0;
+    }
+    globalThis.mainGallery.imageCount = () => images.length;
 
     globalThis.mainGallery.showLoading = function (loadingMEssage, elapsedTimePrefix, elapsedTimeSuffix) {
         // A new run supersedes any earlier failure; otherwise the error overlay

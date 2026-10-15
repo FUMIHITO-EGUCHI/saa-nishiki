@@ -13,6 +13,7 @@ import { buildParametersText, embedPngParameters, findDiskWriterNodes, toWebsock
 import { interruptPodWorkflow, isPodSshEnabled, runPodWorkflow } from './podSshTransport.js';
 import { getGlobalSettings } from './globalSettings.js';
 import { applyFastMode, isDiffusionGeneration, missingFastLora } from '../shared/fastMode.js';
+import { loraStageModels, splitLoraText } from '../shared/loraStageModels.js';
 import { ensureComfyLaunchArgs } from './comfyProcess.js';
 import { getLoRAList, getLoRAListSource } from './modelList.js';
 import { remoteModelSource } from './remoteModelList.js';
@@ -130,8 +131,10 @@ function applyControlnet(workflow, controlnet, workflowInfo){
             "end_at": slot.postEnd,
             "weight_type": "standard",
             "enabled": true,
+            // the base checkpoint's sampling node (35); 44 is the refiner's, which put
+            // the refiner checkpoint under the first pass whenever a refiner ran
             "model": [
-              "44",
+              "35",
               0
             ],
             "image": [
@@ -145,9 +148,9 @@ function applyControlnet(workflow, controlnet, workflowInfo){
           }
         };
 
-        // Change model to IPA output
+        // Change model to IPA output; the hires pass follows through the LoRA node
+        // it already samples from (34 or 39), not this node directly
         workflow["34"]["inputs"]["model"] = [`${index + 1}`, 0];
-        workflow["20"]["inputs"]["model"] = [`${index + 1}`, 0];
 
         // move to next
         index = index + 2;
@@ -179,7 +182,6 @@ function applyControlnet(workflow, controlnet, workflowInfo){
 
           // Change model refiner to IPA output
           workflow["39"]["inputs"]["model"] = [`${index}`, 0];
-          workflow["20"]["inputs"]["model"] = [`${index}`, 0];
           
           // move to next
           index = index + 1;
@@ -440,9 +442,9 @@ function applyControlnet(workflow, controlnet, workflowInfo){
 }
 
 function applyADetailer(workflow, adetailers, workflowInfo) {
-  const {startIndex, refiner, hiresfix} = workflowInfo;
+  const {startIndex, refiner, hiresfix, model} = workflowInfo;
   let index =startIndex + 1;
-  const modelUSE = refiner?43:45; // 45: default   43: refiner
+  const modelUSE = refiner?43:45; // 45: default   43: refiner (clip / vae; the model is the run's last LoRA'd one)
   let imageVAED = hiresfix?28:6;
   const randomSeed = globalThis.crypto.getRandomValues(new Uint32Array(1))[0]; // 4294967296 = 2^32
 
@@ -533,10 +535,7 @@ function applyADetailer(workflow, adetailers, workflowInfo) {
           `${imageVAED}`,
           0
         ],
-        "model": [
-          `${modelUSE}`,
-          0
-        ],
+        "model": model,
         "clip": [
           `${modelUSE}`,
           1
@@ -672,10 +671,7 @@ function applyADetailerUnet(workflow, adetailers, workflowInfo) {
           `${imageVAED}`,
           0
         ],
-        "model": [
-          `${model}`,
-          0
-        ],
+        "model": model,
         "clip": [
           `${clip}`,
           0
@@ -1227,6 +1223,13 @@ class ComfyUI {
     
     // Set Positive prompt
     workflow["32"].inputs.text = positive;        
+    // the LoRA nodes read the tags only, the encoders the rest, so a new prompt with the
+    // same LoRAs keeps the last run's model in VRAM (loraStageModels.js)
+    const loraText = splitLoraText(positive);
+    workflow["34"].inputs.text = loraText.tags;
+    workflow["39"].inputs.text = loraText.tags;
+    workflow["2"].inputs.text = loraText.plain;
+    workflow["41"].inputs.text = loraText.plain;
     // Set Negative prompt
     workflow["33"].inputs.text = negative;
     
@@ -1234,8 +1237,13 @@ class ComfyUI {
     workflow["17"].inputs.Width = width;
     workflow["17"].inputs.Height = height;
 
+    // hires and ADetailer sample from the LoRA'd model of the last pass before them
+    // (loraStageModels.js): 39 when a refiner checkpoint runs, else 34
+    const stages = loraStageModels(refiner.enable && model !== refiner.model ? "39" : "34", { text: positive, hires: hifix.enable });
+
     if (hifix.enable) {            
       // Set Hires fix seed and denoise
+      workflow["20"].inputs.model = stages.hires;
       workflow["20"].inputs.seed = hifix.seed;
       workflow["20"].inputs.denoise = hifix.denoise;
       workflow["20"].inputs.steps = hifix.steps;
@@ -1302,7 +1310,8 @@ class ComfyUI {
     workflowInfo = {
       startIndex: indexCN,
       refiner:    refiner.enable,
-      hiresfix:   hifix.enable
+      hiresfix:   hifix.enable,
+      model:      stages.last
     };
     workflow = applyADetailer(workflowCN, adetailer, workflowInfo);
     return workflow;
@@ -1385,8 +1394,16 @@ class ComfyUI {
     
     // Set Positive prompt
     workflow["32"].inputs.text = positive;        
+    // the LoRA node reads the tags only, the encoder the rest (loraStageModels.js)
+    const loraText = splitLoraText(positive);
+    workflow["34"].inputs.text = loraText.tags;
+    workflow["2"].inputs.text = loraText.plain;
     // Set Negative prompt
     workflow["33"].inputs.text = negative;    
+
+    // hires and ADetailer sample from the LoRA'd model too (loraStageModels.js);
+    // the template wires the hires sampler to the bare UNET loader
+    const stages = loraStageModels("34", { text: positive, hires: hifix.enable });
 
     if (hifix.enable) {
       // Upscale
@@ -1397,6 +1414,7 @@ class ComfyUI {
       workflow["55"].inputs.model_name = `${hifix.model}`;
 
       // Ksampler HiFix
+      workflow["61"].inputs.model = stages.hires;
       workflow["61"].inputs.seed = hifix.seed;
       workflow["61"].inputs.denoise = hifix.denoise;
       workflow["61"].inputs.steps = hifix.steps;
@@ -1432,7 +1450,7 @@ class ComfyUI {
     // default pos and neg to ksampler
     let workflowInfo = {
       startIndex: 62,
-      model:      51,
+      model:      stages.last,
       clip:       50,
       vae:        52,
       colorTransfer: 58,
@@ -1544,6 +1562,12 @@ class ComfyUI {
     // Set Positive prompt
     workflow["32"].inputs.text = positive_left;
     workflow["46"].inputs.text = positive_right;
+    // the LoRA nodes read the left prompt's tags only, its encoders the rest (loraStageModels.js)
+    const loraText = splitLoraText(positive_left);
+    workflow["34"].inputs.text = loraText.tags;
+    workflow["39"].inputs.text = loraText.tags;
+    workflow["2"].inputs.text = loraText.plain;
+    workflow["41"].inputs.text = loraText.plain;
     // Combine prompt
     workflow["29"].inputs.positive = `${positive_left}\n${positive_right}`;
     
@@ -1573,8 +1597,11 @@ class ComfyUI {
     workflow["56"].inputs.strength = regional.str_right;
     workflow["56"].inputs.set_cond_area = regional.option_right;
 
+    const stages = loraStageModels(refiner.enable && model !== refiner.model ? "39" : "34", { text: positive_left, hires: hifix.enable });
+
     if (hifix.enable) {
       // Set Hires fix seed and denoise
+      workflow["20"].inputs.model = stages.hires;
       workflow["20"].inputs.seed = hifix.seed;
       workflow["20"].inputs.denoise = hifix.denoise;
       workflow["20"].inputs.steps = hifix.steps;
@@ -1641,7 +1668,8 @@ class ComfyUI {
     workflowInfo = {
       startIndex: indexCN,
       refiner:    refiner.enable,
-      hiresfix:   hifix.enable
+      hiresfix:   hifix.enable,
+      model:      stages.last
     };
     workflow = applyADetailer(workflowCN, adetailer, workflowInfo);
     return workflow;
@@ -1729,6 +1757,10 @@ class ComfyUI {
     // Set Positive prompt
     workflow["32"].inputs.text = positive_left;
     workflow["46"].inputs.text = positive_right;    
+    // the LoRA node reads the left prompt's tags only, its encoder the rest (loraStageModels.js)
+    const loraText = splitLoraText(positive_left);
+    workflow["39"].inputs.text = loraText.tags;
+    workflow["41"].inputs.text = loraText.plain;
     
     // Set Negative prompt
     workflow["33"].inputs.text = negative_left;
@@ -1752,8 +1784,11 @@ class ComfyUI {
     workflow["52"].inputs.strength = regional.str_right;
     workflow["52"].inputs.set_cond_area = regional.option_right;
 
+    const stages = loraStageModels("39", { text: positive_left, hires: hifix.enable });
+
     if (hifix.enable) {
       // Set Hires fix seed and denoise
+      workflow["20"].inputs.model = stages.hires;
       workflow["20"].inputs.seed = hifix.seed;
       workflow["20"].inputs.denoise = hifix.denoise;
       workflow["20"].inputs.steps = hifix.steps;
@@ -1803,7 +1838,7 @@ class ComfyUI {
     // default pos and neg to ksampler
     let workflowInfo = {
       startIndex: REGIONAL_APPEND_INDEX,
-      model:      59,
+      model:      stages.last,
       clip:       60,
       vae:        61,
       colorTransfer: 28,
@@ -2849,6 +2884,7 @@ async function cancelComfyUI() {
 }
 
 export {
+  ComfyUI,  // the workflow builders, for tests
   sendToRenderer,
   setupGenerateBackendComfyUI,
   runComfyUI,

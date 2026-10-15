@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { loadCSVFile, loadJSONFile } from './fileHandlers.js';
 import { requestDownloadOldThumbs, requestDownloadAnimaThumbs } from './downloadFiles.js';
 import { createUserListsStore } from './userListsStore.js';
+import { resolveSettingsRoot } from './settingsRoot.js';
 import { mergeKeyedList, mergeValueList, summarizeUserLists } from '../shared/userLists.js';
 
 const CAT = '[FileCache]';
@@ -167,7 +168,7 @@ function setupCachedFiles(thumbSelect) {
     const view_tags = loadFileEx('data', 'view_tags.json', cachedViewTagsBase);
 
     userListsStore = createUserListsStore({
-        rootDir: path.join(appPath, 'settings'),
+        rootDir: resolveSettingsRoot(appPath),
         saaVersion: app.getVersion?.() ?? '',
         log: console,
     });

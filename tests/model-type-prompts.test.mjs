@@ -13,7 +13,7 @@ import { DEFAULT_SETTINGS, SECTION_KEYS, normalizeSection } from '../scripts/sha
 const CHECKPOINT = {
     api_prompt: '1girl, solo',
     prompt_style: 'pale color',
-    view_angle: 'from above',
+    view_tags: 'from above',
     character_slots: [{ key: 'hakurei_reimu', weight: 1 }],
     artist_slots: [{ key: '', weight: 1 }],
     prompt_custom_fields: [{ id: 'cf_face', name: 'Face', text: 'smile' }],
@@ -46,7 +46,7 @@ test('entering a type with nothing stored clears the card', () => {
     const patch = promptsFor({}, 'Diffusion', CHECKPOINT);
     assert.equal(patch.api_prompt, '');
     assert.equal(patch.prompt_style, '');
-    assert.equal(patch.view_angle, 'None');
+    assert.equal(patch.view_tags, '');
     assert.deepEqual(patch.prompt_custom_fields.map(field => field.text), [''], 'rows stay, text goes');
     assert.equal(patch.character_slots, undefined, 'a clear does not touch the slot lists');
 });

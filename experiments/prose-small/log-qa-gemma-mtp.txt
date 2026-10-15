@@ -1,0 +1,50 @@
+
+[gemma12-mtp en princess-carry] wall 21.0s prompt_n=899 cache_n=0 out 115t (8.3 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=77
+  masterpiece, best quality, score_7, safe, 2girls, There are two people indoors. short black hair, red eyes, black suit is a girl with short black hair, red eyes, and a black suit. long blonde hair, blue eyes, white dress is a girl with long blonde hair, blue eyes, and a white dress. The girl with short black hair carries the girl with long blonde hair in her arms. The scene is shown in a full body view indoors.
+
+[gemma12-mtp en piggyback] wall 16.8s prompt_n=100 cache_n=805 out 125t (8.0 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=84
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls in a park. @1, a girl with short black hair, red eyes, and a black jacket, and @2, a girl with long blonde hair, blue eyes, and a white dress, are in the scene. The girl with long blonde hair and a white dress gives the girl with short black hair and a black jacket a piggyback ride on her back. The scene is outdoors in a park, shown in a full body view.
+
+[gemma12-mtp en headpat] wall 16.5s prompt_n=103 cache_n=797 out 120t (7.7 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=82
+  masterpiece, best quality, score_7, safe, 2girls, There are two people indoors. long black hair, red eyes, black coat is a girl with long black hair, red eyes, and a black coat. short blonde hair, blue eyes, white blouse is a girl with short blonde hair, blue eyes, and a white blouse. The girl with long black hair and red eyes pats the head of the girl with short blonde hair and blue eyes. The scene is an upper body view set indoors.
+
+[gemma12-mtp en kneel-and-stand] wall 16.2s prompt_n=112 cache_n=797 out 121t (7.9 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=81
+  masterpiece, best quality, score_7, safe, 2girls, There are two people indoors. @1, a girl with short black hair, red eyes, and a black coat, and @2, a girl with long blonde hair, blue eyes, and a white dress. The girl with long blonde hair and a white dress kneels on the floor, and the girl with short black hair and a black coat stands in front of her looking down at her. The scene is a full body view set indoors.
+
+[gemma12-mtp en hands-apart] wall 16.4s prompt_n=100 cache_n=805 out 113t (7.4 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=74
+  masterpiece, best quality, score_7, safe, 2girls, There are two people outdoors. @1, a girl with short black hair, red eyes, and a black jacket, and @2, a girl with long blonde hair, blue eyes, and a white summer dress, face each other. The girl with short black hair and the girl with long blonde hair stretch out their arms toward one another and hold hands. The scene is a full body view set outdoors.
+
+[gemma12-mtp en feeding] wall 14.6s prompt_n=63 cache_n=835 out 106t (7.8 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=68
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls in a cafe. @1, a girl with short black hair, red eyes, and a black jacket, and @2, a girl with long blonde hair, blue eyes, and a white blouse. The girl with short black hair holds a spoon and feeds the girl with long blonde hair. The scene is an upper body view set in a cafe.
+
+[gemma12-mtp ja princess-carry] wall 14.6s prompt_n=97 cache_n=805 out 108t (7.9 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=70
+  masterpiece, best quality, score_7, safe, 2girls, There are two people indoors. @1, a girl with short black hair, red eyes, and a black suit, and @2, a girl with long blonde hair, blue eyes, and a white dress. The girl with short black hair holds the girl with long blonde hair in her arms in a princess carry. The scene is captured in a full body view with indoor lighting.
+
+[gemma12-mtp ja piggyback] wall 18.5s prompt_n=97 cache_n=805 out 122t (7.0 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=82
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls in a park. @1, a girl with short black hair, red eyes, and a black jacket, is being carried. @2, a girl with long blonde hair, blue eyes, and a white dress, carries the girl with short black hair on her back. The girl with long blonde hair holds the girl with short black hair on her back while facing forward. The scene is outdoors in a park with full body view.
+
+[gemma12-mtp ja headpat] wall 19.1s prompt_n=104 cache_n=797 out 117t (6.5 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=79
+  masterpiece, best quality, score_7, safe, 2girls, There are two people indoors. long black hair, red eyes, black coat is a girl with long black hair, red eyes, and a black coat. short blonde hair, blue eyes, white blouse is a girl with short blonde hair, blue eyes, and a white blouse. The girl with long black hair reaches out and strokes the head of the girl with short blonde hair. The scene is an upper body view set indoors.
+
+[gemma12-mtp ja kneel-and-stand] wall 19.5s prompt_n=114 cache_n=797 out 142t (7.7 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=99
+  masterpiece, best quality, score_7, safe, 2girls, There are two people indoors. short black hair, red eyes, black coat is a girl with short black hair, red eyes, and a black coat. long blonde hair, blue eyes, white dress is a girl with long blonde hair, blue eyes, and a white dress. The girl with long blonde hair, blue eyes, and a white dress kneels on the floor while the girl with short black hair, red eyes, and a black coat stands in front of her and looks down at her. The scene is a full body view set indoors.
+
+[gemma12-mtp ja hands-apart] wall 15.5s prompt_n=103 cache_n=805 out 111t (7.7 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=72
+  masterpiece, best quality, score_7, safe, 2girls, There are two girls outdoors. @1, a girl with short black hair, red eyes, and a black jacket, and @2, a girl with long blonde hair, blue eyes, and a white summer dress, face each other. The girl with short black hair and the girl with long blonde hair reach out their arms to hold hands. The scene is set outdoors in a full body view.
+
+[gemma12-mtp ja feeding] wall 18.7s prompt_n=66 cache_n=835 out 138t (8.1 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=true missing=[] words=98
+  masterpiece, best quality, score_7, safe, 2girls, There are two people in a cafe. @1, a girl with short black hair, red eyes, and a black jacket, and @2, a girl with long blonde hair, blue eyes, and a white blouse. The girl with short black hair feeds the girl with long blonde hair with a spoon. The girl with short black hair holds a spoon and brings it to the mouth of the girl with long blonde hair, while the girl with long blonde hair receives the food. The scene is an upper body view in a cafe.
+
+wrote C:\Users\kurah\Documents\Git\SAA-regional\experiments\prose-small\results-qa-gemma-mtp.json

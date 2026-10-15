@@ -207,6 +207,30 @@ function processMetadata(buffer, offset, length, chunkType) {
   }
 }
 
+// A JPEG COM segment has no charset field. It used to be read as UTF-16LE whatever it
+// held, which turned a plain UTF-8 or ASCII comment into noise. Now: UTF-16 when a BOM
+// or the zero high bytes of ASCII text say so, else UTF-8 when the bytes are valid
+// UTF-8 (a Japanese comment included), else Latin-1 so no byte turns into U+FFFD.
+function decodeCommentText(buffer) {
+  let bytes = buffer;
+  if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) return bytes.subarray(2).toString('utf16le');
+  if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) return bytes.subarray(2).swap16().toString('utf16le');
+  if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) bytes = bytes.subarray(3);
+  const probe = Math.min(bytes.length, 32);
+  if (probe >= 4 && probe % 2 === 0) {
+    let zeroHigh = true;
+    for (let i = 0; i < probe; i += 2) {
+      if (bytes[i] === 0 || bytes[i + 1] !== 0) { zeroHigh = false; break; }
+    }
+    if (zeroHigh) return bytes.toString('utf16le');
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return bytes.toString('latin1');
+  }
+}
+
 function decodeUnicodeData(buffer, startOffset) {
   try {
     // Try UTF-16BE
@@ -348,7 +372,7 @@ function extractJpegMetadata(buffer) {
         }
       } else if (segmentType === 0xFE) { // COM segment
         const segmentData = buffer.slice(offset, offset + length - 2);
-        const textData = decodeUnicodeData(segmentData);
+        const textData = decodeCommentText(segmentData);
 
         if (textData.includes('parameters') || textData.includes('prompt') ||
             textData.includes('Comment') || textData.includes('Description') ||

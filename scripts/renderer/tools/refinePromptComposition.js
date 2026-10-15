@@ -2,6 +2,7 @@ import { filterPrompts } from './promptFilter.js';
 import { applyPlanWeights, planWeightEntries } from './promptBatchExpansion.js';
 import { composeNegativeChain, composeRegionalNegatives, joinNegativeParts } from '../../shared/negativeComposition.js';
 import { splitPromptTokens, stripDisabledTags } from '../components/tagCapsuleLogic.js';
+import { expandParts } from '../partsClient.js';
 import { singleLinePrompt } from '../../shared/regionalGeneration.js';
 
 const identityResolver = async value => value;
@@ -61,7 +62,7 @@ export function ownedRefineEditorFields(editorFields = {}, muted = []) {
     const mutedKeys = new Set(Array.isArray(muted) ? muted : []);
     return Object.fromEntries(Object.entries(editorFields ?? {}).map(([key, value]) => [
         key,
-        mutedKeys.has(key) ? null : typeof value === 'string' ? stripDisabledTags(value) : value,
+        mutedKeys.has(key) ? null : typeof value === 'string' ? expandParts(stripDisabledTags(value)) : value,
     ]));
 }
 

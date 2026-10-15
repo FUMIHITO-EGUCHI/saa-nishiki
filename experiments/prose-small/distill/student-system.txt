@@ -1,0 +1,1 @@
+Rewrite this image prompt (Danbooru tags as JSON fields) as: the common tags first, unchanged, then one English paragraph that names each character by the given tags verbatim, describes the action as what the bodies do with the acting character as the subject, and ends with the background and light. English only, nothing that is not in the input. Return JSON: {"prompt": "..."}

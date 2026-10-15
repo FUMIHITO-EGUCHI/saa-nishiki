@@ -401,13 +401,6 @@ html, body {
     margin-right: 0;
 }
 
-#right-settings-panel .dropdown-view {
-    margin: 0;
-    padding-left: 0;
-    padding-right: 0;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(128, 128, 128, 0.55);
-}
 
 
 .model-select{
@@ -867,21 +860,6 @@ html, body {
     box-shadow: none;
 }
 
-.prompt-scene .prompt-views-row > .myTextbox-wrapper > .dropdown-view {
-    margin: 0;
-    padding: 0;
-    border-top: none;
-}
-
-.prompt-views-row.is-collapsed > .myTextbox-wrapper > .dropdown-view {
-    display: none !important;
-}
-
-/* the row's own label says View; the Angle / Camera captions go into the dropdown titles */
-.prompt-scene .prompt-views-row .view-labels {
-    display: none;
-}
-
 /* the Action sentence reads as its own block at the end of the chain */
 .prompt-scene .prompt-field.prompt-action-field {
     margin-top: 8px;
@@ -1006,8 +984,7 @@ html, body {
 }
 
 .prompt-field.is-muted .tag-capsule-view,
-.prompt-field.is-muted [class^="myTextbox-"][class*="-textarea"],
-.prompt-field.is-muted .dropdown-view {
+.prompt-field.is-muted [class^="myTextbox-"][class*="-textarea"] {
     opacity: 0.45;
 }
 
@@ -1471,10 +1448,8 @@ html, body {
     gap: 6px;
 }
 
-/* Diffusion (Anima): Regional, Refiner and ControlNet belong to the checkpoint route
-   (Fast mode has a Diffusion set of its own: scripts/shared/fastMode.js) */
-.cast-mode .regional-condition-trigger-dummy,
-.cast-mode .scene-regional,
+/* Diffusion (Anima): Refiner and ControlNet belong to the checkpoint route (Fast mode
+   has a Diffusion set of its own: scripts/shared/fastMode.js); Regional runs on both */
 .cast-mode .pipeline-card .refiner-container,
 .cast-mode .pipeline-card .controlnet-container {
     display: none;
@@ -1650,11 +1625,22 @@ html, body {
 }
 
 .selection-modal-toolbar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(130px, 0.35fr) minmax(130px, 0.35fr) auto;
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     padding: 10px 12px 6px;
     align-items: end;
+}
+.selection-modal-toolbar > [hidden] {
+    display: none;
+}
+.selection-modal-toolbar .selection-modal-search-label {
+    flex: 1 1 220px;
+    min-width: 0;
+}
+.selection-modal-toolbar .selection-modal-filter-label {
+    flex: 0 1 190px;
+    min-width: 130px;
 }
 
 .selection-modal-favonly {
@@ -1725,23 +1711,105 @@ html, body {
     font: inherit;
 }
 
+/* the Selected row: one line high whatever the count; the chips scroll sideways, the
+   "Selected N" button unfolds them all in a popover, Clear empties the selection */
 .selection-modal-selected {
+    position: relative;
     flex: 0 0 auto;
-    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    box-sizing: border-box;
+    padding: 0 12px;
 }
-
 .selection-modal-section-title {
     margin-bottom: 5px;
     font-size: 0.8rem;
 }
-
+.selection-modal-selected-toggle,
+.selection-modal-clear {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    box-sizing: border-box;
+    padding: 0 9px;
+    border: 1px solid var(--saa-border-ctl);
+    border-radius: 6px;
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
+    font: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+.selection-modal-selected-toggle::after {
+    content: '▾';
+    font-size: 0.7em;
+    opacity: 0.7;
+}
+.selection-modal-selected-toggle.is-open::after {
+    content: '▴';
+}
+.selection-modal-selected-toggle:disabled,
+.selection-modal-clear:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.selection-modal-selected-toggle:not(:disabled):hover,
+.selection-modal-clear:not(:disabled):hover {
+    background: var(--saa-bg-hover);
+}
+.selection-modal-clear {
+    background: transparent;
+    color: var(--saa-muted2);
+}
+.selection-modal-selected-count {
+    padding: 0 6px;
+    border-radius: 8px;
+    background: var(--saa-accent);
+    color: #ffffff;
+    font-size: 0.72rem;
+    line-height: 16px;
+}
 .selection-modal-selected-list {
+    flex: 1 1 auto;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+.selection-modal-selected-list > .selection-modal-chip {
+    flex: 0 0 auto;
+    max-width: 320px;
+}
+.selection-modal-selected-popover {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: calc(100% + 2px);
+    z-index: 3;
     display: flex;
     flex-wrap: wrap;
+    align-content: flex-start;
     gap: 4px;
-    min-height: 24px;
+    max-height: 240px;
+    overflow: auto;
+    padding: 8px;
+    border: 1px solid var(--saa-border-strong);
+    border-radius: 6px;
+    background: var(--saa-bg-panel);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
-
+.selection-modal-selected-popover[hidden] {
+    display: none;
+}
 .selection-modal-chip {
     display: inline-flex;
     align-items: center;
@@ -1751,6 +1819,7 @@ html, body {
     border-radius: 12px;
     padding: 2px 5px 2px 8px;
     font-size: 0.78rem;
+    white-space: nowrap;
 }
 
 .selection-modal-chip-label {
@@ -1774,6 +1843,192 @@ html, body {
     border: 1px solid;
     border-radius: 5px;
     outline: none;
+}
+/* ---- the window-sized dialog (the row's Tags | Parts modal) ----
+   calc(100vw - 48px) by calc(100vh - 48px), at most 1800 by 1200; the list or grid takes
+   the height left after the header, toolbar, Selected row and footer. A dragged size
+   comes as inline width/height (selectionModal.js); .is-narrow = under 1400px wide */
+.selection-modal-dialog.is-window-sized {
+    width: min(1800px, calc(100vw - 48px));
+    height: min(1200px, calc(100vh - 48px));
+    max-height: none;
+    min-width: 640px;
+    min-height: 480px;
+}
+.selection-modal-dialog.is-window-sized .selection-modal-status {
+    flex: 0 0 auto;
+}
+.selection-modal-dialog.is-window-sized .selection-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.selection-modal-dialog.is-window-sized .selection-modal-list {
+    max-height: none;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+.selection-modal-dialog.is-window-sized .selection-modal-panel {
+    flex: 0 0 360px;
+    max-height: none;
+}
+.selection-modal-dialog.is-window-sized.is-narrow .selection-modal-panel {
+    flex-basis: 300px;
+}
+.selection-modal-header-tools {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.selection-modal-fit {
+    min-width: 28px;
+    height: 26px;
+    padding: 0 6px;
+    border: 1px solid var(--saa-border-ctl);
+    border-radius: 4px;
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.selection-modal-fit:hover {
+    background: var(--saa-bg-hover);
+}
+.selection-modal-fit[hidden],
+.selection-modal-resize[hidden],
+.selection-modal-rail[hidden],
+.selection-modal-sort-label[hidden],
+.selection-modal-size[hidden] {
+    display: none;
+}
+.selection-modal-resize {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 16px;
+    height: 16px;
+    border-right: 2px solid var(--saa-muted);
+    border-bottom: 2px solid var(--saa-muted);
+    border-radius: 0 0 5px 0;
+    cursor: nwse-resize;
+    touch-action: none;
+}
+/* the category rail beside the list (a tab that asks for it: the Parts tab) */
+.selection-modal-rail {
+    flex: 0 0 196px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 0;
+    padding: 8px;
+    box-sizing: border-box;
+    overflow: auto;
+    border: 1px solid var(--saa-border-strong);
+    border-radius: 5px;
+    background: var(--saa-bg-panel);
+}
+.selection-modal-dialog.is-narrow .selection-modal-rail {
+    flex-basis: 132px;
+}
+.selection-modal-rail-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--saa-muted2);
+    font: inherit;
+    font-size: 12.5px;
+    text-align: left;
+    cursor: pointer;
+}
+.selection-modal-rail-item:hover {
+    background: var(--saa-bg-hover);
+}
+.selection-modal-rail-item.is-active {
+    background: var(--saa-bg-selected);
+    color: var(--saa-text);
+    font-weight: 600;
+}
+.selection-modal-rail-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.selection-modal-rail-dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--saa-muted);
+}
+.selection-modal-rail-dot.is-blank {
+    background: transparent;
+    border: 1px solid var(--saa-muted);
+    box-sizing: border-box;
+}
+.selection-modal-rail-count {
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: var(--saa-muted);
+}
+.selection-modal-rail-item.is-active .selection-modal-rail-count {
+    color: var(--saa-text);
+}
+/* the sort box and the tile-size segment of a grid tab */
+.selection-modal-sort-label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 0 1 150px;
+    min-width: 120px;
+    font-size: 0.78rem;
+}
+.selection-modal-sort {
+    min-height: 30px;
+    box-sizing: border-box;
+    border: 1px solid var(--saa-border-ctl);
+    border-radius: 5px;
+    padding: 4px 7px;
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
+    font: inherit;
+}
+.selection-modal-size {
+    display: flex;
+    gap: 2px;
+    align-self: end;
+    padding: 2px;
+    border: 1px solid var(--saa-border-ctl);
+    border-radius: 6px;
+    background: var(--saa-bg-panel);
+}
+.selection-modal-size-button {
+    min-width: 28px;
+    height: 24px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--saa-muted2);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.selection-modal-size-button:hover {
+    background: var(--saa-bg-hover);
+}
+.selection-modal-size-button.is-on {
+    background: var(--saa-bg-selected);
+    color: var(--saa-text);
+    font-weight: 600;
 }
 
 .selection-modal-list:focus-visible,
@@ -2328,3 +2583,171 @@ html, body {
 .artist-profile-empty[hidden] {
     display: none;
 }
+
+/* ---------------------------------------------------------------- Parts (partsUi.js)
+   the picker, the chip card, the editor and the history share the selection modal's
+   chrome; colours come from the theme variables so one block serves both themes */
+.parts-dialog { width: min(960px, calc(100vw - 32px)); max-height: min(720px, calc(100vh - 32px)); border-color: var(--saa-border-strong); background: var(--saa-bg-app); color: var(--saa-text); }
+.parts-editor-dialog { width: min(720px, calc(100vw - 32px)); }
+.parts-confirm-modal .parts-dialog { width: min(460px, calc(100vw - 32px)); }
+.parts-history-modal .parts-dialog { width: min(820px, calc(100vw - 32px)); }
+.parts-header { background: var(--saa-bg-field); border-bottom-color: var(--saa-border-strong); }
+.parts-footer { display: flex; align-items: center; gap: 6px; background: var(--saa-bg-field); border-top-color: var(--saa-border-strong); }
+.parts-footer .selection-modal-footer-note { margin-right: auto; }
+.parts-footer-note { font-size: 10.5px; color: var(--saa-muted); }
+.parts-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; flex: 1 1 auto; padding: 10px 12px; overflow: auto; }
+.parts-prefix { margin-right: 1px; color: #e0c080; font-size: 0.85em; font-weight: 400; }
+.parts-title-sub { margin-left: 10px; font-size: 11px; font-weight: 400; color: var(--saa-muted); }
+.parts-hint { font-size: 10.5px; color: var(--saa-muted); }
+.parts-section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: var(--saa-muted); }
+
+/* the editable title: name input and category select where the card shows them */
+.parts-title-form { display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; }
+.parts-title-editable { display: flex; flex: 1 1 auto; min-width: 0; }
+.parts-name-field { display: inline-flex; align-items: center; height: 28px; padding: 0 8px; border: 1px solid var(--saa-accent); border-radius: 5px; background: var(--saa-bg-control); box-sizing: border-box; flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 600; }
+.parts-name-input { flex: 1 1 auto; min-width: 0; border: 0; outline: none; background: transparent; color: var(--saa-text); font: inherit; }
+.parts-title-dot { color: var(--saa-muted); font-size: 11px; }
+.parts-category-select { height: 28px; padding: 0 6px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; font-size: 12px; }
+
+/* editor body */
+.parts-editor-row { display: flex; gap: 12px; }
+.parts-editor-image { flex: none; display: block; width: 112px; height: 154px; border-radius: 4px; overflow: hidden; }
+.parts-editor-form { display: flex; flex-direction: column; gap: 8px; flex: 1 1 auto; min-width: 0; }
+.parts-field-label { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--saa-muted2); }
+.parts-tags-input { box-sizing: border-box; width: 100%; min-height: 70px; padding: 6px 8px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; font-size: 12px; font-family: Consolas, "Cascadia Mono", monospace; resize: vertical; }
+.parts-tags-input:focus { border-color: var(--saa-accent); outline: none; }
+.parts-editor-tools { display: flex; gap: 6px; }
+.parts-sample-options { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border: 1px solid var(--saa-border); border-radius: 5px; background: var(--saa-bg-panel); }
+.parts-check, .parts-radio { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.parts-check input, .parts-radio input { margin: 0; }
+.parts-base-row { display: flex; gap: 14px; padding-left: 22px; }
+.parts-confirm-text { margin: 4px 0; font-size: 12.5px; line-height: 1.5; }
+
+/* tiles */
+.parts-tile-image, .parts-panel-image, .parts-card-image, .parts-history-image { position: relative; display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden; }
+.parts-tile-image img, .parts-panel-image img, .parts-card-image img, .parts-history-image img, .parts-editor-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.parts-tile-image.is-empty, .parts-panel-image.is-empty, .parts-card-image.is-empty, .parts-history-image.is-empty, .parts-editor-image.is-empty { display: flex; align-items: center; justify-content: center; border: 1px dashed var(--saa-border-ctl); background: var(--saa-bg-app); color: var(--saa-muted); box-sizing: border-box; }
+.parts-tile-image.is-foreign img, .parts-panel-image.is-foreign img, .parts-card-image.is-foreign img { opacity: 0.55; }
+.parts-tile-empty { font-size: 10.5px; }
+
+/* the picker */
+.parts-picker-dialog .parts-body { padding-top: 8px; }
+.parts-toolbar { display: flex; align-items: center; gap: 10px; }
+.parts-tabs { display: flex; gap: 2px; padding: 2px; border: 1px solid var(--saa-border-ctl); border-radius: 6px; background: var(--saa-bg-panel); }
+.parts-tab { min-height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 12px; cursor: pointer; }
+.parts-tab:hover { background: var(--saa-bg-hover); }
+.parts-tab.is-active { background: var(--saa-bg-selected); color: var(--saa-text); font-weight: 600; }
+.parts-search { flex: 1 1 auto; min-width: 120px; }
+.parts-count { font-size: 10.5px; color: var(--saa-muted); white-space: nowrap; }
+.parts-picker-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 10px; min-height: 0; flex: 1 1 auto; }
+.parts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 10px; align-content: start; padding: 10px; border: 1px solid var(--saa-border-strong); border-radius: 5px; background: var(--saa-bg-panel); overflow: auto; min-height: 280px; max-height: 52vh; }
+.parts-grid-empty, .parts-panel-empty { grid-column: 1 / -1; padding: 12px; font-size: 12px; color: var(--saa-muted); }
+.parts-tile { display: flex; flex-direction: column; gap: 5px; padding: 5px; border: 1px solid var(--saa-border); border-radius: 6px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; text-align: left; cursor: pointer; }
+.parts-tile:hover { background: var(--saa-bg-hover); }
+.parts-tile.is-selected { border: 2px solid var(--saa-accent); padding: 4px; }
+.parts-tile-name { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.parts-tile-meta { font-size: 10.5px; color: var(--saa-muted); }
+.parts-panel { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--saa-border-strong); border-radius: 5px; background: var(--saa-bg-panel); overflow: auto; }
+.parts-panel-top { display: flex; gap: 10px; }
+.parts-panel-image { flex: none; width: 120px; height: 165px; }
+.parts-panel-info { display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-width: 0; }
+.parts-panel-info .list-manager-button { align-self: stretch; }
+.parts-panel-name { font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+.parts-panel-sub { font-size: 10.5px; color: var(--saa-muted); }
+.parts-panel-edit { margin-top: auto; }
+
+/* tags in the panel and the card */
+.parts-card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.parts-card-tag { display: inline-flex; align-items: center; gap: 4px; height: 21px; padding: 0 8px; border: 1px solid var(--saa-border-ctl); border-radius: 11px; background: var(--saa-bg-control); font-size: 11.5px; }
+.parts-card-tag.is-off { opacity: 0.5; text-decoration: line-through; }
+.parts-card-tag-weight { font-family: Consolas, "Cascadia Mono", monospace; font-size: 10px; color: var(--saa-accent); }
+.parts-card-meta { font-size: 10.5px; color: var(--saa-muted); }
+
+/* the card a part chip opens */
+.parts-card { position: fixed; z-index: 12000; display: flex; flex-direction: column; width: 400px; max-width: calc(100vw - 16px); border: 2px solid var(--saa-border-strong); border-radius: 9px; background: var(--saa-bg-app); color: var(--saa-text); box-shadow: 0 8px 24px var(--saa-shadow); overflow: hidden; }
+.parts-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px 6px 12px; background: var(--saa-bg-field); border-bottom: 1px solid var(--saa-border-strong); }
+.parts-card-title { font-size: 14px; font-weight: 600; }
+.parts-card-category { font-weight: 400; font-size: 11px; color: var(--saa-muted); }
+.parts-card-body { display: flex; gap: 10px; padding: 12px; }
+.parts-card-image { flex: none; width: 112px; height: 154px; }
+.parts-card-info { display: flex; flex-direction: column; gap: 5px; flex: 1 1 auto; min-width: 0; }
+.parts-card-weight { display: flex; align-items: center; gap: 6px; margin-top: auto; font-size: 11.5px; color: var(--saa-muted2); }
+.parts-card-weight-input { width: 44px; height: 24px; padding: 0 6px; border: 1px solid var(--saa-border-ctl); border-radius: 4px; background: var(--saa-bg-control); color: var(--saa-text); font-family: Consolas, "Cascadia Mono", monospace; font-size: 11.5px; box-sizing: border-box; }
+.parts-card-missing { margin: 0; font-size: 12px; line-height: 1.5; color: var(--saa-muted2); }
+.parts-card-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; background: var(--saa-bg-field); border-top: 1px solid var(--saa-border-strong); }
+.parts-card-edit { margin-left: auto; }
+
+/* history */
+.parts-history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.parts-history-item { display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid var(--saa-border); border-radius: 6px; background: var(--saa-bg-control); }
+.parts-history-item.is-pinned { border: 2px solid #e0c080; padding: 5px; }
+.parts-history-item.is-foreign .parts-history-image img { opacity: 0.6; }
+.parts-history-label { font-size: 11px; font-weight: 600; color: var(--saa-muted2); }
+.parts-history-item.is-pinned .parts-history-label { color: #e0c080; }
+.parts-history-meta { font-size: 10.5px; line-height: 1.4; color: var(--saa-muted2); white-space: pre-line; }
+.parts-history-actions { display: flex; gap: 4px; margin-top: auto; }
+
+/* the Scene row's "parts" button (promptFieldManager.js), beside ⋯ */
+.scene-parts-button { height: 22px; padding: 0 6px; border: 1px solid var(--saa-border-ctl); border-radius: 4px; background: var(--saa-bg-control); color: #e0c080; font: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer; }
+.scene-parts-button:hover { background: var(--saa-bg-hover); }
+
+/* the Lists tab */
+.parts-lists-row { display: grid; grid-template-columns: 44px minmax(0, 170px) 96px minmax(0, 1fr) 90px auto; align-items: center; gap: 8px; min-height: 60px; padding: 4px 10px; border-bottom: 1px solid var(--saa-border); }
+.parts-lists-thumb { width: 40px; height: 54px; }
+.parts-lists-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.parts-lists-tags { font-size: 11.5px; color: var(--saa-muted2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.parts-lists-samples { font-size: 12px; }
+.parts-lists-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.parts-lists-note { padding: 7px 10px; font-size: 10.5px; color: var(--saa-muted); }
+
+/* ---- tabs in the selection modal (design/parts AddTag: a row's tag modal is Tags | Parts) ----
+   the strip sits under the header; the search box, the filters, Selected and the
+   footer keep their places across the tabs, only the list changes */
+.selection-modal-tabs { display: flex; align-items: flex-end; gap: 2px; padding: 8px 12px 0; border-bottom: 1px solid var(--saa-border); background: var(--saa-bg-panel); }
+.selection-modal-tabs[hidden], .selection-modal-panel[hidden], .selection-modal-footer-actions[hidden], .selection-modal-crosslink[hidden] { display: none; }
+.selection-modal-tab { min-height: 30px; padding: 0 14px; margin-bottom: -1px; border: 1px solid transparent; border-radius: 6px 6px 0 0; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 12.5px; cursor: pointer; }
+.selection-modal-tab:hover { background: var(--saa-bg-hover); }
+.selection-modal-tab.is-active { border-color: var(--saa-border-strong); border-bottom-color: var(--saa-bg-app); background: var(--saa-bg-app); color: var(--saa-text); font-weight: 600; }
+.selection-modal-tab:focus-visible { outline: 2px solid #4da3ff; outline-offset: 2px; }
+.selection-modal-filter-text { display: block; }
+.selection-modal-favonly:disabled { opacity: 0.3; cursor: default; }
+/* the list with, on a tab that has one, the panel about the active row beside it */
+.selection-modal-body { display: flex; gap: 10px; margin: 0 12px 8px; min-height: 0; }
+.selection-modal-body > .selection-modal-list { flex: 1 1 auto; min-width: 0; margin: 0; }
+.selection-modal-panel { flex: 0 0 236px; display: flex; flex-direction: column; gap: 8px; max-height: 42vh; padding: 8px; border: 1px solid var(--saa-border-strong); border-radius: 5px; background: var(--saa-bg-panel); overflow: auto; box-sizing: border-box; }
+.selection-modal-panel .parts-panel-content { display: flex; flex-direction: column; gap: 8px; }
+.selection-modal-panel .parts-panel-top { flex-direction: column; }
+.selection-modal-panel .parts-panel-image { flex: none; width: 130px; height: 179px; align-self: center; }
+/* a grid tab: the rows are tiles, the tick sits on a selected one */
+/* max-content rows: the box has a definite height (the dialog's), and auto rows would
+   be squeezed into it, the sample images shrinking with them, instead of scrolling */
+.selection-modal-list.is-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--selection-tile, 128px), 1fr)); grid-auto-rows: max-content; gap: 8px; align-content: start; padding: 8px; min-height: 280px; }
+.selection-modal-tile .parts-tile-image { flex: none; }
+.selection-modal-tile.selection-modal-option { position: relative; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 4px; padding: 4px; border: 1px solid var(--saa-border); border-radius: 6px; background: var(--saa-bg-control); font-weight: 400; }
+.selection-modal-tile.selection-modal-option[aria-selected="true"] { border: 2px solid var(--saa-accent); padding: 3px; font-weight: 400; }
+.selection-modal-tile.selection-modal-option[aria-selected="true"]::before { content: '✓'; position: absolute; top: 6px; left: 6px; z-index: 1; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 9px; background: var(--saa-accent); color: #fff; font-size: 11px; font-weight: 700; }
+.selection-modal-list.is-grid .selection-modal-option:hover { background: var(--saa-bg-hover); }
+/* the tile the panel shows (a click), told from the ones picked (a double click) */
+.selection-modal-list.is-preview-click .selection-modal-option.is-previewed { outline: 2px solid var(--saa-accent); outline-offset: -2px; }
+.parts-tile-image.is-missing, .parts-panel-image.is-missing { border-style: dashed; color: var(--saa-muted); font-size: 11px; text-align: center; }
+.parts-tile-tags { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* the Parts tab's panel (pickerPanel in partsUi.js) */
+.parts-picker-panel { gap: 10px; }
+.parts-picker-head { display: flex; flex-direction: column; gap: 2px; }
+.parts-picker-sample { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.parts-picker-sample .parts-panel-image { width: 64%; height: auto; max-width: 220px; }
+.parts-picker-token { display: block; padding: 7px 9px; border-radius: 6px; background: var(--saa-bg-app); color: var(--saa-text); font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.parts-picker-actions { display: flex; gap: 6px; margin-top: auto; }
+.parts-picker-add { flex: 1 1 auto; min-width: 0; min-height: 30px; border: 1px solid; border-radius: 5px; padding: 4px 10px; font: inherit; cursor: pointer; }
+.parts-picker-add.is-selected { opacity: 0.85; }
+.parts-tile-body { display: contents; }
+/* under the main tab's list: the same search on another tab */
+.selection-modal-crosslink { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; margin: -2px 12px 8px; padding: 2px 9px; border: 1px solid #8a7440; border-radius: 10px; background: transparent; color: #e0c080; font: inherit; font-size: 11px; cursor: pointer; }
+.selection-modal-crosslink:hover { background: rgba(224, 192, 128, 0.12); }
+/* a tab's own buttons at the left of the footer */
+.selection-modal-footer-actions { display: flex; gap: 6px; margin-right: auto; }
+.selection-modal-action { min-height: 30px; padding: 4px 10px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; font-size: 12.5px; cursor: pointer; }
+.selection-modal-action:hover:not(:disabled) { background: var(--saa-bg-hover); }
+.selection-modal-action:disabled { opacity: 0.5; cursor: default; }
+/* a part among the Selected chips */
+.selection-modal-chip-prefix { margin-right: 1px; color: #e0c080; font-size: 0.85em; }

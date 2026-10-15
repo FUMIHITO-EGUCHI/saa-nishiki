@@ -148,16 +148,22 @@ contextBridge.exposeInMainWorld('api', {
   artistSearch: async (query, options) => ipcRenderer.invoke('artist-search', query, options),
   artistProfile: async (name) => ipcRenderer.invoke('artist-profile', name),
   artistProfilesAvailable: async () => ipcRenderer.invoke('artist-profiles-available'),
+  // Parts (named tag bundles, "parts:<name>" in a prompt) and their sample images
+  partsGet: async () => ipcRenderer.invoke('parts-get'),
+  partsApply: async (change) => ipcRenderer.invoke('parts-apply', change),
+  partsAddSample: async (id, meta, dataUrl) => ipcRenderer.invoke('parts-add-sample', id, meta, dataUrl),
+  partsSampleImage: async (id, sampleId) => ipcRenderer.invoke('parts-sample-image', id, sampleId),
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),
+  // the distilled Prose model's llama-server: started on demand, { ok, apiUrl, message }
+  proseStudentEnsure: async () => ipcRenderer.invoke('prose-student-ensure'),
   
   // generate_backend ComfyUI
   runComfyUI: async (generateData) => ipcRenderer.invoke('generate-backend-comfyui-run', generateData),
   runComfyUI_Regional: async (generateData) => ipcRenderer.invoke('generate-backend-comfyui-run-regional', generateData),
   runComfyUI_ControlNet: async (generateData) => ipcRenderer.invoke('generate-backend-comfyui-run-controlnet', generateData),
   runComfyUI_MiraITU: async (generateData) => ipcRenderer.invoke('generate-backend-comfyui-run-mira-itu', generateData),
-  getImageComfyUI: async () => ipcRenderer.invoke('generate-backend-comfyui-get-image'),
   openWsComfyUI: async (prompt_id, skipFirst, isIndex) => ipcRenderer.invoke('generate-backend-comfyui-open-ws', prompt_id, skipFirst, isIndex),
   closeWsComfyUI: async () => ipcRenderer.invoke('generate-backend-comfyui-close-ws'),
   cancelComfyUI: async () => ipcRenderer.invoke('generate-backend-comfyui-cancel'),

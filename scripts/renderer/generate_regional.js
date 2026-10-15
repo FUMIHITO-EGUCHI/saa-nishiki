@@ -9,7 +9,8 @@ import { processRandomString } from './tools/nestedBraceParsing.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { filterPrompts } from './tools/promptFilter.js';
 import { asFragment, normalizeCustomFields, normalizeOrder } from '../shared/promptFieldOrder.js';
-import { normalizeSplit, sideOrder } from '../shared/regionalSides.js';
+import { normalizeSplit, panelTags, sideOrder } from '../shared/regionalSides.js';
+import { artistPrompt } from '../shared/artistSlots.js';
 import { composeRegionalNegatives } from '../shared/negativeComposition.js';
 import { beginImageOverride, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
 import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
@@ -127,12 +128,13 @@ export function getPrompts(character_left, character_right, views, ai='', apiInt
     // is the side's character.
     const unit = (id, side) => {
         switch (id) {
-            case 'common': return { text: asFragment(readPromptValue('common')), color: commonColor };
+            // the Panels preset (split screen, 2koma, two panels) follows Common on both sides
+            case 'common': return { text: asFragment(readPromptValue('common')) + asFragment(panelTags(SETTINGS)), color: commonColor };
             case 'views': return { text: views || '', color: viewColor };
             case 'background': return { text: asFragment(readViewPromptField('background', 'background', seed)), color: viewColor };
             case 'style': return { text: asFragment(readViewPromptField('style', 'style', seed)), color: viewColor };
-            // Regional only runs on a Checkpoint, where the Artist card does not exist
-            case 'artist': return { text: '', color: customColor };
+            // the Artist card (Diffusion only) writes "@name" tokens for the whole image
+            case 'artist': return { text: SETTINGS.api_model_type === 'Diffusion' ? asFragment(artistPrompt(SETTINGS)) : '', color: customColor };
             case 'ai': return { text: aiPrompt, color: aiColor };
             case 'characters': {
                 const [BOC, EOC, text] = side === 'left' ? [BOCL, EOCL, character_left] : [BOCR, EOCR, character_right];

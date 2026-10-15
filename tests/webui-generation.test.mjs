@@ -111,6 +111,9 @@ async function fakeWebUI(overrides = {}) {
         txt2imgStatus: 200,
         txt2imgBody: null,      // a raw body, for a reply that is not JSON
         txt2imgDelay: 0,
+        optionsStatus: 200,
+        optionsDelay: 0,
+        forgeModules: [],       // what GET options says Forge has loaded
         detect: { info: 'Success', images: ['Q09OVFJPTA=='] },
         drop: new Set(),        // paths whose connection is cut instead of answered
         ...overrides,
@@ -130,10 +133,12 @@ async function fakeWebUI(overrides = {}) {
         if (at === '/sdapi/v1/options' && req.method === 'GET') {
             // Forge is told apart by forge_additional_modules being one of its options
             reply(res, 200, state.forge
-                ? { sd_model_checkpoint: 'a.safetensors', forge_additional_modules: [] }
+                ? { sd_model_checkpoint: 'a.safetensors', forge_additional_modules: state.forgeModules }
                 : { sd_model_checkpoint: 'a.safetensors', sd_vae: 'Automatic' });
         } else if (at === '/sdapi/v1/options' && req.method === 'POST') {
-            reply(res, 200, {});
+            const answer = () => reply(res, state.optionsStatus, state.optionsStatus === 200 ? {} : { detail: 'no such checkpoint' });
+            if (state.optionsDelay > 0) setTimeout(answer, state.optionsDelay).unref?.();
+            else answer();
         } else if (at === '/controlnet/model_list') {
             reply(res, state.modelListStatus, state.modelListStatus === 200 ? { model_list: state.models } : 'Not Found');
         } else if (at === '/controlnet/module_list') {
@@ -559,6 +564,59 @@ test('an A1111 backend is told its options first, and its request carries no ove
         assert.equal(payload.prompt, '1girl, solo, smile');
     } finally {
         await backend.close();
+    }
+});
+
+test('an A1111 backend has its options applied before the image is asked for, and an options error ends the run', opts, async () => {
+    reset();
+    const backend = await fakeWebUI({ forge: false, optionsDelay: 150 });
+    try {
+        assert.equal(await webui.runWebUI(generateData(backend.addr)), 'data:image/png;base64,R0lGODlhAQABAAAAACw=');
+        // setModel used to resolve as soon as the request was written, so the run went on
+        // while the checkpoint switch was still in flight
+        const order = backend.calls.filter(call => call.method === 'POST').map(call => call.path);
+        assert.deepEqual(order, ['/sdapi/v1/options', '/sdapi/v1/txt2img'], 'the options reply came back first');
+    } finally {
+        await backend.close();
+    }
+
+    reset();
+    const refusing = await fakeWebUI({ forge: false, optionsStatus: 422 });
+    try {
+        assert.equal(await webui.runWebUI(generateData(refusing.addr)), 'Error HTTP 422', 'an options error is the run\'s result');
+        assert.equal(refusing.of('/sdapi/v1/txt2img'), undefined, 'and no image was asked for');
+        assert.equal(stub.busy, false, 'the backend is free again');
+    } finally {
+        await refusing.close();
+    }
+});
+
+test('a VAE override joins the modules Forge holds, replacing only its VAE', opts, async () => {
+    reset();
+    const backend = await fakeWebUI({ forgeModules: ['clip_l.safetensors', 't5xxl.safetensors', 'ae.safetensors'] });
+    try {
+        const data = generateData(backend.addr, { vae: { vae_override: true, vae: 'sdxl_vae.safetensors' } });
+        await webui.runWebUI(data);
+        // this used to be the bare VAE string, wiping the text encoders Forge had loaded
+        assert.deepEqual(backend.payload().override_settings.forge_additional_modules,
+            ['clip_l.safetensors', 't5xxl.safetensors', 'sdxl_vae.safetensors']);
+    } finally {
+        await backend.close();
+    }
+
+    reset();
+    const diffusion = await fakeWebUI();
+    try {
+        const data = generateData(diffusion.addr, {
+            model: undefined,
+            unet: { enable: true, model: 'waiANIMA_v10.safetensors', clip_model: 'clip_l.safetensors', vae_model: 'sdxl_vae.safetensors' },
+            vae: { vae_override: true, vae: 'other_vae.safetensors' },
+        });
+        await webui.runWebUI(data);
+        assert.deepEqual(diffusion.payload().override_settings.forge_additional_modules,
+            ['clip_l.safetensors', 'other_vae.safetensors'], 'the Diffusion model keeps its text encoder and takes the override as its VAE');
+    } finally {
+        await diffusion.close();
     }
 });
 

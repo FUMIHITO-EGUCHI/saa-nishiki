@@ -20,8 +20,7 @@ const BUILTIN_SIDES = Object.freeze({
     common: 'both',
     background: 'both',
     style: 'both',
-    // Regional is a Checkpoint feature and the Artist card a Diffusion one, so this only
-    // matters for the order list; an artist would apply to the whole image anyway.
+    // an artist applies to the whole image
     artist: 'both',
     negative: 'both',
     positive: 'left',
@@ -58,6 +57,16 @@ export function splitFromLabel(label) {
     return SPLITS.find(split => SPLIT_LABELS[split] === label) ?? 'left-right';
 }
 
+// The Panels preset. The masks alone let the two regions fuse into one picture and the
+// tags alone mix their contents; both together drew a clean two-way split 8/8 on Anima
+// and Illustrious (design/composition/bench/FINDINGS.md). The tags go to both sides,
+// after Common, and only while Regional is on.
+export const PANEL_TAGS = 'split screen, 2koma, two panels';
+
+export function panelTags(settings = {}) {
+    return settings?.regional_condition && settings?.regional_panels ? PANEL_TAGS : '';
+}
+
 export function sideLabel(side, split) {
     if (side === 'both') return 'BOTH SIDES';
     const topBottom = normalizeSplit(split) === 'top-bottom';
@@ -75,7 +84,7 @@ export function sideOf(id, customFields) {
 // Expands a chain order into the unit ids that make up one side's prompt, in chain
 // order. Side-specific built-ins that are not part of the stored order follow their
 // shared counterpart: positive_right after positive, negative_left / negative_right
-// after negative. Structural units (views, ai, characters) are kept so the caller
+// after negative. Structural units (ai, artist, characters) are kept so the caller
 // can splice in their text.
 export function sideOrder(order, side, customFields) {
     const result = [];

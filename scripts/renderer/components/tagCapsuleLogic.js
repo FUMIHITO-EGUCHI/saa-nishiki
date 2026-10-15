@@ -778,12 +778,16 @@ export function expandAll(fields = [], generationSeed = 0, count = 1, options = 
     const total = Math.max(1, Math.floor(finiteNumber(count, 1)));
     const baseSeed = finiteNumber(generationSeed, 0);
     const applyExclude = typeof options.applyExclude === 'function' ? options.applyExclude : null;
+    // "parts:<name>" tokens → their tags (partsClient.js expandParts); the preview then
+    // shows the text generate.js sends
+    const expandTokens = typeof options.expandTokens === 'function' ? options.expandTokens : null;
     const byKey = new Map(fields.map(field => [field.key, field]));
 
     const expandField = (key, imageIndex) => {
         const field = byKey.get(key);
         if (!field) return '';
-        return serializeCapsules(field.capsules ?? [], { generationSeed: baseSeed, imageIndex, tokenPrefix: key, omitDisabled: true, batchCount: total });
+        const text = serializeCapsules(field.capsules ?? [], { generationSeed: baseSeed, imageIndex, tokenPrefix: key, omitDisabled: true, batchCount: total });
+        return expandTokens ? expandTokens(text) : text;
     };
     const BUILTIN_KEYS = new Set(['common', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
 

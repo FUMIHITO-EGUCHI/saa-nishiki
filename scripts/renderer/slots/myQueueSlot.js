@@ -294,6 +294,31 @@ class QueueManager {
         }
 
         this.initializeSlotComponents(className, jobID);
+
+        // A Parts sample (partsUi.js) waits behind the user's own jobs: a job attached
+        // while samples are queued moves ahead of the first sample that is not running.
+        if (generateData?.queueManager?.genType !== 'partsSample') {
+            const running = globalThis.generate?.runningJob ?? null;
+            const firstSample = this.getSlots().find(slotClass => {
+                const data = this.getSlotValue(slotClass);
+                return slotClass !== className && data !== running && data?.queueManager?.genType === 'partsSample';
+            });
+            if (firstSample) this.moveBefore(className, firstSample);
+        }
+    }
+
+    // Reorder: `className` takes the place right before `targetClass` (the slot map's
+    // insertion order is the queue order, so the map is rebuilt).
+    moveBefore(className, targetClass) {
+        if (className === targetClass || !this.slotIndex.has(className) || !this.slotIndex.has(targetClass)) return;
+        const moved = this.slotIndex.get(className);
+        const entries = [...this.slotIndex.entries()].filter(([key]) => key !== className);
+        const at = entries.findIndex(([key]) => key === targetClass);
+        entries.splice(at, 0, [className, moved]);
+        this.slotIndex = new Map(entries);
+        const row = this.container.querySelector(`.${className}`);
+        const targetRow = this.container.querySelector(`.${targetClass}`);
+        if (row && targetRow) this.container.insertBefore(row, targetRow);
     }
 
     removeAt(index) {

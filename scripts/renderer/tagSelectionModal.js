@@ -5,8 +5,21 @@ import { insertTagsAtCursor, normalizePromptToken } from './components/selection
 import { tagText } from './components/tagUiText.js';
 import { favGroupForKey, favoriteOptions, isFavoriteTag, toggleFavTag } from './components/favoriteTags.js';
 import { aliasesFor } from './tagAliasClient.js';
+import { PART_PREFIX, partNameOf } from '../shared/parts.js';
 
 const DETAILED_TAG_FILTERS = TAG_FILTERS.filter(filter => filter.options?.category);
+
+// The rows whose tag modal carries no Parts tab: a part is a bundle of tags, not a
+// cast list or an Action sentence (promptFieldManager marks those rows)
+const NO_PARTS_FIELDS = new Set(['characters']);
+
+// The Parts tab of a row's modal, from partsUi.js when it is set up (globalThis, as the
+// row tools reach it: partsUi imports this module for its own tag picker)
+function fieldTabs(fieldKey, textbox, trigger) {
+    if (NO_PARTS_FIELDS.has(fieldKey) || textbox?.closest?.('.prompt-action-field')) return [];
+    const tab = globalThis.partsUi?.pickerTab?.({ fieldKey, trigger });
+    return tab ? [tab] : [];
+}
 
 function stripMarkup(value) {
     return String(value ?? '').replaceAll(/<[^>]+>/g, '').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
@@ -43,12 +56,17 @@ function parseTagSuggestions(suggestions) {
     }).filter(Boolean);
 }
 
+// The row's tokens as the modal's Selected chips; a part token gets the part chip's dress
 function promptSelection(value) {
     return String(value ?? '')
         .split(/[,\n]/)
         .map(token => token.trim())
         .filter(Boolean)
-        .map(token => ({ key: token, value: token, label: token }));
+        .map(token => {
+            const name = partNameOf(normalizePromptToken(token));
+            if (name === null) return { key: token, value: token, label: token };
+            return { key: token, value: token, label: name, prefix: PART_PREFIX, chipClass: 'is-part' };
+        });
 }
 
 function storedCursor(textbox, key, fallback) {
@@ -166,6 +184,24 @@ export function openTagPicker(textbox, { favGroup = 'positive', singleTagsOnly =
     });
 }
 
+// The prompt rows' modals by field key (setupTagSelectionModal), for a caller that
+// opens one from its own button - the row's "parts" button opens it on the Parts tab.
+const fieldControls = new Map();
+
+/**
+ * Open a prompt row's tag modal at the end of the row. `tab` = the tab to open on
+ * ('parts'), null for the tag list. False when the row has no modal.
+ */
+export function openFieldTagModal(fieldKey, { tab = null, trigger = null } = {}) {
+    const control = fieldControls.get(fieldKey);
+    if (!control) return false;
+    const { textbox } = control;
+    const length = textbox.value.length;
+    try { textbox.setSelectionRange(length, length); } catch { /* not focusable right now */ }
+    control.openWith({ tab, trigger: trigger ?? control.trigger });
+    return true;
+}
+
 export function setupTagSelectionModal(textboxes = [], keys = []) {
     const controls = [];
     let fieldIndex = -1;
@@ -196,6 +232,8 @@ export function setupTagSelectionModal(textboxes = [], keys = []) {
             emptyMessage: 'No matching tags.',
             searchPrompt: tagText('tag_ui_modal_search_prompt'),
             allowFreeInput: true,
+            // the row's modal (Tags | Parts) is sized by the window; the Parts grid needs the room
+            fitWindow: true,
             onOpen: () => trigger.setAttribute('aria-expanded', 'true'),
             onClose: () => trigger.setAttribute('aria-expanded', 'false'),
             onApply: selected => applyTagsToTextbox(
@@ -206,13 +244,15 @@ export function setupTagSelectionModal(textboxes = [], keys = []) {
             ),
         });
 
-        trigger.addEventListener('click', () => {
+        // `tab`: the tab to open on (null = the tag list); `source`: the button that
+        // opened it, which gets the focus back
+        const openWith = ({ tab = null, trigger: source = trigger } = {}) => {
             const start = Number.isInteger(textbox.selectionStart) ? textbox.selectionStart : textbox.value.length;
             const end = Number.isInteger(textbox.selectionEnd) ? textbox.selectionEnd : start;
             textbox.dataset.tagModalStart = String(start);
             textbox.dataset.tagModalEnd = String(end);
             modal.open({
-                trigger,
+                trigger: source,
                 fallback: textbox,
                 selection: promptSelection(textbox.value),
                 // empty query lists the field's favorites instead of nothing
@@ -221,11 +261,19 @@ export function setupTagSelectionModal(textboxes = [], keys = []) {
                     isFavorite: key => isFavoriteTag(favGroup, key),
                     toggle: option => toggleFavTag(favGroup, option),
                 },
+                // the Parts tab beside the tags: the search box, the filters, Selected and
+                // Apply stay in place; a picked part is applied as its parts: token
+                tabs: fieldTabs(fieldKey, textbox, source),
+                tab,
+                tabLabel: tagText('tag_ui_tab_tags'),
             });
-        });
+        };
+        trigger.addEventListener('click', () => openWith());
 
         textbox.dataset.tagModalSetup = 'true';
-        controls.push({ textbox, trigger, modal });
+        const control = { textbox, trigger, modal, openWith };
+        fieldControls.set(fieldKey, control);
+        controls.push(control);
     }
     return controls;
 }

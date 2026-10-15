@@ -1,0 +1,50 @@
+
+[qwen35-cpumoe en princess-carry] wall 24.0s prompt_n=894 cache_n=0 out 75t (9.9 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=48
+  masterpiece, best quality, score_7, safe, 2girls, two girls are indoors. The girl with short black hair, red eyes, and a black suit is carrying the girl with long blonde hair, blue eyes, and a white dress in her arms. The scene is indoors with a full body view.
+
+[qwen35-cpumoe en piggyback] wall 6.0s prompt_n=158 cache_n=743 out 125t (28.1 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=92
+  masterpiece, best quality, score_7, safe, 2girls, Two girls are in an outdoor park setting. The girl with short black hair, red eyes, and a black jacket is being carried on the back of the girl with long blonde hair, blue eyes, and a white dress. The girl with long blonde hair, blue eyes, and a white dress holds the girl with short black hair, red eyes, and a black jacket on her back, supporting her weight as she carries her. The scene is set outdoors in a park with full body visibility.
+
+[qwen35-cpumoe en headpat] wall 4.1s prompt_n=152 cache_n=743 out 76t (29.8 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=48
+  masterpiece, best quality, score_7, safe, 2girls, Two girls are indoors. The girl with long black hair, red eyes, and a black coat is patting the girl with short blonde hair, blue eyes, and a white blouse on the head. The scene is indoors with an upper body view.
+
+[qwen35-cpumoe en kneel-and-stand] wall 4.7s prompt_n=161 cache_n=743 out 92t (29.6 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=64
+  masterpiece, best quality, score_7, safe, 2girls, Two people are indoors. A girl with short black hair, red eyes, and a black coat stands in front of a girl with long blonde hair, blue eyes, and a white dress. The girl with long blonde hair kneels on the floor while the girl with short black hair stands in front of her looking down at her.
+
+[qwen35-cpumoe en hands-apart] wall 5.0s prompt_n=157 cache_n=743 out 99t (29.0 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=70
+  masterpiece, best quality, score_7, safe, 2girls, two girls stand outdoors. The girl with short black hair, red eyes, and a black jacket stands facing the girl with long blonde hair, blue eyes, and a white summer dress. The girl with short black hair and the girl with long blonde hair face each other with their arms stretched out, holding hands. The scene is set outdoors with a full body view.
+
+[qwen35-cpumoe en feeding] wall 4.1s prompt_n=151 cache_n=743 out 78t (30.2 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=51
+  masterpiece, best quality, score_7, safe, 2girls, two girls are in a cafe. The girl with short black hair, red eyes, and a black jacket is feeding the girl with long blonde hair, blue eyes, and a white blouse with a spoon. The scene is an upper body view in a cafe.
+
+[qwen35-cpumoe ja princess-carry] wall 5.6s prompt_n=154 cache_n=743 out 120t (28.9 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=86
+  masterpiece, best quality, score_7, safe, 2girls, two girls are indoors. The girl with short black hair, red eyes, and a black suit holds the girl with long blonde hair, blue eyes, and a white dress in her arms. The girl with short black hair, red eyes, and a black suit carries the girl with long blonde hair, blue eyes, and a white dress, supporting her weight with her arms while the girl with long blonde hair, blue eyes, and a white dress rests against her chest.
+
+[qwen35-cpumoe ja piggyback] wall 4.6s prompt_n=154 cache_n=743 out 92t (29.7 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=64
+  masterpiece, best quality, score_7, safe, 2girls, two girls are in an outdoor park setting. The girl with short black hair, red eyes, and a black jacket is being carried on the back. The girl with long blonde hair, blue eyes, and a white dress is carrying the other girl on her back. The scene is set outdoors in a park with full body view.
+
+[qwen35-cpumoe ja headpat] wall 5.1s prompt_n=153 cache_n=743 out 103t (29.4 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=71
+  masterpiece, best quality, score_7, safe, 2girls, two girls are indoors. The girl with long black hair, red eyes, and a black coat stands next to the girl with short blonde hair, blue eyes, and a white blouse. The girl with long black hair, red eyes, and a black coat gently strokes the head of the girl with short blonde hair, blue eyes, and a white blouse, who looks up at her.
+
+[qwen35-cpumoe ja kneel-and-stand] wall 4.7s prompt_n=163 cache_n=743 out 93t (29.7 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=64
+  masterpiece, best quality, score_7, safe, 2girls, two girls are indoors. A girl with short black hair, red eyes, and a black coat stands in front of a girl with long blonde hair, blue eyes, and a white dress. The girl with long blonde hair kneels on the floor, and the girl with short black hair stands in front of her looking down at her.
+
+[qwen35-cpumoe ja hands-apart] wall 4.1s prompt_n=159 cache_n=743 out 79t (30.0 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=51
+  masterpiece, best quality, score_7, safe, 2girls, two girls stand outdoors facing each other. The girl with short black hair, red eyes, and a black jacket stands facing the girl with long blonde hair, blue eyes, and a white summer dress. They extend their arms and hold hands, looking at one another.
+
+[qwen35-cpumoe ja feeding] wall 5.4s prompt_n=155 cache_n=743 out 111t (29.1 t/s) ok=true
+  checks: nonEnglish=false quality=true leftRight=false ref=false missing=[] words=79
+  masterpiece, best quality, score_7, safe, 2girls, two girls are in a cafe. the girl with short black hair, red eyes, and a black jacket is feeding the girl with long blonde hair, blue eyes, and a white blouse with a spoon. the girl with long blonde hair, blue eyes, and a white blouse is being fed by the girl with short black hair, red eyes, and a black jacket. the scene is an upper body view in a cafe.
+
+wrote C:\Users\kurah\Documents\Git\SAA-regional\experiments\prose-small\results-qa-35b.json

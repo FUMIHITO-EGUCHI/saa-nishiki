@@ -10,7 +10,7 @@ import { applySizeRange } from './callbacks.js';
 import { setupStatusPills } from './components/statusPills.js';
 import { AI_MODES, applyAiMode, deriveAiMode, describeAiStatus } from './components/aiModeLogic.js';
 import { PROSE_SCOPES, normalizeProseScope } from '../shared/prosePrompt.js';
-import { describeProseEndpoint, onProseChange, proseState, regenerateProse, revertProseParagraph, setProseParagraph } from './prosePipeline.js';
+import { describeProseEndpoint, onProseChange, proseState, regenerateProse, revertProseParagraph, setProseParagraph, PROSE_WRITERS, proseWriter } from './prosePipeline.js';
 import {
     countLabel, summarizeADetailer, summarizeControlNet, summarizeHires, summarizeJson, summarizeLoRA, summarizeRefiner,
 } from './tools/pipelineSummary.js';
@@ -157,33 +157,6 @@ function setupPipelineRows() {
 }
 
 // ------------------------------------------------------------------ characters & views
-// myViewsList renders two unlabeled dropdowns; add a label row above them (Angle / Camera).
-function setupCharactersCard() {
-    // the Angle / Camera dropdowns sit in the Scene's View row (promptFieldManager moves them)
-    const view = document.querySelector('.dropdown-view');
-    if (!view) return null;
-    let labels = view.querySelector('.view-labels');
-    function render() {
-        const LANG = lang();
-        const names = [LANG.view_angle || 'Angle', LANG.view_camera || 'Camera'];
-        if (!labels) {
-            labels = document.createElement('div');
-            labels.className = 'view-labels';
-            view.prepend(labels);
-        }
-        labels.replaceChildren(...names.map(name => {
-            const span = document.createElement('span');
-            span.textContent = name;
-            return span;
-        }));
-    }
-    render();
-    // setOptions() rebuilds the dropdown markup; keep the label row on top.
-    const observer = new MutationObserver(() => { if (!view.contains(labels)) render(); else if (view.firstElementChild !== labels) view.prepend(labels); });
-    observer.observe(view, { childList: true });
-    return { render };
-}
-
 // ------------------------------------------------------------------ Prose card
 // Diffusion (Anima) only: the switch, where the paragraph is written, how much of the
 // prompt it dissolves, and the paragraph of the last image - editable, revertible,
@@ -191,6 +164,7 @@ function setupCharactersCard() {
 function setupProseCard() {
     const card = document.getElementById('prose-card');
     const segment = document.getElementById('prose-scope-segment');
+    const writerSegment = document.getElementById('prose-writer-segment');
     const preview = document.getElementById('prose-preview');
     const note = document.getElementById('prose-card-note');
     const status = document.getElementById('prose-card-status');
@@ -211,6 +185,21 @@ function setupProseCard() {
         });
         segment.append(button);
         buttons.set(scope, button);
+    }
+
+    const writerButtons = new Map();
+    for (const writer of PROSE_WRITERS) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'ai-mode-button';
+        button.dataset.writer = writer;
+        button.setAttribute('role', 'radio');
+        button.addEventListener('click', () => {
+            globalThis.globalSettings.ai_prose_writer = writer;
+            render();
+        });
+        writerSegment?.append(button);
+        writerButtons.set(writer, button);
     }
 
     let syncing = false;
@@ -244,6 +233,13 @@ function setupProseCard() {
             button.classList.toggle('is-on', key === scope);
             button.setAttribute('aria-checked', String(key === scope));
         }
+        const writer = proseWriter(SETTINGS);
+        const writerLabels = { llm: uiText('ui_prose_writer_llm', 'LLM'), student: uiText('ui_prose_writer_student', 'Student') };
+        for (const [key, button] of writerButtons) {
+            button.textContent = writerLabels[key];
+            button.classList.toggle('is-on', key === writer);
+            button.setAttribute('aria-checked', String(key === writer));
+        }
         if (status) status.textContent = on ? describeProseEndpoint(SETTINGS) : uiText('ui_prose_sub_off', 'off: the tags go out as written');
 
         const state = proseState();
@@ -271,8 +267,8 @@ function setupProseCard() {
 
 // ------------------------------------------------------- model type (Diffusion) wording
 // With the Diffusion model type the Characters card is the Cast and the Prompts card the
-// Scene; the run bar offers the Anima sampling defaults. Regional / Refiner / ControlNet
-// are hidden through body.cast-mode (index.css); Fast stays (its own Diffusion set).
+// Scene; the run bar offers the Anima sampling defaults. Refiner / ControlNet are hidden
+// through body.cast-mode (index.css); Regional and Fast stay (Fast has its own Diffusion set).
 function setupModelTypeUi() {
     const charactersTitle = document.querySelector('.characters-card [data-ui-text="ui_characters_title"]');
     const charactersSub = document.querySelector('.characters-card [data-ui-text="ui_characters_sub"]');
@@ -887,7 +883,6 @@ export function setupUiShell() {
         shell.proseCard?.render?.();
     };
 
-    shell.characters = setupCharactersCard();
     shell.pipeline = setupPipelineRows();
     shell.aiCard = setupAiCard();
     shell.proseCard = setupProseCard();

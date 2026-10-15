@@ -406,14 +406,26 @@ test('a paged answer grows as the list is scrolled or arrowed to its end, and th
         assert.equal(ui.keys().length, 50, 'the first page, not cut by optionLimit');
         assert.match(ui.status.textContent, /^50 \/ 130 results · scroll for more/);
 
-        // scrolled to the end: the next page is asked for and appended
-        ui.listbox.scrollTop = 700; ui.listbox.clientHeight = 300; ui.listbox.scrollHeight = 1000;
-        fire(ui.listbox, 'scroll');
-        await clock.tick(0);
-        assert.deepEqual(log.at(-1), { query: 'hair', offset: 50 });
-        assert.equal(ui.keys().length, 100);
-        assert.match(ui.status.textContent, /^100 \/ 130 results/);
-        assert.equal(ui.listbox.scrollTop, 700, 'the list stays where it was scrolled to; the new rows are below');
+        // scrolled to the end: the next page is asked for and appended. The first row is
+        // the active one (a fresh search makes it so); appending a page must not scroll
+        // it into view, or the list jumps back to the top every 50 rows.
+        const proto = Object.getPrototypeOf(ui.listbox);
+        const scrolledIntoView = [];
+        const originalScrollIntoView = proto.scrollIntoView;
+        proto.scrollIntoView = function () { scrolledIntoView.push(this.id); };
+        try {
+            ui.listbox.scrollTop = 700; ui.listbox.clientHeight = 300; ui.listbox.scrollHeight = 1000;
+            fire(ui.listbox, 'scroll');
+            await clock.tick(0);
+            assert.deepEqual(log.at(-1), { query: 'hair', offset: 50 });
+            assert.equal(ui.keys().length, 100);
+            assert.match(ui.status.textContent, /^100 \/ 130 results/);
+            assert.equal(ui.listbox.scrollTop, 700, 'the list stays where it was scrolled to; the new rows are below');
+            assert.equal(ui.listbox.getAttribute('aria-activedescendant'), ui.rows()[0].id, 'the active row is still the first');
+            assert.deepEqual(scrolledIntoView, [], 'and nothing was scrolled into view');
+        } finally {
+            proto.scrollIntoView = originalScrollIntoView;
+        }
 
         // toggling a row mid-list redraws it and keeps the scroll as well
         ui.listbox.scrollTop = 420;
@@ -709,7 +721,7 @@ test('the caller is told which row is under the pointer, which row is active, an
 
 test('the modal hands back exactly the handles the callers use, and destroy takes it off the page', async () => {
     await withModal({ mode: 'multiple' }, async ({ document, modal, clock, ui }) => {
-        assert.deepEqual(Object.keys(modal).sort(), ['apply', 'close', 'destroy', 'element', 'isOpen', 'open']);
+        assert.deepEqual(Object.keys(modal).sort(), ['activeTab', 'apply', 'category', 'close', 'destroy', 'element', 'isOpen', 'open', 'selectTab']);
         assert.equal(typeof modal.open, 'function');
         assert.equal(document.body.contains(modal.element), true);
 
@@ -731,6 +743,19 @@ test('the modal hands back exactly the handles the callers use, and destroy take
     });
 });
 
+test('open puts the overlay last in the body, so a modal opened from inside another dialog sits on top of it', async () => {
+    await withModal({ mode: 'multiple' }, async ({ document, modal, clock }) => {
+        const dialog = document.createElement('div');
+        dialog.className = 'selection-modal some-other-dialog';
+        document.body.appendChild(dialog);                 // opened after the modal was built
+        assert.equal(document.body.lastElementChild, dialog);
+        modal.open({ options: OPTIONS });
+        await clock.tick(0);
+        assert.equal(document.body.lastElementChild, modal.element, 'the modal moved above the dialog');
+        assert.equal(document.querySelectorAll('.selection-modal').length, 2, 'moved, not copied');
+    });
+});
+
 test('each modal gets its own ids, so two of them on one page do not share a listbox', async () => {
     await withModal({}, async ({ modal, clock, ui }) => {
         const second = createSelectionModal({ mode: 'multiple' });
@@ -743,5 +768,183 @@ test('each modal gets its own ids, so two of them on one page do not share a lis
         assert.notEqual(ui.rows()[0].id, own.rows()[0].id);
         assert.equal(ui.listbox.getAttribute('aria-activedescendant'), ui.rows()[0].id);
         assert.equal(own.listbox.getAttribute('aria-activedescendant'), own.rows()[0].id);
+    });
+});
+
+// ------------------------------------------------------------------ tabs
+
+// A second tab the way partsUi.js gives one: a grid of tiles, its own filters, a panel
+// about the active tile, buttons for the footer, and a count for the main tab's link.
+const PARTS = [
+    { key: 'parts:sailor uniform', value: 'parts:sailor uniform', label: 'sailor uniform', prefix: 'parts:', chipClass: 'is-part', category: 'outfit', attributes: ['sampled'], keywords: ['serafuku, pleated skirt'] },
+    { key: 'parts:twin tails', value: 'parts:twin tails', label: 'twin tails', prefix: 'parts:', chipClass: 'is-part', category: 'hair', attributes: ['missing'], keywords: ['twin tails, long hair'] },
+];
+
+function partsTab(document, log = []) {
+    return {
+        id: 'parts',
+        label: 'Parts',
+        view: 'grid',
+        categories: ['outfit', 'hair'],
+        categoryAll: 'All',
+        attributeLabel: 'Sample',
+        attributes: [{ value: 'sampled', label: 'Sampled' }, { value: 'missing', label: 'No sample' }],
+        attributeAll: 'All',
+        emptyMessage: 'No part matches.',
+        searchPrompt: 'No parts yet.',
+        refreshEvent: 'saa:parts-changed',
+        loadOptions: async () => { log.push('load'); return PARTS; },
+        renderOption: option => { const tile = document.createElement('span'); tile.className = 'tile'; tile.textContent = option.label; return tile; },
+        panel: option => { const about = document.createElement('p'); about.textContent = option ? `about ${option.label}` : 'pick one'; return about; },
+        actions: [
+            { label: 'New part', onClick: () => log.push('new') },
+            { label: () => `Generate missing (${log.filter(item => item === 'load').length})`, disabled: () => false, onClick: () => log.push('missing') },
+        ],
+        peek: query => PARTS.filter(part => part.label.includes(query) || part.keywords[0].includes(query)).length,
+        peekLabel: count => `${count} parts match → Parts`,
+    };
+}
+
+function tabsOf(ui) {
+    return ui.root.querySelectorAll('.selection-modal-tab').map(tab => `${tab.textContent}${tab.getAttribute('aria-selected') === 'true' ? '*' : ''}`);
+}
+
+test('tabs: the strip appears only when open() brings tabs; the toolbar stays in place and the search carries over to the other tab', async () => {
+    await withModal({ mode: 'multiple' }, async ({ document, modal, clock, ui }) => {
+        modal.open({ options: OPTIONS });
+        await clock.tick(0);
+        const strip = ui.root.querySelector('.selection-modal-tabs');
+        assert.equal(strip.hidden, true, 'no tabs were given');
+        assert.equal(ui.favOnly.hidden, true, 'without tabs the star is out of sight when there are no favourites');
+        modal.close();
+
+        const log = [];
+        modal.open({ options: OPTIONS, tabs: [partsTab(document, log)], tabLabel: 'Tags' });
+        await clock.tick(0);
+        assert.equal(strip.hidden, false);
+        assert.deepEqual(tabsOf(ui), ['Tags*', 'Parts']);
+        assert.equal(modal.activeTab(), null);
+        const toolbar = ui.root.querySelector('.selection-modal-toolbar');
+        // the sort box and the tile-size segment sit hidden between the filters and the star
+        const TOOLBAR = ['selection-modal-search-label', 'selection-modal-filter-label', 'selection-modal-filter-label', 'selection-modal-sort-label', 'selection-modal-size', 'selection-modal-favonly'];
+        assert.deepEqual(toolbar.children.map(child => child.className), TOOLBAR);
+        assert.equal(ui.favOnly.hidden, false, 'with tabs the star keeps its place…');
+        assert.equal(ui.favOnly.disabled, true, '…greyed while the tab has no favourites');
+        assert.equal(ui.listbox.classList.contains('is-grid'), false);
+        assert.equal(ui.root.querySelector('.selection-modal-panel').hidden, true);
+        assert.equal(ui.root.querySelector('.selection-modal-footer-actions').hidden, true);
+
+        // the main tab's list, and under it the other tab's count for the same search
+        const crosslink = ui.root.querySelector('.selection-modal-crosslink');
+        assert.equal(crosslink.hidden, true, 'nothing typed yet');
+        typeSearch(ui.search, 'uniform');
+        await clock.tick(120);
+        assert.deepEqual(ui.keys(), ['school uniform']);
+        assert.equal(crosslink.hidden, false);
+        assert.equal(crosslink.textContent, '1 parts match → Parts');
+        assert.deepEqual(log, [], 'the other tab has not loaded anything yet');
+
+        fire(crosslink, 'click');
+        await clock.tick(0);
+        assert.deepEqual(tabsOf(ui), ['Tags', 'Parts*']);
+        assert.equal(modal.activeTab(), 'parts');
+        assert.equal(ui.search.value, 'uniform', 'the search box is the same box');
+        assert.deepEqual(log, ['load']);
+        assert.equal(ui.listbox.classList.contains('is-grid'), true);
+        assert.deepEqual(ui.keys(), ['parts:sailor uniform'], 'the same search narrows the tiles');
+        assert.deepEqual(ui.rows().map(row => row.querySelector('.tile').textContent), ['sailor uniform']);
+        assert.equal(crosslink.hidden, true, 'the link belongs to the main tab');
+        assert.deepEqual(toolbar.children.map(child => child.className), TOOLBAR, 'the toolbar did not move');
+        assert.equal(ui.categorySelect.parentElement.hidden, false);
+        assert.deepEqual(ui.categorySelect.options.map(option => option.textContent), ['All', 'outfit', 'hair']);
+        assert.equal(ui.attributeSelect.parentElement.querySelector('.selection-modal-filter-text').textContent, 'Sample');
+        assert.deepEqual(ui.attributeSelect.options.map(option => option.textContent), ['All', 'Sampled', 'No sample']);
+        const panel = ui.root.querySelector('.selection-modal-panel');
+        assert.equal(panel.hidden, false);
+        assert.equal(panel.textContent, 'about sailor uniform', 'the first tile is the active one, as the first row is in a list');
+        const actions = ui.root.querySelector('.selection-modal-footer-actions');
+        assert.equal(actions.hidden, false);
+        assert.deepEqual(actions.children.map(button => button.textContent), ['New part', 'Generate missing (1)']);
+
+        // back to the main tab: its list, its filters, and the link again
+        fire(ui.root.querySelectorAll('.selection-modal-tab')[0], 'click');
+        await clock.tick(120);
+        assert.deepEqual(tabsOf(ui), ['Tags*', 'Parts']);
+        assert.deepEqual(ui.keys(), ['school uniform'], 'the static options came back');
+        assert.equal(ui.listbox.classList.contains('is-grid'), false);
+        assert.equal(panel.hidden, true);
+        assert.equal(actions.hidden, true);
+        assert.equal(crosslink.hidden, false);
+        assert.deepEqual(ui.categorySelect.options.map(option => option.textContent), ['All categories']);
+    });
+});
+
+test('tabs: a tile toggles into the shared selection as a dressed chip, the panel follows the active tile, and Apply hands the token back', async () => {
+    const applied = [];
+    await withModal({ mode: 'multiple', onApply: selection => applied.push(selection.map(option => option.value)) }, async ({ document, modal, clock, ui }) => {
+        const log = [];
+        modal.open({ options: OPTIONS, selection: [OPTIONS[0]], tabs: [partsTab(document, log)], tabLabel: 'Tags', tab: 'parts' });
+        await clock.tick(120);       // the loader sits behind the same debounce as a search
+        assert.deepEqual(tabsOf(ui), ['Tags', 'Parts*'], 'opened straight on the tab that was asked for');
+        assert.deepEqual(ui.keys(), ['parts:sailor uniform', 'parts:twin tails']);
+        assert.deepEqual(ui.chips(), ['blue hair'], 'the selection the caller brought is there on every tab');
+
+        const panel = ui.root.querySelector('.selection-modal-panel');
+        fire(ui.rows()[1], 'click');
+        assert.deepEqual(ui.chips(), ['blue hair', 'parts:twin tails'], 'the chip reads prefix + label');
+        const chip = ui.root.querySelectorAll('.selection-modal-chip')[1];
+        assert.equal(chip.classList.contains('is-part'), true);
+        assert.equal(chip.querySelector('.selection-modal-chip-prefix').textContent, 'parts:');
+        assert.equal(ui.rows()[1].getAttribute('aria-selected'), 'true');
+        assert.equal(panel.textContent, 'about twin tails', 'the clicked tile is the active one');
+        assert.equal(ui.applyButton.textContent, 'Apply (2)');
+
+        // the grid's arrows: left/right walk the tiles and stop at the edges, no wrap
+        fire(ui.listbox, 'keydown', { key: 'ArrowLeft' });
+        assert.equal(panel.textContent, 'about sailor uniform');
+        fire(ui.listbox, 'keydown', { key: 'ArrowLeft' });
+        assert.equal(panel.textContent, 'about sailor uniform', 'stays on the first tile');
+        fire(ui.listbox, 'keydown', { key: ' ' });
+        assert.deepEqual(ui.chips(), ['blue hair', 'parts:twin tails', 'parts:sailor uniform']);
+
+        // the tab's store changed: the list reloads in place, the active tile stays
+        fire(document, 'saa:parts-changed');
+        await clock.tick(0);
+        assert.deepEqual(log, ['load', 'load']);
+        assert.equal(panel.textContent, 'about sailor uniform');
+        assert.deepEqual(ui.root.querySelector('.selection-modal-footer-actions').children.map(button => button.textContent), ['New part', 'Generate missing (2)'], 'the footer buttons were rebuilt');
+
+        // Ctrl+Tab cycles the tabs, Ctrl+1 goes to the first
+        assert.equal(fire(document.body, 'keydown', { key: 'Tab', ctrlKey: true }), true);
+        await clock.tick(120);
+        assert.deepEqual(tabsOf(ui), ['Tags*', 'Parts']);
+        assert.equal(fire(document.body, 'keydown', { key: '2', ctrlKey: true }), true);
+        await clock.tick(0);
+        assert.deepEqual(tabsOf(ui), ['Tags', 'Parts*']);
+        assert.equal(fire(document.body, 'keydown', { key: '1', ctrlKey: true }), true);
+        await clock.tick(120);
+        assert.deepEqual(tabsOf(ui), ['Tags*', 'Parts']);
+        assert.equal(fire(document.body, 'keydown', { key: 'Tab' }), false, 'a plain Tab is still the focus trap, not a tab switch');
+
+        fire(ui.applyButton, 'click');
+        assert.deepEqual(applied, [['blue hair', 'parts:twin tails', 'parts:sailor uniform']]);
+        assert.equal(modal.isOpen(), false);
+    });
+});
+
+test('tabs: a tab can lift the modal\'s row limit, so a store larger than it is all tiles', async () => {
+    // the Parts tab does: the starter set's 295 parts were cut to the modal's 200 in All
+    await withModal({ mode: 'multiple', optionLimit: 1 }, async ({ document, modal, clock, ui }) => {
+        modal.open({ options: OPTIONS, tabs: [partsTab(document)], tabLabel: 'Tags', tab: 'parts' });
+        await clock.tick(120);
+        assert.deepEqual(ui.keys(), ['parts:sailor uniform'], 'the modal\'s own limit');
+        modal.close();
+
+        modal.open({ options: OPTIONS, tabs: [{ ...partsTab(document), optionLimit: Number.MAX_SAFE_INTEGER }], tabLabel: 'Tags', tab: 'parts' });
+        await clock.tick(120);
+        assert.deepEqual(ui.keys(), ['parts:sailor uniform', 'parts:twin tails']);
+        fire(ui.root.querySelectorAll('.selection-modal-tab')[0], 'click');
+        await clock.tick(120);
+        assert.deepEqual(ui.keys(), ['blue hair'], 'the main tab keeps the modal\'s limit');
     });
 });

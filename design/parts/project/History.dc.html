@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>Sample history of one part</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: #111111; }
+    a { color: #4da3ff; } a:hover { color: #7dbcff; }
+  </style>
+</helmet>
+<div style="width: 760px; height: 520px; box-sizing: border-box; padding: 20px; background: #111111; color: #eeeeee;">
+  <div style="display: flex; flex-direction: column; height: 480px; border: 2px solid #666666; border-radius: 9px; background: #111111; overflow: hidden;">
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px 6px 12px; background: #27272a; border-bottom: 1px solid #555555;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-size: 16px; font-weight: 600;"><span style="color: #e0c080; font-size: 0.85em; margin-right: 1px;">parts:</span>sailor uniform</span>
+        <span style="font-size: 11px; color: #aaaaaa;">サンプルは全部残る · 1 枚をタイルにピン留めできる</span>
+      </div>
+      <a href="Main.dc.html" aria-label="Back to the picker" style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 5px; color: #aaaaaa; font-size: 20px; line-height: 1; text-decoration: none;">×</a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 12px;">
+
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 2px solid #e0c080; border-radius: 6px; background: #2a2620;">
+        <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M30 32h20l4 40H26z" fill="#2c3e6b"></path><path d="M26 40h28v3H26z" fill="#c0392b"></path><path d="M25 72h30l6 24H19z" fill="#2c3e6b"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#dcdcdc"></path></svg></span>
+        <span style="font-size: 11px; font-weight: 600; color: #e0c080;">ピン留め · タイルに使用中</span>
+        <span style="font-size: 10.5px; color: #bdbdc4; line-height: 1.4;">WAI-ANIMA · マネキン<br>seed 3 · prompt v2<br>9/21 10:14</span>
+        <span style="display: flex; gap: 4px; margin-top: auto;">
+          <button style="min-height: 24px; padding: 0 7px; border: 1px solid #555555; border-radius: 4px; background: #222222; color: #eeeeee; font: inherit; font-size: 11px; cursor: pointer;">Unpin</button>
+          <button style="min-height: 24px; padding: 0 7px; border: 1px solid #555555; border-radius: 4px; background: #222222; color: #eeeeee; font: inherit; font-size: 11px; cursor: pointer;">Open</button>
+        </span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24;">
+        <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#e8c9a8"></circle><path d="M28 10c0-4 5-8 12-8s12 4 12 8v30l-4-3V14H32v23l-4 3z" fill="#3a2a1a"></path><path d="M30 32h20l4 40H26z" fill="#2c3e6b"></path><path d="M26 40h28v3H26z" fill="#c0392b"></path><path d="M25 72h30l6 24H19z" fill="#2c3e6b"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#e8c9a8"></path></svg></span>
+        <span style="font-size: 11px; font-weight: 600; color: #bdbdc4;">キャラで生成</span>
+        <span style="font-size: 10.5px; color: #bdbdc4; line-height: 1.4;">WAI-ANIMA · Sakura Miku<br>seed 3 · prompt v2<br>9/21 10:20</span>
+        <span style="display: flex; gap: 4px; margin-top: auto;">
+          <button style="min-height: 24px; padding: 0 7px; border: 1px solid #555555; border-radius: 4px; background: #222222; color: #eeeeee; font: inherit; font-size: 11px; cursor: pointer;">Pin</button>
+          <button style="min-height: 24px; padding: 0 7px; border: 1px solid #555555; border-radius: 4px; background: #222222; color: #eeeeee; font: inherit; font-size: 11px; cursor: pointer;">Open</button>
+        </span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24;">
+        <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden; opacity: 0.6;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M30 32h20l4 40H26z" fill="#33477a"></path><path d="M26 40h28v3H26z" fill="#c0392b"></path><path d="M25 72h30l6 24H19z" fill="#33477a"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#dcdcdc"></path></svg></span>
+        <span style="font-size: 11px; font-weight: 600; color: #8a8a93;">古い台紙プロンプト</span>
+        <span style="font-size: 10.5px; color: #9a9aa3; line-height: 1.4;">WAI-ANIMA · マネキン<br>seed 3 · prompt v1<br>9/19 22:03</span>
+        <span style="display: flex; gap: 4px; margin-top: auto;">
+          <button style="min-height: 24px; padding: 0 7px; border: 1px solid #555555; border-radius: 4px; background: #222222; color: #eeeeee; font: inherit; font-size: 11px; cursor: pointer;">Pin</button>
+          <button style="min-height: 24px; padding: 0 7px; border: 1px solid #555555; border-radius: 4px; background: #222222; color: #eeeeee; font: inherit; font-size: 11px; cursor: pointer;">Delete</button>
+        </span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid #3a3a42; border-radius: 6px; background: #1f1f24;">
+        <span style="display: block; width: 100%; aspect-ratio: 8 / 11; border-radius: 3px; background: #f4f4f4; overflow: hidden; opacity: 0.6;"><svg viewBox="0 0 80 110" aria-hidden="true" style="display: block; width: 100%; height: 100%;"><circle cx="40" cy="18" r="10" fill="#dcdcdc"></circle><path d="M30 32h20l4 40H26z" fill="#1f2d52"></path><path d="M26 40h28v3H26z" fill="#a83232"></path><path d="M25 72h30l6 24H19z" fill="#1f2d52"></path><path d="M30 96h7v10h-7zM43 96h7v10h-7z" fill="#e8e8e8"></path><path d="M18 34l12-2v10l-8 22-6-2zM62 34l-12-2v10l8 22 6-2z" fill="#dcdcdc"></path></svg></span>
+        <span style="font-size: 11px; font-weight: 600; color: #8a8a93;">別モデル</span>
+        <span style="font-size: 10.5px; color: #9a9aa3; line-height: 1.4;">Illustrious · マネキン<br>seed 3 · prompt v2<br>9/20 09:41</span>
+        <span style="display: flex; gap: 4px; margin-top: auto;">
+          <button style="min-height: 24px; padding: 0 7px; border: 1px solid #555555; border-radius: 4px; background: #222222; color: #eeeeee; font: inherit; font-size: 11px; cursor: pointer;">Pin</button>
+          <button style="min-height: 24px; padding: 0 7px; border: 1px solid #555555; border-radius: 4px; background: #222222; color: #eeeeee; font: inherit; font-size: 11px; cursor: pointer;">Delete</button>
+        </span>
+      </div>
+
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; margin-top: auto; padding: 8px 12px; background: #27272a; border-top: 1px solid #555555;">
+      <button style="display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font: inherit; font-size: 12.5px; cursor: pointer;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"></path><path d="M12.2 1.6v2.9H9.3"></path></svg>New sample</button>
+      <span style="font-size: 10.5px; color: #8a8a93;">ピン留めが無ければ、タイルは今のモデルの最新サンプル(マネキン優先)</span>
+      <a href="Main.dc.html" style="margin-left: auto; display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; border: 1px solid #555555; border-radius: 5px; background: #222222; color: #eeeeee; font-size: 12.5px; text-decoration: none; box-sizing: border-box;">Back</a>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":760,"height":520}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

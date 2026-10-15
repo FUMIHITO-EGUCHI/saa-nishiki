@@ -94,6 +94,7 @@ export function summarizeRegional(settings = {}, text = {}) {
         parts.push(`${fixed(settings.regional_str_left, 1)} / ${fixed(settings.regional_str_right, 1)}`);
     }
     if (settings.regional_swap) parts.push(text.swap ?? 'swapped');
+    if (settings.regional_panels) parts.push(text.panels ?? 'panels');
     return parts.join(SEP);
 }
 

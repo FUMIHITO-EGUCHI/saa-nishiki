@@ -70,6 +70,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     regional_option_right: 'default',
     // 'left-right' | 'top-bottom' (regionalSides.js SPLITS)
     regional_split: 'left-right',
+    // the composition line: "split screen, 2koma, two panels" on both sides (design/composition/bench)
+    regional_panels: false,
     // generation settings remembered per model type (scripts/shared/modelTypeSettings.js)
     model_type_generation: {},
     // the Prompts card remembered per model type (scripts/shared/modelTypePrompts.js): a
@@ -84,6 +86,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
     character_left: 'None',
     character_right: 'None',
 
+    // the View row: angle, camera, composition tags and parts: chips (the Angle / Camera
+    // dropdowns of older versions are read once into it, see migrateViewPrompts)
+    view_tags: '',
     view_angle: 'None',
     view_camera: 'None',
     view_background: 'None',
@@ -113,6 +118,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     api_image_landscape: false,
     scroll_to_last: false,
     keep_gallery: true,
+    gallery_max_images: 200,   // the gallery keeps this many data URLs; older ones are dropped
 
     custom_prompt: '',
     api_prompt: 'masterpiece, best quality, amazing quality',
@@ -138,6 +144,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     positive_right_weight_plans: [],
     negative_weight_plans: [],
     exclude_weight_plans: [],
+    views_weight_plans: [],
     background_weight_plans: [],
     style_weight_plans: [],
     negative_left_weight_plans: [],
@@ -147,6 +154,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
     positive_right_batch: { enabled: false, count: 4 },
     negative_batch: { enabled: false, count: 4 },
     exclude_batch: { enabled: false, count: 4 },
+    views_batch: { enabled: false, count: 4 },
     background_batch: { enabled: false, count: 4 },
     style_batch: { enabled: false, count: 4 },
     negative_left_batch: { enabled: false, count: 4 },
@@ -183,6 +191,13 @@ export const DEFAULT_SETTINGS = Object.freeze({
     // what the paragraph dissolves: 'cast' (characters + action), 'scene' (+ background /
     // style) or 'all'; the rest goes out as the tags it was (scripts/shared/prosePrompt.js)
     ai_prose_scope: 'cast',
+    // who writes the paragraph: 'llm' = the AI card's Ollama / pod LLM with the full rules,
+    // 'student' = the distilled 2B model (scripts/main/proseStudent.js runs a llama-server
+    // from these two paths on this port; ~1 s a paragraph on a 4070 beside ComfyUI)
+    ai_prose_writer: 'llm',
+    ai_prose_student_server: '',
+    ai_prose_student_model: '',
+    ai_prose_student_port: 8090,
 
     api_interface: 'None',
     api_preview_refresh_time: 1,
@@ -281,7 +296,7 @@ export const SECTION_KEYS = Object.freeze({
         'ai_pod_addr', 'ai_pod_share_host', 'ai_pod_auth', 'ai_pod_model', 'ai_pod_keep_alive',
         'remote_ai_base_url', 'remote_ai_model', 'remote_ai_api_key', 'remote_ai_timeout',
         'tag_assist', 'tag_chip_alias', 'wildcard_random',
-        'keep_gallery', 'scroll_to_last', 'generate_auto_start',
+        'keep_gallery', 'scroll_to_last', 'gallery_max_images', 'generate_auto_start',
         'fav_characters',
         'fav_artists',
         'artist_recent',
@@ -291,15 +306,16 @@ export const SECTION_KEYS = Object.freeze({
     prompt: Object.freeze([
         'character_slots', 'artist_slots', 'artist_signature_guard',
         'character1', 'character2', 'character3', 'character_left', 'character_right',
-        'view_angle', 'view_camera', 'view_background', 'view_style', 'weights4dropdownlist',
+        'view_tags', 'view_angle', 'view_camera', 'view_background', 'view_style', 'weights4dropdownlist',
         'custom_prompt', 'api_prompt', 'api_prompt_right', 'api_neg_prompt', 'api_neg_prompt_left', 'api_neg_prompt_right',
         'prompt_background', 'prompt_style', 'ai_prompt', 'prompt_ban',
         'prompt_custom_fields', 'prompt_positive_order', 'prompt_negative_order', 'prompt_field_presets', 'prompt_field_collapsed', 'prompt_field_muted',
         'common_weight_plans', 'positive_weight_plans', 'positive_right_weight_plans', 'negative_weight_plans', 'exclude_weight_plans',
-        'background_weight_plans', 'style_weight_plans', 'negative_left_weight_plans', 'negative_right_weight_plans',
+        'views_weight_plans', 'background_weight_plans', 'style_weight_plans', 'negative_left_weight_plans', 'negative_right_weight_plans',
         'common_batch', 'positive_batch', 'positive_right_batch', 'negative_batch', 'exclude_batch',
-        'background_batch', 'style_batch', 'negative_left_batch', 'negative_right_batch',
+        'views_batch', 'background_batch', 'style_batch', 'negative_left_batch', 'negative_right_batch',
         'ai_interface', 'ai_local_prompt_mode', 'ai_prompt_role', 'ai_prompt_preview', 'ai_prose_enable', 'ai_prose_scope',
+        'ai_prose_writer', 'ai_prose_student_server', 'ai_prose_student_model', 'ai_prose_student_port',
     ]),
     generation: Object.freeze([
         'random_seed', 'cfg', 'step', 'width', 'height', 'batch', 'api_image_landscape', 'api_model_sampler', 'api_model_scheduler',
@@ -307,7 +323,7 @@ export const SECTION_KEYS = Object.freeze({
         'api_hf_enable', 'api_hf_scale', 'api_hf_denoise', 'api_hf_upscaler_selected', 'api_hf_colortransfer', 'api_hf_random_seed', 'api_hf_steps',
         'api_refiner_enable', 'api_refiner_add_noise', 'api_refiner_model', 'api_refiner_model_vpred', 'api_refiner_ratio',
         'regional_condition', 'regional_swap', 'regional_overlap_ratio', 'regional_image_ratio',
-        'regional_str_left', 'regional_str_right', 'regional_option_left', 'regional_option_right', 'regional_split',
+        'regional_str_left', 'regional_str_right', 'regional_option_left', 'regional_option_right', 'regional_split', 'regional_panels',
     ]),
     lora: Object.freeze(['lora_slot']),
     adetailer: Object.freeze(['api_adetailer_enable', 'ad_slot']),
@@ -420,12 +436,17 @@ function coerce(key, value, defaultValue) {
     return sameType(defaultValue, value) ? clone(value) : clone(defaultValue);
 }
 
-// The Background / Style dropdown columns became prompt fields. A selection stored by an
-// older version (state file or preset) is converted into prompt text once, then cleared,
-// so re-normalizing already-migrated data is a no-op. 'Random' stays the literal keyword
-// `random`, which the generator still resolves against the view-tag list per seed.
+// The Background / Style dropdown columns became prompt fields, and then the Angle /
+// Camera columns became the View row (view_tags, a chip row like the others). A
+// selection stored by an older version (state file or preset) is converted into prompt
+// text once, then cleared, so re-normalizing already-migrated data is a no-op. 'Random'
+// stays the literal keyword `random`, which the generator still resolves against the
+// view-tag list per seed (background / style only; the View row sends it as a tag).
 function migrateViewPrompts(result) {
-    const moves = [['view_background', 'prompt_background', 2], ['view_style', 'prompt_style', 3]];
+    const moves = [
+        ['view_angle', 'view_tags', 0], ['view_camera', 'view_tags', 1],
+        ['view_background', 'prompt_background', 2], ['view_style', 'prompt_style', 3],
+    ];
     for (const [fromKey, toKey, weightIndex] of moves) {
         const value = String(result[fromKey] ?? '').trim();
         result[fromKey] = 'None';
@@ -442,8 +463,7 @@ function migrateViewPrompts(result) {
         result[toKey] = existing ? `${existing.replace(/,$/, '')}, ${tag}` : tag;
     }
     if (Array.isArray(result.weights4dropdownlist)) {
-        result.weights4dropdownlist[2] = 1;
-        result.weights4dropdownlist[3] = 1;
+        for (const index of [0, 1, 2, 3]) result.weights4dropdownlist[index] = 1;
     }
     return result;
 }

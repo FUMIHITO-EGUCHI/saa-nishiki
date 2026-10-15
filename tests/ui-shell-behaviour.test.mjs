@@ -105,7 +105,6 @@ function buildMarkup(document) {
     const dom = {};
     const make = (tag, properties, children) => el(document, tag, properties, children);
 
-    dom.view = make('div', { class: 'dropdown-view' }, [make('div', { class: 'view-select' })]);
 
     dom.rows = new Map();
     const rows = PIPE_ROWS.map(([pipe, toggle]) => {
@@ -173,7 +172,7 @@ function buildMarkup(document) {
     document.body.append(
         dom.left,
         make('div', { id: 'right' }, [
-            dom.view, dom.promptsCard, dom.artistCard, dom.animaDefaults,
+            dom.promptsCard, dom.artistCard, dom.animaDefaults,
             dom.aiCard, dom.pipelineCard, dom.runBar,
         ]),
         dom.queueContainer,
@@ -613,30 +612,6 @@ test('the Anima defaults button writes the sampling set and keeps the orientatio
         dom.animaDefaults.click();
         assert.deepEqual([settings.width, settings.height], [832, 1216], 'a portrait image stays portrait');
     }, { settings });
-});
-
-// ------------------------------------------------------------------ characters card
-
-test('the View row keeps its Angle / Camera labels on top when the dropdowns are rebuilt', async () => {
-    await withShell(async ({ document, dom, observers }) => {
-        const labels = dom.view.querySelector('.view-labels');
-        assert.ok(labels);
-        assert.deepEqual(labels.children.map(node => node.textContent), [EN.view_angle, EN.view_camera]);
-        assert.equal(dom.view.firstElementChild, labels, 'the labels sit above the dropdowns');
-
-        // setOptions() rebuilds the dropdown markup below the labels, which leaves the
-        // label row somewhere in the middle; the observer puts it back on top.
-        dom.view.appendChild(el(document, 'div', { class: 'view-select' }));
-        dom.view.appendChild(labels);
-        assert.notEqual(dom.view.firstElementChild, labels);
-        observers.notify(dom.view);
-        assert.equal(dom.view.firstElementChild, labels, 'the label row is moved back above the dropdowns');
-
-        // the labels follow the language on the next render
-        globalThis.globalSettings.language = 'zh-CN';
-        globalThis.uiShell.characters.render();
-        assert.deepEqual(labels.children.map(node => node.textContent), [language['zh-CN'].view_angle, language['zh-CN'].view_camera]);
-    });
 });
 
 // ------------------------------------------------------------------ info panel

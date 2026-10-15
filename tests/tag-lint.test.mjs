@@ -182,6 +182,30 @@ test('dictionary status: a burst past the backend cap goes out in several lookup
         assert.equal(status.tagStatus('tag 2499'), 'unknown', 'a key past the cap is answered, not assumed unknown');
     }));
 
+test('dictionary status: the heat each lookup carries is kept for the chips, for known tags only',
+    { timeout: DICTIONARY_TIMEOUT }, () => withDrainGuard(async () => {
+        const status = await freshStatus('heat', async keys => ({
+            loaded: true,
+            known: keys.filter(key => key !== 'zzz_nothing'),
+            heat: { fig: 99, cuirass: 999, '1girl': 6008644, zzz_nothing: 3 },
+        }));
+        const values = ['fig', 'cuirass', '1girl', 'zzz nothing'];
+        assert.equal(status.tagHeat('fig'), null, 'nothing before the answer');
+        for (const value of values) status.tagStatus(value);
+        await waitFor(() => values.every(value => status.tagStatus(value) !== 'pending'));
+        assert.equal(status.tagHeat('fig'), 99);
+        assert.equal(status.tagHeat('cuirass'), 999);
+        assert.equal(status.tagHeat('1girl'), 6008644);
+        assert.equal(status.tagHeat('zzz nothing'), null, 'a heat for a key the dictionary does not know is not kept');
+        assert.equal(status.tagHeat('BREAK'), null, 'not a tag');
+        assert.equal(status.tagHeat('masterpiece'), null, 'model vocabulary was never looked up');
+        globalThis.globalSettings.api_model_type = 'Diffusion';
+        assert.equal(status.tagHeat('fig'), null, 'a language-model encoder gets no marks');
+        globalThis.globalSettings.api_model_type = 'Checkpoint';
+        status.resetTagStatus();
+        assert.equal(status.tagHeat('fig'), null, 'a reload forgets the counts with the flags');
+    }));
+
 test('dictionary status: a failed lookup pauses the marks, then tries again',
     { timeout: DICTIONARY_TIMEOUT }, () => withDrainGuard(async () => {
         let fail = true;

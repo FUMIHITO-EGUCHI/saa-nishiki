@@ -64,15 +64,15 @@ function beginSettingHistory(change) {
 }
 
 function weightsFromLists() {
-    const view = globalThis.viewList;
     const regional = globalThis.characterListRegional;
     const number = value => { const parsed = Number.parseFloat(value); return Number.isFinite(parsed) ? parsed : 1; };
-    if (!view?.getTextValue || !regional?.getTextValue) return null;
+    if (!regional?.getTextValue) return null;
     try {
-        // Slots 2-3 (Background / Style columns) and 4-6 (characters 1-3, now
-        // character_slots) are retired; kept as 1 so the stored shape stays compatible.
+        // Slots 0-1 (Angle / Camera columns, now the View row), 2-3 (Background / Style
+        // columns) and 4-6 (characters 1-3, now character_slots) are retired; kept as 1
+        // so the stored shape stays compatible.
         return [
-            number(view.getTextValue(0)), number(view.getTextValue(1)), 1, 1,
+            1, 1, 1, 1,
             1, 1, 1,
             number(regional.getTextValue(0)), number(regional.getTextValue(1)),
         ];
@@ -251,7 +251,7 @@ function watchSlots() {
         for (const type of ['input', 'change', 'click']) container.addEventListener(type, mark);
         new MutationObserver(mark).observe(container, { childList: true, subtree: true });
     }
-    for (const selector of ['.dropdown-view', '.dropdown-character', '.dropdown-character-regional', '.dropdown-artist']) {
+    for (const selector of ['.dropdown-character', '.dropdown-character-regional', '.dropdown-artist']) {
         const container = document.querySelector(selector);
         if (!container) continue;
         watchSectionInteraction(container, 'prompt', 'prompt-dropdown');

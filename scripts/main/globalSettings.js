@@ -7,11 +7,12 @@ import path from 'node:path';
 import * as fs from 'node:fs';
 import { loadJSONFile } from './fileHandlers.js';
 import { createSettingsStore } from './settingsStore.js';
+import { resolveSettingsRoot } from './settingsRoot.js';
 import { resolveRefineSystemPrompt } from '../aiPromptRefiner.js';
 
 const CAT = '[GlobalSettings]';
 const appPath = app.isPackaged ? path.join(path.dirname(app.getPath('exe')), 'resources', 'app') : app.getAppPath();
-const settingsRoot = path.join(appPath, 'settings');
+const settingsRoot = resolveSettingsRoot(appPath);
 
 let store = null;
 let globalSettings = null;

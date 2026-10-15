@@ -59,8 +59,8 @@ test('normalizeSection keeps weights4dropdownlist numeric and batch objects well
         negative_batch: 'nope',
         positive_weight_plans: [{ tag: 'a' }],
     });
-    // slots 2-3 belonged to the retired Background / Style dropdowns and are pinned to 1
-    assert.deepEqual(prompt.weights4dropdownlist, [1.2, 1, 1, 1, 1, 1, 1, 1, 1]);
+    // slots 0-3 belonged to the retired Angle / Camera / Background / Style dropdowns and are pinned to 1
+    assert.deepEqual(prompt.weights4dropdownlist, [1, 1, 1, 1, 1, 1, 1, 1, 1]);
     assert.deepEqual(prompt.positive_batch, { enabled: true, count: 8 });
     assert.deepEqual(prompt.negative_batch, { enabled: false, count: 4 });
     assert.deepEqual(prompt.positive_weight_plans, [{ tag: 'a' }]);

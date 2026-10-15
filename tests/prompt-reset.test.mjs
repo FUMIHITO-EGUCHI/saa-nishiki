@@ -13,13 +13,12 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 test('clearedPromptPatch empties every prompt text, the View row and the weight plans', () => {
     const patch = clearedPromptPatch({
         custom_prompt: 'masterpiece', api_prompt: '1girl', prompt_ban: 'text',
-        view_angle: 'from side', view_camera: 'upper body',
+        view_tags: 'from side, upper body',
         positive_weight_plans: [{ id: 'x' }],
     });
     for (const key of PROMPT_TEXT_KEYS) assert.equal(patch[key], '', key);
     for (const key of PROMPT_PLAN_KEYS) assert.deepEqual(patch[key], [], key);
-    assert.equal(patch.view_angle, 'None');
-    assert.equal(patch.view_camera, 'None');
+    assert.equal(patch.view_tags, '', 'the View row is a prompt text like the others');
     // every patched key belongs to the prompt section (one undo step through it)
     for (const key of Object.keys(patch)) assert.ok(SECTION_KEYS.prompt.includes(key), `${key} is a prompt-section key`);
 });
