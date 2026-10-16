@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { setupGallery } from '../scripts/renderer/customGallery.js';
+import { setupGallery, VIEWER_SELECT_EVENT } from '../scripts/renderer/customGallery.js';
 import { withFakeDom } from './helpers/fakeDom.mjs';
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -306,5 +306,25 @@ test('grid mode lays the images out newest first and removes the one that was ri
         assert.deepEqual(
             container.querySelectorAll('.cg-gallery-item').map(item => item.querySelector('img').dataset.src),
             [png('c'), png('a')]);
+    });
+});
+
+test('an image keeps its record, and every selection announces the image on show', async () => {
+    await withGallery(async ({ container, gallery, document }) => {
+        const seen = [];
+        document.addEventListener(VIEWER_SELECT_EVENT, event => seen.push(event.detail));
+        const record = { recipe: { v: 1 }, timing: { total: 10200, segments: [] }, path: 'C:\out\a.png', interface: 'ComfyUI' };
+        gallery.appendImageData(png('a'), '7', 'tag a', 'True', true, '', record);
+        gallery.appendImageData(png('b'), '8', 'tag b', 'True', true);
+        assert.equal(gallery.currentEntry().record, null, 'an image from elsewhere has no record');
+        assert.equal(seen.at(-1).seed, '8');
+
+        clickPreview(container, previews(container)[1]);
+        assert.equal(gallery.currentEntry().record, record);
+        assert.equal(seen.at(-1).record, record);
+        assert.equal(seen.at(-1).image, png('a'));
+
+        gallery.clearGallery();
+        assert.equal(gallery.currentEntry(), null);
     });
 });

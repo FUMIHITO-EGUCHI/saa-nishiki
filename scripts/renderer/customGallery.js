@@ -1,6 +1,9 @@
 import { customCommonOverlay, addDragFunctionality } from './customOverlay.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 
+// fired with the image on show (mainGallery.currentEntry()) whenever the selection changes
+export const VIEWER_SELECT_EVENT = 'saa:viewer-select';
+
 function setupScrollableContainer(container) {
     let isDragging = false, startX, scrollLeft;
     container.addEventListener('mousedown', (e) => {
@@ -129,7 +132,8 @@ export function setupGallery(containerId) {
     let seeds = [];
     let tags = [];
     let infos = [];   // per-image generation info (BBCode) shown in the Info panel
-    let renderedImageCount = 0;
+    let records = []; // per-image { recipe, timing, path, interface } (imageRecipe.js), or null
+let renderedImageCount = 0;
 
     const container = document.querySelector(`.${containerId}`);
     if (!container) {
@@ -142,6 +146,7 @@ export function setupGallery(containerId) {
         seeds = [];
         tags = [];
         infos = [];
+        records = [];
         renderedImageCount = 0;
         currentIndex = 0;
         container.innerHTML = '';
@@ -155,6 +160,7 @@ export function setupGallery(containerId) {
                 seeds.splice(index, 1);
                 tags.splice(index, 1);
                 infos.splice(index, 1);
+                records.splice(index, 1);
 
                 renderedImageCount = images.length;
                 currentIndex = 0;
@@ -165,7 +171,8 @@ export function setupGallery(containerId) {
             seeds.splice(currentIndex, 1);
             tags.splice(currentIndex, 1);
             infos.splice(currentIndex, 1);
-            renderedImageCount = images.length;
+            records.splice(currentIndex, 1);
+renderedImageCount = images.length;
             currentIndex = currentIndex - 1;
             if(currentIndex < 0)
                 currentIndex = 0;
@@ -173,7 +180,9 @@ export function setupGallery(containerId) {
         }            
     };
 
-    globalThis.mainGallery.appendImageData = function (base64, seed, tagsString, keep_gallery, switchToLatest = false, info = '') {
+    // `record` is what the run knows of the image beyond its pixels: its recipe, timing
+    // and saved file (imageRecipe.js imageRecord); null for an image from elsewhere.
+    globalThis.mainGallery.appendImageData = function (base64, seed, tagsString, keep_gallery, switchToLatest = false, info = '', record = null) {
         if ('False' === keep_gallery) {
             globalThis.mainGallery.clearGallery();
         }
@@ -191,6 +200,7 @@ export function setupGallery(containerId) {
         if (typeof info === 'string' && info !== '') ownInfo = info;
         else if (info !== null) ownInfo = globalThis.generate?.infoBySeed?.get?.(String(seed)) ?? '';
         infos.push(ownInfo);
+        records.push(record && typeof record === 'object' ? record : null);
 
         if (seeds.length !== tags.length || images.length !== seeds.length) {
             console.warn('[appendImageData] Mismatch: images:', images.length, 'seeds:', seeds.length, 'tags:', tags.length);
@@ -230,13 +240,23 @@ export function setupGallery(containerId) {
             seeds.splice(victim, 1);
             tags.splice(victim, 1);
             infos.splice(victim, 1);
-            if (victim < currentIndex) currentIndex -= 1;
+            records.splice(victim, 1);
+if (victim < currentIndex) currentIndex -= 1;
             dropped += 1;
         }
         if (dropped > 0) renderedImageCount = 0;
         return dropped > 0;
     }
     globalThis.mainGallery.imageCount = () => images.length;
+    // the image on show, with everything the gallery keeps of it; null when empty
+    globalThis.mainGallery.currentEntry = () => (images.length === 0 ? null : {
+        index: currentIndex,
+        image: images[currentIndex],
+        seed: seeds[currentIndex],
+        tags: tags[currentIndex],
+        info: infos[currentIndex],
+        record: records[currentIndex] ?? null,
+    });
 
     globalThis.mainGallery.showLoading = function (loadingMEssage, elapsedTimePrefix, elapsedTimeSuffix) {
         // A new run supersedes any earlier failure; otherwise the error overlay
@@ -706,6 +726,7 @@ export function setupGallery(containerId) {
     // has it, otherwise the parameters embedded in the file (loaded / older images).
     let infoSyncToken = 0;
     function syncInfoPanel() {
+        document.dispatchEvent(new CustomEvent(VIEWER_SELECT_EVENT, { detail: globalThis.mainGallery.currentEntry() }));
         const box = globalThis.infoBox?.image;
         if (!box?.setValue || images.length === 0) return;
         const index = currentIndex;

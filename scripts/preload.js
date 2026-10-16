@@ -166,6 +166,7 @@ contextBridge.exposeInMainWorld('api', {
   runComfyUI_MiraITU: async (generateData) => ipcRenderer.invoke('generate-backend-comfyui-run-mira-itu', generateData),
   openWsComfyUI: async (prompt_id, skipFirst, isIndex) => ipcRenderer.invoke('generate-backend-comfyui-open-ws', prompt_id, skipFirst, isIndex),
   closeWsComfyUI: async () => ipcRenderer.invoke('generate-backend-comfyui-close-ws'),
+  takeComfyUIResult: async () => ipcRenderer.invoke('generate-backend-comfyui-take-result'),
   cancelComfyUI: async () => ipcRenderer.invoke('generate-backend-comfyui-cancel'),
 
   // generate_backend WebUI

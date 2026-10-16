@@ -13,7 +13,7 @@ import { normalizeControlType } from '../shared/controlNetUnion.js';
 import { setQueueAutoStart } from './callbacks.js';
 import { filterPrompts } from './tools/promptFilter.js';
 import { beginImageOverride, createPlanWeigher, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
-import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
+import { isOriginalKey, originalCharacterName, originalKey } from '../shared/characterKeys.js';
 import { isStructuredRefineFormat, removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
 import { composeNegativeChain } from '../shared/negativeComposition.js';
 import { artistPrompt, signatureGuard } from '../shared/artistSlots.js';
@@ -29,6 +29,7 @@ import { castEnabled, isDiffusionFieldId } from '../shared/castMembers.js';
 import { resolveRefinerModel } from '../shared/refinerModel.js';
 import { stripDisabledTags } from './components/tagCapsuleLogic.js';
 import { expandParts } from './partsClient.js';
+import { captureRecipeSections, imageRecord, noteJobSteps, queuedRecipe, startJobClock, takeImageResult } from './imageRecipe.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
 
@@ -229,12 +230,12 @@ async function createCharacters(index, seeds) {
     const seed = seeds[index];
 
     if (character.toLowerCase() === 'none') {
-        return { tag: '', tag_assist: '', thumb: null, info: '', neg_tags: '', isOriginal: false };
+        return { tag: '', tag_assist: '', thumb: null, info: '', neg_tags: '', isOriginal: false, characterKey: 'None' };
     }
 
     // an `oc:` key is an original character, whatever slot it sits in
     const isOriginalCharacter = isOriginalKey(character);
-    const { tag, thumb, info, weight, name } = isOriginalCharacter
+    const { tag, thumb, info, weight, name, key } = isOriginalCharacter
         ? handleOriginalCharacter(originalCharacterName(character), seed, isValueOnly, index, FILES)
         : await handleStandardCharacter(character, seed, isValueOnly, index, FILES);
 
@@ -250,6 +251,8 @@ async function createCharacters(index, seeds) {
         info: tagAssist.info,
         weight: weight,
         characterName:name,
+        // the key the slot resolved to ("Random" has picked one by now), for the image's recipe
+        characterKey: key,
         neg_tags: neg_tags,
         isOriginal: isOriginalCharacter
     };
@@ -257,9 +260,11 @@ async function createCharacters(index, seeds) {
 
 async function handleStandardCharacter(character, seed, isValueOnly, index, FILES) {
     let tag, thumb, info, name;
+    let key = character;
     if (character.toLowerCase() === 'random') {
         const selectedIndex = getRandomIndex(seed, FILES.characterListArray.length);
         const selectedKey = FILES.characterListArray[selectedIndex][0];
+        key = selectedKey;
         tag = FILES.characterListArray[selectedIndex][1];
         const displayName = getLocalizedCharacterName({
             key: selectedKey,
@@ -289,13 +294,15 @@ async function handleStandardCharacter(character, seed, isValueOnly, index, FILE
         name = displayName;
     }
     const weight = globalThis.characterList.getTextValue(index);
-    return { tag, thumb, info, weight, name };
+    return { tag, thumb, info, weight, name, key };
 }
 
 function handleOriginalCharacter(character, seed, isValueOnly, index, FILES) {
     let tag, info, name;
+    let key = originalKey(character);
     if (character.toLowerCase() === 'random') {
         const selectedIndex = getRandomIndex(seed, FILES.ocListArray.length);
+        key = originalKey(FILES.ocListArray[selectedIndex][0]);
         tag = FILES.ocListArray[selectedIndex][1];
         info = formatOriginalCharacterInfo({
         key: FILES.ocListArray[selectedIndex][0],
@@ -308,7 +315,7 @@ function handleOriginalCharacter(character, seed, isValueOnly, index, FILES) {
         name = character;
     }
     const weight = globalThis.characterList.getTextValue(index);
-    return { tag, thumb: null, info, weight, name };
+    return { tag, thumb: null, info, weight, name, key };
 }
 
 export function getRandomIndex(seed, listLength) {
@@ -422,9 +429,11 @@ async function getCharacters() {
     let negativeTags = '';
     let character_name_for_image_prefix = '';
     const characterTags = [];   // each slot on its own ('' for an empty slot), for the Prose step
+    const characterKeys = [];   // the key each slot resolved to, for the image's recipe
 
     for(let index=0; index < slotCount; index++) {
-        let {tag, tag_assist, thumb, info, weight, characterName, neg_tags, isOriginal} = await createCharacters(index, seeds);
+        let {tag, tag_assist, thumb, info, weight, characterName, characterKey, neg_tags, isOriginal} = await createCharacters(index, seeds);
+        characterKeys.push(characterKey ?? 'None');
         let seperate = ', ';
         // Should not happen
         if(tag.startsWith('✨ ')) {
@@ -468,6 +477,7 @@ async function getCharacters() {
         thumb: thumbImages,
         characters_tag:character,
         character_tags: characterTags,
+        character_keys: characterKeys,
         information: information,
         seed:random_seed,
         characters:characters,
@@ -660,6 +670,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let negativePrompt = '';
     let thumbImage = null;
     let charactersName = '';
+    let characterKeys = [];
     let img_prefix = '';
     let refineContext = null;
     // the wildcard / "{a|b}" choices this image made, for whatever has to read the same text
@@ -674,6 +685,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         positivePromptColored = globalThis.generate.lastPosColored;
         negativePrompt = globalThis.generate.lastNeg;
         charactersName = globalThis.generate.lastCharacter;
+        characterKeys = globalThis.generate.lastCharacterKeys ?? [];
         img_prefix = globalThis.generate.lastImagePrefix;
         // Batch (Last) keeps the previous prompt but still walks the weight plans.
         const override = getActiveOverride();
@@ -683,7 +695,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
             negativePrompt = applied.negative;
         }
     } else {            
-        const {thumb, characters_tag, character_tags, information, seed, characters, negative_tags, image_prefix} = await getCharacters();
+        const {thumb, characters_tag, character_tags, character_keys, information, seed, characters, negative_tags, image_prefix} = await getCharacters();
         randomSeed = seed;
         finalInfo = information;
 
@@ -730,10 +742,11 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         };
         thumbImage = thumb;
         charactersName = characters;
+        characterKeys = character_keys;
         img_prefix = image_prefix;
     }
 
-    return {finalInfo, randomSeed, positivePrompt, positivePromptColored, negativePrompt, thumbImage, charactersName, img_prefix, refineContext, materials}
+    return {finalInfo, randomSeed, positivePrompt, positivePromptColored, negativePrompt, thumbImage, charactersName, characterKeys, img_prefix, refineContext, materials}
 }
 
 export function createHiFix(randomSeed, apiInterface, brownColor){
@@ -1217,17 +1230,19 @@ export async function generateImage(dataPack){
         globalThis.infoBox.image.clear();
     }
 
+    // the editor as this click found it: every image of the run keeps it in its recipe
+    const recipeSections = captureRecipeSections();
     let prepareError = null;
-    for(let loop = 0; loop < loops; loop++){        
+    for(let loop = 0; loop < loops; loop++){
       try {
         if(globalThis.generate.cancelClicked){
             globalThis.queueManager.removeAll();
             break;
-        }                                
+        }
 
         if(globalThis.generate.skipClicked){
             break;
-        } 
+        }
 
         if(!globalThis.inGenerating)
             globalThis.generate.loadingMessage = LANG.generate_warmup.replace('{0}', `${loop+1}`).replace('{1}', loops);
@@ -1279,6 +1294,7 @@ export async function generateImage(dataPack){
         globalThis.generate.lastPosColored = createPromptResult.positivePromptColored;
         globalThis.generate.lastNeg = createPromptResult.negativePrompt;
         globalThis.generate.lastCharacter = createPromptResult.charactersName;
+        globalThis.generate.lastCharacterKeys = createPromptResult.characterKeys;
         globalThis.generate.lastImagePrefix = createPromptResult.img_prefix;
         if(createPromptResult.thumbImage)
             globalThis.generate.lastThumb = createPromptResult.thumbImage;
@@ -1366,7 +1382,17 @@ export async function generateImage(dataPack){
             }),
 
             img_prefix: getImageSavePrefix(apiInterface, createPromptResult.img_prefix)
-        };        
+        };
+        generateData.recipe = queuedRecipe(recipeSections, {
+            seed: createPromptResult.randomSeed,
+            width,
+            height,
+            interface: apiInterface,
+            characters: createPromptResult.characterKeys,
+            names: createPromptResult.charactersName,
+            positive: createPromptResult.positivePrompt,
+            negative: createPromptResult.negativePrompt,
+        });
 
         let finalInfo = `${createPromptResult.finalInfo}\n`;
             finalInfo += `Positive:\n${createPromptResult.positivePromptColored}\n`;
@@ -1464,6 +1490,7 @@ export async function startQueue(){
         let result = '';
         if(queueManager.genType === 'normal') {
             globalThis.thumbGallery.append(queueManager.thumb);
+            const clock = startJobClock();
 
             const aiRequest = await getAiPromptResult(
                 queueManager.loop,
@@ -1505,6 +1532,8 @@ export async function startQueue(){
                 resolveComponent: async (value, seed) => processRandomString(await replaceWildcardsAsync(value, seed)),
             });
             const aiPreview = promptResult.preview;
+            const aiMs = aiRequest.source === 'none' ? 0 : clock.lap();
+            const aiStep = { mode: aiRequest.source === 'none' ? 'off' : promptMode, text: aiPrompt };
             if (isStructuredRefineFormat(promptResult.envelope?.format)) {
                 recordRefineRunCandidate(queueManager.refineRun, {
                     ...promptResult.envelope,
@@ -1551,6 +1580,12 @@ export async function startQueue(){
                 // ComfyUI masks a negative per side; only a result that rebuilt them replaces them
                 if (typeof promptResult.negativeLeft === 'string') generateData.negative_left = promptResult.negativeLeft;
                 if (typeof promptResult.negativeRight === 'string') generateData.negative_right = promptResult.negativeRight;
+                noteJobSteps(generateData, {
+                    positive: `${generateData.positive_left}\n${generateData.positive_right}`,
+                    negative: generateData.negative,
+                    ai: aiStep,
+                    timing: { jobStart: clock.start, ai: aiMs },
+                });
                 // Cancel pressed while the AI prompt was written, or "−" on this row: nothing
                 // has reached the backend, whose own cancel mark a new run would clear
                 result = (globalThis.generate.cancelClicked || jobDropped(generateData))
@@ -1559,12 +1594,20 @@ export async function startQueue(){
             } else {
                 generateData.positive = promptResult.positive;
                 generateData.negative = promptResult.negative;
+                clock.lap();
                 // Diffusion (Anima) with Prose on: the tags become one English paragraph
                 const prose = await applyProse(generateData, {
                     job: queueManager.prose,
                     aiMode: aiRequest.source === 'none' ? 'off' : promptMode,
                     aiText: aiPrompt,
                     LANG,
+                });
+                noteJobSteps(generateData, {
+                    positive: generateData.positive,
+                    negative: generateData.negative,
+                    ai: aiStep,
+                    prose,
+                    timing: { jobStart: clock.start, ai: aiMs, prose: prose ? clock.lap() : 0 },
                 });
                 // applyProse shows its own "writing the paragraph" label while the LLM runs;
                 // put the run label back before the sampler starts.
@@ -1701,7 +1744,7 @@ async function seartGenerate(apiInterface, generateData){
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 async function runComfyUI(apiInterface, generateData){
-    function sendToGallery(image, generateData){
+    async function sendToGallery(image, generateData){
         if(!image)  // same prompts from backend will return null
             return;
 
@@ -1712,9 +1755,11 @@ async function runComfyUI(apiInterface, generateData){
             return;
         }
 
+        // the saved file and the time it took travel beside the image (imageRecipe.js)
+        const record = imageRecord(generateData, generateData.recipe ? await takeImageResult() : null);
         if(!keepGallery)
             globalThis.mainGallery.clearGallery();
-        globalThis.mainGallery.appendImageData(image, `${generateData.seed}`, generateData.positive, keepGallery, globalThis.globalSettings.scroll_to_last);
+        globalThis.mainGallery.appendImageData(image, `${generateData.seed}`, generateData.positive, keepGallery, globalThis.globalSettings.scroll_to_last, '', record);
     }
 
     const SETTINGS = globalThis.globalSettings;
@@ -1770,7 +1815,7 @@ async function runComfyUI(apiInterface, generateData){
                             breakNow = true;
                         }
                     } else {
-                        sendToGallery(image, generateData);
+                        await sendToGallery(image, generateData);
                     }
                 } catch (error){
                     ret = LANG.gr_error_creating_image.replace('{0}',error.message).replace('{1}', apiInterface);
@@ -1811,6 +1856,7 @@ async function runWebUI(apiInterface, generateData) {
     let breakNow = false;
     let cancelled = false;   // no image was made: the caller must not count it as one
 
+    const posted = Date.now();
     try {
         let result;
         if (globalThis.inBrowser) {
@@ -1837,7 +1883,7 @@ async function runWebUI(apiInterface, generateData) {
                 } else {
                     if(!keepGallery)
                         globalThis.mainGallery.clearGallery();
-                    globalThis.mainGallery.appendImageData(result, `${generateData.seed}`, generateData.positive, keepGallery, globalThis.globalSettings.scroll_to_last);
+                    globalThis.mainGallery.appendImageData(result, `${generateData.seed}`, generateData.positive, keepGallery, globalThis.globalSettings.scroll_to_last, '', imageRecord(generateData, null, { posted }));
                 }
             }
         }

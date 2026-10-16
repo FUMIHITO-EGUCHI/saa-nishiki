@@ -6,6 +6,8 @@
 // bytes over the client WebSocket instead of saving a file, and the whole workflow
 // is scanned for any other file-writing node before submission.
 
+import { crc32 } from './pngText.js';
+
 // Explicit deny-list plus a /save/i heuristic below. SaveImageWebsocket is the only
 // allowed "save" node — it writes to the WebSocket, not the disk.
 const DISK_WRITER_CLASS_TYPES = new Set([
@@ -102,22 +104,6 @@ export function buildParametersText(workflow) {
 // Buffer only exists in the main process; resolved lazily so this shared module
 // still loads in a renderer / browser context (which never embeds PNG metadata).
 const PNG_SIGNATURE_BYTES = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-
-const CRC_TABLE = (() => {
-    const table = new Uint32Array(256);
-    for (let n = 0; n < 256; n++) {
-        let c = n;
-        for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-        table[n] = c >>> 0;
-    }
-    return table;
-})();
-
-function crc32(buffer) {
-    let crc = 0xFFFFFFFF;
-    for (const byte of buffer) crc = CRC_TABLE[(crc ^ byte) & 0xFF] ^ (crc >>> 8);
-    return (crc ^ 0xFFFFFFFF) >>> 0;
-}
 
 /**
  * Insert a tEXt chunk (keyword "parameters") right after IHDR. Returns the input

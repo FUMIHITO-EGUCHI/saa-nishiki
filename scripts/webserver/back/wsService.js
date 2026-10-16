@@ -25,7 +25,7 @@ import { getRelatedTags, hasRelatedDictionary } from '../../main/tagRelated_back
 import { getArtistProfile, hasArtistProfiles, searchArtists } from '../../main/artist_backend.js';
 import { addPartSample, applyParts, getPartsDoc, readPartSample } from '../../main/parts_backend.js';
 import { runComfyUI, runComfyUI_Regional, runComfyUI_ControlNet, runComfyUI_MiraITU, 
-    openWsComfyUI, closeWsComfyUI, cancelComfyUI, python_runComfyUI } from '../../main/generate_backend_comfyui.js';
+    openWsComfyUI, closeWsComfyUI, takeComfyUIResult, cancelComfyUI, python_runComfyUI } from '../../main/generate_backend_comfyui.js';
 import { runWebUI, runWebUI_Regional, cancelWebUI, startPollingWebUI, stopPollingWebUI, runWebUI_ControlNet, python_runWebUI,
     getControlNetProcessorList, getADetailerModelList, getUpscalersModelList, resetModelLists } from '../../main/generate_backend_webui.js';
 import { remoteAI, localAI } from '../../main/remoteAI_backend.js';
@@ -532,6 +532,7 @@ const methodHandlers = {
   'runComfyUI_MiraITU': (params)=> runComfyUI_MiraITU(...params),
   'openWsComfyUI': (params)=> openWsComfyUI(...params),
   'closeWsComfyUI': ()=> closeWsComfyUI(),
+  'takeComfyUIResult': ()=> takeComfyUIResult(),
   'cancelComfyUI': ()=> cancelComfyUI(),
 
   // webui

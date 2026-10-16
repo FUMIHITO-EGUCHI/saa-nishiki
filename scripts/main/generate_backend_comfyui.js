@@ -18,6 +18,10 @@ import { ensureComfyLaunchArgs } from './comfyProcess.js';
 import { getLoRAList, getLoRAListSource } from './modelList.js';
 import { remoteModelSource } from './remoteModelList.js';
 import { resolveUnionControlType } from '../shared/controlNetUnion.js';
+import { RECIPE_CHUNK, TIME_CHUNK } from '../shared/recipe.js';
+import { createRunTimeline, summarizeRunTiming } from '../shared/runTiming.js';
+import { asciiJson, insertTextChunks } from '../shared/pngText.js';
+import { comfyOutputDir, savedImagePath, stampImageTime } from './imageRecord.js';
 
 const CAT = '[ComfyUI]';
 const TIMEOUT = 5000; // 5 seconds timeout for backend response
@@ -761,6 +765,45 @@ class ComfyUI {
     this.firstValidPreview = false;
     this.uuid = 'none';
     this.pythonRun = false;
+    // the run on its way: its recipe and the renderer's timing ({ recipe, before }), the
+    // workflow (whose node classes name the timeline's segments) and the timeline itself
+    this.record = null;
+    this.timeline = null;
+    this.savedImage = null;     // the saver's { filename, subfolder, type } of the last image
+    this.lastResult = null;     // Promise of { path, timing, recipe } for the renderer (takeResult)
+  }
+
+  // What the renderer asks for once the image is in: where it was saved and how long it
+  // took. One run at a time (the backend mutex), so the last finished run is the one.
+  async takeResult() {
+    const result = this.lastResult;
+    this.lastResult = null;
+    return result ? await result : null;
+  }
+
+  // The image of the run is in: work out its file and timing, and write the time into the
+  // file. The renderer awaits this through takeResult, not the image itself.
+  finishRecord() {
+    const record = this.record;
+    const timeline = this.timeline;
+    const image = this.savedImage;
+    this.record = null;
+    this.timeline = null;
+    this.savedImage = null;
+    if (!record || !timeline) {
+      this.lastResult = null;
+      return;
+    }
+    timeline.fetched();
+    const timing = summarizeRunTiming({ timeline: timeline.timeline, workflow: record.workflow, before: record.before ?? {} });
+    const addr = this.addr;
+    const auth = this.auth;
+    this.lastResult = (async () => {
+      const outputDir = await comfyOutputDir(addr, auth).catch(() => '');
+      const file = savedImagePath(outputDir, image);
+      if (file) await stampImageTime(file, timing);
+      return { path: file, timing, recipe: record.recipe ?? null };
+    })();
   }
 
   cancelGenerate() {
@@ -785,6 +828,16 @@ class ComfyUI {
     });
 
     request.end();
+  }
+
+  // ComfyUI's "executing" messages for this prompt: a node starting, or (node null) the
+  // prompt done. They time the run; anything else is left to the handler below.
+  recordMessage(message) {
+    if (!this.timeline || message?.type !== 'executing') return;
+    const data = message.data ?? {};
+    if (data.prompt_id !== undefined && data.prompt_id !== this.prompt_id) return;
+    if (data.node === null) this.timeline.end();
+    else this.timeline.node(data.node);
   }
 
   async openWS(prompt_id, skipFirst = true, index='29'){
@@ -873,6 +926,7 @@ class ComfyUI {
 
         try {
           const message = JSON.parse(data.toString('utf8'));
+          this.recordMessage(message);
           if (message.type === 'executing' || message.type === 'status') {
             const msgData = message.data;
             if (msgData.node === null && msgData.prompt_id === this.prompt_id && this.step !== 0) {
@@ -881,6 +935,7 @@ class ComfyUI {
                   if (image && Buffer.isBuffer(image)) {
                       const base64Image = processImage(image);
                       if (base64Image) {
+                        this.finishRecord();
                         finalize(`data:image/png;base64,${base64Image}`);
                         return;
                       } else {
@@ -917,6 +972,8 @@ class ComfyUI {
                     if (image && Buffer.isBuffer(image)) {
                       const base64Image = processImage(image);
                       if (base64Image) {
+                        this.timeline?.end();
+                        this.finishRecord();
                         finalize(`data:image/png;base64,${base64Image}`);
                         return;
                       } else {
@@ -1015,6 +1072,7 @@ class ComfyUI {
         }
         
         const imageInfo = jsonData[prompt_id ||this.prompt_id].outputs[index].images[0];            
+        this.savedImage = { filename: imageInfo.filename, subfolder: imageInfo.subfolder, type: imageInfo.type };
         this.urlPrefix = `view?filename=${imageInfo.filename}&subfolder=${imageInfo.subfolder}&type=${imageInfo.type}`;            
         const imageData = await this.getUrl();
         if (typeof imageData === 'string' && imageData.startsWith('Error:')) {
@@ -2488,7 +2546,8 @@ class ComfyUI {
     try {
       const result = await run;
       if (result.error) return cancelMark ? 'Error: Cancelled' : result.error;
-      const image = embedPngParameters(result.images[0], this.podParameters);
+      let image = embedPngParameters(result.images[0], this.podParameters);
+      image = this.embedPodRecord(image);
       this.savePodImage(image);
       console.log(CAT, `Pod image received over SSH (${result.images.length} image(s))`);
       return `data:image/png;base64,${image.toString('base64')}`;
@@ -2500,7 +2559,29 @@ class ComfyUI {
     }
   }
 
+  // A pod image comes over the WebSocket without the saver's chunks: the recipe and the
+  // time are written in here, before it is saved and shown.
+  embedPodRecord(image) {
+    const record = this.record;
+    const timeline = this.timeline;
+    this.record = null;
+    this.timeline = null;
+    this.lastResult = null;
+    this.podTiming = null;
+    if (!record || !timeline) return image;
+    timeline.end();
+    timeline.fetched();
+    const timing = summarizeRunTiming({ timeline: timeline.timeline, workflow: record.workflow, before: record.before ?? {} });
+    this.podTiming = { timing, recipe: record.recipe ?? null };
+    return insertTextChunks(image, [
+      ...(record.recipe ? [[RECIPE_CHUNK, asciiJson(record.recipe)]] : []),
+      [TIME_CHUNK, asciiJson(timing)],
+    ]);
+  }
+
   savePodImage(buffer) {
+    const kept = this.podTiming ?? null;
+    this.podTiming = null;
     try {
       const settings = getGlobalSettings();
       const dir = String(settings.pod_image_save_dir ?? '').trim() || path.join(app.getPath('pictures'), 'SAA');
@@ -2509,14 +2590,22 @@ class ComfyUI {
       const file = path.join(dir, `SAA_${stamp}_${this.podSeed}.png`);
       fs.writeFileSync(file, buffer);
       console.log(CAT, 'Pod image saved to', file);
+      if (kept) this.lastResult = Promise.resolve({ path: file, ...kept });
     } catch (error) {
       // the image still reaches the gallery; local auto-save is best-effort
       console.warn(CAT, 'Pod image local save failed:', error?.message ?? error);
     }
   }
 
-  run(workflow, pythonRun=false) {
+  // `record` ({ recipe, before }) belongs to a txt2img run from the SAA window: the recipe
+  // goes in with the prompt (the saver writes extra_pnginfo out as PNG text chunks) and
+  // the run is timed. Other runs (MiraITU, a ControlNet preview, Python) carry none.
+  run(workflow, pythonRun=false, record=null) {
     this.pythonRun = pythonRun;
+    this.record = record ? { ...record, workflow } : null;
+    this.timeline = record ? createRunTimeline() : null;
+    this.savedImage = null;
+    this.lastResult = null;
     const promptTimeout = Math.max(this.timeout, PROMPT_TIMEOUT);
     if (this.podEnabled()) return this.runPod(workflow);
     return new Promise((resolve, reject) => {
@@ -2524,6 +2613,7 @@ class ComfyUI {
         prompt: workflow,
         client_id: this.clientID
       };
+      if (record?.recipe) requestBody.extra_data = { extra_pnginfo: { [RECIPE_CHUNK]: record.recipe } };
       const body = JSON.stringify(requestBody);
       const apiUrl = httpApiUrl(this.addr, 'prompt');
 
@@ -2610,6 +2700,10 @@ async function setupGenerateBackendComfyUI() {
       closeWsComfyUI();
   });
 
+  ipcMain.handle('generate-backend-comfyui-take-result', async () => {
+      return await takeComfyUIResult();
+  });
+
   ipcMain.handle('generate-backend-comfyui-cancel', async (event) => {
       await cancelComfyUI();
   });
@@ -2658,6 +2752,28 @@ async function prepareFastModeRun(generateData, settings, remote) {
   return '';
 }
 
+// The recipe and timing a run carries into ComfyUI (backendComfyUI.run): the renderer's
+// recipe with what this run actually sends once Fast mode had its say. null for a job
+// that keeps no recipe (a Parts sample, a run from Python or another client).
+function runRecord(generateData) {
+  if (!generateData?.recipe) return null;
+  const fast = generateData.fastMode ?? null;
+  const recipe = {
+    ...generateData.recipe,
+    run: {
+      ...generateData.recipe.run,
+      sent: {
+        steps: generateData.step,
+        cfg: generateData.cfg,
+        sampler: generateData.sampler,
+        scheduler: generateData.scheduler,
+        fast: fast?.lora ? { lora: fast.lora, strength: fast.strength } : null,
+      },
+    },
+  };
+  return { recipe, before: generateData.timing ?? null };
+}
+
 async function runComfyUI_unguarded(generateData, remote = false) {
   const isBusy = await getMutexBackendBusy();
   if (isBusy) {
@@ -2682,7 +2798,7 @@ async function runComfyUI_unguarded(generateData, remote = false) {
   if(backendComfyUI.uuid !== 'none')
     console.log(CAT, 'Running ComfyUI with uuid:', backendComfyUI.uuid);
 
-  const result = await backendComfyUI.run(workflow);  
+  const result = await backendComfyUI.run(workflow, false, runRecord(generateData));
   return result;
 }
 
@@ -2719,7 +2835,7 @@ async function runComfyUI_Regional_unguarded(generateData, remote = false) {
   
   if(backendComfyUI.uuid !== 'none')
     console.log(CAT, 'Running ComfyUI Regional with uuid:', backendComfyUI.uuid);
-  const result = await backendComfyUI.run(workflow);
+  const result = await backendComfyUI.run(workflow, false, runRecord(generateData));
   return result;
 }
 
@@ -2873,6 +2989,12 @@ function closeWsComfyUI() {
   backendComfyUI.closeWS();
 }
 
+// Where the last image was saved, how long it took and the recipe it carries
+// ({ path, timing, recipe }), or null.
+async function takeComfyUIResult() {
+  return await backendComfyUI.takeResult();
+}
+
 async function cancelComfyUI() {
   console.log(CAT, 'Processing interrupted');
   cancelMark = true;
@@ -2893,6 +3015,7 @@ export {
   runComfyUI_MiraITU,
   openWsComfyUI,
   closeWsComfyUI,
+  takeComfyUIResult,
   cancelComfyUI,
   python_runComfyUI
 };

@@ -17,7 +17,7 @@ const callbacks = read('scripts/renderer/callbacks.js');
 const main = read('main.js');
 
 test('ComfyUI run(): timeout / error handlers resolve instead of throwing on undefined identifiers', () => {
-  const runStart = backend.indexOf('  run(workflow, pythonRun=false) {');
+  const runStart = backend.indexOf('  run(workflow, pythonRun=false, record=null) {');
   const runBody = backend.slice(runStart, backend.indexOf('request.end();', runStart));
   assert.ok(runStart > 0);
   assert.doesNotMatch(runBody, /\$\{timeout\}/, 'must use this.timeout');
@@ -39,7 +39,7 @@ test('network failures recover: blocklist lifts on any response, stale error ove
   const getUrlBody = backend.slice(backend.indexOf('  async getUrl() {'), backend.indexOf('  createWorkflow('));
   assert.match(getUrlBody, /response\.on\('end', \(\) => \{\n\s*\/\/[\s\S]*?delete ComfyUI\.addrBlockList\[this\.addr\];/, 'getUrl lifts the block on response');
   assert.doesNotMatch(getUrlBody.slice(getUrlBody.indexOf("response.on('end'"), getUrlBody.indexOf("request.on('error'")), /addrBlockList\[this\.addr\] = /, 'an HTTP status alone no longer blocks the address');
-  const runStart = backend.indexOf('  run(workflow, pythonRun=false) {');
+  const runStart = backend.indexOf('  run(workflow, pythonRun=false, record=null) {');
   const runBody = backend.slice(runStart, backend.indexOf('request.end();', runStart));
   assert.match(runBody, /delete ComfyUI\.addrBlockList\[this\.addr\];/, 'a reachable /prompt lifts the block too');
 

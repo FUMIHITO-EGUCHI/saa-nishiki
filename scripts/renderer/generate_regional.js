@@ -20,6 +20,7 @@ import { captureRefineEditorSnapshot, refineRequestFields, snapshotFieldsForProm
 import { refineRequestContext } from './tools/refineGenerationResult.js';
 import { createRefineRunController } from './tools/refineRunState.js';
 import { currentLocalLlmEndpoint, isStructuredRefineRequest } from './remoteAI.js';
+import { captureRecipeSections, imageRecord, queuedRecipe, takeImageResult } from './imageRecipe.js';
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 function getCustomJSON(loop=-1){
@@ -841,13 +842,16 @@ export async function seartGenerateRegional(apiInterface, generateData){
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 async function runComfyUI(apiInterface, generateData){
-    function sendToGallery(image, generateData){
+    async function sendToGallery(image, generateData){
         if(!image)  // same prompts from backend will return null
             return;
 
+        // the saved file and the time it took travel beside the image (imageRecipe.js)
+        const record = imageRecord(generateData, generateData.recipe ? await takeImageResult() : null);
+
         if(!keepGallery)
             globalThis.mainGallery.clearGallery();
-        globalThis.mainGallery.appendImageData(image, `${generateData.seed}`, `${generateData.positive_left}\n${generateData.positive_right}`, keepGallery, globalThis.globalSettings.scroll_to_last);
+        globalThis.mainGallery.appendImageData(image, `${generateData.seed}`, `${generateData.positive_left}\n${generateData.positive_right}`, keepGallery, globalThis.globalSettings.scroll_to_last, '', record);
     }
 
     const SETTINGS = globalThis.globalSettings;
@@ -903,7 +907,7 @@ async function runComfyUI(apiInterface, generateData){
                             breakNow = true;
                         }
                     } else {
-                        sendToGallery(image, generateData);
+                        await sendToGallery(image, generateData);
                     }
                 } catch (error){
                     ret = LANG.gr_error_creating_image.replace('{0}',error.message).replace('{1}', apiInterface);
@@ -944,6 +948,7 @@ async function runWebUI(apiInterface, generateData) {
     let breakNow = false;
     let cancelled = false;   // no image was made: the caller must not count it as one
 
+    const posted = Date.now();
     try {
         let result;
         if (globalThis.inBrowser) {
@@ -970,7 +975,7 @@ async function runWebUI(apiInterface, generateData) {
                 } else {
                     if(!keepGallery)
                         globalThis.mainGallery.clearGallery();
-                    globalThis.mainGallery.appendImageData(result, `${generateData.seed}`, `${generateData.positive_left}\nBREAK\n${generateData.positive_right}`, keepGallery, globalThis.globalSettings.scroll_to_last);
+                    globalThis.mainGallery.appendImageData(result, `${generateData.seed}`, `${generateData.positive_left}\nBREAK\n${generateData.positive_right}`, keepGallery, globalThis.globalSettings.scroll_to_last, '', imageRecord(generateData, null, { posted }));
                 }
             }
         }
