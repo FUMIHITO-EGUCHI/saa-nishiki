@@ -367,32 +367,6 @@ body {
     opacity: 1;
 }
 
-/* Switch Mode Button for Gallery */
-#cg-switch-mode-button {
-    left: 10px;
-    background: #3498db;
-}
-
-/* Seed Button for Gallery */
-#cg-seed-button {
-    right: 10px;
-    background: #f39c12;
-}
-
-/* Tag Button for Gallery */
-#cg-tag-button {
-    right: 10px;
-    top: 50px;
-    background: #e74c3c;
-}
-
-/* Info Button for Gallery */
-#cg-info-button {
-    right: 10px;
-    top: 90px;
-    background: #9b59b6;
-}
-
 /* Switch Mode Button for Thumb */
 #cg-thumb-switch-mode-button {
     position: absolute; 

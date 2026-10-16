@@ -23,6 +23,7 @@ import { setupTagAutoCompleteBackend } from './scripts/main/tagAutoComplete_back
 import { setupTagRelatedBackend } from './scripts/main/tagRelated_backend.js';
 import { setupArtistBackend } from './scripts/main/artist_backend.js';
 import { setupPartsBackend } from './scripts/main/parts_backend.js';
+import { setupLibraryBackend } from './scripts/main/library_backend.js';
 import { setupModelApi } from './scripts/main/remoteAI_backend.js';
 import { setupGenerateBackendComfyUI, sendToRenderer } from './scripts/main/generate_backend_comfyui.js';
 import { stopPodSshSession } from './scripts/main/podSshTransport.js';
@@ -112,6 +113,7 @@ async function initializeApp() {
   // after the tag list: the artist index is built from it
   setupArtistBackend();
   setupPartsBackend();
+  setupLibraryBackend();
   setupModelApi();
   setupGenerateBackendComfyUI();
   setupGenerateBackendWebUI();  

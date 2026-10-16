@@ -57,6 +57,9 @@ export const sharedBodyHTML = `
               <div class="ui-card-tools">
                 <div class="gallery-main-latest"></div>
                 <div class="gallery-main-keep"></div>
+                <button type="button" class="viewer-tool-button" id="viewer-grid-toggle" aria-pressed="false" aria-label="Grid view" title="Grid view">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="1.5" width="4.5" height="4.5"></rect><rect x="8" y="1.5" width="4.5" height="4.5"></rect><rect x="1.5" y="8" width="4.5" height="4.5"></rect><rect x="8" y="8" width="4.5" height="4.5"></rect></svg>
+                </button>
                 <span class="gallery-main-header-span" hidden>
                   <span id="gallery-main-span"></span>
                   <img id="gallery-main-toggle" src="scripts/svg/mydropdown-arrow.svg" alt="><" fill="currentColor">
@@ -71,9 +74,11 @@ export const sharedBodyHTML = `
           <div class="image-infobox-container ui-card" id="info-panel">
             <div class="image-infobox-header ui-card-head info-tabs" role="tablist">
               <button type="button" class="info-tab is-active" role="tab" data-info-tab="info" aria-selected="true">Info</button>
+              <button type="button" class="info-tab" role="tab" data-info-tab="prompt" aria-selected="false">Prompt</button>
               <button type="button" class="info-tab" role="tab" data-info-tab="characters" aria-selected="false">Characters</button>
               <button type="button" class="info-tab" role="tab" data-info-tab="ai" aria-selected="false">AI</button>
               <span class="ui-card-tools">
+                <span class="viewer-recipe-badge" id="viewer-recipe-badge" hidden></span>
                 <span class="image-infobox-header-span" hidden>
                   <span id="image-infobox-span"></span>
                   <img id="image-infobox-toggle" src="scripts/svg/mydropdown-arrow.svg" alt="><" fill="currentColor">
@@ -81,7 +86,8 @@ export const sharedBodyHTML = `
               </span>
             </div>
             <div class="info-panels">
-              <div class="info-panel image-infobox-main" data-info-panel="info" role="tabpanel"></div>
+              <div class="info-panel viewer-info" data-info-panel="info" role="tabpanel"></div>
+              <div class="info-panel image-infobox-main" data-info-panel="prompt" role="tabpanel" hidden></div>
               <div class="info-panel gallery-thumb-container" data-info-panel="characters" role="tabpanel" hidden>
                 <div class="gallery-thumb-header" hidden>
                   <div class="gallery-thumb-header-span">

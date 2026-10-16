@@ -708,7 +708,9 @@ function setupLeftPanel() {
     };
     let stored = null;
     try { stored = Number(localStorage.getItem('saa.infoHeight')); } catch { /* ignore */ }
-    setHeight(Number.isFinite(stored) && stored > 0 ? stored : 200);
+    // the Info tab (viewerInfo.js) needs room for the time legend beside the recipe
+    const DEFAULT_HEIGHT = 300;
+    setHeight(Number.isFinite(stored) && stored > 0 ? stored : DEFAULT_HEIGHT);
     if (splitter) {
         let dragging = false;
         let startY = 0;
@@ -733,7 +735,7 @@ function setupLeftPanel() {
             const current = panel.getBoundingClientRect().height;
             setHeight(current + (event.key === 'ArrowUp' ? 24 : -24));
         });
-        splitter.addEventListener('dblclick', () => setHeight(200));
+        splitter.addEventListener('dblclick', () => setHeight(DEFAULT_HEIGHT));
     }
 
     const status = document.getElementById('viewer-status');
@@ -743,8 +745,8 @@ function setupLeftPanel() {
         const rendered = document.querySelectorAll('.gallery-main-main .cg-gallery-image, .gallery-main-main .cg-preview-image');
         const count = rendered.length;
         if (count === 0) { status.textContent = ''; return; }
-        const last = globalThis.generate?.lastSeed;
-        status.textContent = `${count} ${uiText(count === 1 ? 'ui_viewer_image' : 'ui_viewer_images', count === 1 ? 'image' : 'images')}${Number.isFinite(last) && last >= 0 ? ` · seed ${last}` : ''}`;
+        // the seed of each image is in the Info tab
+        status.textContent = `${count} ${uiText(count === 1 ? 'ui_viewer_image' : 'ui_viewer_images', count === 1 ? 'image' : 'images')}`;
     }
     refreshViewerStatus();
 

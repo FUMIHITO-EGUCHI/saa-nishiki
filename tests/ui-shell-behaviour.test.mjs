@@ -756,7 +756,7 @@ test('the large view mirrors the pending summary and proxies its buttons', async
 
 // ------------------------------------------------------------------ viewer status
 
-test('the viewer line counts the rendered images and names the last seed', async () => {
+test('the viewer line counts the rendered images (the seed is in the Info tab)', async () => {
     await withShell(async ({ document, dom, shell }) => {
         assert.equal(dom.viewerStatus.textContent, '');
         const main = document.querySelector('.gallery-main-main');
@@ -766,7 +766,7 @@ test('the viewer line counts the rendered images and names the last seed', async
 
         main.appendChild(el(document, 'img', { class: 'cg-gallery-image' }));
         globalThis.mainGallery.appendImageData('data:image/png;base64,AA', '77', []);
-        assert.equal(dom.viewerStatus.textContent, `2 ${EN.ui_viewer_images} · seed 77`);
+        assert.equal(dom.viewerStatus.textContent, `2 ${EN.ui_viewer_images}`);
     });
 });
 

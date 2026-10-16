@@ -136,39 +136,6 @@ test('a jpeg keeps its own type, and anything that is not an image data: URL is 
     });
 });
 
-test('the gallery Info button opens Image Info on the selected image, named after its seed', async () => {
-    await withFakeDom(async document => {
-        baseGlobals();
-        const opened = [];
-        const shown = [];
-        globalThis.api = { readBase64Image: async () => ({ metadata: { parameters: 'embedded' } }) };
-        globalThis.infoBox = { image: { setValue() {} } };
-        globalThis.imageInfo = { openImage: async (...args) => { opened.push(args); return true; } };
-        globalThis.overlay = {
-            custom: { createCustomOverlay: (...args) => shown.push(args), closeCustomOverlaysByGroup() {} },
-        };
-
-        const container = document.createElement('div');
-        container.className = 'custom-gallery';
-        document.body.appendChild(container);
-        globalThis.mainGallery = {};
-        setupGallery('custom-gallery');
-        globalThis.mainGallery.appendImageData(`data:image/png;base64,${PIXELS}`, '4242', '', 'True', true);
-
-        document.getElementById('cg-info-button').click();
-        await flush();
-        assert.deepEqual(opened, [[`data:image/png;base64,${PIXELS}`, 'gallery_4242.png']]);
-        assert.deepEqual(shown, [], 'Image Info took it: no metadata text overlay');
-
-        // Image Info could not take it: the metadata text is shown instead
-        globalThis.imageInfo.openImage = async () => { throw new Error('no window'); };
-        document.getElementById('cg-info-button').click();
-        await flush();
-        assert.equal(shown.length, 1);
-        assert.equal(shown[0][1], '\n\nembedded');
-    }, extras);
-});
-
 test('the image context menus open Image Info in split, grid and full screen', async () => {
     await withMenu(async ({ opened, openOn }) => {
         for (const [className, expected] of [

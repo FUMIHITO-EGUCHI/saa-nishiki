@@ -38,6 +38,7 @@ import { setupUiShell } from './renderer/uiShell.js';
 import { setupListManager } from './renderer/listManager.js';
 import { loadParts } from './renderer/partsClient.js';
 import { setupPartsUi } from './renderer/partsUi.js';
+import { setupViewerInfo } from './renderer/viewerInfo.js';
 import { filterPrompts } from './renderer/tools/promptFilter.js';
 import { setupRightClickMenu, addSpellCheckSuggestions } from './renderer/components/myRightClickMenu.js';
 import { extractHostPort } from './renderer/generate.js';
@@ -819,6 +820,9 @@ async function init(){
 
         // 2026-08-30 layout glue (pipeline rows, AI card, run bar, left panel, status pills)
         setupUiShell();
+
+        // the viewer's Info tab: time and recipe of the image on show
+        setupViewerInfo();
 
         // Parts: the document the chips and the prompt expand from
         loadParts();
