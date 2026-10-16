@@ -161,6 +161,12 @@ contextBridge.exposeInMainWorld('api', {
   libraryThumbs: async (paths) => ipcRenderer.invoke('library-thumbs', paths),
   libraryImage: async (file) => ipcRenderer.invoke('library-image', file),
   libraryTrash: async (file) => ipcRenderer.invoke('library-trash', file),
+  libraryLoraUses: async (label) => ipcRenderer.invoke('library-lora-uses', label),
+  loraCatalog: async () => ipcRenderer.invoke('lora-catalog'),
+  loraApply: async (change) => ipcRenderer.invoke('lora-apply', change),
+  loraAddSample: async (name, meta, dataUrl) => ipcRenderer.invoke('lora-add-sample', name, meta, dataUrl),
+  loraSampleImage: async (name, sampleId) => ipcRenderer.invoke('lora-sample-image', name, sampleId),
+  loraCivitai: async (name) => ipcRenderer.invoke('lora-civitai', name),
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),

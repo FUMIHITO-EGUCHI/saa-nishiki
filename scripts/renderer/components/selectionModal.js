@@ -249,6 +249,8 @@ export function createSelectionModal({
             categories: Array.isArray(tab.categories) ? tab.categories : [],
             defaultCategory: typeof tab.defaultCategory === 'string' ? tab.defaultCategory : '',
             attributes: Array.isArray(tab.attributes) ? tab.attributes : [],
+            // the attribute the tab opens on (the LoRA tab: the ones that fit the model)
+            defaultAttribute: typeof tab.defaultAttribute === 'string' ? tab.defaultAttribute : '',
             categoryLabel: tab.categoryLabel ?? 'Category',
             attributeLabel: tab.attributeLabel ?? 'Attribute',
             categoryAll: tab.categoryAll ?? 'All categories',
@@ -668,7 +670,9 @@ export function createSelectionModal({
             && (activeConfig.categories ?? []).some(entry => (typeof entry === 'string' ? entry : entry?.value) === activeConfig.defaultCategory);
         categorySelect.value = preset && !activeConfig.rail ? activeConfig.defaultCategory : '';
         railCategory = preset && activeConfig.rail ? activeConfig.defaultCategory : '';
-        attributeSelect.value = '';
+        const presetAttribute = typeof activeConfig.defaultAttribute === 'string' && activeConfig.defaultAttribute !== ''
+            && (activeConfig.attributes ?? []).some(entry => (typeof entry === 'string' ? entry : entry?.value) === activeConfig.defaultAttribute);
+        attributeSelect.value = presetAttribute ? activeConfig.defaultAttribute : '';
         renderSortSelect();
         renderSizeSegment();
         listbox.classList.toggle('is-grid', activeConfig.view === 'grid');

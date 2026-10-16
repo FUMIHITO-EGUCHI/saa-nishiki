@@ -1094,7 +1094,9 @@ export function getImageSavePrefix(apiInterface, character_prefix) {
 const partsSampleHandlers = new Map();
 let partsSampleSequence = 0;
 
-export function attachPartsSampleJob({ label = 'Sample', key = '', positive = '', negative = '', seed = 3, width = 512, height = 704, steps = null, cfg = null, sampler = null, scheduler = null, onImage = null, onDone = null } = {}) {
+// `prefix` is the ComfyUI output folder the saver writes the sample's own copy to (a LoRA
+// sample, loraUi.js, goes to lora-samples/).
+export function attachPartsSampleJob({ label = 'Sample', key = '', positive = '', negative = '', seed = 3, width = 512, height = 704, steps = null, cfg = null, sampler = null, scheduler = null, prefix = 'parts-samples/%date', onImage = null, onDone = null } = {}) {
     const apiInterface = globalThis.generate.api_interface.getValue();
     if (apiInterface !== 'ComfyUI') return false;
     const SETTINGS = globalThis.globalSettings;
@@ -1154,7 +1156,7 @@ export function attachPartsSampleJob({ label = 'Sample', key = '', positive = ''
                 clip_device: globalThis.dropdownList.textencoder_device.getValue(),
             },
         }),
-        img_prefix: 'parts-samples/%date',
+        img_prefix: prefix,
     };
     globalThis.queueManager.attach([label, positive], generateData);
     if (SETTINGS.generate_auto_start && !globalThis.inGenerating) startQueue();

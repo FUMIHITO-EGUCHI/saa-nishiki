@@ -41,6 +41,7 @@ import { setupPartsUi } from './renderer/partsUi.js';
 import { setupViewerInfo } from './renderer/viewerInfo.js';
 import { setupUseSettings } from './renderer/useSettingsDialog.js';
 import { setupLibrary } from './renderer/libraryWindow.js';
+import { setupLoraUi } from './renderer/loraUi.js';
 import { filterPrompts } from './renderer/tools/promptFilter.js';
 import { setupRightClickMenu, addSpellCheckSuggestions } from './renderer/components/myRightClickMenu.js';
 import { extractHostPort } from './renderer/generate.js';
@@ -541,6 +542,8 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
     // Parts ("parts:<name>" tag bundles): the picker / card / editor the Scene rows and
     // the chips open; before the fields, whose rows ask for it as they are built
     setupPartsUi();
+    // the LoRA tab of the rows' tag modal
+    setupLoraUi();
     globalThis.prompt.tagCapsuleFields = setupTagCapsuleFields([
         globalThis.prompt.common,
         globalThis.prompt.views,

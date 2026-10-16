@@ -2915,3 +2915,61 @@ html, body {
 .library-button { min-height: 32px; border: 1px solid var(--saa-border-ctl); border-radius: 6px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; cursor: pointer; }
 .library-button:hover { background: var(--saa-bg-hover); }
 .library-button.is-danger { border-color: color-mix(in srgb, var(--saa-danger) 45%, var(--saa-border-ctl)); color: var(--saa-danger); }
+
+/* ---- the LoRA tab (loraUi.js) ---- */
+.lora-tile-body { display: contents; }
+.lora-tile-picture { position: relative; display: block; }
+.lora-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; border-radius: 5px; overflow: hidden; }
+.lora-grid.is-large { gap: 4px; border-radius: 0; overflow: visible; }
+.lora-cell { display: block; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; }
+button.lora-cell { cursor: pointer; }
+.lora-cell-frame { position: relative; display: block; width: 100%; aspect-ratio: 8 / 11; background: var(--saa-bg-field); overflow: hidden; }
+.lora-grid.is-large .lora-cell-frame { box-sizing: border-box; border: 1px solid var(--saa-border); border-radius: 4px; }
+.lora-grid.is-large .lora-cell.is-default .lora-cell-frame { border: 2px solid var(--saa-accent); }
+.lora-cell-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.lora-cell-image:not([src]) { visibility: hidden; }
+.lora-cell-weight { position: absolute; left: 2px; top: 2px; padding: 0 4px; border-radius: 3px; background: rgba(0, 0, 0, 0.55); font-size: 10px; color: #e6e7ea; font-variant-numeric: tabular-nums; }
+.lora-grid-missing { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--saa-bg-app) 82%, transparent); color: var(--saa-muted); font-size: 11px; }
+.lora-tile-star { position: absolute; top: 2px; right: 5px; color: #e0a72f; font-size: 13px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); }
+.lora-tile-name { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lora-tile-meta { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 11px; color: var(--saa-muted); }
+.lora-base-badge { flex: none; padding: 0 6px; border: 1px solid var(--saa-border); border-radius: 4px; }
+.lora-tile-trigger { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--saa-accent); }
+.lora-tile-trigger.is-none { color: var(--saa-warn); }
+.selection-modal-panel:has(.lora-panel) { flex-basis: 380px; max-height: none; overflow-x: hidden; }
+.lora-panel { display: flex; flex-direction: column; gap: 12px; }
+.lora-panel-empty { margin: 0; color: var(--saa-muted); }
+.lora-panel-head { display: flex; flex-direction: column; gap: 2px; }
+.lora-panel-name { margin: 0; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.lora-panel-sub { font-size: 11.5px; color: var(--saa-muted); }
+.lora-category { padding: 0; border: 0; background: transparent; color: var(--saa-muted); font: inherit; font-size: 11.5px; cursor: pointer; }
+.lora-panel .lora-grid.is-large { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.lora-range { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: var(--saa-muted); }
+.lora-range-label { display: flex; align-items: center; gap: 6px; }
+.lora-range-input { width: 58px; height: 28px; padding: 0 6px; border: 1px solid var(--saa-border-ctl); border-radius: 4px; background: var(--saa-bg-field); color: var(--saa-text); font: inherit; box-sizing: border-box; }
+.lora-range-src { padding: 1px 7px; border-radius: 4px; background: var(--saa-bg-control); font-size: 11px; }
+.lora-range-src.is-Civitai { background: color-mix(in srgb, var(--saa-accent) 18%, transparent); color: var(--saa-accent); }
+.lora-spacer { flex: 1 1 auto; }
+.lora-button { min-height: 28px; padding: 0 10px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; font-size: 12px; cursor: pointer; }
+.lora-button:hover:not(:disabled) { background: var(--saa-bg-hover); }
+.lora-button:disabled { opacity: 0.5; cursor: default; }
+.lora-panel-section { display: flex; flex-direction: column; gap: 6px; }
+.lora-panel-label { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--saa-muted); }
+.lora-words { display: flex; flex-wrap: wrap; gap: 6px; }
+.lora-word { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 9px; border: 1px solid var(--saa-accent); border-radius: 12px; background: color-mix(in srgb, var(--saa-accent) 16%, transparent); color: var(--saa-text); font-size: 12px; }
+.lora-word-remove { width: 16px; height: 16px; padding: 0; border: 0; background: transparent; color: var(--saa-accent); cursor: pointer; }
+.lora-word-offer { padding: 3px 9px; border: 1px dashed var(--saa-border-strong); border-radius: 12px; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 12px; cursor: pointer; }
+.lora-word-offer.is-ask { color: var(--saa-muted); }
+.lora-default { display: flex; flex-direction: column; gap: 6px; }
+.lora-default-value { color: var(--saa-text); font-variant-numeric: tabular-nums; }
+.lora-default-slider { width: 100%; accent-color: var(--saa-accent); }
+.lora-uses-count { color: var(--saa-accent); }
+.lora-uses-thumbs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.lora-uses-thumbs:empty { display: none; }
+.lora-uses-thumb { display: block; width: 100%; aspect-ratio: 832 / 1216; object-fit: cover; border-radius: 4px; background: var(--saa-bg-field); }
+.lora-panel-file { margin: 0; font-size: 11.5px; color: var(--saa-muted); line-height: 1.5; word-break: break-all; }
+.lora-panel-actions { display: flex; gap: 8px; margin-top: auto; }
+.lora-panel-actions .lora-add { flex: 1 1 auto; min-height: 34px; }
+.lora-panel-actions .lora-add.is-selected { opacity: 0.85; }
+.selection-modal-chip.is-lora { border-color: #8b5cf6; }
+.selection-modal-chip.is-lora .selection-modal-chip-prefix { margin-right: 3px; color: #c084fc; font-size: 0.85em; }

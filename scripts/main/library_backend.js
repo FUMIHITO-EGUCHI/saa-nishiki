@@ -123,6 +123,14 @@ async function thumbnailFor(entry) {
     return `data:image/jpeg;base64,${jpeg.toString('base64')}`;
 }
 
+/** The images made with a LoRA (its label): { total, recent } - the five newest paths. */
+export async function libraryLoraUses(label) {
+    const name = String(label ?? '');
+    if (!name) return { total: 0, recent: [] };
+    const entries = (await getIndex().all(await libraryRoots())).filter(entry => entry.loras.includes(name)).sort(newestFirst);
+    return { total: entries.length, recent: entries.slice(0, 5).map(entry => entry.path) };
+}
+
 /** Thumbnails of the given images: { path: dataUrl }. */
 export async function libraryThumbs(paths = []) {
     const result = {};
@@ -171,5 +179,6 @@ export function setupLibraryBackend() {
     ipcMain.handle('library-thumbs', async (event, paths) => libraryThumbs(paths));
     ipcMain.handle('library-image', async (event, file) => libraryImage(file));
     ipcMain.handle('library-trash', async (event, file) => libraryTrash(file));
+    ipcMain.handle('library-lora-uses', async (event, label) => libraryLoraUses(label));
     return true;
 }

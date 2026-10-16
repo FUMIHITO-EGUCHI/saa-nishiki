@@ -24,6 +24,7 @@ import { tagReload, tagGet, tagSearch, tagLookup, getTagAliases } from '../../ma
 import { getRelatedTags, hasRelatedDictionary } from '../../main/tagRelated_backend.js';
 import { getArtistProfile, hasArtistProfiles, searchArtists } from '../../main/artist_backend.js';
 import { addPartSample, applyParts, getPartsDoc, readPartSample } from '../../main/parts_backend.js';
+import { loraAddSample, loraApply, loraCatalogView, loraCivitai, loraSampleImage } from '../../main/lora_backend.js';
 import { runComfyUI, runComfyUI_Regional, runComfyUI_ControlNet, runComfyUI_MiraITU, 
     openWsComfyUI, closeWsComfyUI, takeComfyUIResult, cancelComfyUI, python_runComfyUI } from '../../main/generate_backend_comfyui.js';
 import { runWebUI, runWebUI_Regional, cancelWebUI, startPollingWebUI, stopPollingWebUI, runWebUI_ControlNet, python_runWebUI,
@@ -532,6 +533,11 @@ const methodHandlers = {
   'runComfyUI_MiraITU': (params)=> runComfyUI_MiraITU(...params),
   'openWsComfyUI': (params)=> openWsComfyUI(...params),
   'closeWsComfyUI': ()=> closeWsComfyUI(),
+  'loraCatalog': () => loraCatalogView(),
+  'loraApply': (params) => loraApply(...params),
+  'loraAddSample': (params) => loraAddSample(...params),
+  'loraSampleImage': (params) => loraSampleImage(...params),
+  'loraCivitai': (params) => loraCivitai(...params),
   'takeComfyUIResult': ()=> takeComfyUIResult(),
   'cancelComfyUI': ()=> cancelComfyUI(),
 
