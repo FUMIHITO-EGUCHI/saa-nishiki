@@ -2093,7 +2093,7 @@ body {
 .list-manager-edit-pick { display: flex; }
 .list-manager-edit-thumb { display: flex; align-items: center; gap: 8px; }
 .list-manager-edit-thumb-status { font-size: 11px; color: var(--saa-ok); }
-.list-manager-edit-buttons { display: flex; gap: 8px; }
+.list-manager-edit-buttons { display: flex; gap: 8px; justify-content: flex-end; }
 
 /* ---- AI card ---- */
 .ai-card { border: 1px solid var(--saa-border); border-radius: 8px; background: var(--saa-bg-panel); overflow: hidden; }
@@ -2337,6 +2337,7 @@ body {
 .ai-result-modal-actions { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
 .ai-result-modal-actions button { height: 26px; padding: 0 12px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font-size: 12px; cursor: pointer; }
 .ai-result-modal-actions button:hover { background: var(--saa-bg-hover); }
+.ai-result-modal-actions .ai-result-modal-copy { margin-right: auto; }
 
 /* Positive / Negative frames around the prompt fields; per-field collapsing */
 .prompt-group { display: flex; flex-direction: column; gap: 12px; padding: 8px 10px 12px; border: 1px solid var(--saa-border); border-radius: 8px; background: transparent; }

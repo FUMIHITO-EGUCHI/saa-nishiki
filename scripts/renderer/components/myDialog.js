@@ -38,6 +38,18 @@ function createButtonContainer(name) {
     return buttonContainer;
 }
 
+// cancel on the left, the primary button on the right, the row right-aligned (the app-wide order)
+function createButtonRow(...names) {
+    const row = document.createElement('div');
+    row.className = 'dialog-button-row';
+    row.style.display = 'flex';
+    row.style.justifyContent = 'flex-end';
+    row.style.gap = '10px';
+    row.style.marginTop = '10px';
+    row.append(...names.map(createButtonContainer));
+    return row;
+}
+
 function setBlur() {
     if (blurBackdrop) {
         blurBackdrop.style.display = 'block';
@@ -111,15 +123,7 @@ function showDialog(type, options = {}) {
                     (value) => { result = value; }
                 );
 
-                const buttonContainerOk = createButtonContainer(`ok`);
-                buttonContainerOk.style.marginTop = '10px';
-                dialog.appendChild(buttonContainerOk);
-
-                if(showCancel) {
-                    const buttonContainerCancel = createButtonContainer(`cancel`);                
-                    buttonContainerCancel.style.marginTop = '10px';                
-                    dialog.appendChild(buttonContainerCancel);
-                }
+                dialog.appendChild(createButtonRow(...(showCancel ? ['cancel'] : []), 'ok'));
                 
                 setupButtons(
                     `dialog-button-container-ok`,
@@ -210,12 +214,7 @@ function showDialog(type, options = {}) {
                 const { message = 'Are you sure?', yesText = 'Yes', noText = 'No' } = options;
                 dialog.appendChild(createMessageElement(message));
 
-                const buttonContainerYes = createButtonContainer(`yes`);
-                const buttonContainerNo = createButtonContainer(`no`);
-                buttonContainerYes.style.marginTop = '10px';
-                buttonContainerNo.style.marginTop = '10px';
-                dialog.appendChild(buttonContainerYes);
-                dialog.appendChild(buttonContainerNo);
+                dialog.appendChild(createButtonRow('no', 'yes'));
                 setupButtons(
                     `dialog-button-container-yes`,
                     yesText,

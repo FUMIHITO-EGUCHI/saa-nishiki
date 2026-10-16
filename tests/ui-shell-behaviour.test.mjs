@@ -676,8 +676,8 @@ test('the Refine review shows the model answer as text, never as markup', async 
         assert.equal(status.getAttribute('aria-live'), 'polite');
         assert.equal(status.textContent, 'Pending editor update');
         assert.deepEqual(pending.querySelectorAll('.ai-refine-actions button').map(node => [node.type, node.textContent]), [
-            ['button', 'Apply to prompt'],
             ['button', 'Discard'],
+            ['button', 'Apply to prompt'],
         ]);
     });
 });
@@ -689,13 +689,13 @@ test('Apply reports what the editor did, and a refused apply leaves the buttons 
         const buttons = () => pendingOf(dom).querySelectorAll('.ai-refine-actions button');
         const status = () => pendingOf(dom).querySelector('.ai-refine-status').textContent;
 
-        buttons()[0].click();
+        buttons()[1].click();
         await tick();
         assert.equal(status(), 'Not applied: prompt changed after this run started');
         assert.deepEqual(buttons().map(node => node.disabled), [false, false], 'the run can be applied again');
 
         answer = { status: 'applied', discardedPlans: 2 };
-        buttons()[0].click();
+        buttons()[1].click();
         await tick();
         assert.equal(status(), 'Applied · 2 incompatible Weight Plan(s) removed');
         assert.equal(pendingOf(dom).querySelector('.ai-refine-actions'), null, 'an applied run offers nothing more');
@@ -707,7 +707,7 @@ test('only the newest Refine run is actionable, and Discard takes the panel away
         const applied = [];
         const discarded = [];
         globalThis.infoPanel.showRefinePending({ runId: 'old', text: 'old', onApply: async () => { applied.push('old'); return { status: 'applied' }; } });
-        const oldApply = pendingOf(dom).querySelectorAll('.ai-refine-actions button')[0];
+        const oldApply = pendingOf(dom).querySelectorAll('.ai-refine-actions button')[1];
 
         globalThis.infoPanel.showRefinePending({ runId: 'new', text: 'new', onApply: async () => { applied.push('new'); return { status: 'applied' }; }, onDiscard: () => discarded.push('new') });
         assert.equal(dom.aiInfoPanel.querySelectorAll('.ai-refine-pending').length, 1, 'the older panel is replaced');
@@ -717,7 +717,7 @@ test('only the newest Refine run is actionable, and Discard takes the panel away
         await tick();
         assert.deepEqual(applied, [], 'the button of the superseded run does nothing');
 
-        pendingOf(dom).querySelectorAll('.ai-refine-actions button')[1].click();
+        pendingOf(dom).querySelectorAll('.ai-refine-actions button')[0].click();
         await tick();
         assert.deepEqual(discarded, ['new']);
         assert.equal(pendingOf(dom), null);
@@ -746,8 +746,8 @@ test('the large view mirrors the pending summary and proxies its buttons', async
         assert.deepEqual(body.children, [], 'the large view is text too');
 
         const actions = backdrop.querySelectorAll('.ai-result-modal-actions button');
-        assert.deepEqual(actions.map(node => node.textContent), ['Copy', 'Apply to prompt', 'Discard']);
-        actions[1].click();
+        assert.deepEqual(actions.map(node => node.textContent), ['Copy', 'Discard', 'Apply to prompt']);
+        actions[2].click();
         await tick();
         assert.deepEqual(applied, ['apply'], 'the proxy presses the button in the panel');
         assert.equal(document.body.querySelector('.ai-result-modal-backdrop'), null, 'and the modal closes behind it');

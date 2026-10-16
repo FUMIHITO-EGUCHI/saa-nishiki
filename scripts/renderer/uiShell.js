@@ -601,6 +601,7 @@ function setupLeftPanel() {
         actions.className = 'ai-result-modal-actions';
         const copy = document.createElement('button');
         copy.type = 'button';
+        copy.className = 'ai-result-modal-copy';
         copy.textContent = 'Copy';
         copy.addEventListener('click', async () => {
             try {
@@ -688,7 +689,7 @@ function setupLeftPanel() {
                 container.remove();
                 onDiscard?.();
             });
-            actions.append(apply, discard);
+            actions.append(discard, apply);
             container.append(actions);
         }
         aiPanel.append(container);

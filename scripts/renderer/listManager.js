@@ -312,7 +312,7 @@ export function setupListManager() {
         const cancel = el('button', 'list-manager-button', text('ui_lists_edit_cancel', 'Cancel'));
         cancel.type = 'button';
         cancel.addEventListener('click', () => { state.editing = null; render(); });
-        buttons.append(save, cancel);
+        buttons.append(cancel, save);
         form.append(buttons);
         body.append(form);
         nameInput.disabled ? tagInput?.focus() : nameInput.focus();

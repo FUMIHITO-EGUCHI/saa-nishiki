@@ -29,7 +29,7 @@
 }
 .ai-refine-status { color: var(--saa-text); font-size: 12px; font-weight: 600; }
 .ai-refine-summary { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--saa-muted2); font: 11.5px/1.5 Consolas, "Cascadia Mono", monospace; }
-.ai-refine-actions { display: flex; gap: 8px; }
+.ai-refine-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .ai-refine-actions button { min-height: 30px; padding: 4px 10px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); cursor: pointer; }
 .ai-refine-actions button:focus-visible { outline: 2px solid var(--saa-accent); outline-offset: 2px; }
 .ai-refine-actions button:disabled { cursor: wait; opacity: .65; }
