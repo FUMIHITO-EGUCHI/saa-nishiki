@@ -60,6 +60,7 @@ function cleanRun(run = {}) {
         width: finite(run.width),
         height: finite(run.height),
         interface: text(run.interface),
+        click: text(run.click),
         regional: run.regional === true,
         characters: Array.isArray(run.characters) ? run.characters.map(key => String(key ?? 'None')) : [],
         names: text(run.names),

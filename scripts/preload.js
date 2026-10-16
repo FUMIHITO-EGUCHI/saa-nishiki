@@ -156,6 +156,11 @@ contextBridge.exposeInMainWorld('api', {
   libraryFavorites: async () => ipcRenderer.invoke('library-favorites'),
   librarySetFavorite: async (file, on) => ipcRenderer.invoke('library-set-favorite', file, on),
   libraryShowInFolder: async (file) => ipcRenderer.invoke('library-show-in-folder', file),
+  libraryRoots: async () => ipcRenderer.invoke('library-roots'),
+  libraryImages: async (query) => ipcRenderer.invoke('library-images', query),
+  libraryThumbs: async (paths) => ipcRenderer.invoke('library-thumbs', paths),
+  libraryImage: async (file) => ipcRenderer.invoke('library-image', file),
+  libraryTrash: async (file) => ipcRenderer.invoke('library-trash', file),
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),

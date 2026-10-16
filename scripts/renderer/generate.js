@@ -1388,6 +1388,8 @@ export async function generateImage(dataPack){
             width,
             height,
             interface: apiInterface,
+            // the images of one click share it (the Library groups a run by it)
+            click: refineRun.runId,
             characters: createPromptResult.characterKeys,
             names: createPromptResult.charactersName,
             positive: createPromptResult.positivePrompt,

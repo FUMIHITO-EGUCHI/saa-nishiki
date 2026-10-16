@@ -1,7 +1,8 @@
 // settings/library.json: what the viewer and the Library keep that the image files do not
-// - the stars. An image is named by its absolute path (compared without case on Windows,
-// whose paths are). Node fs only, no Electron, so it is unit-testable; the same atomic
-// write / .bak discipline as the other stores.
+// - the stars, and a few remembered values (the ComfyUI output folder last seen). An image
+// is named by its absolute path (compared without case on Windows, whose paths are). Node
+// fs only, no Electron, so it is unit-testable; the same atomic write / .bak discipline as
+// the other stores.
 import fs from 'node:fs';
 import path from 'node:path';
 import { readJsonWithFallback, writeJsonAtomic } from './settingsStore.js';
@@ -20,12 +21,14 @@ export function createLibraryStore({ rootDir, saaVersion = '', now = () => new D
         return platform === 'win32' ? resolved.toLowerCase() : resolved;
     };
     let favorites = null;   // Map key -> path as given
+    let values = {};
 
     function load() {
         const { value, source, error } = readJsonWithFallback(file, fsImpl);
         if (error) log?.warn?.(CAT, `${FILE_NAME}: ${error.message}${source ? ` (using ${source})` : ''}`);
         const data = value && typeof value === 'object' && value.section === LIBRARY_SECTION ? value.data : null;
         favorites = new Map();
+        values = data?.values && typeof data.values === 'object' && !Array.isArray(data.values) ? { ...data.values } : {};
         for (const entry of Array.isArray(data?.favorites) ? data.favorites : []) {
             if (typeof entry === 'string' && entry.trim()) favorites.set(keyOf(entry), pathApi.resolve(entry));
         }
@@ -44,7 +47,7 @@ export function createLibraryStore({ rootDir, saaVersion = '', now = () => new D
             section: LIBRARY_SECTION,
             saa_version: saaVersion,
             saved_at: stamp instanceof Date ? stamp.toISOString() : String(stamp),
-            data: { favorites: [...favorites.values()] },
+            data: { favorites: [...favorites.values()], values },
         }, fsImpl);
     }
 
@@ -64,5 +67,17 @@ export function createLibraryStore({ rootDir, saaVersion = '', now = () => new D
         return favorites.has(keyOf(target));
     }
 
-    return { file, load, list, setFavorite, isFavorite };
+    function getValue(key) {
+        if (!favorites) load();
+        return values[key];
+    }
+
+    function setValue(key, value) {
+        if (!favorites) load();
+        if (values[key] === value) return;
+        values = { ...values, [key]: value };
+        save();
+    }
+
+    return { file, load, list, setFavorite, isFavorite, getValue, setValue };
 }

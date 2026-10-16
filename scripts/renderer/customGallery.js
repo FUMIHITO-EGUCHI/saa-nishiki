@@ -208,6 +208,8 @@ if (victim < currentIndex) currentIndex -= 1;
     document.addEventListener(FAVORITES_CHANGED_EVENT, paintStars);
     loadFavorites();
     globalThis.mainGallery.isStarred = isStarred;
+    // the saved files of this session's images, newest first (the Library's "This session")
+    globalThis.mainGallery.sessionPaths = () => records.map(record => record?.path).filter(Boolean).reverse();
     globalThis.mainGallery.toggleStar = () => toggleStar(currentIndex);
 
     // Grid or the single image with its strip; the viewer header's grid button flips it.

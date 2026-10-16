@@ -615,13 +615,15 @@ export async function generateRegionalImage(dataPack){
         globalThis.infoBox.image.clear();
     }
 
+    // the editor as this click found it: every image of the run keeps it in its recipe
+    const recipeSections = captureRecipeSections();
     let prepareError = null;
     for(let loop = 0; loop < loops; loop++){
       try {
         if(globalThis.generate.cancelClicked){
             globalThis.queueManager.removeAll();
             break;
-        }                                
+        }
 
         if(globalThis.generate.skipClicked){
             break;
@@ -757,7 +759,18 @@ export async function generateRegionalImage(dataPack){
 
             img_prefix: getImageSavePrefix(apiInterface, createPromptResult.img_prefix)
         }
-        
+        generateData.recipe = queuedRecipe(recipeSections, {
+            seed: createPromptResult.randomSeed,
+            width,
+            height,
+            interface: apiInterface,
+            regional: true,
+            click: refineRun.runId,
+            names: createPromptResult.charactersName,
+            positive: `${createPromptResult.positivePromptLeft}\n${createPromptResult.positivePromptRight}`,
+            negative: createPromptResult.negativePrompt,
+        });
+
         let finalInfo = `${createPromptResult.finalInfo}\n`;
             finalInfo += `Positive Left:\n${createPromptResult.positivePromptLeftColored}\n`;
             finalInfo += `Positive Right:\n${createPromptResult.positivePromptRightColored}\n`;

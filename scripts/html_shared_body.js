@@ -60,6 +60,10 @@ export const sharedBodyHTML = `
                 <button type="button" class="viewer-tool-button" id="viewer-grid-toggle" aria-pressed="false" aria-label="Grid view" title="Grid view">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="1.5" width="4.5" height="4.5"></rect><rect x="8" y="1.5" width="4.5" height="4.5"></rect><rect x="1.5" y="8" width="4.5" height="4.5"></rect><rect x="8" y="8" width="4.5" height="4.5"></rect></svg>
                 </button>
+                <button type="button" class="viewer-tool-button has-label" id="viewer-library-open">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 1.5h3.5V5M5 10.5H1.5V7M10.5 1.5L7 5M1.5 10.5L5 7"></path></svg>
+                  <span data-ui-text="viewer_library">Library</span>
+                </button>
                 <span class="gallery-main-header-span" hidden>
                   <span id="gallery-main-span"></span>
                   <img id="gallery-main-toggle" src="scripts/svg/mydropdown-arrow.svg" alt="><" fill="currentColor">
