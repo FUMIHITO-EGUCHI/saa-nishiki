@@ -2812,3 +2812,42 @@ html, body {
 .viewer-recipe-actions:empty { display: none; }
 .viewer-primary-button { min-height: 32px; padding: 0 14px; border: none; border-radius: 6px; background: var(--saa-accent); color: #ffffff; font: inherit; font-weight: 600; cursor: pointer; }
 .viewer-primary-button:hover { filter: brightness(1.08); }
+
+/* ---- Use settings… (useSettingsDialog.js) ---- */
+.use-settings-modal .selection-modal-dialog { width: min(980px, calc(100vw - 32px)); max-height: min(900px, calc(100vh - 32px)); }
+.use-settings-modal .dialog-shell-body { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-height: 0; padding: 14px 16px; overflow-y: auto; }
+.use-settings-head { display: flex; align-items: center; gap: 14px; }
+.use-settings-thumb { width: 44px; height: 64px; flex: none; object-fit: cover; border-radius: 4px; }
+.use-settings-sub { font-size: 12px; color: var(--saa-muted); }
+.use-settings-rows { display: flex; flex-direction: column; gap: 10px; }
+.use-settings-grid { display: grid; grid-template-columns: 28px 170px minmax(0, 1fr) minmax(0, 1fr) 80px; gap: 12px; align-items: start; }
+.use-settings-heads { padding: 0 10px; font-size: 11.5px; color: var(--saa-muted); align-items: center; }
+.use-settings-grid input[type="checkbox"] { width: 16px; height: 16px; margin: 2px 0 0 0; accent-color: var(--saa-accent); }
+.use-settings-row { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--saa-border); border-radius: 7px; background: var(--saa-bg-app); }
+.use-settings-row.is-on { background: var(--saa-bg-control); }
+.use-settings-label { font-weight: 600; cursor: pointer; }
+.use-settings-image { color: var(--saa-text); line-height: 1.45; overflow-wrap: anywhere; }
+.use-settings-now { color: var(--saa-muted); line-height: 1.45; overflow-wrap: anywhere; }
+.recipe-status { justify-self: end; padding: 1px 8px; border-radius: 4px; font-size: 11px; white-space: nowrap; }
+.recipe-status.is-same { background: var(--saa-bg-field); color: var(--saa-muted); }
+.recipe-status.is-differs { background: color-mix(in srgb, var(--saa-accent) 18%, transparent); color: var(--saa-accent); }
+.recipe-status.is-new-field { background: color-mix(in srgb, var(--saa-ok) 18%, transparent); color: var(--saa-ok); }
+.recipe-status.is-muted { background: color-mix(in srgb, var(--saa-warn) 18%, transparent); color: var(--saa-warn); }
+.recipe-field-grid { max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-left: 40px; }
+.recipe-field-row { display: grid; grid-template-columns: 170px minmax(0, 1fr) minmax(0, 1fr) 80px; gap: 12px; align-items: start; padding: 6px 0; border-top: 1px solid var(--saa-border); }
+.recipe-field-name { color: var(--saa-muted); font-size: 12.5px; line-height: 24px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recipe-field-chips { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.recipe-field-chips .recipe-chip { padding-left: 9px; cursor: default; max-width: 100%; }
+.recipe-field-chips .recipe-chip:hover { filter: none; }
+.recipe-field-chips .recipe-chip .tag-capsule-chip-name { overflow: hidden; text-overflow: ellipsis; }
+.recipe-field-empty { color: var(--saa-placeholder); line-height: 24px; }
+.recipe-field-row .recipe-status { margin-top: 4px; }
+.recipe-lora-list { display: flex; flex-direction: column; gap: 4px; padding-left: 40px; }
+.recipe-lora-row { display: grid; grid-template-columns: minmax(0, 1fr) 70px 70px 200px; gap: 10px; align-items: center; padding: 5px 8px; border-radius: 5px; background: var(--saa-bg-app); font-size: 12.5px; }
+.recipe-lora-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recipe-lora-weight, .recipe-lora-stage { color: var(--saa-muted); }
+.recipe-lora-state.is-found { color: var(--saa-ok); }
+.recipe-lora-state.is-missing { color: var(--saa-warn); }
+.use-settings-notice { position: fixed; left: 50%; bottom: 40px; z-index: 10001; transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--saa-border-strong); border-radius: 8px; background: var(--saa-bg-panel); color: var(--saa-text); box-shadow: 0 8px 24px var(--saa-shadow); }
+.use-settings-notice-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.use-settings-notice-undo { flex: none; height: 28px; padding: 0 12px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: transparent; color: var(--saa-accent); font: inherit; font-weight: 600; cursor: pointer; }

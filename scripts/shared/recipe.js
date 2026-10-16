@@ -171,6 +171,73 @@ export function recipeSize(recipe) {
 
 // ------------------------------------------------------------------ "parameters"
 
+// the saver writes Civitai's sampler / schedule names; SAA's lists hold ComfyUI's
+const SAMPLER_NAMES = Object.freeze({
+    'euler a': 'euler_ancestral', euler: 'euler', lms: 'lms', heun: 'heun', dpm2: 'dpm_2', 'dpm2 a': 'dpm_2_ancestral',
+    'dpm++ 2s a': 'dpmpp_2s_ancestral', 'dpm++ 2m': 'dpmpp_2m', 'dpm++ sde': 'dpmpp_sde', 'dpm++ 2m sde': 'dpmpp_2m_sde',
+    'dpm++ 3m sde': 'dpmpp_3m_sde', 'dpm fast': 'dpm_fast', 'dpm adaptive': 'dpm_adaptive', ddim: 'ddim', plms: 'plms',
+    unipc: 'uni_pc', lcm: 'lcm',
+});
+
+function comfySampler(name) {
+    const plain = String(name ?? '').trim();
+    const lower = plain.toLowerCase().replace(/ (karras|exponential)$/, '');
+    return SAMPLER_NAMES[lower] ?? plain;
+}
+
+function comfyScheduler(name, sampler) {
+    const plain = String(name ?? '').trim().toLowerCase();
+    if (plain) return plain === 'ddim' ? 'ddim_uniform' : plain.replaceAll(' ', '_');
+    const suffix = /\s(karras|exponential)$/i.exec(String(sampler ?? ''));
+    return suffix ? suffix[1].toLowerCase() : '';
+}
+
+/**
+ * A recipe-shaped stand-in for an image that only has its "parameters" text: the whole
+ * positive prompt in the Positive field (characters included, so the character slots are
+ * emptied), the negative in Negative, the sampler values, size and seed, and the
+ * <lora:…> tags as LoRA rows. `partial: true` marks it. The model is named without its
+ * folder or extension there: it is looked up in `checkpoints` / `diffusion` (the model
+ * lists) and kept when one of them has it.
+ */
+export function recipeFromParameters(text, { checkpoints = [], diffusion = [] } = {}) {
+    const parsed = parseParameters(text);
+    if (!parsed) return null;
+    const generation = {};
+    const app = {};
+    const label = name => String(name ?? '').split(/[\\/]/).pop().replace(/\.[^.]+$/, '').toLowerCase();
+    const wanted = label(parsed.model);
+    const checkpoint = wanted ? checkpoints.find(name => label(name) === wanted) : null;
+    const unet = wanted && !checkpoint ? diffusion.find(name => label(name) === wanted) : null;
+    if (checkpoint) {
+        app.api_model_type = 'Checkpoint';
+        generation.api_model_file_select = checkpoint;
+    } else if (unet) {
+        app.api_model_type = 'Diffusion';
+        generation.api_model_file_diffusion_select = unet;
+    }
+    if (Number.isFinite(parsed.steps)) generation.step = parsed.steps;
+    if (Number.isFinite(parsed.cfg)) generation.cfg = parsed.cfg;
+    if (parsed.sampler) generation.api_model_sampler = comfySampler(parsed.sampler);
+    const scheduler = comfyScheduler(parsed.scheduler, parsed.sampler);
+    if (scheduler) generation.api_model_scheduler = scheduler;
+    if (Number.isFinite(parsed.width) && Number.isFinite(parsed.height)) Object.assign(generation, { width: parsed.width, height: parsed.height, api_image_landscape: false });
+    return {
+        v: RECIPE_VERSION,
+        partial: true,
+        saa: '',
+        created: '',
+        sections: {
+            prompt: { api_prompt: parsed.positive, api_neg_prompt: parsed.negative, character_slots: [{ key: 'None', weight: 1 }], artist_slots: [{ key: '', weight: 1 }] },
+            generation,
+            lora: { lora_slot: parsed.loras.map(row => [row.name, String(row.model), String(row.clip), 'ALL']) },
+            adetailer: {},
+        },
+        app,
+        run: cleanRun({ seed: parsed.seed, width: parsed.width, height: parsed.height, positive: parsed.positive, negative: parsed.negative }),
+    };
+}
+
 const LORA_TAG = /<lora:([^:>]+)(?::([^:>]*))?(?::([^:>]*))?(?::[^>]*)?>/gi;
 
 /**

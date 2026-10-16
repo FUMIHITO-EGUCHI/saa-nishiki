@@ -432,6 +432,22 @@ export function setProseParagraph(text, { key = last?.key } = {}) {
     }
 }
 
+/**
+ * An image's own paragraph, taken back into the cache under the fields it was written
+ * from ("Use settings…" with the Prose row on): the next image with the same fields - the
+ * same tags - sends this text instead of asking for a new one. Different tags ask anew.
+ */
+export function pinProseParagraph({ fields, paragraph } = {}) {
+    const text = String(paragraph ?? '');
+    if (!fields || typeof fields !== 'object' || !text.trim()) return false;
+    const key = proseCacheKey(fields, proseTarget(globalThis.globalSettings ?? {}));
+    remember(cache, key, { prompt: text, original: text });
+    for (const failure of [...failed.keys()]) if (failure.endsWith(`\n${key}`)) failed.delete(failure);
+    last = { key, fields, prompt: text, original: text, edited: false };
+    notify();
+    return true;
+}
+
 export function revertProseParagraph() {
     if (!last) return;
     setProseParagraph(last.original);

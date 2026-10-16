@@ -345,7 +345,7 @@ test('an image keeps its record, and every selection announces the image on show
     await withGallery(async ({ container, gallery, document }) => {
         const seen = [];
         document.addEventListener(VIEWER_SELECT_EVENT, event => seen.push(event.detail));
-        const record = { recipe: { v: 1 }, timing: { total: 10200, segments: [] }, path: 'C:\out\a.png', interface: 'ComfyUI' };
+        const record = { recipe: { v: 1 }, timing: { total: 10200, segments: [] }, path: 'C:\\out\\a.png', interface: 'ComfyUI' };
         gallery.appendImageData(png('a'), '7', 'tag a', 'True', true, '', record);
         gallery.appendImageData(png('b'), '8', 'tag b', 'True', true);
         assert.equal(gallery.currentEntry().record, null, 'an image from elsewhere has no record');

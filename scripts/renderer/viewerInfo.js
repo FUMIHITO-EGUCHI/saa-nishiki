@@ -8,6 +8,7 @@ import { VIEWER_SELECT_EVENT } from './customGallery.js';
 import { showInFolder } from './libraryClient.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { summarizeImage } from '../shared/imageSummary.js';
+import { parseRecipe } from '../shared/recipe.js';
 import { formatDuration } from '../shared/runTiming.js';
 
 export const SEGMENT_COLORS = Object.freeze({
@@ -204,7 +205,8 @@ async function readImageRecords(dataUrl) {
     return result?.metadata ?? null;
 }
 
-// action builders the later parts of the viewer add (Use settings…): (actions, entry, summary) => void
+// action builders the later parts of the viewer add (Use settings…):
+// (actions, { entry, summary, records }) => void, records being { recipe, timing, parameters, path }
 const actionBuilders = [];
 
 /** Adds a button maker for the actions under the recipe. */
@@ -227,20 +229,21 @@ export function setupViewerInfo() {
             if (badge) badge.hidden = true;
             return;
         }
-        let summary;
+        // what is known of the image: { recipe, timing, parameters, path }
+        let records;
         const record = entry.record;
         if (record?.recipe || record?.timing) {
-            summary = summarizeImage({ recipe: record.recipe, timing: record.timing, path: record.path, seed: entry.seed });
+            records = { recipe: record.recipe, timing: record.timing, parameters: '', path: record.path ?? '' };
         } else {
-            summary = summarizeImage({ seed: entry.seed });
             const metadata = await readImageRecords(entry.image).catch(() => null);
             if (mine !== token) return;   // the selection moved on
-            summary = summarizeImage({ recipe: metadata?.saa_recipe, timing: metadata?.saa_time, parameters: metadata?.parameters ?? metadata?.data ?? '', path: record?.path ?? '', seed: entry.seed });
+            records = { recipe: metadata?.saa_recipe ?? null, timing: metadata?.saa_time ?? null, parameters: metadata?.parameters ?? metadata?.data ?? '', path: record?.path ?? '' };
         }
-        const writer = record?.recipe?.run?.prose?.writer ?? '';
+        const summary = summarizeImage({ ...records, seed: entry.seed });
+        const writer = summary.state === 'full' ? (parseRecipe(records.recipe)?.run?.prose?.writer ?? '') : '';
         const actions = renderViewerInfo(panel, summary, { badge, writer });
         for (const build of actionBuilders) {
-            try { build(actions, entry, summary); } catch (error) { console.error('[ViewerInfo] action failed:', error); }
+            try { build(actions, { entry, summary, records }); } catch (error) { console.error('[ViewerInfo] action failed:', error); }
         }
     }
 
