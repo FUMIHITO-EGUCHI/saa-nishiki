@@ -96,13 +96,47 @@ export function modeIconName(mode) {
 export function chipSignature(capsule, options = {}) {
     const plan = normalizeWeightPlan(capsule.weightPlan);
     const part = options.part ? `${options.part.exists ? 1 : 0}:${options.part.count}` : '';
+    const lora = options.lora ? `${options.lora.suggest ?? 0}:${options.lora.from ? 1 : 0}` : '';
     return [capsule.id, capsule.value, plan.mode, plan.min, plan.max, plan.step, plan.seed,
         options.excluded ? 1 : 0, options.favorite ? 1 : 0, capsule.disabled ? 1 : 0, options.status ?? '', part,
-        options.heat ?? ''].join('|');
+        options.heat ?? '', lora].join('|');
+}
+
+const LINK_ICON = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 7l2-2M4.5 4.5L3 6a2 2 0 003 3l1.5-1.5M7.5 7.5L9 6a2 2 0 00-3-3L4.5 4.5"></path></svg>';
+
+// The LoRA marks of a chip (loraUi.js chipInfo): the badge counting the LoRAs suggested
+// for the tag, which opens their popover, and the link mark on a trigger word that came
+// in with a LoRA of the slots.
+function paintLoraMarks(chip, lora) {
+    const from = Boolean(lora?.from);
+    const suggest = Number(lora?.suggest) || 0;
+    chip.classList.toggle('is-from-lora', from);
+    let mark = chip.querySelector('.tag-capsule-chip-from-lora');
+    if (from && !mark) {
+        mark = document.createElement('span');
+        mark.className = 'tag-capsule-chip-from-lora';
+        mark.innerHTML = LINK_ICON;
+        chip.insertBefore(mark, chip.querySelector('.tag-capsule-chip-name'));
+    } else if (!from) {
+        mark?.remove();
+    }
+    let badge = chip.querySelector('.tag-capsule-chip-lora');
+    if (suggest > 0) {
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'tag-capsule-chip-lora';
+            badge.setAttribute('role', 'button');
+            chip.appendChild(badge);
+        }
+        badge.textContent = `LoRA ${suggest}`;
+        badge.setAttribute('aria-label', `LoRAs that know ${chip.querySelector('.tag-capsule-chip-name')?.title ?? ''}`);
+    } else {
+        badge?.remove();
+    }
 }
 
 export function createChip(capsule, options = {}) {
-    const { text, excluded = false, favorite = false, status = '', part = null, heat = null } = options;
+    const { text, excluded = false, favorite = false, status = '', part = null, heat = null, lora = null } = options;
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'tag-capsule-chip';
@@ -128,19 +162,19 @@ export function createChip(capsule, options = {}) {
     chip.appendChild(weight);
     // no × on the chip: a tag is removed from the context menu or with Delete
 
-    updateChip(chip, capsule, { text, excluded, favorite, status, part, heat });
+    updateChip(chip, capsule, { text, excluded, favorite, status, part, heat, lora });
     return chip;
 }
 
 export function updateChip(chip, capsule, options = {}) {
-    const { text, excluded = false, favorite = false, status = '', part = null, heat = null } = options;
+    const { text, excluded = false, favorite = false, status = '', part = null, heat = null, lora = null } = options;
     const plan = normalizeWeightPlan(capsule.weightPlan);
     const kind = chipKind(plan);
     const description = describePlan(plan);
     const modeIcon = modeIconName(plan.mode);
 
     chip.dataset.capsuleId = capsule.id;
-    chip.dataset.signature = chipSignature(capsule, { excluded, favorite, status, part, heat });
+    chip.dataset.signature = chipSignature(capsule, { excluded, favorite, status, part, heat, lora });
     // a "parts:<name>" token: the gold prefix, the name, and the member count at the right
     chip.classList.toggle('is-part', Boolean(part));
     chip.classList.toggle('is-part-missing', Boolean(part) && !part.exists);
@@ -213,13 +247,14 @@ export function updateChip(chip, capsule, options = {}) {
     }
     chip.setAttribute('aria-label', labelParts.join(', '));
     chip.title = titleParts.join(' — ');
+    paintLoraMarks(chip, part ? null : lora);
     return chip;
 }
 
 // Keyed diff: reuses chip elements by capsule id, re-renders only changed ones,
 // and keeps `trailing` (the add-tag slot) as the last child.
 export function renderChips(container, capsules, options = {}) {
-    const { text, excludedSet = new Set(), trailing = null, isFavorite = null, tagStatus = null, tagHeat = null, partInfo = null } = options;
+    const { text, excludedSet = new Set(), trailing = null, isFavorite = null, tagStatus = null, tagHeat = null, partInfo = null, loraInfo = null } = options;
     const existing = new Map();
     for (const child of container.querySelectorAll(':scope > .tag-capsule-chip')) {
         existing.set(child.dataset.capsuleId, child);
@@ -233,12 +268,13 @@ export function renderChips(container, capsules, options = {}) {
         const part = typeof partInfo === 'function' && isPartToken(capsule.value) ? partInfo(capsule.value) : null;
         const status = !part && typeof tagStatus === 'function' ? tagStatus(capsule.value) : '';
         const heat = !part && status === 'known' && typeof tagHeat === 'function' ? tagHeat(capsule.value) : null;
+        const lora = !part && typeof loraInfo === 'function' ? loraInfo(capsule.value) : null;
         let chip = existing.get(capsule.id);
         if (chip) {
             existing.delete(capsule.id);
-            if (chip.dataset.signature !== chipSignature(capsule, { excluded, favorite, status, part, heat })) updateChip(chip, capsule, { text, excluded, favorite, status, part, heat });
+            if (chip.dataset.signature !== chipSignature(capsule, { excluded, favorite, status, part, heat, lora })) updateChip(chip, capsule, { text, excluded, favorite, status, part, heat, lora });
         } else {
-            chip = createChip(capsule, { text, excluded, favorite, status, part, heat });
+            chip = createChip(capsule, { text, excluded, favorite, status, part, heat, lora });
         }
         ordered.push(chip);
     }

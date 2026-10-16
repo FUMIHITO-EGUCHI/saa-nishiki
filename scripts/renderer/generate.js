@@ -582,13 +582,16 @@ function getPrompts(characters, views, ai='', apiInterface = 'None', loop=-1, fi
 }
 
 export function getLoRAs(apiInterface) {
-    const loraData = globalThis.lora.getValues();
+    // the slots, then the LoRAs the prompt's parts carry (loraUi.js: the ones not in a slot
+    // already, on a model of their base unless the part says to use them anyway)
+    const fromParts = (globalThis.loraUi?.partLorasForPrompt?.() ?? []).map(lora => [lora.name, String(lora.weight), String(lora.weight), 'ALL']);
+    const loraData = [...(globalThis.lora.getValues() ?? []), ...fromParts];
     if (!Array.isArray(loraData) || loraData.length === 0 || apiInterface === 'None') {
         return '';
     }
-    
+
     const formattedStrings = [];
-    
+
     for (const slot of loraData) {
         if (!Array.isArray(slot) || slot.length < 4) continue;
         

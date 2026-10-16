@@ -8,10 +8,18 @@
 //
 // Samples are queued like the Parts' (generate.attachPartsSampleJob): six images per
 // LoRA on the current model, behind the user's own jobs.
+//
+// The LoRAs also meet the prompt where it is written: a tag chip that some LoRA is
+// suggested for carries a "LoRA N" badge whose popover shows those LoRAs' grids and adds
+// the chosen one; a trigger word that came in with a LoRA of the slots carries a link
+// mark; and each LoRA slot row lists its trigger words, which switch on and off in the
+// prompt.
 
-import { LORA_CHANGED_EVENT, addLoraSample, askCivitai, changeLora, loadLoraCatalog, loraCatalog, loraEntry, loraSampleImage } from './loraClient.js';
+import { LORA_CHANGED_EVENT, addLoraSample, askCivitai, changeLora, loadLoraCatalog, loraCatalog, loraEntry, loraSampleImage, lorasForTag } from './loraClient.js';
+import { parsePromptToCapsules, serializeCapsules } from './components/tagCapsuleLogic.js';
 import { LORA_SAMPLE_GENERATION, LORA_SAMPLE_SEED, LORA_SAMPLE_SIZE, defaultCell, loraFitsModel, loraSamplePrompt, sampleWeights, samplesForModel, tagKey } from '../shared/loraCatalog.js';
 import { attachPartsSampleJob, partsSampleQueued } from './generate.js';
+import { getPart, partLoras } from './partsClient.js';
 import { showDialog } from './components/myDialog.js';
 
 const CATEGORY_COLORS = Object.freeze({
@@ -394,7 +402,279 @@ export async function addLorasToSlots(names) {
     const persistence = globalThis.settingsPersistence;
     if (persistence?.runEditTransaction) await persistence.runEditTransaction({ source: 'lora-catalog', sections: ['lora'] }, add);
     else await add();
+    document.dispatchEvent(new CustomEvent(LORA_CHANGED_EVENT));
     return [...new Set(entries.flatMap(entry => entry.triggers))];
+}
+
+// ------------------------------------------------------------------ the prompt side
+
+// the rows a LoRA's words belong in: not the negative ones, not Exclude, not the cast list
+const NOT_POSITIVE = new Set(['characters', 'negative', 'negative_left', 'negative_right', 'exclude']);
+
+function positiveRow(fieldKey) {
+    if (!fieldKey || NOT_POSITIVE.has(fieldKey)) return false;
+    const fields = globalThis.globalSettings?.prompt_custom_fields;
+    return !(Array.isArray(fields) && fields.some(field => field?.id === fieldKey && field.polarity === 'negative'));
+}
+
+// the LoRAs of the slots that run (OFF rows do not)
+function slotLoras() {
+    const rows = globalThis.lora?.getValues?.() ?? globalThis.globalSettings?.lora_slot ?? [];
+    return rows.filter(row => Array.isArray(row) && row[0] && row[3] !== 'OFF').map(row => String(row[0]));
+}
+
+/**
+ * A chip's LoRA marks for its row (tagCapsuleField.js): how many LoRAs not yet in the
+ * slots are suggested for the tag, and whether it is a trigger word of a LoRA that is.
+ */
+export function chipInfo(value, fieldKey) {
+    if (!positiveRow(fieldKey)) return null;
+    const key = tagKey(value);
+    if (!key) return null;
+    const inSlots = new Set(slotLoras());
+    const suggest = lorasForTag(key).filter(entry => !inSlots.has(entry.name)).length;
+    const from = [...inSlots].some(name => loraEntry(name)?.triggers.includes(key));
+    return suggest || from ? { suggest, from } : null;
+}
+
+// whether a part's LoRA goes with it on the model in use
+function partLoraRuns(part, lora) {
+    if (part?.otherBase === 'use') return true;
+    const entry = loraEntry(lora.name);
+    return !entry || loraFitsModel(entry.base, modelType());
+}
+
+/** The trigger words a part adds when it is expanded (partsClient.js). */
+export function partTriggers(part) {
+    const words = [];
+    for (const lora of part?.loras ?? []) {
+        if (!partLoraRuns(part, lora)) continue;
+        for (const word of loraEntry(lora.name)?.triggers ?? []) if (!words.includes(word)) words.push(word);
+    }
+    return words;
+}
+
+function fieldMuted(id) {
+    const settings = globalThis.globalSettings ?? {};
+    const custom = (settings.prompt_custom_fields ?? []).find(field => field?.id === id);
+    if (custom) return custom.muted === true;
+    return Array.isArray(settings.prompt_field_muted) && settings.prompt_field_muted.includes(id);
+}
+
+/**
+ * The LoRAs the parts in the positive rows bring to a run, as LoRA rows: those not in a
+ * slot already, and only on a model of their base unless the part says otherwise.
+ */
+export function partLorasForPrompt() {
+    const inSlots = new Set((globalThis.lora?.getValues?.() ?? []).map(row => String(row?.[0] ?? '')));
+    const found = new Map();
+    for (const { id, control } of positiveControls()) {
+        if (fieldMuted(id)) continue;
+        for (const lora of partLoras(String(control.getValue() ?? ''))) {
+            if (inSlots.has(lora.name) || found.has(lora.name)) continue;
+            const part = getPart(lora.part);
+            if (partLoraRuns(part, lora)) found.set(lora.name, lora);
+        }
+    }
+    return [...found.values()];
+}
+
+// where a slot's LoRA came from, for its row ("tag: multiple views"); this session only
+const origins = new Map();
+
+function notifySlots() {
+    document.dispatchEvent(new CustomEvent(LORA_CHANGED_EVENT));
+}
+
+// a row's prompt control (built-in by its key, a custom field by its id)
+function rowControl(fieldKey) {
+    return globalThis.prompt?.[fieldKey] ?? null;
+}
+
+function addWordsToRow(fieldKey, words) {
+    const control = rowControl(fieldKey);
+    if (!control?.getValue || !control.commitValue || words.length === 0) return;
+    const text = String(control.getValue() ?? '');
+    const present = new Set(parsePromptToCapsules(text).map(capsule => tagKey(capsule.value)));
+    const missing = words.filter(word => !present.has(tagKey(word)));
+    if (missing.length === 0) return;
+    const trimmed = text.replace(/[\s,]+$/, '');
+    control.commitValue(trimmed ? `${trimmed}, ${missing.join(', ')}` : missing.join(', '));
+}
+
+let popover = null;
+
+function closePopover() {
+    popover?.remove();
+    popover = null;
+    document.removeEventListener('pointerdown', outsidePopover, true);
+    document.removeEventListener('keydown', popoverKey, true);
+}
+
+function outsidePopover(event) {
+    if (popover && !popover.contains(event.target)) closePopover();
+}
+
+function popoverKey(event) {
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        closePopover();
+    }
+}
+
+/** The popover under a chip's "LoRA N" badge: the LoRAs suggested for `tag`, one picked to add. */
+export function openTagPopover({ tag, anchor, fieldKey }) {
+    closePopover();
+    const inSlots = new Set(slotLoras());
+    const entries = lorasForTag(tag).filter(entry => !inSlots.has(entry.name));
+    if (entries.length === 0) return;
+    let picked = entries[0].name;
+    const box = element('div', 'lora-popover');
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-label', `${text('lora_popover_title', 'LoRAs that know')} ${tag}`);
+    box.append(element('span', 'lora-popover-title', `“${tag}”`));
+    const body = element('div', 'lora-popover-body');
+    const list = element('div', 'lora-popover-list');
+    list.setAttribute('role', 'radiogroup');
+    const gridHolder = element('div', 'lora-popover-grid');
+    const add = button('viewer-primary-button lora-popover-add', '', async () => {
+        const entry = loraEntry(picked);
+        if (!entry) return;
+        closePopover();
+        const words = await addLorasToSlots([entry.name]);
+        origins.set(entry.name, tag);
+        addWordsToRow(fieldKey, words);
+        notifySlots();
+    });
+    const paint = () => {
+        for (const row of list.querySelectorAll('.lora-popover-option')) {
+            const on = row.dataset.name === picked;
+            row.classList.toggle('is-on', on);
+            row.querySelector('input').checked = on;
+        }
+        const entry = loraEntry(picked);
+        gridHolder.replaceChildren(strengthGrid(entry, { ring: true }));
+        if (samplesForModel(entry, currentModel()).samples.size === 0 && comfyInterface()) {
+            gridHolder.append(button('lora-button lora-popover-take', text('lora_take_samples', 'Take samples'), () => queueLoraSamples(entry.name)));
+        }
+        add.textContent = `${text('lora_add', 'Add')} ${entry.label} · ${number(entry.range.def)}`;
+    };
+    for (const entry of entries) {
+        const row = element('label', 'lora-popover-option');
+        row.dataset.name = entry.name;
+        const radio = element('input');
+        radio.type = 'radio';
+        radio.name = 'lora-popover-pick';
+        const names = element('span', 'lora-popover-names');
+        names.append(element('span', 'lora-popover-name', entry.label), element('span', 'lora-popover-note', [entry.triggers.join(', ') || text('lora_no_trigger', 'no trigger'), number(entry.range.def)].join(' · ')));
+        row.append(radio, names, element('span', 'lora-popover-star', entry.favorite ? '★' : ''));
+        row.addEventListener('click', () => { picked = entry.name; paint(); });
+        list.append(row);
+    }
+    body.append(list, gridHolder);
+    box.append(body, add);
+    document.body.append(box);
+    const rect = anchor?.getBoundingClientRect?.() ?? { left: 40, bottom: 40 };
+    const width = Math.min(660, window.innerWidth - 32);
+    box.style.left = `${Math.max(16, Math.min(rect.left, window.innerWidth - width - 16))}px`;
+    box.style.top = `${Math.min(rect.bottom + 6, window.innerHeight - 40)}px`;
+    box.style.width = `${width}px`;
+    popover = box;
+    paint();
+    // the catalog may change while it is open (new samples): the grid follows
+    const repaint = () => { if (popover === box && box.isConnected) paint(); else document.removeEventListener(LORA_CHANGED_EVENT, repaint); };
+    document.addEventListener(LORA_CHANGED_EVENT, repaint);
+    setTimeout(() => {
+        document.addEventListener('pointerdown', outsidePopover, true);
+        document.addEventListener('keydown', popoverKey, true);
+    }, 0);
+}
+
+// ------------------------------------------------------------------ the slot rows
+
+// the positive rows' controls with their texts, for finding a trigger word
+function positiveControls() {
+    const ids = ['common', 'views', 'background', 'style', 'positive', 'positive_right'];
+    for (const field of globalThis.globalSettings?.prompt_custom_fields ?? []) if (field?.polarity !== 'negative' && field?.id) ids.push(field.id);
+    return ids.map(id => ({ id, control: rowControl(id) })).filter(item => item.control?.getValue);
+}
+
+function rowsWithWord(word) {
+    const key = tagKey(word);
+    return positiveControls().filter(({ control }) => parsePromptToCapsules(String(control.getValue() ?? '')).some(capsule => tagKey(capsule.value) === key));
+}
+
+function switchWord(word, on) {
+    if (on) {
+        addWordsToRow('positive', [word]);
+        return;
+    }
+    const key = tagKey(word);
+    for (const { control } of rowsWithWord(word)) {
+        // the rest of the row goes back as the chips write it (weights and disabled marks kept)
+        const kept = parsePromptToCapsules(String(control.getValue() ?? '')).filter(capsule => tagKey(capsule.value) !== key);
+        control.commitValue(serializeCapsules(kept));
+    }
+}
+
+let slotSignature = '';
+
+/** Each LoRA slot row lists its LoRA's trigger words, on (in the prompt) or off. */
+export function decorateSlots() {
+    const container = document.querySelector('.add-lora-main');
+    if (!container) return;
+    const rows = [...container.querySelectorAll('.slot-row.content-row')];
+    const values = globalThis.lora?.getValues?.() ?? [];
+    const lines = rows.map((row, index) => {
+        const entry = loraEntry(String(values[index]?.[0] ?? ''));
+        if (!entry) return { row, words: [], origin: '' };
+        return { row, entry, origin: origins.get(entry.name) ?? '', words: entry.triggers.map(word => ({ word, on: rowsWithWord(word).length > 0 })) };
+    });
+    const signature = JSON.stringify(lines.map(line => [line.entry?.name ?? '', line.origin, line.words]));
+    if (signature === slotSignature && lines.every(line => (line.words.length > 0 || line.origin) === Boolean(line.row.querySelector('.lora-slot-triggers')))) return;
+    slotSignature = signature;
+    for (const line of lines) {
+        let holder = line.row.querySelector('.lora-slot-triggers');
+        if (!line.entry || (line.words.length === 0 && !line.origin)) {
+            holder?.remove();
+            continue;
+        }
+        if (!holder) {
+            holder = element('div', 'lora-slot-triggers');
+            line.row.append(holder);
+        }
+        holder.replaceChildren();
+        if (line.origin) holder.append(element('span', 'lora-slot-origin', `tag: ${line.origin}`));
+        for (const { word, on } of line.words) {
+            const chip = button(`lora-slot-trigger${on ? ' is-on' : ''}`, on ? `${word} ✓` : `+ ${word}`, () => {
+                switchWord(word, !on);
+                notifySlots();
+            });
+            chip.setAttribute('aria-pressed', String(on));
+            holder.append(chip);
+        }
+    }
+}
+
+function watchSlots() {
+    const container = document.querySelector('.add-lora-main');
+    if (!container) return;
+    let timer = null;
+    const later = () => {
+        clearTimeout(timer);
+        timer = setTimeout(decorateSlots, 120);
+    };
+    new MutationObserver(mutations => {
+        // our own trigger lines are no reason to look again
+        if (mutations.every(mutation => mutation.target.closest?.('.lora-slot-triggers'))) return;
+        later();
+    }).observe(container, { childList: true, subtree: true });
+    container.addEventListener('change', later);
+    container.addEventListener('click', later);
+    document.addEventListener(LORA_CHANGED_EVENT, later);
+    // a trigger word typed or removed in a row turns its chip on or off
+    document.addEventListener('input', event => { if (event.target?.closest?.('.prompt-fields, .myTextbox-wrapper')) later(); }, true);
+    later();
 }
 
 export function setupLoraUi() {
@@ -403,8 +683,14 @@ export function setupLoraUi() {
         addToSlots: addLorasToSlots,
         queueSamples: queueLoraSamples,
         reload: () => loadLoraCatalog({ force: true }),
+        chipInfo,
+        openTagPopover,
+        decorateSlots,
+        partTriggers,
+        partLorasForPrompt,
     };
     globalThis.loraUi = api;
     loadLoraCatalog();
+    watchSlots();
     return api;
 }

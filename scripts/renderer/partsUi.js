@@ -16,6 +16,8 @@ import {
 } from './components/tagCapsuleLogic.js';
 import { openFieldTagModal, openTagPicker } from './tagSelectionModal.js';
 import { attachPartsSampleJob, partsSampleQueued } from './generate.js';
+import { loraCatalog, loraEntry } from './loraClient.js';
+import { loraFitsModel, loraLabel } from '../shared/loraCatalog.js';
 
 const CAT = '[PartsUI]';
 
@@ -154,6 +156,85 @@ function openFrame({ title, className = '', onClose = null }) {
 
 // ---------------------------------------------------------------- the editor
 
+// The LoRAs a part carries, as the editor shows them: a row per LoRA (the LoRA, its
+// weight, whether it fits the model in use), whether its trigger words come along, and
+// what a model of another base does with it. `state` is { loras, loraTriggers, otherBase }.
+function partLoraEditor(state, onChange) {
+    const box = el('div', 'parts-lora-box');
+    const rows = el('div', 'parts-lora-rows');
+    const modelLabel = name => String(name ?? '').split(/[\\/]/).pop().replace(/\.safetensors$/i, '');
+    const fits = name => {
+        const entry = loraEntry(name);
+        if (!entry || entry.base === 'unknown') return null;
+        return loraFitsModel(entry.base, globalThis.globalSettings?.api_model_type === 'Diffusion' ? 'Diffusion' : 'Checkpoint');
+    };
+    const baseText = name => {
+        const entry = loraEntry(name);
+        if (!entry || entry.base === 'unknown') return '';
+        const label = entry.base === 'anima' ? 'Anima' : 'Illustrious';
+        return fits(name) ? `${label} ✓` : label;
+    };
+    const paint = () => {
+        rows.replaceChildren();
+        state.loras.forEach((lora, index) => {
+            const row = el('div', 'parts-lora-row');
+            const select = el('select', 'parts-lora-select');
+            select.setAttribute('aria-label', 'LoRA');
+            const names = Array.isArray(globalThis.cachedFiles?.loraList) ? globalThis.cachedFiles.loraList.filter(name => name && name !== 'None') : [];
+            for (const name of names.includes(lora.name) ? names : [lora.name, ...names]) {
+                const option = el('option', '', modelLabel(name));
+                option.value = name;
+                select.append(option);
+            }
+            select.value = lora.name;
+            select.addEventListener('change', () => { state.loras[index] = { ...lora, name: select.value }; paint(); onChange(); });
+            const weight = el('input', 'parts-lora-weight');
+            weight.type = 'number';
+            weight.step = '0.05';
+            weight.value = String(lora.weight);
+            weight.setAttribute('aria-label', text('parts_lora_weight', 'Weight'));
+            weight.addEventListener('change', () => {
+                const value = Number(weight.value);
+                if (Number.isFinite(value)) { state.loras[index] = { ...state.loras[index], weight: value }; onChange(); }
+            });
+            const base = el('span', `parts-lora-base${fits(lora.name) === false ? ' is-other' : fits(lora.name) ? ' is-fit' : ''}`, baseText(lora.name));
+            const remove = button('parts-lora-remove', '×', () => { state.loras.splice(index, 1); paint(); onChange(); }, { title: text('parts_lora_remove', 'Remove LoRA') });
+            row.append(select, weight, base, remove);
+            rows.append(row);
+        });
+        triggers.hidden = state.loras.length === 0;
+        otherBase.hidden = state.loras.length === 0;
+    };
+    const triggers = el('label', 'parts-check');
+    const triggersCheck = document.createElement('input');
+    triggersCheck.type = 'checkbox';
+    triggersCheck.checked = state.loraTriggers !== false;
+    triggersCheck.addEventListener('change', () => { state.loraTriggers = triggersCheck.checked; onChange(); });
+    triggers.append(triggersCheck, el('span', '', text('parts_lora_triggers', 'Add trigger words')));
+    const add = button('parts-lora-add', text('parts_lora_add', '+ Add LoRA'), () => {
+        const first = loraCatalog().loras.find(entry => fits(entry.name) !== false) ?? loraCatalog().loras[0];
+        const name = first?.name ?? (globalThis.cachedFiles?.loraList ?? []).find(item => item && item !== 'None');
+        if (!name) return;
+        state.loras.push({ name, weight: first?.range?.def ?? 0.8 });
+        paint();
+        onChange();
+    });
+    const otherBase = el('label', 'parts-field-label parts-lora-other');
+    otherBase.append(el('span', '', text('parts_lora_other_base', 'Other base')));
+    const otherSelect = el('select', 'parts-lora-other-select');
+    for (const [value, label] of [['skip', text('parts_lora_skip', 'Skip LoRA')], ['use', text('parts_lora_use', 'Use anyway')]]) {
+        const option = el('option', '', label);
+        option.value = value;
+        otherSelect.append(option);
+    }
+    otherSelect.value = state.otherBase === 'use' ? 'use' : 'skip';
+    otherSelect.addEventListener('change', () => { state.otherBase = otherSelect.value; onChange(); });
+    otherBase.append(otherSelect);
+    box.append(el('span', 'parts-field-title', text('parts_loras', 'LoRAs')), rows, triggers, add, otherBase);
+    paint();
+    return box;
+}
+
 /**
  * Make or change a part. `initial` = { name, category, tags }; `id` names the part
  * being edited (null for a new one). `onSaved(entry, { id })` runs after the store
@@ -206,6 +287,32 @@ export function openPartEditor({ id = null, initial = {}, onSaved = null, trigge
     pickRow.append(pick);
     form.append(tagsLabel, pickRow);
 
+    // the LoRAs the part brings, and what the part becomes in a prompt
+    const loraState = {
+        loras: (existing?.loras ?? []).map(lora => ({ ...lora })),
+        loraTriggers: existing?.loraTriggers !== false,
+        otherBase: existing?.otherBase === 'use' ? 'use' : 'skip',
+    };
+    const preview = el('div', 'parts-expand-preview');
+    const paintPreview = () => {
+        const name = nameInput.value.trim() || text('parts_name_placeholder', 'name');
+        const draft = { tags: tagsInput.value.trim(), ...loraState };
+        const words = loraState.loraTriggers ? globalThis.loraUi?.partTriggers?.(draft) ?? [] : [];
+        const running = loraState.loras.filter(lora => draft.otherBase === 'use' || !loraEntry(lora.name) || loraEntry(lora.name).base === 'unknown'
+            || loraFitsModel(loraEntry(lora.name).base, globalThis.globalSettings?.api_model_type === 'Diffusion' ? 'Diffusion' : 'Checkpoint'));
+        const lines = [[draft.tags, ...words].filter(Boolean).join(', '), ...running.map(lora => `+ LoRA  ${loraLabel(lora.name)}  ${lora.weight}`)];
+        preview.replaceChildren(
+            el('span', 'parts-field-title', text('parts_sends_as', 'Sends as')),
+            el('code', 'parts-picker-token', partToken(name)),
+            el('span', 'parts-field-title', text('parts_expands_to', 'Expands to')),
+            el('code', 'parts-expand-code', lines.join('\n')),
+        );
+    };
+    form.append(partLoraEditor(loraState, paintPreview), preview);
+    nameInput.addEventListener('input', paintPreview);
+    tagsInput.addEventListener('input', paintPreview);
+    paintPreview();
+
     const sampleBox = el('div', 'parts-sample-options');
     const generateLabel = el('label', 'parts-check');
     const generateCheck = document.createElement('input');
@@ -249,7 +356,7 @@ export function openPartEditor({ id = null, initial = {}, onSaved = null, trigge
             // overwrite = remove the other part first (its samples go with it)
             await applyPartsChange({ action: 'remove', id: targetId });
         }
-        const change = { action: 'set', entry: { name, category: categorySelect.value, tags } };
+        const change = { action: 'set', entry: { name, category: categorySelect.value, tags, loras: loraState.loras, loraTriggers: loraState.loraTriggers, otherBase: loraState.otherBase } };
         if (id) change.id = id;
         const doc = await applyPartsChange(change);
         if (!doc) { console.warn(CAT, 'save refused', change); return; }

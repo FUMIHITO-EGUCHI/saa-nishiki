@@ -2973,3 +2973,46 @@ button.lora-cell { cursor: pointer; }
 .lora-panel-actions .lora-add.is-selected { opacity: 0.85; }
 .selection-modal-chip.is-lora { border-color: #8b5cf6; }
 .selection-modal-chip.is-lora .selection-modal-chip-prefix { margin-right: 3px; color: #c084fc; font-size: 0.85em; }
+
+/* ---- LoRA marks on the prompt (loraUi.js): chip badge, popover, slot trigger words ---- */
+.tag-capsule-chip .tag-capsule-chip-lora { display: inline-flex; align-items: center; height: 17px; margin-left: 2px; padding: 0 6px; border: 1px solid #8b5cf6; border-radius: 9px; background: #2e2440; color: #d8c4ff; font-size: 10.5px; font-weight: 700; cursor: pointer; }
+.tag-capsule-chip .tag-capsule-chip-lora:hover { background: #3b2d55; }
+.tag-capsule-chip.is-from-lora { border-color: #5b4a80; }
+.tag-capsule-chip .tag-capsule-chip-from-lora { display: inline-flex; color: #c084fc; margin-right: -1px; }
+.lora-popover { position: fixed; z-index: 10002; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border: 1px solid var(--saa-border-strong); border-radius: 8px; background: var(--saa-bg-panel); color: var(--saa-text); box-shadow: 0 10px 30px var(--saa-shadow); }
+.lora-popover-title { font-weight: 600; }
+.lora-popover-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
+.lora-popover-list { display: flex; flex-direction: column; gap: 4px; }
+.lora-popover-option { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 8px; border-radius: 6px; cursor: pointer; }
+.lora-popover-option.is-on { background: color-mix(in srgb, var(--saa-accent) 18%, transparent); }
+.lora-popover-option input { margin: 0; accent-color: var(--saa-accent); }
+.lora-popover-names { display: flex; flex-direction: column; min-width: 0; }
+.lora-popover-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lora-popover-note { font-size: 11.5px; color: var(--saa-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lora-popover-star { color: #e0a72f; font-size: 11.5px; }
+.lora-popover-grid { position: relative; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.lora-popover-grid .lora-grid { width: 100%; }
+.lora-popover-grid .lora-grid.is-large { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.lora-popover-add { min-height: 32px; }
+.add-lora-main .slot-row.content-row .lora-slot-triggers { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 0 4px; font-size: 12px; }
+.lora-slot-origin { color: var(--saa-muted); }
+.lora-slot-trigger { padding: 1px 9px; border: 1px dashed var(--saa-border-strong); border-radius: 11px; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 12px; cursor: pointer; }
+.lora-slot-trigger.is-on { border: 1px solid var(--saa-accent); background: color-mix(in srgb, var(--saa-accent) 16%, transparent); color: var(--saa-text); }
+
+/* ---- a part's LoRAs in the part editor (partsUi.js partLoraEditor) ---- */
+.parts-lora-box { display: flex; flex-direction: column; gap: 8px; }
+.parts-field-title { font-size: 11.5px; color: var(--saa-muted); }
+.parts-lora-rows { display: flex; flex-direction: column; gap: 6px; }
+.parts-lora-rows:empty { display: none; }
+.parts-lora-row { display: grid; grid-template-columns: minmax(0, 1fr) 70px 110px 30px; gap: 8px; align-items: center; padding: 8px; border: 1px solid var(--saa-border); border-radius: 7px; background: var(--saa-bg-app); }
+.parts-lora-select, .parts-lora-weight, .parts-lora-other-select { box-sizing: border-box; height: 30px; padding: 0 8px; border: 1px solid var(--saa-border-ctl); border-radius: 4px; background: var(--saa-bg-field); color: var(--saa-text); font: inherit; min-width: 0; }
+.parts-lora-weight { width: 100%; }
+.parts-lora-base { font-size: 11.5px; color: var(--saa-muted); }
+.parts-lora-base.is-fit { color: var(--saa-ok); }
+.parts-lora-base.is-other { color: var(--saa-warn); }
+.parts-lora-remove { width: 30px; height: 30px; border: 1px solid var(--saa-border-ctl); border-radius: 4px; background: var(--saa-bg-control); color: var(--saa-muted); cursor: pointer; }
+.parts-lora-add { align-self: flex-start; height: 30px; padding: 0 12px; border: 1px dashed var(--saa-border-strong); border-radius: 6px; background: transparent; color: var(--saa-muted2); font: inherit; cursor: pointer; }
+.parts-lora-other { display: flex; flex-direction: column; gap: 5px; }
+.parts-lora-other[hidden], .parts-lora-box .parts-check[hidden] { display: none; }
+.parts-expand-preview { display: flex; flex-direction: column; gap: 5px; }
+.parts-expand-code { display: block; padding: 8px 10px; border-radius: 6px; background: var(--saa-bg-app); color: var(--saa-text); font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -42,6 +42,7 @@ import { setupFinalPromptDisclosure } from './finalPromptDisclosure.js';
 import { tagText } from './tagUiText.js';
 import { TAG_DICTIONARY_EVENT, tagHeat, tagStatus } from './tagDictionaryStatus.js';
 import { PARTS_CHANGED_EVENT, expandParts, partInfo } from '../partsClient.js';
+import { LORA_CHANGED_EVENT } from '../loraClient.js';
 import { isPartToken } from '../../shared/parts.js';
 import { customFieldExtras, isCustomFieldId, normalizeCustomFields, normalizeOrder, setCustomFieldExtras } from '../../shared/promptFieldOrder.js';
 import { sideOrder } from '../../shared/regionalSides.js';
@@ -393,6 +394,8 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     document.addEventListener(TAG_DICTIONARY_EVENT, onDictionaryEvent);
     // a part was made, renamed or removed: its chips change their count / missing mark
     document.addEventListener(PARTS_CHANGED_EVENT, onDictionaryEvent);
+    // the LoRA catalog or the slots changed: the badges and the link marks follow
+    document.addEventListener(LORA_CHANGED_EVENT, onDictionaryEvent);
 
     function render() {
         if (mode === 'capsule') {
@@ -404,6 +407,8 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
                 tagStatus,
                 tagHeat,
                 partInfo,
+                // the LoRA marks belong to the rows a LoRA's words go in (loraUi.js)
+                loraInfo: value => globalThis.loraUi?.chipInfo?.(value, key) ?? null,
             });
             chips.setAttribute('aria-label', `${fieldLabel()} · ${text('tag_ui_chips_label', capsules.length)}`);
             updateRoving();
@@ -531,6 +536,11 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
     chips.addEventListener('click', event => {
         const index = chipIndexOf(event.target);
         if (index < 0) return;
+        // the "LoRA N" badge opens the LoRAs suggested for the tag
+        if (event.target.closest('.tag-capsule-chip-lora') && globalThis.loraUi?.openTagPopover) {
+            globalThis.loraUi.openTagPopover({ tag: capsules[index].value, anchor: chipAt(index), fieldKey: key });
+            return;
+        }
         if (event.target.closest('.tag-capsule-chip-toggle')) {
             // on a selected chip the dot flips the whole selection together
             const ids = selectedIds.has(capsules[index]?.id) ? selectionIds() : [];
