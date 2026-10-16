@@ -33,11 +33,11 @@ function png(records = []) {
     return insertTextChunks(base, records);
 }
 
-function recipeOf({ seed, names, click }) {
+function recipeOf({ seed, names }) {
     return buildRecipe({
         sections: { prompt: { api_prompt: '1girl, cherry blossoms' }, generation: { step: 30, cfg: 4, api_model_file_select: 'waiIllustriousSDXL_v170.safetensors' }, lora: { lora_slot: [['dmd2.safetensors', '1', '1', 'ALL']] }, adetailer: {} },
         settings: { api_model_type: 'Checkpoint' },
-        run: { seed, names, click, positive: 'rice shower, 1girl, cherry blossoms' },
+        run: { seed, names, positive: 'rice shower, 1girl, cherry blossoms' },
         now: Date.UTC(2026, 9, 16, 5, 32),
     });
 }
@@ -78,7 +78,7 @@ test('an entry says what the PNG text says: recipe, time, or only parameters', (
     const day = path.join(dir, '2026-10-16');
     fs.mkdirSync(day);
     fs.writeFileSync(path.join(day, 'a.png'), png([
-        ['saa_recipe', asciiJson(recipeOf({ seed: 1830551274, names: 'ライスシャワー', click: 'c1' }))],
+        ['saa_recipe', asciiJson(recipeOf({ seed: 1830551274, names: 'ライスシャワー' }))],
         ['saa_time', asciiJson({ v: 1, total: 10200, segments: [{ id: 'base', ms: 5800 }] })],
     ]));
     fs.writeFileSync(path.join(day, 'b.png'), png([['parameters', 'maid, 1girl\nNegative prompt: lowres\nSteps: 28, Sampler: Euler a, CFG scale: 6, Seed: 77, Size: 832x1216, Model: waiIllustriousSDXL_v160']]));
@@ -86,7 +86,7 @@ test('an entry says what the PNG text says: recipe, time, or only parameters', (
     const index = createLibraryIndex({ log: null });
     const entries = Object.fromEntries((await index.images(dir, '2026-10-16')).map(entry => [entry.name, entry]));
     assert.equal(entries['a.png'].state, 'full');
-    assert.deepEqual([entries['a.png'].seed, entries['a.png'].time, entries['a.png'].click, entries['a.png'].width], [1830551274, 10200, 'c1', 832]);
+    assert.deepEqual([entries['a.png'].seed, entries['a.png'].time, entries['a.png'].width], [1830551274, 10200, 832]);
     assert.deepEqual(entries['a.png'].characters, ['ライスシャワー']);
     assert.deepEqual(entries['a.png'].loras, ['dmd2']);
     assert.match(entries['a.png'].text, /cherry blossoms/);
@@ -116,30 +116,28 @@ test('the cache spares the second read and notices a changed file', () => withFo
     assert.equal(reads, 2);
 }));
 
-test('the grid: search and filters, sorting, and runs grouped by their click', async () => {
+test('the grid: search and filters, time order, a group per day', async () => {
     await withFakeDom(async () => {
         globalThis.globalSettings = { language: 'en-US' };
         globalThis.cachedFiles = { language: { 'en-US': {} } };
-        const { filterEntries, groupEntries, groupSummary, sortEntries, filterOptions } = await import('../scripts/renderer/libraryWindow.js');
-        const entry = (name, minute, extra = {}) => ({ name, path: `C:\\out\\${name}`, created: `2026-10-16T05:${String(minute).padStart(2, '0')}:00.000Z`, mtime: 0, model: 'v170', characters: ['rice'], loras: [], state: 'full', text: '', click: '', time: null, type: 'Checkpoint', fast: false, ...extra });
+        const { filterEntries, groupByDay, sortEntries, filterOptions } = await import('../scripts/renderer/libraryWindow.js');
+        // local times, so the days are this machine's days
+        const entry = (name, day, hour, extra = {}) => ({ name, path: `C:\\out\\${name}`, created: new Date(2026, 9, day, hour).toISOString(), mtime: 0, model: 'v170', characters: ['rice'], loras: [], state: 'full', text: '', time: null, type: 'Checkpoint', fast: false, ...extra });
         const entries = [
-            entry('a.png', 1, { click: 'k1', time: 9000, text: 'cherry blossoms rice' }),
-            entry('b.png', 2, { click: 'k1', time: 8000 }),
-            entry('c.png', 5, { click: 'k2', loras: ['charturn'] }),
-            entry('d.png', 30, { state: 'partial', model: 'v160' }),
-            entry('e.png', 33, { state: 'partial', model: 'v160' }),
+            entry('a.png', 15, 9, { text: 'cherry blossoms rice' }),
+            entry('b.png', 16, 23),
+            entry('c.png', 15, 22, { loras: ['charturn'] }),
+            entry('d.png', 16, 1, { state: 'partial', model: 'v160' }),
+            entry('e.png', 16, 2, { state: 'partial', model: 'v160' }),
         ];
         assert.deepEqual(filterEntries(entries, { search: 'cherry rice' }).map(item => item.name), ['a.png']);
         assert.deepEqual(filterEntries(entries, { search: 'D.PNG' }).map(item => item.name), ['d.png'], 'the file name is searched too');
         assert.deepEqual(filterEntries(entries, { lora: 'charturn' }).map(item => item.name), ['c.png']);
         assert.deepEqual(filterEntries(entries, { recipe: 'partial', model: 'v160' }).map(item => item.name), ['d.png', 'e.png']);
-        assert.deepEqual(sortEntries(entries, 'newest').map(item => item.name), ['e.png', 'd.png', 'c.png', 'b.png', 'a.png']);
-        assert.deepEqual(sortEntries(entries, 'fastest').map(item => item.name).slice(0, 2), ['b.png', 'a.png']);
-        const runs = groupEntries(sortEntries(entries, 'newest'), 'run');
-        assert.deepEqual(runs.map(group => group.entries.map(item => item.name)), [['e.png', 'd.png'], ['c.png'], ['b.png', 'a.png']],
-            'one click, one run; images without a click join when close in time with the same model and characters');
-        assert.equal(groupSummary(runs[2].entries), '2 images · rice · Checkpoint');
-        assert.deepEqual(groupEntries(entries, 'day').map(group => group.entries.length), [5]);
+        assert.deepEqual(sortEntries(entries, 'newest').map(item => item.name), ['b.png', 'e.png', 'd.png', 'c.png', 'a.png']);
+        assert.deepEqual(sortEntries(entries, 'oldest').map(item => item.name), ['a.png', 'c.png', 'd.png', 'e.png', 'b.png']);
+        assert.deepEqual(groupByDay(sortEntries(entries, 'newest')).map(group => [group.day, group.entries.map(item => item.name)]),
+            [['2026-10-16', ['b.png', 'e.png', 'd.png']], ['2026-10-15', ['c.png', 'a.png']]]);
         assert.deepEqual(filterOptions(entries, item => [item.model]), [{ value: 'v170', count: 3 }, { value: 'v160', count: 2 }]);
     });
 });

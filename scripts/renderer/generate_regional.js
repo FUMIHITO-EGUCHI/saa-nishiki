@@ -765,7 +765,6 @@ export async function generateRegionalImage(dataPack){
             height,
             interface: apiInterface,
             regional: true,
-            click: refineRun.runId,
             names: createPromptResult.charactersName,
             positive: `${createPromptResult.positivePromptLeft}\n${createPromptResult.positivePromptRight}`,
             negative: createPromptResult.negativePrompt,

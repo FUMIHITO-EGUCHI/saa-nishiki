@@ -70,8 +70,7 @@ export function indexEntry(file, stat, header) {
         fast: Boolean(summary.fast),
         time: summary.time?.total ?? null,
         created: recipe?.created || new Date(stat.mtimeMs).toISOString(),
-        click: recipe?.run?.click ?? '',
-        text: searchText(summary, records),
+text: searchText(summary, records),
     };
 }
 

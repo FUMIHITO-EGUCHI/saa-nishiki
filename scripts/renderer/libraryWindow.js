@@ -1,9 +1,9 @@
 // The Library: every image in the folders SAA saves to, by folder (ComfyUI's output by
 // day, the pod saves by day) or by view (this session, the stars, the images with an SAA
 // recipe, those with only their parameters). Search and filters narrow the grid, which
-// is grouped by run (one Generate click), by day or not at all; the panel on the right
-// tells what the selected image is and offers Use settings…, Show in folder and Move to
-// trash. The main window's viewer stays this session's.
+// runs in time order, a group per day; the panel on the right tells what the selected
+// image is and offers Use settings…, Show in folder and Move to trash. The main window's
+// viewer stays this session's.
 //
 // The images and their records come from the main process (library_backend.js); the
 // thumbnails are asked for as their tiles come into view.
@@ -16,7 +16,6 @@ import { summarizeImage } from '../shared/imageSummary.js';
 import { formatDuration } from '../shared/runTiming.js';
 
 const TILE_SIZES = Object.freeze({ S: 120, M: 160, L: 210 });
-const RUN_GAP_MS = 10 * 60 * 1000;
 const STORAGE_KEY = 'saa.library';
 
 function lang() {
@@ -81,61 +80,25 @@ export function filterEntries(entries, { search = '', model = '', lora = '', cha
     });
 }
 
-/** Newest, oldest, or fastest first (an image without a time last). */
+/** In time order: newest first, or oldest first. */
 export function sortEntries(entries, sort = 'newest') {
-    const list = [...entries];
     const when = entry => dateOf(entry).getTime();
-    if (sort === 'oldest') return list.sort((a, b) => when(a) - when(b));
-    if (sort === 'fastest') return list.sort((a, b) => (a.time ?? Infinity) - (b.time ?? Infinity) || when(b) - when(a));
-    return list.sort((a, b) => when(b) - when(a));
+    return [...entries].sort(sort === 'oldest' ? (a, b) => when(a) - when(b) : (a, b) => when(b) - when(a));
 }
 
-/**
- * The groups the grid shows: 'run' (the images of one Generate click; an image from before
- * recipes kept the click joins the one before it when model and characters match and it
- * came within ten minutes), 'day', or 'none'. [{ key, title, entries }]
- */
-export function groupEntries(entries, group = 'run') {
-    if (group === 'none') return [{ key: 'all', title: '', entries }];
+/** The grid's groups, one per day, in the order the entries come: [{ day, entries }]. */
+export function groupByDay(entries) {
     const groups = [];
-    let current = null;
     for (const entry of entries) {
-        const date = dateOf(entry);
-        let key;
-        if (group === 'day') {
-            key = dayText(date);
-        } else if (entry.click) {
-            key = `click:${entry.click}`;
-        } else {
-            const previous = current?.entries.at(-1);
-            const near = previous && !previous.click && Math.abs(dateOf(previous).getTime() - date.getTime()) <= RUN_GAP_MS
-                && previous.model === entry.model && previous.characters.join('|') === entry.characters.join('|');
-            key = near ? current.key : `loose:${entry.path}`;
-        }
-        if (!current || current.key !== key) {
-            current = { key, entries: [] };
-            groups.push(current);
-        }
-        current.entries.push(entry);
+        const day = dayText(dateOf(entry));
+        if (groups.at(-1)?.day !== day) groups.push({ day, entries: [] });
+        groups.at(-1).entries.push(entry);
     }
     return groups;
 }
 
-/** "4 images · rice shower · Diffusion · Fast" */
-export function groupSummary(entries) {
-    const count = entries.length;
-    const first = entries[0] ?? {};
-    const parts = [`${count} ${text(count === 1 ? 'ui_viewer_image' : 'ui_viewer_images', count === 1 ? 'image' : 'images')}`];
-    if (first.characters?.length) parts.push(first.characters.join(', '));
-    if (first.type) parts.push(first.type);
-    if (first.fast) parts.push('Fast');
-    return parts.join(' · ');
-}
-
-function groupTitle(group, mode) {
-    if (mode === 'day') return group.key;
-    const date = dateOf(group.entries[0]);
-    return dayText(date) === dayText(new Date()) ? timeText(date) : `${dayText(date)} ${timeText(date)}`;
+function countText(count) {
+    return `${count.toLocaleString()} ${text(count === 1 ? 'ui_viewer_image' : 'ui_viewer_images', count === 1 ? 'image' : 'images')}`;
 }
 
 /** The values a filter offers: [{ value, count }], most common first. */
@@ -155,7 +118,7 @@ let library = null;
 
 function createLibrary() {
     const shell = createDialogShell({ className: 'library-modal' });
-    const prefs = { group: 'run', sort: 'newest', size: 'M', ...readPrefs() };
+    const prefs = { sort: 'newest', size: 'M', ...readPrefs() };
     const state = {
         roots: [],
         source: null,          // { view } | { root, folder }
@@ -195,15 +158,10 @@ function createLibrary() {
         toolbar.append(pill);
     }
     toolbar.append(element('span', 'library-spacer'));
-    const groupSelect = element('select');
-    for (const [value, label] of [['run', text('library_group_run', 'Run')], ['day', text('library_group_day', 'Day')], ['none', text('library_group_none', 'None')]]) groupSelect.append(new Option(label, value));
-    groupSelect.value = prefs.group;
     const sortSelect = element('select');
-    for (const [value, label] of [['newest', text('library_sort_newest', 'Newest')], ['oldest', text('library_sort_oldest', 'Oldest')], ['fastest', text('library_sort_fastest', 'Fastest')]]) sortSelect.append(new Option(label, value));
-    sortSelect.value = prefs.sort;
-    const groupLabel = element('label', 'library-option', text('library_group', 'Group'));
-    groupLabel.append(groupSelect);
-    const sortLabel = element('label', 'library-option', text('library_sort', 'Sort'));
+    for (const [value, label] of [['newest', text('library_sort_newest', 'Newest')], ['oldest', text('library_sort_oldest', 'Oldest')]]) sortSelect.append(new Option(label, value));
+    sortSelect.value = prefs.sort === 'oldest' ? 'oldest' : 'newest';
+    const sortLabel= element('label', 'library-option', text('library_sort', 'Sort'));
     sortLabel.append(sortSelect);
     const sizes = element('div', 'library-sizes');
     sizes.setAttribute('role', 'group');
@@ -219,8 +177,7 @@ function createLibrary() {
         });
         sizes.append(button);
     }
-    toolbar.append(groupLabel, sortLabel, sizes);
-    groupSelect.addEventListener('change', () => { prefs.group = groupSelect.value; writePrefs(prefs); renderGrid(); });
+    toolbar.append(sortLabel, sizes);
     sortSelect.addEventListener('change', () => { prefs.sort = sortSelect.value; writePrefs(prefs); renderGrid(); });
     let searchTimer = null;
     search.addEventListener('input', () => {
@@ -419,19 +376,17 @@ function createLibrary() {
             }
         }, { root: gridArea, rootMargin: '400px 0px' }) : null;
         const shown = sortEntries(filterEntries(state.entries, state.filters), prefs.sort);
-        count.textContent = `${shown.length.toLocaleString()} ${text(shown.length === 1 ? 'ui_viewer_image' : 'ui_viewer_images', shown.length === 1 ? 'image' : 'images')}`;
+        count.textContent = countText(shown.length);
         gridArea.replaceChildren();
         if (shown.length === 0) {
             gridArea.append(element('div', 'library-empty', state.entries.length ? text('library_no_match', 'No image matches') : text('library_no_images', 'No images here')));
             return;
         }
-        for (const group of groupEntries(shown, prefs.group)) {
+        for (const group of groupByDay(shown)) {
             const section = element('section', 'library-group');
-            if (prefs.group !== 'none') {
-                const head = element('div', 'library-group-head');
-                head.append(element('span', 'library-group-time', groupTitle(group, prefs.group)), element('span', 'library-group-summary', groupSummary(group.entries)), element('span', 'library-group-rule'));
-                section.append(head);
-            }
+            const head = element('div', 'library-group-head');
+            head.append(element('span', 'library-group-time', group.day), element('span', 'library-group-summary', countText(group.entries.length)), element('span', 'library-group-rule'));
+            section.append(head);
             const grid = element('div', 'library-grid');
             for (const entry of group.entries) grid.append(tile(entry));
             section.append(grid);
