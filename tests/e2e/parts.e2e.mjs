@@ -134,7 +134,7 @@ test('the row\'s Choose tags modal: the Tags tab links the same search to the Pa
     await page.click('.prompt-positive .tag-capsule-add');
     await page.waitFor(`Boolean(document.querySelector('${OPEN_MODAL}'))`, { label: 'the tag modal' });
     const tabs = JSON.parse(await page.evaluate(`JSON.stringify([...document.querySelectorAll('${OPEN_MODAL} .selection-modal-tab')].map(tab => [tab.textContent, tab.getAttribute('aria-selected')]))`));
-    assert.deepEqual(tabs, [['Tags', 'true'], ['Parts', 'false']], 'the tag list first, the parts beside it');
+    assert.deepEqual(tabs, [['Tags', 'true'], ['Parts', 'false'], ['LoRA', 'false']], 'the tag list first, the parts and the LoRAs beside it');
     // the toolbar's ends: the search box first, the star last, on both tabs
     const toolbarEnds = `(() => { const shown = [...document.querySelectorAll('${OPEN_MODAL} .selection-modal-toolbar > *')].filter(node => !node.hidden); return [shown[0]?.className, shown.at(-1)?.className].join(' | '); })()`;
     assert.equal(await page.evaluate(toolbarEnds), 'selection-modal-search-label | selection-modal-favonly');

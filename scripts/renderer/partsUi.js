@@ -205,7 +205,8 @@ function partLoraEditor(state, onChange) {
         triggers.hidden = state.loras.length === 0;
         otherBase.hidden = state.loras.length === 0;
     };
-    const triggers = el('label', 'parts-check');
+    // its own class: the editor's .parts-check is the sample switch (and the E2E story's)
+    const triggers = el('label', 'parts-lora-check');
     const triggersCheck = document.createElement('input');
     triggersCheck.type = 'checkbox';
     triggersCheck.checked = state.loraTriggers !== false;

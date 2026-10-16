@@ -2618,8 +2618,8 @@ html, body {
 .parts-tags-input:focus { border-color: var(--saa-accent); outline: none; }
 .parts-editor-tools { display: flex; gap: 6px; }
 .parts-sample-options { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border: 1px solid var(--saa-border); border-radius: 5px; background: var(--saa-bg-panel); }
-.parts-check, .parts-radio { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
-.parts-check input, .parts-radio input { margin: 0; }
+.parts-check, .parts-radio, .parts-lora-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.parts-check input, .parts-radio input, .parts-lora-check input { margin: 0; }
 .parts-base-row { display: flex; gap: 14px; padding-left: 22px; }
 .parts-confirm-text { margin: 4px 0; font-size: 12.5px; line-height: 1.5; }
 
@@ -3013,6 +3013,6 @@ button.lora-cell { cursor: pointer; }
 .parts-lora-remove { width: 30px; height: 30px; border: 1px solid var(--saa-border-ctl); border-radius: 4px; background: var(--saa-bg-control); color: var(--saa-muted); cursor: pointer; }
 .parts-lora-add { align-self: flex-start; height: 30px; padding: 0 12px; border: 1px dashed var(--saa-border-strong); border-radius: 6px; background: transparent; color: var(--saa-muted2); font: inherit; cursor: pointer; }
 .parts-lora-other { display: flex; flex-direction: column; gap: 5px; }
-.parts-lora-other[hidden], .parts-lora-box .parts-check[hidden] { display: none; }
+.parts-lora-other[hidden], .parts-lora-check[hidden] { display: none; }
 .parts-expand-preview { display: flex; flex-direction: column; gap: 5px; }
 .parts-expand-code { display: block; padding: 8px 10px; border-radius: 6px; background: var(--saa-bg-app); color: var(--saa-text); font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
