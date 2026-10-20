@@ -125,7 +125,7 @@ function cleanRange(range) {
 
 function cleanSample(sample) {
     if (!isObject(sample) || !sample.id || !sample.file) return null;
-    return {
+    const clean = {
         id: String(sample.id),
         file: String(sample.file),
         weight: finite(sample.weight, 0),
@@ -133,6 +133,26 @@ function cleanSample(sample) {
         modelType: sample.modelType === 'Diffusion' ? 'Diffusion' : 'Checkpoint',
         created: String(sample.created ?? ''),
     };
+    // the prompt it was made with, for the sample viewer (older samples have none)
+    if (typeof sample.positive === 'string' && sample.positive) clean.positive = sample.positive;
+    if (typeof sample.negative === 'string') clean.negative = sample.negative;
+    if (Number.isInteger(sample.seed)) clean.seed = sample.seed;
+    return clean;
+}
+
+/**
+ * A sample prompt the user wrote: `body` (the tags after the quality words, `{lora}` where
+ * the LoRA's words go), and optionally its own negative and seed. Null when there is no body.
+ */
+export function cleanSamplePrompt(prompt) {
+    if (!isObject(prompt)) return null;
+    const body = String(prompt.body ?? '').trim();
+    if (!body) return null;
+    const clean = { body };
+    if (typeof prompt.negative === 'string') clean.negative = prompt.negative.trim();
+    const seed = Number(prompt.seed);
+    if (Number.isInteger(seed) && seed >= 0) clean.seed = seed;
+    return clean;
 }
 
 const cleanWords = list => [...new Set((Array.isArray(list) ? list : []).map(tagKey).filter(Boolean))];
@@ -159,6 +179,8 @@ export function cleanLoraEntry(entry = {}) {
     }
     const samples = (Array.isArray(entry.samples) ? entry.samples : []).map(cleanSample).filter(Boolean);
     if (samples.length) next.samples = samples;
+    const samplePrompt = cleanSamplePrompt(entry.samplePrompt);
+    if (samplePrompt) next.samplePrompt = samplePrompt;
     return next;
 }
 
@@ -170,7 +192,11 @@ export function normalizeLoraDoc(doc) {
         if (Object.keys(clean).length) loras[name] = clean;
     }
     const range = cleanRange({ ...DEFAULT_RANGE, ...(isObject(doc?.defaults) ? doc.defaults : {}), src: 'default' }) ?? { ...DEFAULT_RANGE, src: 'default' };
-    return { loras, defaults: { min: range.min, max: range.max, def: range.def } };
+    const next = { loras, defaults: { min: range.min, max: range.max, def: range.def } };
+    // the sample prompt of every LoRA that has none of its own
+    const samplePrompt = cleanSamplePrompt(doc?.samplePrompt);
+    if (samplePrompt) next.samplePrompt = samplePrompt;
+    return next;
 }
 
 /**
@@ -185,12 +211,21 @@ export function applyLoraChange(doc, change = {}) {
         const range = cleanRange({ ...change.patch, src: 'default' });
         return range ? { ...current, defaults: { min: range.min, max: range.max, def: range.def } } : null;
     }
+    if (change.action === 'sample-template') {
+        // null (or a prompt without a body) goes back to the built-in one
+        const next = { ...current };
+        delete next.samplePrompt;
+        const samplePrompt = cleanSamplePrompt(change.patch);
+        if (samplePrompt) next.samplePrompt = samplePrompt;
+        return next;
+    }
     if (!name) return null;
     const entry = current.loras[name] ?? {};
     let next;
     if (change.action === 'set') {
         next = cleanLoraEntry({ ...entry, ...(isObject(change.patch) ? change.patch : {}) });
         if (change.patch?.favorite === false) delete next.favorite;
+        if (isObject(change.patch) && 'samplePrompt' in change.patch && !cleanSamplePrompt(change.patch.samplePrompt)) delete next.samplePrompt;
     } else if (change.action === 'clear') {
         next = cleanLoraEntry({ samples: entry.samples, sha256: entry.sha256, civitai: entry.civitai, favorite: entry.favorite, category: entry.category });
     } else if (change.action === 'add-sample') {
@@ -252,6 +287,7 @@ export function loraView(file, stored = {}, { defaults = DEFAULT_RANGE, known = 
         favorite: stored.favorite === true,
         category: stored.category ?? defaultCategory(file.name),
         samples: stored.samples ?? [],
+        samplePrompt: stored.samplePrompt ?? null,
         sha256: stored.sha256 ?? '',
         civitai: stored.civitai ?? null,
         hasMetadata: (file.frequency ?? []).length > 0,
@@ -276,18 +312,62 @@ const SAMPLE_NEGATIVE = Object.freeze({
     Checkpoint: 'worst quality, low quality, bad anatomy, bad hands, artist name, signature, watermark, text, logo',
 });
 
+// where a sample prompt takes the LoRA's trigger words and the tags it is suggested for
+export const LORA_WORDS_TOKEN = '{lora}';
+// a framing of its own: with none, the model drifted into close-ups (2026-10-17 bench)
+export const DEFAULT_SAMPLE_BODY = `1girl, solo, full body, standing, looking at viewer, ${LORA_WORDS_TOKEN}, simple background, white background`;
+
+export function sampleQuality(modelType) {
+    return SAMPLE_QUALITY[modelType === 'Diffusion' ? 'Diffusion' : 'Checkpoint'];
+}
+
+export function sampleNegative(modelType) {
+    return SAMPLE_NEGATIVE[modelType === 'Diffusion' ? 'Diffusion' : 'Checkpoint'];
+}
+
+/** The tags of a prompt text, trimmed, the empty ones left out. */
+export function promptTags(text) {
+    return String(text ?? '').split(',').map(tag => tag.trim()).filter(Boolean);
+}
+
+/** A body with `{lora}` replaced by the words (and dropped when there are none). */
+export function expandLoraWords(body, words = []) {
+    return promptTags(body).flatMap(tag => (tag === LORA_WORDS_TOKEN ? words : [tag])).join(', ');
+}
+
+/** A LoRA's words: its trigger words, then the tags it is suggested for. */
+export function loraWords(entry) {
+    return [...new Set([...(entry?.triggers ?? []), ...(entry?.linked ?? [])])];
+}
+
 /**
- * One cell of a LoRA's sample grid: a girl with the LoRA's trigger words and the tags it
- * is suggested for, at `weight` (0 = the LoRA left out, the same prompt otherwise), so
- * the cells differ by the LoRA alone.
+ * The prompt a LoRA's samples are made with: its own (This LoRA) when it has one, else
+ * the template every LoRA shares (Default for all), else the built-in one; `body` comes
+ * back with the LoRA's words in it.
  */
-export function loraSamplePrompt({ modelType, name, triggers = [], linked = [], weight = 0 }) {
-    const type = modelType === 'Diffusion' ? 'Diffusion' : 'Checkpoint';
-    const words = [...new Set([...triggers, ...linked])];
-    // a framing of its own: with none, the model drifted into close-ups (2026-10-17 bench)
-    const positive = [SAMPLE_QUALITY[type], '1girl, solo, full body, standing, looking at viewer', ...words, 'simple background, white background'].filter(Boolean).join(', ');
+export function resolveSamplePrompt({ entry = null, template = null, modelType = 'Checkpoint' } = {}) {
+    const own = cleanSamplePrompt(entry?.samplePrompt);
+    const shared = cleanSamplePrompt(template);
+    const source = own ?? shared;
+    return {
+        body: expandLoraWords(source?.body ?? DEFAULT_SAMPLE_BODY, loraWords(entry)),
+        negative: source?.negative ?? sampleNegative(modelType),
+        seed: source?.seed ?? LORA_SAMPLE_SEED,
+        own: Boolean(own),
+    };
+}
+
+/**
+ * One cell of a LoRA's sample grid: the quality words of the model type and the sample
+ * prompt (resolveSamplePrompt; the built-in one with the LoRA's trigger words and its
+ * suggested tags when `prompt` is not given), at `weight` (0 = the LoRA left out, the same
+ * prompt otherwise), so the cells differ by the LoRA alone.
+ */
+export function loraSamplePrompt({ modelType, name, triggers = [], linked = [], weight = 0, prompt = null }) {
+    const resolved = prompt ?? resolveSamplePrompt({ entry: { triggers, linked }, modelType });
+    const positive = [sampleQuality(modelType), resolved.body].filter(Boolean).join(', ');
     const tag = weight > 0 ? `\n<lora:${name}:${weight}:${weight}>` : '';
-    return { positive: `${positive}${tag}`, negative: SAMPLE_NEGATIVE[type] };
+    return { positive: `${positive}${tag}`, negative: resolved.negative ?? sampleNegative(modelType), seed: resolved.seed ?? LORA_SAMPLE_SEED };
 }
 
 /** The samples of the model in use, by weight; another model's only when it has none. */

@@ -62,7 +62,7 @@ function knownTags(facts) {
     return known;
 }
 
-/** Every listed LoRA as the renderer shows it: { loras, defaults, categories }. */
+/** Every listed LoRA as the renderer shows it: { loras, defaults, samplePrompt, categories }. */
 export async function loraCatalogView() {
     const store = getCatalog();
     const names = listedLoras();
@@ -72,6 +72,8 @@ export async function loraCatalogView() {
     return {
         loras: facts.map(file => loraView(file, doc.loras[file.name] ?? {}, { defaults: doc.defaults, known })),
         defaults: doc.defaults,
+        // the sample prompt every LoRA without its own shares; null = the built-in one
+        samplePrompt: doc.samplePrompt ?? null,
         categories: LORA_CATEGORIES,
     };
 }

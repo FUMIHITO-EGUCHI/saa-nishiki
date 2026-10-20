@@ -8,7 +8,8 @@ import path from 'node:path';
 import test from 'node:test';
 
 import {
-    applyLoraChange, defaultCell, deriveWords, loraBase, loraFitsModel, loraSamplePrompt, loraView, normalizeLoraDoc, sampleWeights, samplesForModel, tagFrequency,
+    DEFAULT_SAMPLE_BODY, applyLoraChange, defaultCell, deriveWords, expandLoraWords, loraBase, loraFitsModel, loraSamplePrompt, loraView, normalizeLoraDoc,
+    resolveSamplePrompt, sampleNegative, sampleWeights, samplesForModel, tagFrequency,
 } from '../scripts/shared/loraCatalog.js';
 import { civitaiFacts, createLoraCatalog, readSafetensorsMetadata, sampleFolderName } from '../scripts/main/loraCatalog.js';
 
@@ -71,6 +72,46 @@ test('the user\'s choices over the guesses; a change and its undoing', () => {
     assert.equal(doc.loras['a.safetensors'], undefined, 'nothing left to keep');
     assert.equal(applyLoraChange(doc, { action: 'set', name: 'b', patch: { range: { min: 1, max: 0.5 } } }).loras.b, undefined, 'a range upside down is dropped');
     assert.equal(loraView({ name: 'dmd2_sdxl_4step.safetensors' }, {}).category, 'Speed');
+});
+
+test('the sample prompt: the LoRA\'s own, else the default for all, else the built-in one, its words where {lora} is', () => {
+    const entry = { triggers: ['charturn'], linked: ['turnaround'] };
+    assert.equal(expandLoraWords('1girl, {lora}, white background', ['charturn', 'turnaround']), '1girl, charturn, turnaround, white background');
+    assert.equal(expandLoraWords('1girl, {lora}, white background', []), '1girl, white background', 'no words, no gap');
+
+    const builtIn = resolveSamplePrompt({ entry, modelType: 'Checkpoint' });
+    assert.equal(builtIn.body, expandLoraWords(DEFAULT_SAMPLE_BODY, ['charturn', 'turnaround']));
+    assert.deepEqual([builtIn.negative, builtIn.seed, builtIn.own], [sampleNegative('Checkpoint'), 3, false]);
+
+    const template = { body: 'chibi, {lora}, grey background', negative: 'blurry', seed: 9 };
+    assert.deepEqual(resolveSamplePrompt({ entry, template, modelType: 'Diffusion' }), { body: 'chibi, charturn, turnaround, grey background', negative: 'blurry', seed: 9, own: false });
+
+    const own = { ...entry, samplePrompt: { body: '1girl, charturn, from behind', negative: 'lowres', seed: 4 } };
+    assert.deepEqual(resolveSamplePrompt({ entry: own, template, modelType: 'Checkpoint' }), { body: '1girl, charturn, from behind', negative: 'lowres', seed: 4, own: true });
+
+    const cell = loraSamplePrompt({ modelType: 'Checkpoint', name: 'a.safetensors', weight: 0.8, prompt: resolveSamplePrompt({ entry: own, modelType: 'Checkpoint' }) });
+    assert.match(cell.positive, /^masterpiece, best quality, very aesthetic, absurdres, 1girl, charturn, from behind\n<lora:a\.safetensors:0\.8:0\.8>$/, 'the quality words of the model type stay in front');
+    assert.deepEqual([cell.negative, cell.seed], ['lowres', 4]);
+});
+
+test('the sample prompts are kept: a LoRA\'s own on its entry, the default for all on the document', () => {
+    let doc = normalizeLoraDoc({});
+    doc = applyLoraChange(doc, { action: 'set', name: 'a.safetensors', patch: { samplePrompt: { body: ' 1girl, from behind ', negative: 'lowres', seed: '4' } } });
+    assert.deepEqual(doc.loras['a.safetensors'].samplePrompt, { body: '1girl, from behind', negative: 'lowres', seed: 4 });
+    assert.deepEqual(loraView({ name: 'a.safetensors' }, doc.loras['a.safetensors']).samplePrompt, { body: '1girl, from behind', negative: 'lowres', seed: 4 });
+    doc = applyLoraChange(doc, { action: 'set', name: 'a.safetensors', patch: { samplePrompt: null } });
+    assert.equal(doc.loras['a.safetensors'], undefined, 'back to the default: nothing left to keep');
+
+    doc = applyLoraChange(doc, { action: 'sample-template', patch: { body: 'chibi, {lora}', seed: 7 } });
+    assert.deepEqual(normalizeLoraDoc(doc).samplePrompt, { body: 'chibi, {lora}', seed: 7 }, 'it survives a read back');
+    doc = applyLoraChange(doc, { action: 'sample-template', patch: null });
+    assert.equal(doc.samplePrompt, undefined, 'null is the built-in one again');
+    assert.equal(applyLoraChange(doc, { action: 'sample-template', patch: { body: '  ' } }).samplePrompt, undefined, 'a prompt with no tags is none');
+
+    // a sample remembers the prompt it was made with
+    doc = applyLoraChange(doc, { action: 'add-sample', name: 'a.safetensors', sample: { id: 's1', file: 's1.png', weight: 0.8, model: 'v170', positive: 'masterpiece, 1girl\n<lora:a:0.8:0.8>', negative: 'lowres', seed: 3 } });
+    const [sample] = doc.loras['a.safetensors'].samples;
+    assert.deepEqual([sample.positive, sample.negative, sample.seed], ['masterpiece, 1girl\n<lora:a:0.8:0.8>', 'lowres', 3]);
 });
 
 test('samples: one per weight and model, the model in use first', () => {

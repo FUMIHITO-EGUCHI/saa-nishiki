@@ -8,7 +8,7 @@ import { DEFAULT_RANGE, LORA_CATEGORIES, loraLabel, tagKey } from '../shared/lor
 
 export const LORA_CHANGED_EVENT = 'saa:loras-changed';
 
-let catalog = null;          // { loras, defaults, categories }
+let catalog = null;          // { loras, defaults, samplePrompt, categories }
 let loading = null;
 const byName = new Map();
 const samples = new Map();   // name|sampleId -> data URL
@@ -45,7 +45,7 @@ export function loadLoraCatalog({ force = false } = {}) {
 }
 
 export function loraCatalog() {
-    return catalog ?? { loras: [], defaults: { ...DEFAULT_RANGE }, categories: LORA_CATEGORIES };
+    return catalog ?? { loras: [], defaults: { ...DEFAULT_RANGE }, samplePrompt: null, categories: LORA_CATEGORIES };
 }
 
 export function loraEntry(name) {
