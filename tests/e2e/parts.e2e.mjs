@@ -153,13 +153,11 @@ test('the row\'s Choose tags modal: the Tags tab links the same search to the Pa
     assert.deepEqual(JSON.parse(await page.evaluate(`JSON.stringify([...document.querySelectorAll('${OPEN_MODAL} .selection-modal-filter-label')].map(node => node.hidden))`)), [true, true], 'no Category or Sample box beside the rail');
 
     // a tile joins the selection as a part chip; Apply writes the token into the row
-    // a click previews the tile in the panel; the panel's button (or a double click) picks it
+    // a click picks the tile, as a tag is picked, and shows it in the panel
     await page.click(`${OPEN_MODAL} .selection-modal-tile`);
-    await page.waitFor(`Boolean(document.querySelector('${OPEN_MODAL} .selection-modal-tile.is-previewed'))`, { label: 'the tile previewed' });
-    assert.equal(await page.evaluate(`document.querySelectorAll('${OPEN_MODAL} .selection-modal-chip.is-part').length`), 0, 'a click alone does not pick');
-    assert.match(await page.evaluate(`document.querySelector('${OPEN_MODAL} .selection-modal-panel').textContent`), /serafuku/, 'the panel shows the previewed part\'s tags');
-    await page.click(`${OPEN_MODAL} .parts-picker-add`);
     await page.waitFor(`Boolean(document.querySelector('${OPEN_MODAL} .selection-modal-chip.is-part'))`, { label: 'the part among the selected chips' });
+    assert.match(await page.evaluate(`document.querySelector('${OPEN_MODAL} .selection-modal-panel').textContent`), /serafuku/, 'the panel shows the picked part\'s tags');
+    assert.equal(await page.evaluate(`Boolean(document.querySelector('${OPEN_MODAL} .parts-picker-add'))`), false, 'no second button to pick with');
     assert.equal(await page.evaluate(`document.querySelector('${OPEN_MODAL} .selection-modal-chip.is-part .selection-modal-chip-label').textContent`), 'parts:Sailor Uniform');
     await page.click(`${OPEN_MODAL} .selection-modal-apply`);
     await page.waitFor(`!document.querySelector('${OPEN_MODAL}')`, { label: 'the modal to close' });

@@ -1,74 +1,36 @@
-// The LoRA tab of a row's tag modal (tagSelectionModal.js): every LoRA as a tile whose
-// picture is its sample grid - the LoRA off, then five weights over its range - so what
-// it does shows without words. The panel beside the grid holds what the user decides per
-// LoRA: the weight range the samples span (and Retake), the trigger words kept, the
-// default weight, the tags it is suggested for, plus the images made with it and the
-// Civitai lookup. A picked LoRA joins the modal's Selected row; Apply adds it to the LoRA
-// slots at its default weight and its trigger words to the row.
-//
-// Samples are queued like the Parts' (generate.attachPartsSampleJob): six images per
-// LoRA on the current model, behind the user's own jobs.
+// The LoRA tab of a row's tag modal (tagSelectionModal.js), and the same tab alone as the
+// LoRA card's "+ LoRA" picker: every LoRA as a tile whose picture is its sample grid - the
+// LoRA off, then five weights over its range - so what it does shows without words. A
+// click on a tile picks it (as a tag is picked) and shows it in the panel, which holds
+// what the user decides per LoRA: the weight range the samples span (and Retake, with the
+// prompt they are made with), the trigger words kept, the default weight, the tags it is
+// suggested for, plus the images made with it and the Civitai lookup. A sample opens the
+// sample viewer (loraSamples.js). Apply adds the picked LoRAs to the LoRA slots at their
+// default weights and their trigger words to the row.
 //
 // The LoRAs also meet the prompt where it is written: a tag chip that some LoRA is
 // suggested for carries a "LoRA N" badge whose popover shows those LoRAs' grids and adds
 // the chosen one; a trigger word that came in with a LoRA of the slots carries a link
-// mark; and each LoRA slot row lists its trigger words, which switch on and off in the
-// prompt.
+// mark; and each LoRA slot row (slots/myLoRASlot.js) lists its trigger words, which
+// switch on and off in the prompt.
 
-import { LORA_CHANGED_EVENT, addLoraSample, askCivitai, changeLora, loadLoraCatalog, loraCatalog, loraEntry, loraSampleImage, lorasForTag } from './loraClient.js';
+import { LORA_CHANGED_EVENT, askCivitai, changeLora, loadLoraCatalog, loraCatalog, loraEntry, loraSampleImage, lorasForTag } from './loraClient.js';
 import { parsePromptToCapsules, serializeCapsules } from './components/tagCapsuleLogic.js';
-import { LORA_SAMPLE_GENERATION, LORA_SAMPLE_SEED, LORA_SAMPLE_SIZE, defaultCell, loraFitsModel, loraSamplePrompt, sampleWeights, samplesForModel, tagKey } from '../shared/loraCatalog.js';
-import { attachPartsSampleJob, partsSampleQueued } from './generate.js';
+import { defaultCell, loraFitsModel, sampleWeights, samplesForModel, tagKey } from '../shared/loraCatalog.js';
 import { getPart, partLoras } from './partsClient.js';
 import { showDialog } from './components/myDialog.js';
+import { createSelectionModal } from './components/selectionModal.js';
+import {
+    button, comfyInterface, currentModel, element, hasSamples, insideSampleOverlay, modelType, number,
+    openRetakeDialog, openSampleViewer, queueLoraSamples, text,
+} from './loraSamples.js';
+
+export { queueLoraSamples };
 
 const CATEGORY_COLORS = Object.freeze({
     Composition: '#38bdf8', Character: '#f472b6', Style: '#c084fc', Concept: '#4ade80',
     Pose: '#facc15', Clothing: '#e0a72f', Speed: '#ffb454', Unsorted: '#6b7280',
 });
-
-function lang() {
-    const settings = globalThis.globalSettings ?? {};
-    return globalThis.cachedFiles?.language?.[settings.language] ?? {};
-}
-
-function text(key, fallback) {
-    const value = lang()[key];
-    return typeof value === 'string' && value ? value : fallback;
-}
-
-function element(tag, className, content) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (content !== undefined && content !== null) node.textContent = String(content);
-    return node;
-}
-
-function button(className, label, onClick) {
-    const node = element('button', className, label);
-    node.type = 'button';
-    node.addEventListener('click', event => {
-        event.stopPropagation();
-        onClick(event);
-    });
-    return node;
-}
-
-function number(value) {
-    return Number.isFinite(value) ? String(Math.round(value * 100) / 100) : '—';
-}
-
-function modelType() {
-    return globalThis.globalSettings?.api_model_type === 'Diffusion' ? 'Diffusion' : 'Checkpoint';
-}
-
-function currentModel() {
-    return String(globalThis.dropdownList?.model?.getValue?.() ?? '');
-}
-
-function comfyInterface() {
-    return globalThis.generate?.api_interface?.getValue?.() === 'ComfyUI';
-}
 
 export function baseLabel(base) {
     return { sdxl: 'Illustrious / SDXL', anima: 'Anima' }[base] ?? text('lora_base_unknown', 'Unknown');
@@ -80,7 +42,7 @@ function categoryLabel(category) {
 
 // ------------------------------------------------------------------ the sample grid
 
-/** Off and five weights, each with its sample (or an empty cell), the default ringed. */
+/** Off and five weights, each with its sample (or an empty cell), the default ringed; `onPick(weight)` makes the cells buttons. */
 function strengthGrid(entry, { ring = false, onPick = null } = {}) {
     const grid = element('span', `lora-grid${ring ? ' is-large' : ''}`);
     const weights = sampleWeights(entry.range);
@@ -118,38 +80,10 @@ function tile(entry) {
     box.append(picture, element('span', 'lora-tile-name', entry.label));
     const meta = element('span', 'lora-tile-meta');
     meta.append(element('span', 'lora-base-badge', baseLabel(entry.base)));
+    if (slotLoras({ all: true }).includes(entry.name)) meta.append(element('span', 'lora-base-badge is-in-slots', text('lora_in_slots', 'In slots')));
     meta.append(element('span', `lora-tile-trigger${entry.triggers.length ? '' : ' is-none'}`, entry.triggers.length ? entry.triggers.join(', ') : text('lora_no_trigger', 'no trigger')));
     box.append(meta);
     return box;
-}
-
-// ------------------------------------------------------------------ samples
-
-/** Queues the six sample images of a LoRA on the current model; false when it cannot. */
-export function queueLoraSamples(name) {
-    const entry = loraEntry(name);
-    if (!entry || !comfyInterface()) return false;
-    const type = modelType();
-    const model = currentModel();
-    const generation = LORA_SAMPLE_GENERATION[type];
-    for (const weight of sampleWeights(entry.range)) {
-        const key = `lora:${entry.name}:${weight}:${model}`;
-        if (partsSampleQueued(key)) continue;
-        const { positive, negative } = loraSamplePrompt({ modelType: type, name: entry.name, triggers: entry.triggers, linked: entry.linked, weight });
-        attachPartsSampleJob({
-            label: `LoRA ${entry.label} · ${weight === 0 ? 'off' : number(weight)}`,
-            key,
-            positive,
-            negative,
-            seed: LORA_SAMPLE_SEED,
-            width: LORA_SAMPLE_SIZE.width,
-            height: LORA_SAMPLE_SIZE.height,
-            ...generation,
-            prefix: 'lora-samples/%date',
-            onImage: image => addLoraSample(entry.name, { weight, model, modelType: type }, image),
-        });
-    }
-    return true;
 }
 
 // ------------------------------------------------------------------ the panel
@@ -201,7 +135,7 @@ async function imagesWith(entry, holder) {
     }
 }
 
-function panel(entry, api, option) {
+function panel(entry) {
     const box = element('div', 'lora-panel');
     if (!entry) {
         box.append(element('p', 'lora-panel-empty', loraCatalog().loras.length ? text('lora_panel_pick', 'Pick a LoRA.') : text('lora_panel_none', 'No LoRA files found.')));
@@ -218,8 +152,8 @@ function panel(entry, api, option) {
     head.append(element('h3', 'lora-panel-name', entry.label), sub);
     box.append(head);
 
-    // the grid: a click on a weight makes it the default
-    box.append(strengthGrid(entry, { ring: true, onPick: weight => { if (weight > 0) setRange(entry, { def: weight }); } }));
+    // the grid: a click opens the samples large (the default is made there, or below)
+    box.append(strengthGrid(entry, { ring: true, onPick: () => openSampleViewer(entry.name) }));
     const rangeRow = element('div', 'lora-range');
     const input = (value, label, key) => {
         const field = element('input', 'lora-range-input');
@@ -238,7 +172,8 @@ function panel(entry, api, option) {
     rangeRow.append(rangeLabel, element('span', 'lora-range-dash', '–'), input(entry.range.max, text('lora_range_max', 'Highest weight'), 'max'));
     rangeRow.append(element('span', `lora-range-src is-${entry.range.src}`, entry.range.src === 'Civitai' ? 'Civitai' : entry.range.src === 'custom' ? text('lora_range_custom', 'custom') : text('lora_range_default', 'default')));
     rangeRow.append(element('span', 'lora-spacer'));
-    const take = button('lora-button', samplesForModel(entry, currentModel()).samples.size ? text('lora_retake', 'Retake') : text('lora_take_samples', 'Take samples'), () => queueLoraSamples(entry.name));
+    // the prompt the samples are made with is written in the dialog, just before they are taken
+    const take = button('lora-button lora-retake-open', samplesForModel(entry, currentModel()).samples.size ? text('lora_retake', 'Retake') : text('lora_take_samples', 'Take samples'), () => openRetakeDialog(entry.name));
     take.disabled = !comfyInterface();
     rangeRow.append(take);
     box.append(rangeRow);
@@ -287,11 +222,9 @@ function panel(entry, api, option) {
     if (Number.isFinite(entry.dim)) facts.push(`dim ${number(entry.dim)}${Number.isFinite(entry.alpha) ? ` / alpha ${number(entry.alpha)}` : ''}`);
     box.append(element('p', 'lora-panel-file', facts.join(' · ')));
 
-    const actions = element('div', 'lora-panel-actions');
-    const selected = Boolean(option && api?.isSelected?.(option));
-    const add = button(`viewer-primary-button lora-add${selected ? ' is-selected' : ''}`, selected ? text('lora_remove_from_selection', 'Remove from selection') : text('lora_add_to_slots', 'Add to LoRA slots'), () => { if (option) api?.toggle?.(option); });
-    actions.append(add);
+    // picking happens on the tile (as a tag is picked); the panel only looks things up
     if (!globalThis.inBrowser) {
+        const actions = element('div', 'lora-panel-actions');
         const civitai = button('lora-button', 'Civitai', async () => {
             civitai.disabled = true;
             const answer = await askCivitai(entry.name).catch(error => ({ ok: false, message: error?.message ?? String(error) }));
@@ -299,8 +232,8 @@ function panel(entry, api, option) {
             if (!answer?.ok) showDialog('info', { message: answer?.message ?? 'Civitai' });
         });
         actions.append(civitai);
+        box.append(actions);
     }
-    box.append(actions);
     return box;
 }
 
@@ -320,7 +253,7 @@ function optionFor(entry) {
     };
 }
 
-/** The LoRA tab for a row's modal; null for a browser client without the catalog. */
+/** The LoRA tab for a row's modal, or (`fieldKey` null) for the LoRA card's own picker. */
 export function loraPickerTab({ fieldKey = null } = {}) {
     const matching = query => {
         const needle = String(query ?? '').trim().toLowerCase();
@@ -347,7 +280,8 @@ export function loraPickerTab({ fieldKey = null } = {}) {
                 if (entry) changeLora({ action: 'set', name: entry.name, patch: { favorite: !entry.favorite } });
             },
         },
-        clickPreviews: true,
+        // a click picks the tile and shows it in the panel, as on the tag list
+        clickPreviews: false,
         sorts: [
             { value: 'name', label: text('parts_sort_name', 'Name'), compare: (a, b) => labelOf(a).localeCompare(labelOf(b)) },
             { value: 'newest', label: text('lora_sort_newest', 'Newest file'), compare: (a, b) => (loraEntry(b.lora)?.mtime ?? 0) - (loraEntry(a.lora)?.mtime ?? 0) || labelOf(a).localeCompare(labelOf(b)) },
@@ -366,10 +300,7 @@ export function loraPickerTab({ fieldKey = null } = {}) {
             return loraCatalog().loras.map(optionFor);
         },
         renderOption: item => tile(loraEntry(item.lora)),
-        panel: (item, api) => {
-            const entry = item ? loraEntry(item.lora) : null;
-            return panel(entry, api, entry ? optionFor(entry) : null);
-        },
+        panel: item => panel(item ? loraEntry(item.lora) : null),
         actions: [],
         peek: matching,
         peekLabel: count => text('lora_tab_peek', '{0} LoRAs match → LoRA').replace('{0}', String(count)),
@@ -406,6 +337,36 @@ export async function addLorasToSlots(names) {
     return [...new Set(entries.flatMap(entry => entry.triggers))];
 }
 
+let picker = null;
+
+/**
+ * The LoRA card's "+ LoRA": the tag modal's LoRA tab on its own (titled LoRA, no other
+ * tab), the picked LoRAs added to the slots and their trigger words to the Positive row.
+ */
+export function openLoraPicker({ trigger = null } = {}) {
+    if (!picker) {
+        picker = createSelectionModal({
+            mode: 'multiple',
+            fitWindow: true,
+            onApply: async selected => {
+                const names = selected.map(option => option.lora).filter(Boolean);
+                if (names.length === 0) return;
+                addWordsToRow('positive', await addLorasToSlots(names));
+                notifySlots();
+            },
+        });
+    }
+    picker.open({
+        trigger,
+        modalTitle: 'LoRA',
+        tabs: [loraPickerTab()],
+        tab: 'lora',
+        soleTab: true,
+        applyLabel: count => (count > 0 ? `${text('lora_add', 'Add')} (${count})` : text('lora_add', 'Add')),
+    });
+    return picker;
+}
+
 // ------------------------------------------------------------------ the prompt side
 
 // the rows a LoRA's words belong in: not the negative ones, not Exclude, not the cast list
@@ -417,10 +378,10 @@ function positiveRow(fieldKey) {
     return !(Array.isArray(fields) && fields.some(field => field?.id === fieldKey && field.polarity === 'negative'));
 }
 
-// the LoRAs of the slots that run (OFF rows do not)
-function slotLoras() {
+// the LoRAs of the slots that run (OFF rows do not), or with `all` every row's
+function slotLoras({ all = false } = {}) {
     const rows = globalThis.lora?.getValues?.() ?? globalThis.globalSettings?.lora_slot ?? [];
-    return rows.filter(row => Array.isArray(row) && row[0] && row[3] !== 'OFF').map(row => String(row[0]));
+    return rows.filter(row => Array.isArray(row) && row[0] && (all || row[3] !== 'OFF')).map(row => String(row[0]));
 }
 
 /**
@@ -512,11 +473,11 @@ function closePopover() {
 }
 
 function outsidePopover(event) {
-    if (popover && !popover.contains(event.target)) closePopover();
+    if (popover && !popover.contains(event.target) && !insideSampleOverlay(event.target)) closePopover();
 }
 
 function popoverKey(event) {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && !document.querySelector('.lora-viewer, .lora-retake')) {
         event.preventDefault();
         closePopover();
     }
@@ -553,9 +514,9 @@ export function openTagPopover({ tag, anchor, fieldKey }) {
             row.querySelector('input').checked = on;
         }
         const entry = loraEntry(picked);
-        gridHolder.replaceChildren(strengthGrid(entry, { ring: true }));
+        gridHolder.replaceChildren(strengthGrid(entry, { ring: true, onPick: () => openSampleViewer(entry.name) }));
         if (samplesForModel(entry, currentModel()).samples.size === 0 && comfyInterface()) {
-            gridHolder.append(button('lora-button lora-popover-take', text('lora_take_samples', 'Take samples'), () => queueLoraSamples(entry.name)));
+            gridHolder.append(button('lora-button lora-popover-take', text('lora_take_samples', 'Take samples'), () => openRetakeDialog(entry.name)));
         }
         add.textContent = `${text('lora_add', 'Add')} ${entry.label} · ${number(entry.range.def)}`;
     };
@@ -604,93 +565,78 @@ function rowsWithWord(word) {
     return positiveControls().filter(({ control }) => parsePromptToCapsules(String(control.getValue() ?? '')).some(capsule => tagKey(capsule.value) === key));
 }
 
-function switchWord(word, on) {
-    if (on) {
-        addWordsToRow('positive', [word]);
-        return;
+/** Puts a trigger word in the Positive row, or takes it out of every positive row. */
+export function switchWord(word, on) {
+    if (on) addWordsToRow('positive', [word]);
+    else {
+        const key = tagKey(word);
+        for (const { control } of rowsWithWord(word)) {
+            // the rest of the row goes back as the chips write it (weights and disabled marks kept)
+            const kept = parsePromptToCapsules(String(control.getValue() ?? '')).filter(capsule => tagKey(capsule.value) !== key);
+            control.commitValue(serializeCapsules(kept));
+        }
     }
-    const key = tagKey(word);
-    for (const { control } of rowsWithWord(word)) {
-        // the rest of the row goes back as the chips write it (weights and disabled marks kept)
-        const kept = parsePromptToCapsules(String(control.getValue() ?? '')).filter(capsule => tagKey(capsule.value) !== key);
-        control.commitValue(serializeCapsules(kept));
-    }
+    notifySlots();
 }
 
-let slotSignature = '';
-
-/** Each LoRA slot row lists its LoRA's trigger words, on (in the prompt) or off. */
-export function decorateSlots() {
-    const container = document.querySelector('.add-lora-main');
-    if (!container) return;
-    const rows = [...container.querySelectorAll('.slot-row.content-row')];
-    const values = globalThis.lora?.getValues?.() ?? [];
-    const lines = rows.map((row, index) => {
-        const entry = loraEntry(String(values[index]?.[0] ?? ''));
-        if (!entry) return { row, words: [], origin: '' };
-        return { row, entry, origin: origins.get(entry.name) ?? '', words: entry.triggers.map(word => ({ word, on: rowsWithWord(word).length > 0 })) };
-    });
-    const signature = JSON.stringify(lines.map(line => [line.entry?.name ?? '', line.origin, line.words]));
-    if (signature === slotSignature && lines.every(line => (line.words.length > 0 || line.origin) === Boolean(line.row.querySelector('.lora-slot-triggers')))) return;
-    slotSignature = signature;
-    for (const line of lines) {
-        let holder = line.row.querySelector('.lora-slot-triggers');
-        if (!line.entry || (line.words.length === 0 && !line.origin)) {
-            holder?.remove();
-            continue;
-        }
-        if (!holder) {
-            holder = element('div', 'lora-slot-triggers');
-            line.row.append(holder);
-        }
-        holder.replaceChildren();
-        if (line.origin) holder.append(element('span', 'lora-slot-origin', `tag: ${line.origin}`));
-        for (const { word, on } of line.words) {
-            const chip = button(`lora-slot-trigger${on ? ' is-on' : ''}`, on ? `${word} ✓` : `+ ${word}`, () => {
-                switchWord(word, !on);
-                notifySlots();
-            });
-            chip.setAttribute('aria-pressed', String(on));
-            holder.append(chip);
-        }
-    }
+/** A slot row's trigger words, each on (in a positive row) or off, and where the LoRA came from. */
+export function slotWords(name) {
+    const entry = loraEntry(name);
+    if (!entry) return { words: [], origin: '' };
+    return { origin: origins.get(entry.name) ?? '', words: entry.triggers.map(word => ({ word, on: rowsWithWord(word).length > 0 })) };
 }
 
-function watchSlots() {
-    const container = document.querySelector('.add-lora-main');
-    if (!container) return;
+/** What a slot row's slider spans: the LoRA's range (the catalog default without one) and the sample weights on it. */
+export function slotRange(name) {
+    const range = loraEntry(name)?.range ?? loraCatalog().defaults;
+    return { min: range.min, max: range.max, def: range.def, ticks: [...new Set(sampleWeights(range))] };
+}
+
+/** The positive rows' tags as one text, the LoRA tags left out (the Retake dialog's "Current prompt"). */
+export function currentPromptText() {
+    const tags = [];
+    for (const { id, control } of positiveControls()) {
+        if (fieldMuted(id)) continue;
+        for (const capsule of parsePromptToCapsules(String(control.getValue() ?? ''))) {
+            const value = String(capsule.value ?? '').trim();
+            if (!value || capsule.disabled || /^<lora:/i.test(value) || tags.includes(value)) continue;
+            tags.push(value);
+        }
+    }
+    return tags.join(', ');
+}
+
+// a trigger word typed or removed in a row turns its chip in the slot row on or off
+function watchPrompt() {
     let timer = null;
     const later = () => {
         clearTimeout(timer);
-        timer = setTimeout(decorateSlots, 120);
+        timer = setTimeout(() => globalThis.lora?.refreshWords?.(), 120);
     };
-    new MutationObserver(mutations => {
-        // our own trigger lines are no reason to look again
-        if (mutations.every(mutation => mutation.target.closest?.('.lora-slot-triggers'))) return;
-        later();
-    }).observe(container, { childList: true, subtree: true });
-    container.addEventListener('change', later);
-    container.addEventListener('click', later);
     document.addEventListener(LORA_CHANGED_EVENT, later);
-    // a trigger word typed or removed in a row turns its chip on or off
     document.addEventListener('input', event => { if (event.target?.closest?.('.prompt-fields, .myTextbox-wrapper')) later(); }, true);
-    later();
 }
 
 export function setupLoraUi() {
     const api = {
         pickerTab: loraPickerTab,
+        openPicker: openLoraPicker,
         addToSlots: addLorasToSlots,
         queueSamples: queueLoraSamples,
+        openSamples: openSampleViewer,
+        hasSamples,
         reload: () => loadLoraCatalog({ force: true }),
         chipInfo,
         openTagPopover,
-        decorateSlots,
+        slotWords,
+        slotRange,
+        switchWord,
+        currentPromptText,
         partTriggers,
         partLorasForPrompt,
     };
     globalThis.loraUi = api;
     loadLoraCatalog();
-    watchSlots();
+    watchPrompt();
     return api;
 }

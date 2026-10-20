@@ -21,11 +21,12 @@ test('a part from the bundled starter set is marked as such, a part the user mad
     assert.equal(merged.doc.parts.mine.starter, false, 'merging never marks the user\'s part');
 });
 
-test('the Parts tab asks the modal for the rail, click-previews, two sort orders, three tile sizes and no Sample box', () => {
+test('the Parts tab asks the modal for the rail, a click that picks, two sort orders, three tile sizes and no Sample box', () => {
     const ui = read('scripts/renderer/partsUi.js');
     const tab = ui.slice(ui.indexOf('export function partsPickerTab('), ui.indexOf('export function openPartsPicker('));
     assert.match(tab, /rail: true,/);
-    assert.match(tab, /clickPreviews: true,/);
+    // a click picks the tile as a tag is picked (2026-10-20); the panel follows it
+    assert.match(tab, /clickPreviews: false,/);
     assert.match(tab, /attributes: \[\],/, 'no Sample filter: the tile says when a sample is missing');
     assert.match(tab, /color: CATEGORY_COLORS\[category\]/);
     for (const category of PART_CATEGORIES) assert.match(ui, new RegExp(`\\b${category}: '#[0-9a-f]{6}'`), `${category} has a rail colour`);
@@ -35,7 +36,7 @@ test('the Parts tab asks the modal for the rail, click-previews, two sort orders
     assert.match(tab, /\{ value: 'm', label: 'M', px: 168, default: true/);
     assert.match(tab, /\{ value: 'l', label: 'L', px: 220/);
     assert.match(tab, /renderOption: item => pickerTile\(item\.part\)/);
-    assert.match(tab, /panel: \(item, api\) => pickerPanel\(item\?\.part \?\? null, \{ trigger, api, toOption: option/);
+    assert.match(tab, /panel: \(item, api\) => pickerPanel\(item\?\.part \?\? null, \{ trigger, onChanged/);
     assert.doesNotMatch(tab, /parts_filter_sampled|Model/, 'no model selector: the model in use decides');
 });
 
@@ -50,8 +51,7 @@ test('a tile shows the sample of the model in use or says "No sample yet"; the p
     assert.match(panel, /entry\.starter \? text\('parts_origin_starter', 'starter'\) : text\('parts_origin_user', 'yours'\)/);
     assert.match(panel, /v\$\{sample\.promptVersion\}/);
     assert.match(panel, /'parts-picker-token', partToken\(entry\.name\)/);
-    assert.match(panel, /text\('parts_add_to_selection', 'Add to selection'\)/);
-    assert.match(panel, /text\('parts_remove_from_selection', 'Remove from selection'\)/);
+    assert.doesNotMatch(panel, /parts-picker-add/, 'no button of its own to pick with: the tile is it');
     assert.match(panel, /openPartEditor\(\{ id, trigger/);
     assert.match(panel, /queuePartSample\(id, \{ base: 'mannequin' \}\)/);
     // a sample of the other model type is not what the picker shows

@@ -677,7 +677,7 @@ function pickerTile(id) {
 // The panel beside the grid of the row modal's Parts tab: the name, where the part
 // came from, the sample of the model in use, the tags, what the chip sends, and Add
 // to selection / Edit / Sample
-function pickerPanel(id, { trigger = null, api = null, toOption = null, onChanged = null } = {}) {
+function pickerPanel(id, { trigger = null, onChanged = null } = {}) {
     const entry = id ? getPart(id) : null;
     const panel = el('div', 'parts-panel-content parts-picker-panel');
     if (!entry) {
@@ -707,15 +707,12 @@ function pickerPanel(id, { trigger = null, api = null, toOption = null, onChange
     panel.append(chips);
     panel.append(el('span', 'parts-section-label', text('parts_sends_as', 'Sends as').toUpperCase()));
     panel.append(el('code', 'parts-picker-token', partToken(entry.name)));
+    // picking happens on the tile (as a tag is picked); the panel edits and resamples
     const actions = el('div', 'parts-picker-actions');
-    const option = toOption ? toOption(entry) : null;
-    const selected = Boolean(option && api?.isSelected?.(option));
-    const add = button(`parts-picker-add${selected ? ' is-selected' : ''}`, selected ? text('parts_remove_from_selection', 'Remove from selection') : text('parts_add_to_selection', 'Add to selection'), () => { if (option) api?.toggle?.(option); });
-    add.disabled = !option;
     const edit = button('list-manager-button parts-picker-edit', text('parts_edit_short', 'Edit'), () => openPartEditor({ id, trigger, onSaved: () => onChanged?.() }));
     const sampleButton = button('list-manager-button parts-picker-sample', text('parts_sample_short', 'Sample'), () => queuePartSample(id, { base: 'mannequin' }), { title: text('parts_new_sample', 'New sample') });
     sampleButton.disabled = !comfyInterface();
-    actions.append(add, edit, sampleButton);
+    actions.append(edit, sampleButton);
     panel.append(actions);
     return panel;
 }
@@ -810,8 +807,8 @@ export function partsPickerTab({ fieldKey = null, trigger = null } = {}) {
         categoryAll: text('parts_category_all', 'All'),
         // no Sample box: a tile without a sample of the model in use says so itself
         attributes: [],
-        // one click shows the tile in the panel, a double click (or Enter) picks it
-        clickPreviews: true,
+        // a click picks the tile and shows it in the panel, as on the tag list
+        clickPreviews: false,
         sorts: [
             { value: 'name', label: text('parts_sort_name', 'Name'), compare: (a, b) => optionLabelOf(a).localeCompare(optionLabelOf(b)) },
             { value: 'newest', label: text('parts_sort_newest', 'Newest'), compare: (a, b) => created(b).localeCompare(created(a)) || optionLabelOf(a).localeCompare(optionLabelOf(b)) },
@@ -832,7 +829,7 @@ export function partsPickerTab({ fieldKey = null, trigger = null } = {}) {
             return partList().map(option);
         },
         renderOption: item => pickerTile(item.part),
-        panel: (item, api) => pickerPanel(item?.part ?? null, { trigger, api, toOption: option, onChanged: () => api.refresh() }),
+        panel: (item, api) => pickerPanel(item?.part ?? null, { trigger, onChanged: () => api.refresh() }),
         actions: [
             { label: text('parts_new', '+ New part'), onClick: api => openPartEditor({ trigger, onSaved: () => api.refresh() }) },
             {

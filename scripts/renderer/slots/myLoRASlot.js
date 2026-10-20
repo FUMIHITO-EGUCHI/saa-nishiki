@@ -1,6 +1,15 @@
-import { mySimpleList } from '../components/myDropdown.js';
-import { setupTextbox } from '../components/myTextbox.js';
-import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
+// The LoRA slots, the LoRA card of the Pipeline: one row per LoRA - a switch, the name,
+// its trigger words (on or off in the prompt), a weight slider marked at the weights its
+// samples were taken at, the weight, and a fold with the pass it runs in, the CLIP
+// strength (it follows the weight until a value of its own is typed; ↺ puts it back) and
+// the button that opens the samples. "+ LoRA" opens the LoRA picker (loraUi.js). The
+// LoRA's words, range and samples come from globalThis.loraUi when it is set up.
+//
+// Kept as before: settings.lora_slot rows [name, model, clip, mode], mode ALL, Base, HiFix
+// or OFF (an OFF row keeps its strengths and its pass comes back as All).
+
+import { LORA_CHANGED_EVENT } from '../loraClient.js';
+import { loraLabel } from '../../shared/loraCatalog.js';
 
 let instanceSlotManager = null;
 
@@ -24,736 +33,378 @@ export function generateGUID() {
     return result;
 }
 
-async function processLoraMetadata(data) {
-    try {
-        const jsonString = JSON.stringify(data, null, 2);
+const STAGES = Object.freeze([['ALL', 'All'], ['Base', 'Base'], ['HiFix', 'Hires']]);
+const MODES = new Set(['ALL', 'Base', 'HiFix', 'OFF']);
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const ICONS = Object.freeze({
+    down: 'M4 6l4 4 4-4',
+    close: 'M4 4l8 8M12 4l-8 8',
+    relink: ['M3.5 8a4.5 4.5 0 108-2.8', 'M11.8 2.2v3.2H8.6'],
+    image: ['M2.5 3.5h11v9h-11z', 'M2.5 11.5l3.5-3.5 2.5 2.5 2-2 3 3'],
+    plus: ['M8 3v10', 'M3 8h10'],
+});
 
-        const keyMap = {
-            "modelspec.title": "Model Title",
-            "modelspec.architecture": "Architecture",
-            "modelspec.date": "Date",
-            "ss_sd_model_name": "Base Model Name",
-            "ss_base_model_version": "Base Model Version",
-            "modelspec.resolution": "Resolution",
-            "ss_seed": "Seed",
-            "ss_clip_skip": "Clip Skip",
-            "ss_network_dim": "Network Dim",
-            "ss_network_alpha": "Network Alpha"
-        };
-
-        const basicInfoObj = {};
-        for (const [oldKey, newKey] of Object.entries(keyMap)) {
-            if (data[oldKey]) {
-                basicInfoObj[newKey] = data[oldKey];
-            }
-        }
-        const basicInfo = Object.entries(basicInfoObj)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join('\n');
-
-        const topN = 10; 
-        let topTags = '';
-        if (data['ss_tag_frequency']) {
-            try {
-                const tagFrequency = JSON.parse(data['ss_tag_frequency']);
-                const firstKey = Object.keys(tagFrequency)[0];
-                const tags = firstKey ? tagFrequency[firstKey] || {} : {};
-                const sortedTags = Object.entries(tags)
-                    .map(([tag, count]) => ({ tag, count: Number(count) }))
-                    .sort((a, b) => b.count - a.count)
-                    .slice(0, topN)
-                    .map(item => `${item.tag} (${item.count})`);
-                topTags = sortedTags.join(', ');
-            } catch (parseError) {
-                console.error('Failed to parse ss_tag_frequency:', parseError);
-                topTags = '';
-            }
-        }
-
-        return { jsonString, basicInfo, topTags };
-    } catch (error) {
-        throw new Error(`Reading metadata failed: ${error.message}`);
-    }
+function lang() {
+    const settings = globalThis.globalSettings ?? {};
+    return globalThis.cachedFiles?.language?.[settings.language] ?? {};
 }
 
-async function showLoRAInfo(modelPath, prefix, loraPath, lora_trigger_words, lora_metadata, lora_no_metadata){
-    const greenColor = (globalThis.globalSettings.css_style==='dark')?'Chartreuse':'SeaGreen';
-    try {
-        let loraInfo;
-        if (globalThis.inBrowser) {
-            loraInfo = await sendWebSocketMessage({ type: 'API', method: 'readSafetensors', params: [modelPath, prefix, loraPath] });
-        } else {
-            loraInfo = await globalThis.api.readSafetensors(modelPath, prefix, loraPath);
-        }
-        if(typeof loraInfo === 'string')
-        {
-            if(loraInfo.startsWith('None'))
-            {
-                globalThis.overlay.custom.createCustomOverlay(
-                    'none', `\n\n${lora_no_metadata}`, 384, 'center', 'left', null, 'Lora');
-            } else if(loraInfo.startsWith('Error')){
-                globalThis.overlay.custom.createCustomOverlay(
-                    'none', `\n\n${loraInfo}`, 384, 'center', 'left', null, 'Lora');
-            }
-        } else {
-            const { jsonString, basicInfo, topTags } = await processLoraMetadata(loraInfo);
-            let loraImage;
-            if (globalThis.inBrowser) {
-                loraImage = await sendWebSocketMessage({ type: 'API', method: 'readFile', params: [modelPath, prefix, loraPath.replace('.safetensors', '.png')] });
-            } else {
-                loraImage = await globalThis.api.readFile(modelPath, prefix, loraPath.replace('.safetensors', '.png'));
-            }
-            const message = `\n\n${basicInfo}\n${lora_trigger_words}[color=${greenColor}]${topTags}[/color]\n\n${lora_metadata}\n${jsonString}`;
-            globalThis.overlay.custom.createCustomOverlay(
-                loraImage, message, 384, 'center', 'left', null, 'Lora');
-        }
-    } catch (error) {
-        console.log('error', error);
-    }   
+function text(key, fallback) {
+    const value = lang()[key];
+    return typeof value === 'string' && value ? value : fallback;
 }
 
-function createSlotsFromValues(slotManager, slotValues, options = {}) {
-    const { validateLoRA = true, clearSlots = true } = options;
-
-    const SETTINGS = globalThis.globalSettings || {};
-    const FILES = globalThis.cachedFiles || { language: {}, loraList: ['Default LoRA'] };
-    const LANG = FILES.language[SETTINGS.language] || {
-        lora_model_strength: 'Model Strength',
-        lora_clip_strength: 'Clip Strength',
-        lora_enable_title: 'Enable'
-    };
-
-    // Optionally clear existing slots
-    if (clearSlots) {
-        const slots = slotManager.getSlots();
-        for (const slotClass of slots) {
-            slotManager.delSlot(slotClass);
-        }
-    }
-
-    // Process each set of slot values
-    for (let [loraName, modelStrength, clipStrength, enableValue] of slotValues) {
-        // Validate LoRA existence if required
-        const loraList = Array.isArray(FILES.loraList) ? FILES.loraList : [];
-        const missing = loraName !== '' && loraList.length > 0 && !loraList.includes(loraName);
-        if (validateLoRA && missing) {
-            console.warn(`LoRA "${loraName}" not found in loraList`);
-            if (options.skipInvalid) {
-                console.log(`LoRA "${loraName}" skipped due to validation failure.`);
-                continue;
-            }
-        }
-        // A name the list does not hold used to fall back to the list's first entry (the
-        // dropdown's default rule), so another LoRA went out in its place. The name stays
-        // as its own option, and the row is switched off until the file is there.
-        const nameOptions = missing ? [loraName, ...loraList] : loraList;
-        if (missing) {
-            console.warn(`LoRA "${loraName}" is not in the model folder: the row is kept by name and switched off`);
-            enableValue = 'OFF';
-        }
-
-        const className = slotManager.addSlot();
-        if (!className) continue;
-
-        const slot = slotManager.slotIndex.get(className);
-        if (!slot) continue;
-
-        requestAnimationFrame(() => {
-            // Initialize select1 (LoRA dropdown)            
-            const select1Component = mySimpleList(
-                slot.itemClasses.select1,
-                'LoRA',
-                nameOptions,
-                null,
-                15,
-                true,
-                false
-            );
-            select1Component.updateDefaults(loraName);
-            slot.items.set(slot.itemClasses.select1, () => select1Component);
-            slotManager.componentInstances.set(`${className}-${slot.itemClasses.select1}`, select1Component);
-
-            // Initialize text1 (Model Strength)
-            const text1Component = setupTextbox(
-                slot.itemClasses.text1,
-                LANG.lora_model_strength,
-                { value: modelStrength, defaultTextColor: 'rgb(179,157,219)', maxLines: 1 },
-                false,
-                null,
-                false,
-                true
-            ); 
-            slot.items.set(slot.itemClasses.text1, () => text1Component);
-            slotManager.componentInstances.set(`${className}-${slot.itemClasses.text1}`, text1Component);
-
-            // Initialize text2 (Clip Strength)
-            const text2Component = setupTextbox(
-                slot.itemClasses.text2,
-                LANG.lora_clip_strength,
-                { value: clipStrength, defaultTextColor: 'rgb(255,213,0)', maxLines: 1 },
-                false,
-                null,
-                globalThis.generate.api_interface.getValue() !== 'ComfyUI',
-                true
-            );
-            slot.items.set(slot.itemClasses.text2, () => text2Component);
-            slotManager.componentInstances.set(`${className}-${slot.itemClasses.text2}`, text2Component);
-
-
-            // Initialize select2 (Enable dropdown)
-            const select2Component = mySimpleList(
-                slot.itemClasses.select2,
-                LANG.lora_enable_title,
-                ["ALL", "Base", "HiFix", "OFF"],
-                null,
-                5,
-                false,
-                false
-            );
-            select2Component.updateDefaults(enableValue);
-            slot.items.set(slot.itemClasses.select2, () => select2Component);
-            slotManager.componentInstances.set(`${className}-${slot.itemClasses.select2}`, select2Component);
-        });
-    }
+function element(tag, className, content) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (content !== undefined && content !== null) node.textContent = String(content);
+    return node;
 }
 
+function icon(paths, size = 14) {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    for (const [key, value] of Object.entries({ width: size, height: size, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', 'stroke-width': 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) {
+        svg.setAttribute(key, String(value));
+    }
+    for (const d of [paths].flat()) {
+        const path = document.createElementNS(SVG_NS, 'path');
+        path.setAttribute('d', d);
+        svg.append(path);
+    }
+    return svg;
+}
+
+function iconButton(className, label, paths, onClick) {
+    const node = element('button', className);
+    node.type = 'button';
+    node.setAttribute('aria-label', label);
+    node.title = label;
+    node.append(icon(paths));
+    node.addEventListener('click', onClick);
+    return node;
+}
+
+const strength = value => {
+    const number = Number.parseFloat(value);
+    return Number.isFinite(number) ? number : 0;
+};
+const formatted = value => String(Math.round(value * 100) / 100);
+
+function lorasListed() {
+    const list = globalThis.cachedFiles?.loraList;
+    return Array.isArray(list) ? list : [];
+}
+
+// a name the list does not hold (the list read and not empty): the row is kept by name, off
+function missing(name) {
+    const list = lorasListed();
+    return name !== '' && list.length > 0 && !list.includes(name);
+}
+
+/** "<lora:a:0.6:0.4:0:0>…" (a prompt's LoRA tags) as slot rows, one mode per pair. */
+export function rowsFromLoraTags(loraString) {
+    const rows = [];
+    for (const match of String(loraString ?? '').matchAll(/<lora:([^>]+)>/g)) {
+        const parts = match[1].split(':');
+        const name = parts[0];
+        const values = parts.slice(1).map(v => Number.parseFloat(v) || 0);
+        // a list not read yet (empty) says nothing about the file: the row is kept as written
+        if (missing(name)) {
+            rows.push([name, '0', '0', 'OFF']);
+            continue;
+        }
+        if (values.length <= 2) {
+            const model = values[0]?.toString() || '0';
+            const clip = values[1]?.toString() || '0';
+            rows.push([name, model, clip, (Number.parseFloat(model) !== 0 || Number.parseFloat(clip) !== 0) ? 'ALL' : 'OFF']);
+        } else if (values.length === 4) {
+            const base = [values[0], values[1]];
+            const hires = [values[2], values[3]];
+            const baseOn = base.some(v => v !== 0);
+            const hiresOn = hires.some(v => v !== 0);
+            if (baseOn && base[0] === hires[0] && base[1] === hires[1]) rows.push([name, String(base[0]), String(base[1]), 'ALL']);
+            else {
+                if (baseOn) rows.push([name, String(base[0]), String(base[1]), 'Base']);
+                if (hiresOn) rows.push([name, String(hires[0]), String(hires[1]), 'HiFix']);
+                if (!baseOn && !hiresOn) rows.push([name, '0', '0', 'OFF']);
+            }
+        }
+    }
+    return rows;
+}
 
 class SlotManager {
     constructor(containerSelector) {
         this.container = document.querySelector(`.${containerSelector}`);
-        this.slotIndex = new Map();
-        this.candidateClassName = null;
-        this.componentInstances = new Map();
-        this.initialize();
-        this.bindEvents();
+        this.rows = [];
+        this.list = element('div', 'lora-slots');
+        const addRow = element('div', 'lora-slot-add-row');
+        this.addButton = element('button', 'lora-slot-add');
+        this.addButton.type = 'button';
+        this.addButton.append(icon(ICONS.plus), document.createTextNode('LoRA'));
+        this.addButton.addEventListener('click', () => globalThis.loraUi?.openPicker?.({ trigger: this.addButton }));
+        addRow.append(this.addButton);
+        this.container?.append(this.list, addRow);
+        // the catalog read (ranges, trigger words, samples) or changed: the rows follow
+        document.addEventListener(LORA_CHANGED_EVENT, () => this.refreshAll());
     }
 
-    bindEvents() {
-        this.container.addEventListener('click', async (e) => {
-            const target = e.target.closest('.slot-action');
-            if (!target) return;
+    // ------------------------------------------------------------ the rows
 
-            const action = target.dataset.action;
-            if (action === 'add') {
-                this.handleAdd();
-            } else if (action === 'delete') {
-                const slotClass = target.dataset.slot;
-                this.delSlot(slotClass);
-            } else if (action === 'info') {
-                const slotClass = target.dataset.slot;
-                
-                const SETTINGS = globalThis.globalSettings;
-                const FILES = globalThis.cachedFiles;
-                const LANG = FILES.language[SETTINGS.language];
-
-                const apiInterface = globalThis.generate.api_interface.getValue();
-                let modelPath = '';
-                let prefix = '';
-                if(apiInterface == 'ComfyUI'){
-                    modelPath = SETTINGS.model_path_comfyui;
-                    prefix = 'loras';
-                } else if(apiInterface == 'WebUI'){
-                    modelPath = SETTINGS.model_path_webui;
-                    prefix = 'Lora';
-                }
-
-                const loraPath = this.getSlotValue(slotClass, 0);
-                await showLoRAInfo(modelPath, prefix, loraPath, LANG.lora_trigger_words, LANG.lora_metadata, LANG.lora_no_metadata);                             
-            }
-        });
-
-        this.container.addEventListener('input', (e) => {
-            const input = e.target;
-            if (!input.matches('.numeric-input')) return;
-
-            const value = input.value;
-            const validPattern = /^-?\d*\.?\d*$/;   //NOSONAR S8786
-            if (validPattern.test(value)) {
-                input.dataset.lastValid = value;
-            } else {
-                input.value = input.dataset.lastValid || '';
-            }
-        });
-
-        this.container.addEventListener('keydown', (e) => {
-            const input = e.target;
-            if (!input.matches('.numeric-input')) return;
-
-            const key = e.key;
-            const value = input.value;
-            const cursorPos = input.selectionStart;
-
-            if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'].includes(key)) {
-                return;
-            }
-
-            if (key === '.' && value.includes('.')) {
-                e.preventDefault();
-                return;
-            }
-
-            if (key === '-' && (cursorPos !== 0 || value.includes('-'))) {
-                e.preventDefault();
-                return;
-            }
-
-            if (!/[\d.-]/.test(key)) {
-                e.preventDefault();
-            }
-        });
-    }
-    
-    getSlotValue(slotClass, index){
-        let ret = 'none';
-
-        const slot = this.slotIndex.get(slotClass);
-        if (!slot) {
-            console.log('Slot not found:', slotClass);
-            return ret;
-        }
-
-        let i = 0;
-        for (const item of slot.items) {
-            const itemClass = item[0];
-            const componentKey = `${slotClass}-${itemClass}`;
-            const component = this.componentInstances.get(componentKey);
-            
-            if (component && index === i) {
-                const value = component.getValue ? component.getValue() : 'No getValue method';
-                ret = value;
-            } 
-            i += 1;
-        }
-
-        return ret;
-    }
-
-    generateClassName(prefix) {
-        return `${prefix}-${generateGUID()}`;
-    }
-
-    initialize() {
-        const candidateClassName = this.createCandidateRow();
-        
-        const candidateSlot = this.slotIndex.get(candidateClassName);
-        if (candidateSlot) {
-            const row = this.renderAddRow(candidateClassName, candidateSlot.itemClasses);
-            this.container.appendChild(row);
-        }
-    }
-
-    createCandidateRow() {
-        const className = this.generateClassName('slot');
-        const itemClasses = {
-            add: this.generateClassName('slot-row-add'),
-            select1: this.generateClassName('slot-row-select1'),
-            text1: this.generateClassName('slot-row-text1'),
-            text2: this.generateClassName('slot-row-text2'),
-            select2: this.generateClassName('slot-row-select2')
+    rowFromValues([name, model, clip, mode] = []) {
+        const known = MODES.has(mode) ? mode : 'OFF';
+        const absent = missing(String(name ?? ''));
+        if (absent) console.warn(`LoRA "${name}" is not in the model folder: the row is kept by name and switched off`);
+        const modelText = String(model ?? '0') || '0';
+        const clipText = String(clip ?? modelText) || modelText;
+        return {
+            id: `slot-${generateGUID()}`,
+            name: String(name ?? ''),
+            model: modelText,
+            clip: clipText,
+            linked: strength(clipText) === strength(modelText),
+            stage: known === 'OFF' ? 'ALL' : known,
+            on: known !== 'OFF' && !absent,
+            missing: absent,
+            open: false,
+            el: null,
         };
+    }
 
-        this.slotIndex.set(className, {
-            itemClasses,
-            items: new Map(),
-            isCandidate: true
+    setRows(values) {
+        this.rows = (Array.isArray(values) ? values : []).filter(row => Array.isArray(row) && row[0] && String(row[0]).toLowerCase() !== 'none').map(row => this.rowFromValues(row));
+        this.render();
+    }
+
+    render() {
+        this.list.replaceChildren(...this.rows.map(row => this.renderRow(row)));
+        this.container?.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    refreshAll() {
+        for (const row of this.rows) if (row.el?.isConnected) this.renderRow(row);
+    }
+
+    /** Repaints the trigger words of every row (a word typed in a prompt row). */
+    refreshWords() {
+        for (const row of this.rows) if (row.el?.isConnected) this.paintWords(row);
+    }
+
+    renderRow(row) {
+        const node = row.el ?? element('div', 'lora-slot');
+        row.el = node;
+        node.dataset.slot = row.id;
+        node.classList.toggle('is-off', !row.on);
+        node.classList.toggle('is-missing', row.missing);
+        node.classList.toggle('is-open', row.open);
+        node.replaceChildren(this.renderLine(row));
+        if (row.open) node.append(this.renderFold(row));
+        return node;
+    }
+
+    renderLine(row) {
+        const line = element('div', 'lora-slot-line');
+        const toggle = element('button', 'lora-slot-switch');
+        toggle.type = 'button';
+        toggle.setAttribute('role', 'switch');
+        toggle.setAttribute('aria-checked', String(row.on));
+        toggle.setAttribute('aria-label', text('lora_slot_on', 'On'));
+        toggle.disabled = row.missing;
+        toggle.append(element('span', 'lora-slot-knob'));
+        toggle.addEventListener('click', () => {
+            row.on = !row.on;
+            this.renderRow(row);
         });
-        this.candidateClassName = className;
-        return className;
+
+        const main = element('div', 'lora-slot-main');
+        const name = element('div', 'lora-slot-name', loraLabel(row.name) || row.name);
+        name.title = row.missing ? `${row.name} · ${text('lora_slot_missing', 'not in the LoRA folder')}` : row.name;
+        const words = element('div', 'lora-slot-words');
+        main.append(name, words);
+
+        const weight = element('div', 'lora-slot-weight');
+        const slider = element('input', 'lora-slot-slider');
+        slider.type = 'range';
+        slider.step = '0.05';
+        slider.setAttribute('aria-label', text('lora_weight', 'Weight'));
+        const ticks = element('div', 'lora-slot-ticks');
+        weight.append(slider, ticks);
+        const value = element('input', 'lora-slot-value');
+        value.type = 'number';
+        value.step = '0.05';
+        value.setAttribute('aria-label', text('lora_model_strength', 'Model strength'));
+
+        const fold = iconButton('lora-slot-icon lora-slot-fold', text('lora_slot_details', 'Details'), ICONS.down, () => {
+            row.open = !row.open;
+            this.renderRow(row);
+        });
+        fold.setAttribute('aria-expanded', String(row.open));
+        const remove = iconButton('lora-slot-icon lora-slot-remove', text('lora_remove', 'Remove'), ICONS.close, () => this.removeRow(row));
+
+        // the weight: the slider and the field are the same value (CLIP too while it follows)
+        const show = () => {
+            const current = strength(row.model);
+            const range = globalThis.loraUi?.slotRange?.(row.name) ?? { min: 0, max: 1, ticks: [] };
+            const min = Math.min(0, range.min, current);
+            const max = Math.max(range.max, current, min + 0.05);
+            slider.min = String(min);
+            slider.max = String(max);
+            slider.value = String(current);
+            ticks.replaceChildren(...(range.ticks ?? []).filter(tick => tick >= min && tick <= max).map(tick => {
+                const mark = element('span', 'lora-slot-tick');
+                mark.style.left = `calc(7px + (100% - 14px) * ${((tick - min) / (max - min)).toFixed(4)})`;
+                return mark;
+            }));
+            if (document.activeElement !== value) value.value = row.model;
+        };
+        const setModel = (text, { exact = false } = {}) => {
+            row.model = exact ? text : formatted(strength(text));
+            if (row.linked) row.clip = row.model;
+            const clip = row.el?.querySelector('.lora-slot-clip');
+            if (clip && document.activeElement !== clip) clip.value = row.clip;
+        };
+        slider.addEventListener('input', () => {
+            setModel(slider.value);
+            value.value = row.model;
+        });
+        value.addEventListener('input', () => {
+            if (value.value === '' || !Number.isFinite(Number(value.value))) return;
+            setModel(value.value, { exact: true });
+            show();
+        });
+        value.addEventListener('change', () => {
+            setModel(value.value === '' ? '0' : value.value);
+            value.value = row.model;
+            show();
+        });
+        show();
+        line.append(toggle, main, weight, value, fold, remove);
+        this.paintWords(row, words);
+        return line;
     }
 
-    renderAddRow(className, itemClasses) {
-        const row = document.createElement('div');
-        row.className = `slot-row add-row ${className}`;
-        row.innerHTML = `
-            <div class="slot-action slot-action-add ${itemClasses.add}" data-action="add" data-slot="${className}">
-                <img class="slot-action-add-toggle" src="scripts/svg/add.svg" alt="+">
-            </div>
-            <div class="controlnet-slot-image">
-                <img class="filter-controlnet-icon" id="global-portrait-icon" src="scripts/svg/portrait.svg" max-width="48px" height="48px">
-                <img class="filter-controlnet-icon" id="global-sliders-icon" src="scripts/svg/sliders.svg" max-width="48px" height="48px">                
-                <img class="filter-controlnet-icon" id="global-painting-icon" src="scripts/svg/painting.svg" max-width="48px" height="48px">
-            </div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-
-        `;
-        return row;
-    }
-
-    addSlot() {
-        const slot = this.slotIndex.get(this.candidateClassName);
-
-        slot.isCandidate = false;
-        slot.itemClasses.delete = this.generateClassName('delete');
-        slot.itemClasses.info = this.generateClassName('info');
-        delete slot.itemClasses.add;
-        const className = this.candidateClassName;
-
-        const candidateRow = this.container.querySelector(`.${className}`);
-        if (candidateRow) {
-            candidateRow.classList.remove('add-row');
-            candidateRow.classList.add('content-row');
-            
-            const itemClasses = slot.itemClasses;
-            candidateRow.innerHTML = `
-                <div class="slot-action slot-action-del ${itemClasses.delete}" data-action="delete" data-slot="${className}">
-                    <img class="slot-action-del-toggle" src="scripts/svg/del.svg" alt="-">
-                </div>
-                <div class="${itemClasses.select1}"></div>
-                <div class="${itemClasses.text1}"></div>
-                <div class="${itemClasses.text2}"></div>
-                <div class="${itemClasses.select2}"></div>
-                <div class="slot-action slot-action-info ${itemClasses.info}" data-action="info" data-slot="${className}">
-                    <img class="slot-action-info-toggle" src="scripts/svg/info.svg" alt="?">
-                </div>
-            `;
+    paintWords(row, holder = row.el?.querySelector('.lora-slot-words')) {
+        if (!holder) return;
+        holder.replaceChildren();
+        if (row.stage !== 'ALL') holder.append(element('span', 'lora-slot-stage', row.stage === 'Base' ? text('lora_stage_base_only', 'Base only') : text('lora_stage_hires_only', 'Hires only')));
+        const { words = [], origin = '' } = globalThis.loraUi?.slotWords?.(row.name) ?? {};
+        if (origin) holder.append(element('span', 'lora-slot-origin', `tag: ${origin}`));
+        for (const { word, on } of words) {
+            const chip = element('button', `lora-slot-trigger${on ? ' is-on' : ''}`, on ? `${word} ✓` : `+ ${word}`);
+            chip.type = 'button';
+            chip.setAttribute('aria-pressed', String(on));
+            chip.addEventListener('click', () => globalThis.loraUi?.switchWord?.(word, !on));
+            holder.append(chip);
         }
-
-        const newCandidateClassName = this.createCandidateRow();        
-        const newCandidateSlot = this.slotIndex.get(newCandidateClassName);
-        if (newCandidateSlot) {
-            const newRow = this.renderAddRow(newCandidateClassName, newCandidateSlot.itemClasses);
-            this.container.appendChild(newRow);
-        }
-        
-        return className;
+        holder.hidden = holder.childElementCount === 0;
     }
 
-    delSlot(className) {
-        if (this.slotIndex.has(className) && !this.slotIndex.get(className).isCandidate) {
-            const slot = this.slotIndex.get(className);
-            
-            if (slot) {
-                for (const itemClass of Object.values(slot.itemClasses)) {
-                    const componentKey = `${className}-${itemClass}`;
-                    if (this.componentInstances.has(componentKey)) {
-                        this.componentInstances.delete(componentKey);
-                    }
-                }
+    renderFold(row) {
+        const fold = element('div', 'lora-slot-more');
+
+        const stage = element('div', 'lora-slot-field');
+        stage.append(element('span', 'lora-slot-label', text('lora_stage', 'Stage')));
+        const segment = element('div', 'lora-segment');
+        segment.setAttribute('role', 'group');
+        for (const [mode, label] of STAGES) {
+            const option = element('button', row.stage === mode ? 'is-on' : '', text(`lora_stage_${label.toLowerCase()}`, label));
+            option.type = 'button';
+            option.setAttribute('aria-pressed', String(row.stage === mode));
+            option.addEventListener('click', () => {
+                row.stage = mode;
+                this.renderRow(row);
+            });
+            segment.append(option);
+        }
+        stage.append(segment);
+
+        const clipField = element('div', 'lora-slot-field');
+        clipField.append(element('span', 'lora-slot-label', 'CLIP'));
+        const clipLine = element('div', 'lora-slot-clip-line');
+        const clip = element('input', `lora-slot-value lora-slot-clip${row.linked ? '' : ' is-own'}`);
+        clip.type = 'number';
+        clip.step = '0.05';
+        clip.value = row.clip;
+        clip.setAttribute('aria-label', text('lora_clip_strength', 'CLIP strength'));
+        // WebUI takes one strength: the CLIP one is ComfyUI's
+        clip.disabled = globalThis.generate?.api_interface?.getValue?.() !== 'ComfyUI';
+        clip.addEventListener('input', () => {
+            if (clip.value === '' || !Number.isFinite(Number(clip.value))) return;
+            row.clip = clip.value;
+            if (row.linked) {
+                row.linked = false;
+                clip.classList.add('is-own');
+                clipLine.append(relink);
             }
-            
-            const rowElement = this.container.querySelector(`.${className}`);
-            if (rowElement) {
-                rowElement.remove();
-            }
-            
-            this.slotIndex.delete(className);
-        }
+        });
+        clip.addEventListener('change', () => {
+            row.clip = formatted(strength(clip.value));
+            clip.value = row.clip;
+        });
+        const relink = iconButton('lora-slot-icon lora-slot-relink', text('lora_clip_follow', 'Same as the weight'), ICONS.relink, () => {
+            row.linked = true;
+            row.clip = row.model;
+            this.renderRow(row);
+        });
+        clipLine.append(clip);
+        if (!row.linked) clipLine.append(relink);
+        clipField.append(clipLine);
+
+        const range = element('div', 'lora-slot-field');
+        const span = globalThis.loraUi?.slotRange?.(row.name);
+        range.append(element('span', 'lora-slot-label', text('lora_range', 'Range')), element('span', 'lora-slot-range', span ? `${formatted(span.min)} – ${formatted(span.max)}` : '—'));
+
+        const actions = element('div', 'lora-slot-actions');
+        const samples = element('button', 'lora-button lora-slot-samples');
+        samples.type = 'button';
+        samples.append(icon(ICONS.image), document.createTextNode(text('lora_samples', 'Samples')));
+        samples.disabled = !globalThis.loraUi?.hasSamples?.(row.name);
+        samples.addEventListener('click', () => globalThis.loraUi?.openSamples?.(row.name));
+        actions.append(samples);
+
+        fold.append(stage, clipField, range, actions);
+        return fold;
     }
 
-    clear() {
-        const slots = this.getSlots();
-        for (const slotClass of slots) {
-            this.delSlot(slotClass);
-        }
+    removeRow(row) {
+        this.rows = this.rows.filter(item => item !== row);
+        row.el?.remove();
+        this.container?.dispatchEvent(new Event('change', { bubbles: true }));
     }
+
+    // ------------------------------------------------------------ the old API
 
     getSlots() {
-        return Array.from(this.slotIndex.keys()).filter(className => !this.slotIndex.get(className).isCandidate);
-    }
-
-    getSlot(className) {
-        const slot = this.slotIndex.get(className);
-        if (!slot) return [];
-        return Object.values(slot.itemClasses);
-    }
-
-    setSlotItem(itemClass, generator) {
-        for (const [className, slot] of this.slotIndex.entries()) {
-            if (Object.values(slot.itemClasses).includes(itemClass)) {
-                const generatorFn = typeof generator === 'function' ? generator : () => generator;
-                slot.items.set(itemClass, generatorFn);
-                
-                const component = generatorFn();
-                if (component) {
-                    const componentKey = `${className}-${itemClass}`;
-                    this.componentInstances.set(componentKey, component);
-                    console.log('Set component for', componentKey, 'value:', component.getValue ? component.getValue() : 'N/A');
-                }
-            }
-        }
-    }
-
-    getSlotItem(itemClass) {
-        for (const [className, slot] of this.slotIndex.values()) {
-            if (slot.items.has(itemClass)) {
-                const componentKey = `${className}-${itemClass}`;
-                if (this.componentInstances.has(componentKey)) {
-                    return () => this.componentInstances.get(componentKey);
-                }
-                return slot.items.get(itemClass);
-            }
-        }
-        return null;
+        return this.rows.map(row => row.id);
     }
 
     getValues() {
-        const result = [];        
-        const contentSlots = this.getSlots();
-        
-        for (const className of contentSlots) {
-            const slot = this.slotIndex.get(className);
-            if (!slot) continue;
-            
-            const rowValues = [];
-            const { select1, text1, text2, select2 } = slot.itemClasses;
-            
-            try {
-                const loraNameComponent = this.componentInstances.get(`${className}-${select1}`);
-                const loraName = loraNameComponent?.getValue ? loraNameComponent.getValue() : '';
-                rowValues.push(loraName);
-                
-                const modelStrengthComponent = this.componentInstances.get(`${className}-${text1}`);
-                const modelStrength = modelStrengthComponent?.getValue ? modelStrengthComponent.getValue() : '';
-                rowValues.push(modelStrength);
-                
-                const clipStrengthComponent = this.componentInstances.get(`${className}-${text2}`);
-                const clipStrength = clipStrengthComponent?.getValue ? clipStrengthComponent.getValue() : '';
-                rowValues.push(clipStrength);
-                
-                const enableComponent = this.componentInstances.get(`${className}-${select2}`);
-                const enableValue = enableComponent?.getValue ? enableComponent.getValue() : '';
-                rowValues.push(enableValue);
-                
-                result.push(rowValues);            
-            } catch (error) {
-                console.error(`Error getting values for slot ${className}:`, error);
-            }
-        }
-        
-        return result;
+        return this.rows.map(row => [row.name, row.model, row.linked ? row.model : row.clip, row.on ? row.stage : 'OFF']);
     }
 
-    flush(){
-        this.clear();
-
-        const slots = globalThis.globalSettings.lora_slot;
-        if (!slots || slots.length === 0) {
-            return;
-        }
-
-        const loraStrings = slots.map(([loraName, modelStrength, clipStrength, enableValue]) => {
-    
-            const modelStr = Number.parseFloat(modelStrength) || 0;
-            const clipStr = Number.parseFloat(clipStrength) || 0;
-    
-            let loraFormat = '';
-            switch (enableValue) {
-                case 'ALL':
-                    loraFormat = `<lora:${loraName}:${modelStr}:${clipStr}>`;
-                    break;
-                case 'Base':
-                    loraFormat = `<lora:${loraName}:${modelStr}:${clipStr}:0:0>`;
-                    break;
-                case 'HiFix':
-                    loraFormat = `<lora:${loraName}:0:0:${modelStr}:${clipStr}>`;
-                    break;
-                case 'OFF':
-                    loraFormat = `<lora:${loraName}:0:0>`;
-                    break;
-                default:
-                    // an enable value from an older or half-written settings row: off, like
-                    // OFF above. It named an undeclared cleanLoraName and threw here, which
-                    // took the whole settings load (slotsManager.flushSlots) with it.
-                    loraFormat = `<lora:${loraName}:0:0>`;
-            }
-    
-            return loraFormat;
-        });
-    
-        const loraString = loraStrings.join('');
-        this.flushSlot(loraString);
+    clear() {
+        this.rows = [];
+        this.list.replaceChildren();
     }
 
-    // eslint-disable-next-line sonarjs/cognitive-complexity
+    /** The rows saved in the settings. */
+    flush() {
+        this.setRows(globalThis.globalSettings?.lora_slot ?? []);
+    }
+
+    /** The rows a prompt's LoRA tags name (the image info's Send, the right-click menu). */
     flushSlot(loraString) {
-        this.clear();
-        
-        const FILES = globalThis.cachedFiles || { language: {}, loraList: ['Default LoRA'] };
-    
-        // Parse loraString into slotValues
-        const slotValues = [];
-        const loraRegex = /<lora:([^>]+)>/g;
-        const loraMatches = [...loraString.matchAll(loraRegex)];
-    
-        for (const match of loraMatches) {
-            const loraContent = match[1];
-            const parts = loraContent.split(':');
-            const loraName = parts[0];
-            const values = parts.slice(1).map(v => Number.parseFloat(v) || 0);
-    
-            let select1 = loraName;
-            let text1 = '0';
-            let text2 = '0';
-            let select2 = 'OFF';
-    
-            // a list not read yet (empty) says nothing about the file: the row is kept as written
-            const loraExists = !Array.isArray(FILES.loraList) || FILES.loraList.length === 0 || FILES.loraList.includes(loraName);
-            if (!loraExists) {
-                slotValues.push([select1, text1, text2, select2]);
-                continue;
-            }
-    
-            if (values.length <= 2) {
-                text1 = values[0]?.toString() || '0';
-                text2 = values[1]?.toString() || '0';
-                select2 = (Number.parseFloat(text1) !== 0 || Number.parseFloat(text2) !== 0) ? 'ALL' : 'OFF';
-                slotValues.push([select1, text1, text2, select2]);
-            } else if (values.length === 4) {
-                const pair1 = [values[0], values[1]];
-                const pair2 = [values[2], values[3]];
-                const pair1HasNonZero = pair1.some(v => v !== 0);
-                const pair2HasNonZero = pair2.some(v => v !== 0);
-                const pairsEqual = pair1[0] === pair2[0] && pair1[1] === pair2[1];
-    
-                if (pairsEqual && pair1HasNonZero) {
-                    text1 = pair1[0].toString();
-                    text2 = pair1[1].toString();
-                    select2 = 'ALL';
-                    slotValues.push([select1, text1, text2, select2]);
-                } else {
-                    if (pair1HasNonZero) {
-                        text1 = pair1[0].toString();
-                        text2 = pair1[1].toString();
-                        select2 = 'Base';
-                        slotValues.push([select1, text1, text2, select2]);
-                    }
-                    if (pair2HasNonZero) {
-                        text1 = pair2[0].toString();
-                        text2 = pair2[1].toString();
-                        select2 = 'HiFix';
-                        slotValues.push([select1, text1, text2, select2]);
-                    }
-                    if (!pair1HasNonZero && !pair2HasNonZero) {
-                        select2 = 'OFF';
-                        slotValues.push([select1, text1, text2, select2]);
-                    }
-                }
-            }
-        }
-    
-        createSlotsFromValues(this, slotValues, { context: 'Created', validateLoRA: true });
+        this.setRows(rowsFromLoraTags(loraString));
     }
 
+    /** The same rows again (the LoRA list, the language or the backend changed). */
     reload() {
-        const slotValues = this.getValues();
-    
-        createSlotsFromValues(this, slotValues, {
-            context: 'Restored',
-            validateLoRA: true,
-            skipInvalid: true
-        });
-    }
-
-    initializeSlotComponents(className, slot, currentValues = null) {
-        requestAnimationFrame(() => {
-            for (const [itemClass, generator] of slot.items.entries()) {
-                if (generator) {
-                    const component = generator();
-                    if (component) {
-                        const componentKey = `${className}-${itemClass}`;
-                        this.componentInstances.set(componentKey, component);
-                        
-                        if (currentValues?.has(componentKey) && component.setValue) {
-                            const previousValue = currentValues.get(componentKey);
-                            component.setValue(previousValue);
-                            console.log(`Restored value for ${componentKey}:`, previousValue);
-                        }
-                        
-                        console.log(`Initialized component for ${componentKey}`);
-                    }
-                }
-            }
-        });
-    }
-
-    handleAdd() {
-        const SETTINGS = globalThis.globalSettings || {};
-        const FILES = globalThis.cachedFiles || { language: {}, loraList: ['Default LoRA'] };
-        const LANG = FILES.language[SETTINGS.language] || {
-            lora_model_strength: 'Model Strength',
-            lora_clip_strength: 'Clip Strength',
-            lora_enable_title: 'Enable'
-        };
-
-        const className = this.addSlot();
-        if (!className) return;
-
-        const slot = this.slotIndex.get(className);
-        if (!slot) return;
-        
-        requestAnimationFrame(() => {
-            const select1Generator = () => 
-                mySimpleList(
-                    slot.itemClasses.select1, 
-                    'LoRA', 
-                    FILES.loraList, 
-                    null, 
-                    15, 
-                    true, 
-                    false
-                );
-            slot.items.set(slot.itemClasses.select1, select1Generator);
-            const select1Component = select1Generator();
-            if (select1Component) {
-                this.componentInstances.set(`${className}-${slot.itemClasses.select1}`, select1Component);
-            }
-            
-            const text1Generator = () => 
-                setupTextbox(
-                    slot.itemClasses.text1, 
-                    LANG.lora_model_strength, 
-                    { value: '1.0', defaultTextColor: 'rgb(179,157,219)', maxLines: 1 }, 
-                    false, 
-                    null,
-                    false,  // passwordMode
-                    true    // numberOnly
-                );
-            slot.items.set(slot.itemClasses.text1, text1Generator);
-            const text1Component = text1Generator();
-            if (text1Component) {
-                this.componentInstances.set(`${className}-${slot.itemClasses.text1}`, text1Component);
-            }
-            
-            const text2Generator = () => 
-                setupTextbox(
-                    slot.itemClasses.text2, 
-                    LANG.lora_clip_strength, 
-                    { value: '1.0', defaultTextColor: 'rgb(255,213,0)', maxLines: 1 }, 
-                    false, 
-                    null,
-                    globalThis.generate.api_interface.getValue() !== 'ComfyUI',  
-                    true    
-                );
-            slot.items.set(slot.itemClasses.text2, text2Generator);
-            const text2Component = text2Generator();
-            if (text2Component) {
-                this.componentInstances.set(`${className}-${slot.itemClasses.text2}`, text2Component);
-            }
-            
-            const select2Generator = () => 
-                mySimpleList(
-                    slot.itemClasses.select2, 
-                    LANG.lora_enable_title, 
-                    ["ALL", "Base", "HiFix", "OFF"], 
-                    null, 
-                    5, 
-                    false, 
-                    false
-                );
-            slot.items.set(slot.itemClasses.select2, select2Generator);
-            const select2Component = select2Generator();
-            if (select2Component) {
-                this.componentInstances.set(`${className}-${slot.itemClasses.select2}`, select2Component);
-            }            
-        });
+        this.setRows(this.getValues());
     }
 }
 
 export function setupLoRA(containerID) {
-    if(!instanceSlotManager) {
+    if (!instanceSlotManager) {
         instanceSlotManager = new SlotManager(containerID);
     }
     return instanceSlotManager;
