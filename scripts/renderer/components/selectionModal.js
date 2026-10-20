@@ -238,6 +238,8 @@ export function createSelectionModal({
     let sortValue = '';            // the sort order on a tab that offers some
     let tileSize = '';             // the tile size on a grid tab that offers some
     let popoverOpen = false;       // the Selected list unfolded
+    let soleTab = false;           // the one extra tab is the whole modal: no strip, no main tab
+    let applyText = null;          // count -> the Apply button's words, when the caller names them
     let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, onActiveOption, favorites: null, sorts: [], tileSizes: [], optionLimit };
 
     // Everything a tab can set: its filters (and what they are called), its loader, its
@@ -388,7 +390,8 @@ export function createSelectionModal({
     }
 
     function renderApplyLabel() {
-        applyButton.textContent = mode === 'multiple' && selectedOptions.length > 0
+        if (typeof applyText === 'function') applyButton.textContent = applyText(selectedOptions.length);
+        else applyButton.textContent = mode === 'multiple' && selectedOptions.length > 0
             ? tagText('tag_ui_apply_count', selectedOptions.length)
             : tagText('tag_ui_apply');
         cancelButton.textContent = tagText('tag_ui_cancel');
@@ -595,8 +598,8 @@ export function createSelectionModal({
 
     function renderTabs() {
         tabStrip.replaceChildren();
-        tabStrip.hidden = tabs.length === 0;
-        if (tabs.length === 0) return;
+        tabStrip.hidden = tabs.length === 0 || soleTab;
+        if (tabStrip.hidden) return;
         const entries = [{ id: null, label: mainTabLabel, tab: null }, ...tabs.map(tab => ({ id: tab.id, label: tab.label ?? tab.id, tab }))];
         for (const entry of entries) {
             const button = createElement('button', 'selection-modal-tab', entry.label);
@@ -949,7 +952,7 @@ export function createSelectionModal({
             close({ apply: false });
             return;
         }
-        if (tabs.length > 0 && event.ctrlKey && !event.altKey && !event.metaKey) {
+        if (tabs.length > 0 && !soleTab && event.ctrlKey && !event.altKey && !event.metaKey) {
             // Ctrl+Tab cycles the tabs, Ctrl+1…9 jumps to one
             const all = [null, ...tabs];
             if (event.key === 'Tab') {
@@ -1131,8 +1134,13 @@ export function createSelectionModal({
             tabs: extraTabs = [],
             tab: initialTab = null,
             tabLabel = 'Items',
+            // the modal is the `tab` alone (the LoRA card's "+ LoRA": the LoRA tab, titled LoRA)
+            soleTab: onlyTab = false,
+            // count -> the Apply button's words ("Add (2)"); the modal's own when null
+            applyLabel = null,
         } = {}) {
             lastTrigger = trigger;
+            applyText = typeof applyLabel === 'function' ? applyLabel : null;
             fallbackFocus = fallback;
             unhookRefreshEvent();
             mainConfig = {
@@ -1163,6 +1171,7 @@ export function createSelectionModal({
             tabs = (Array.isArray(extraTabs) ? extraTabs : []).filter(tab => tab && typeof tab === 'object' && tab.id);
             mainTabLabel = tabLabel;
             activeTab = tabs.find(tab => tab.id === initialTab) ?? null;
+            soleTab = Boolean(onlyTab) && activeTab !== null;
             activeConfig = configFor(activeTab);
             favOnly = false;
             heading.textContent = modalTitle;
