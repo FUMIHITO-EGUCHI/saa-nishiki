@@ -3,7 +3,7 @@ import { getGlobalSettings } from './globalSettings.js';
 import { getWorkflowStore, executeRecordedWorkflow } from './workflowRuntime.js';
 import { createImageEditor } from './imageEditService.js';
 import { backendAuthHeaders, httpApiUrl } from '../shared/backendAddress.js';
-import { getMutexBackendBusy, setMutexBackendBusy } from '../../main-common.js';
+import { tryAcquireBackendBusy, setMutexBackendBusy } from '../../main-common.js';
 
 function target() {
     const settings=getGlobalSettings();
@@ -34,11 +34,12 @@ export function validateEditSettings(input, available) {
         if(!list.includes(input[key])) throw new Error(`Unavailable ${key}`);
         result[key]=input[key];
     }
-    for(const [key,min,max,integer] of [['seed',0,4294967295,true],['steps',1,100,true],['cfg',0,30,false],['denoise',0.01,1,false]]) {
-        const number=input[key];
+    for(const [key,min,max,integer] of [['seed',0,4294967295,true],['steps',1,100,true],['cfg',0,30,false],['denoise',0.01,1,false],['guideSize',128,1024,true],['maxSize',128,1536,true]]) {
+        const number=input[key]??({guideSize:512,maxSize:1024}[key]);
         if(!Number.isFinite(number)||number<min||number>max||(integer&&!Number.isInteger(number))) throw new Error(`Invalid ${key}`);
         result[key]=number;
     }
+    if(result.guideSize>result.maxSize)throw new Error('Guide size must not exceed maximum processing size');
     for(const key of ['positive','negative']) {
         if(typeof input[key]!=='string'||input[key].length>20_000) throw new Error(`Invalid ${key} prompt`);
         result[key]=input[key];
@@ -49,24 +50,28 @@ export function validateEditSettings(input, available) {
 
 export function setupImageEditing() {
     const editor=createImageEditor(getWorkflowStore(),{
-        generate:(workflow,requested)=>executeRecordedWorkflow({...target(),workflow,requested}),
+        generate:(workflow,requested,cancellation)=>executeRecordedWorkflow({...target(),workflow,requested,cancellation}),
     });
     ipcMain.handle('image-edit-capabilities',capabilities);
     ipcMain.handle('image-edit-list',()=>getWorkflowStore().list('projects').map(({id,name,createdAt,currentRevision})=>({id,name,createdAt,currentRevision})));
     ipcMain.handle('image-edit-get',(_,id)=>editor.get(id));
-    ipcMain.handle('image-edit-create',(_,dataUrl,name)=>editor.create(dataUrl,name));
+    ipcMain.handle('image-edit-create',(_,dataUrl,name,runId)=>editor.create(dataUrl,name,runId));
     ipcMain.handle('image-edit-preview',(_,request)=>editor.preview(request));
-    let busy=false;
+    let busy=false,cancellation=null;
     ipcMain.handle('image-edit-generate',async (_,request)=> {
-        if(busy||await getMutexBackendBusy()) throw new Error('ComfyUI is busy');
+        if(busy) throw new Error('ComfyUI is busy');
         busy=true;
-        await setMutexBackendBusy(true);
+        cancellation={cancelled:false};
+        let ownsMutex=false;
         try {
+            ownsMutex=await tryAcquireBackendBusy();
+            if(!ownsMutex) throw new Error('ComfyUI is busy');
             const settings=validateEditSettings(request.settings,await capabilities());
-            return await editor.generate({...request,settings});
-        } finally {busy=false; await setMutexBackendBusy(false);}
+            if(cancellation.cancelled) throw new Error('Cancelled');
+            return await editor.generate({...request,settings,cancellation});
+        } finally {busy=false;cancellation=null;if(ownsMutex)await setMutexBackendBusy(false);}
     });
-    ipcMain.handle('image-edit-cancel',()=>editor.cancel());
+    ipcMain.handle('image-edit-cancel',()=>{if(cancellation)cancellation.cancelled=true;return editor.cancel();});
     ipcMain.handle('image-edit-accept',(_,id,revisionId)=>editor.accept(id,revisionId));
     ipcMain.handle('image-edit-discard',(_,id,revisionId)=>editor.discard(id,revisionId));
     ipcMain.handle('image-edit-select',(_,id,revisionId)=>editor.select(id,revisionId));

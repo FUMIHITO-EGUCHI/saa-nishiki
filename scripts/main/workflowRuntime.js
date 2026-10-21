@@ -10,6 +10,7 @@ export function getWorkflowStore() {
     if (!store) {
         const appPath = app.isPackaged ? path.join(path.dirname(app.getPath('exe')), 'resources', 'app') : app.getAppPath();
         store = createWorkflowStore(path.join(resolveSettingsRoot(appPath), 'workflows'));
+        store.recoverInterrupted();
     }
     return store;
 }

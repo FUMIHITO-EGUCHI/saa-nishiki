@@ -1,6 +1,7 @@
 import { updateLanguage, updateSettings, SAMPLER_COMFYUI, SCHEDULER_COMFYUI, SAMPLER_WEBUI, SCHEDULER_WEBUI } from './renderer/language.js';
 import { SPLITS, migrateRegionalSwap, splitFromLabel, splitLabel } from './shared/regionalSides.js';
 import { setupGallery } from './renderer/customGallery.js';
+import { setupWorkflowStudio } from './renderer/workflowStudio.js';
 import { setupThumbOverlay, setupThumb } from './renderer/customThumbGallery.js';
 import { setupSuggestionSystem } from './renderer/tagAutoComplete.js';
 import { setupButtonOverlay, customCommonOverlay } from './renderer/customOverlay.js';
@@ -149,6 +150,7 @@ export async function setupLeftRight(SETTINGS, FILES, LANG) {
     setupThumb('gallery-thumb-main');
     setupThumbOverlay();
     globalThis.imageInfo = setupImageUploadOverlay();
+    setupWorkflowStudio();
 
     globalThis.collapsedTabs = {
         infoBox: setupCollapsed('image-infobox', false),

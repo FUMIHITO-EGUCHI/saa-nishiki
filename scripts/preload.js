@@ -87,7 +87,7 @@ contextBridge.exposeInMainWorld('api', {
   imageEditCapabilities: () => ipcRenderer.invoke('image-edit-capabilities'),
   imageEditList: () => ipcRenderer.invoke('image-edit-list'),
   imageEditGet: id => ipcRenderer.invoke('image-edit-get', id),
-  imageEditCreate: (dataUrl, name) => ipcRenderer.invoke('image-edit-create', dataUrl, name),
+  imageEditCreate: (dataUrl, name, runId) => ipcRenderer.invoke('image-edit-create', dataUrl, name, runId),
   imageEditPreview: request => ipcRenderer.invoke('image-edit-preview', request),
   imageEditGenerate: request => ipcRenderer.invoke('image-edit-generate', request),
   imageEditCancel: () => ipcRenderer.invoke('image-edit-cancel'),

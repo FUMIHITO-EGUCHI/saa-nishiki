@@ -255,7 +255,7 @@ export const workflow = {
 
 // ---------------------------------------------------------------- the app
 
-class Page {
+export class Page {
     constructor(ws) {
         this.ws = ws;
         this.nextId = 0;

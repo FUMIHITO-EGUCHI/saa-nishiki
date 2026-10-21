@@ -60,7 +60,8 @@ export function setupGallery(containerId) {
     let tags = [];
     let infos = [];   // per-image generation info (BBCode) shown in the Info panel
     let records = []; // per-image { recipe, timing, path, interface } (imageRecipe.js), or null
-let renderedImageCount = 0;
+    globalThis.mainGallery.currentImage = () => images[currentIndex] ?? null;
+    let renderedImageCount = 0;
 
     const container = document.querySelector(`.${containerId}`);
     if (!container) {

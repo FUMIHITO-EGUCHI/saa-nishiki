@@ -19,10 +19,11 @@ export function createImageEditor(store, { generate: execute } = {}) {
     };
     return {
         get,
-        async create(dataUrl,name='Image') {
+        async create(dataUrl,name='Image',sourceRunId) {
             const bytes=pngBytes(dataUrl), image=await readOriginal(bytes);
             const id=randomUUID();
             const project=store.create('projects',{ name:String(name).slice(0,120),width:image.width,height:image.height,
+                sourceRunId:sourceRunId?store.read('runs',sourceRunId).id:undefined,
                 channels:image.channels,currentRevision:id,attempts:[],revisions:[{id,asset:'original.png',parentId:null,status:'original',createdAt:new Date().toISOString()}] });
             store.putImage('projects',project.id,'original.png',bytes);
             return project;
@@ -36,19 +37,21 @@ export function createImageEditor(store, { generate: execute } = {}) {
             if(active) throw new Error('An image edit is already running');
             const {project,bytes}=parentOf(request);
             const attempt={id:randomUUID(),parentId:request.parentId,status:'preparing',createdAt:new Date().toISOString(),settings:request.settings};
-            const job={id:attempt.id,cancelled:false,run:null}; active=job;
-            project.attempts.push(attempt); write(project);
+            const job=request.cancellation??{cancelled:false}; job.run=null; active=job;
             try {
+                project.attempts.push(attempt); write(project);
                 const mask=pngBytes(request.mask), lock=request.lock?pngBytes(request.lock):null;
+                attempt.assets={mask:`${attempt.id}-mask.png`,lock:lock?`${attempt.id}-lock.png`:null};
                 store.putImage('projects',project.id,`${attempt.id}-mask.png`,mask);
                 if(lock) store.putImage('projects',project.id,`${attempt.id}-lock.png`,lock);
                 const prepared=await prepareEdit(bytes,mask,lock,request);
                 if(prepared.empty) { attempt.status='no-change'; return attempt; }
                 attempt.crop=prepared.crop;
+                attempt.assets.alpha=`${attempt.id}-alpha.png`;
                 attempt.transform={modelInput:prepared.crop,returnSize:prepared.crop,resizeParent:false,padding:request.padding??32,feather:request.feather??4};
                 store.putImage('projects',project.id,`${attempt.id}-alpha.png`,prepared.alphaPng);
                 if(job.cancelled) throw new Error('Cancelled');
-                job.run=await execute(maskEditWorkflow(prepared,request.settings),{...request.settings,parentRevision:request.parentId,crop:prepared.crop});
+                job.run=await execute(maskEditWorkflow(prepared,request.settings),{...request.settings,parentRevision:request.parentId,crop:prepared.crop},job);
                 attempt.runId=job.run.runId; attempt.status='running'; write(project);
                 if(job.cancelled) await job.run.cancel();
                 const {image}=await job.run.result;
@@ -64,7 +67,8 @@ export function createImageEditor(store, { generate: execute } = {}) {
             } catch(error) {
                 attempt.status=job.cancelled||error.message==='Cancelled'?'cancelled':'failed'; attempt.error=error.message; throw error;
             } finally {
-                attempt.finishedAt=new Date().toISOString(); write(project); active=null;
+                attempt.finishedAt=new Date().toISOString();
+                try { write(project); } finally { active=null; }
             }
         },
         async cancel() { if(active) {active.cancelled=true; await active.run?.cancel();} },

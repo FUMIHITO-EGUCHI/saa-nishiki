@@ -14,7 +14,7 @@ export function maskEditWorkflow(prepared, settings) {
         '7': node('CLIPTextEncode', { clip:['5',1], text:settings.negative }),
         '8': node('ToBasicPipe', { model:['5',0],clip:['5',1],vae:['4',2],positive:['6',0],negative:['7',0] }),
         '9': node('MaskDetailerPipe', { image:['1',0],mask:['3',0],basic_pipe:['8',0],
-            guide_size:512,guide_size_for:false,max_size:1024,mask_mode:true,seed:settings.seed,
+            guide_size:settings.guideSize??512,guide_size_for:false,max_size:settings.maxSize??1024,mask_mode:true,seed:settings.seed,
             steps:settings.steps,cfg:settings.cfg,sampler_name:settings.sampler,scheduler:settings.scheduler,
             denoise:settings.denoise,feather:0,crop_factor:3,drop_size:1,refiner_ratio:0.2,batch_size:1,cycle:1,
             inpaint_model:false,noise_mask_feather:0,bbox_fill:false,contour_fill:false }),

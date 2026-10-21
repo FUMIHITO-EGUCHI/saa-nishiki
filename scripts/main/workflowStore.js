@@ -18,6 +18,21 @@ export function createWorkflowStore(root) {
     const write = (kind, record) => { writeJsonAtomic(file(kind, record.id, 'record.json'), record); return record; };
     return {
         root, read, write,
+        recoverInterrupted() {
+            for (const kind of ['runs','projects']) {
+                const folder=path.join(root,kind);
+                if(!fs.existsSync(folder))continue;
+                for(const id of fs.readdirSync(folder).filter(id=>ID.test(id))) {
+                    let record;try{record=read(kind,id);}catch{continue;}
+                    let changed=false;
+                    for(const item of kind==='runs'?[record]:record.attempts??[]) {
+                        if(!['preparing','submitting','running'].includes(item.status))continue;
+                        item.status='interrupted';item.error='App stopped before completion was recorded; remote execution state is unknown';changed=true;
+                    }
+                    if(changed)write(kind,record);
+                }
+            }
+        },
         create(kind, data) { return write(kind, { ...data, schema: 1, id: randomUUID(), createdAt: new Date().toISOString() }); },
         list(kind, limit = 100) {
             if (!['runs', 'projects'].includes(kind)) throw new Error('Invalid record kind');

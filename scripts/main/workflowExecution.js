@@ -7,14 +7,15 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // One connection and one immutable prompt per run. The socket is attached before
 // submission; history remains authoritative when events are lost or cached.
-export async function startWorkflowExecution({ addr, auth = '', workflow, requested = {}, outputNode = '29',
-    stages = [], store, onProgress = () => {}, onPreview = () => {}, timeoutMs = 20 * 60_000 }) {
+export async function startWorkflowExecution({ addr, auth = '', workflow, requested = {}, transforms = [], outputNode = '29',
+    stages = [], store, onProgress = () => {}, onPreview = () => {}, timeoutMs = 20 * 60_000,
+    cancellation = { cancelled: false } }) {
     const clientId = randomUUID();
-    const record = store.create('runs', { requested, submitted: false, status: 'preparing',
+    const record = store.create('runs', { requested, transforms, submitted: false, status: 'preparing',
         apiPrompt: workflow, provenance: describeWorkflow(workflow, outputNode), events: [], stages: [],
         timing: { basis: 'client wall clock; per-stage durations not measured' } });
     const save = () => store.write('runs', record);
-    let cancelled = false;
+    let cancellationPromise;
     let remoteError = '';
     let promptId;
     const pending = [];
@@ -28,6 +29,20 @@ export async function startWorkflowExecution({ addr, auth = '', workflow, reques
         if (!response.ok) throw new Error(`ComfyUI HTTP ${response.status}: ${(await response.text()).slice(0, 1000)}`);
         return response;
     };
+    const cancelRemote = () => {
+        if (!promptId) return Promise.resolve();
+        // The server atomically cancels this job only. A queue snapshot followed
+        // by global /interrupt can accidentally interrupt the following job.
+        cancellationPromise ??= request(`api/jobs/${encodeURIComponent(promptId)}/cancel`, {})
+            .then(() => { record.cancellationAcknowledged = true; });
+        return cancellationPromise;
+    };
+    const cancel = () => { cancellation.cancelled = true; return cancelRemote(); };
+    const checkCancelled = async () => {
+        if (!cancellation.cancelled) return;
+        await cancel();
+        throw new Error('Cancelled');
+    };
     const event = message => {
         const { type, data = {} } = message;
         if (data.prompt_id && data.prompt_id !== promptId) return;
@@ -38,10 +53,10 @@ export async function startWorkflowExecution({ addr, auth = '', workflow, reques
         if (type === 'execution_cached') for (const id of data.nodes ?? []) {
             if (record.provenance.nodes[id]) record.provenance.nodes[id].state = 'cached';
         }
-        if (type === 'executing' && data.node && record.provenance.nodes[data.node]) record.provenance.nodes[data.node].state = 'observed-running';
+        if (type === 'executing' && data.node && record.provenance.nodes[data.node]) record.provenance.nodes[data.node].state = 'execution-observed';
         if (type === 'executed' && record.provenance.nodes[data.node]) record.provenance.nodes[data.node].state = 'observed-completed';
         if (type === 'execution_error') remoteError = String(data.exception_message ?? 'ComfyUI execution failed').slice(0, 2000);
-        if (type === 'execution_interrupted') cancelled = true;
+        if (type === 'execution_interrupted') cancellation.cancelled = true;
     };
     const socket = new WebSocket(wsApiUrl(addr, `ws?clientId=${clientId}`), { headers });
     socket.on('message', (bytes, binary) => {
@@ -59,6 +74,7 @@ export async function startWorkflowExecution({ addr, auth = '', workflow, reques
             socket.once('open', () => { clearTimeout(timer); resolve(); });
             socket.once('error', error => { clearTimeout(timer); reject(error); });
         });
+        await checkCancelled();
         record.status = 'submitting';
         record.submissionAttemptedAt = new Date().toISOString();
         save();
@@ -71,34 +87,39 @@ export async function startWorkflowExecution({ addr, auth = '', workflow, reques
         pending.splice(0).forEach(event);
         save();
     } catch (error) {
-        record.status = 'failed'; record.error = error.message; record.finishedAt = new Date().toISOString();
-        save(); socket.terminate(); throw error;
+        if (promptId) await cancelRemote().catch(() => {});
+        record.status = cancellation.cancelled ? 'cancelled' : 'failed'; record.error = error.message; record.finishedAt = new Date().toISOString();
+        try { save(); } finally { socket.terminate(); }
+        throw error;
     }
-    const cancel = async () => {
-        cancelled = true;
-        // /interrupt is global: only interrupt when this prompt owns the GPU.
-        const queue = await (await request('queue')).json();
-        if (queue.queue_running?.some(row => row[1] === promptId)) await request('interrupt', {});
-        else await request('queue', { delete: [promptId] });
-    };
     const result = (async () => {
         const deadline = Date.now() + timeoutMs;
         try {
             while (Date.now() < deadline) {
-                if (cancelled) throw new Error('Cancelled');
+                await checkCancelled();
                 if (remoteError) throw new Error(remoteError);
-                const history = (await (await request(`history/${encodeURIComponent(promptId)}`)).json())[promptId];
+                let history;
+                try {
+                    history = (await (await request(`history/${encodeURIComponent(promptId)}`)).json())[promptId];
+                } catch (error) {
+                    // Model loading/detailing can temporarily stall the HTTP
+                    // event loop. Losing one poll is not a failed generation.
+                    if (!['TimeoutError','AbortError','TypeError'].includes(error.name)) throw error;
+                    if (record.events.length < 5000) record.events.push({type:'history-retry',at:new Date().toISOString(),error:error.message});
+                    await pause(750);
+                    continue;
+                }
                 if (history) {
                     for (const [type, data] of history.status?.messages ?? []) event({ type, data });
                     if (remoteError) throw new Error(remoteError);
-                    if (cancelled) throw new Error('Cancelled');
+                    await checkCancelled();
                     if (history.status?.status_str === 'error') throw new Error('ComfyUI execution failed');
                     if (history.status?.completed || history.outputs?.[outputNode]?.images?.length) {
                         const info = history.outputs?.[outputNode]?.images?.[0];
                         if (!info) throw new Error('Selected output contains no image');
                         const getImage = async metadata => Buffer.from(await (await request(`view?${new URLSearchParams(metadata)}`)).arrayBuffer());
                         const image = await getImage(info);
-                        if (cancelled) throw new Error('Cancelled');
+                        await checkCancelled();
                         store.putImage('runs', record.id, 'final.png', image);
                         record.output = { node: outputNode, imageSlot: 'images', batchIndex: 0, ...info, asset: 'final.png' };
                         for (const stage of stages) {
@@ -110,23 +131,25 @@ export async function startWorkflowExecution({ addr, auth = '', workflow, reques
                                 record.stages.push({ ...stage, state: 'available', asset, backendOutput: stageInfo });
                             } catch (error) { record.stages.push({ ...stage, state: 'unavailable', error: error.message }); }
                         }
-                        if (cancelled) throw new Error('Cancelled');
+                        await checkCancelled();
                         record.status = 'succeeded';
                         return { image, record };
                     }
                 }
                 await pause(750);
             }
-            await cancel().catch(() => {});
-            cancelled = false;
-            throw new Error('ComfyUI run timed out; cancellation requested');
+            await cancelRemote();
+            throw new Error('ComfyUI run timed out; cancellation acknowledged');
         } catch (error) {
-            record.status = cancelled ? 'cancelled' : 'failed';
+            const userCancelled=cancellation.cancelled;
+            if(!record.cancellationAcknowledged)await cancelRemote().catch(cancelError=>{record.cancellationError=cancelError.message;});
+            if (cancellationPromise) await cancellationPromise.catch(() => {});
+            record.status = userCancelled && record.cancellationAcknowledged ? 'cancelled' : 'failed';
             record.error = error.message;
             throw error;
         } finally {
             record.finishedAt = new Date().toISOString();
-            save(); socket.close();
+            try { save(); } finally { socket.close(); }
         }
     })();
     result.catch(() => {}); // the UI may attach its result listener after submission

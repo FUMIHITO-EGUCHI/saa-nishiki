@@ -207,9 +207,10 @@ class PodSshSession {
 }
 
 class PodJob {
-    constructor({ onProgress, onPreview, timeoutMs }) {
+    constructor({ onProgress, onPreview, onEvent, timeoutMs }) {
         this.onProgress = onProgress;
         this.onPreview = onPreview;
+        this.onEvent = onEvent;
         this.images = [];
         this.promptId = null;
         this.settled = false;
@@ -226,6 +227,7 @@ class PodJob {
     handleEvent(frame) {
         if (this.settled) return;
         this.touch();
+        this.onEvent?.(frame);
         if (frame.event === 'queued') this.promptId = frame.promptId;
         else if (frame.event === 'progress') this.onProgress?.(frame.value, frame.max);
         else if (frame.event === 'preview') this.onPreview?.(Buffer.from(frame.data, 'base64'));
@@ -269,7 +271,7 @@ export function isPodSshEnabled(settings) {
  * Run one workflow on the pod. Resolves to { images: Buffer[], promptId } or
  * { error: 'Error: ...' } — never rejects, matching the backend's error-string style.
  */
-export async function runPodWorkflow({ settings, workflow, saveNodes, onProgress, onPreview, timeoutMs = 600_000 }) {
+export async function runPodWorkflow({ settings, workflow, saveNodes, onProgress, onPreview, onEvent, timeoutMs = 600_000 }) {
     const config = podSshConfig(settings);
     if (!config.enabled || !config.target) return { error: 'Error: pod SSH transport is not configured' };
     try {
@@ -284,7 +286,7 @@ export async function runPodWorkflow({ settings, workflow, saveNodes, onProgress
     // the VRAM to ComfyUI before the workflow starts (a no-op when nothing is loaded).
     await unloadLoadedPodModels();
 
-    const job = new PodJob({ onProgress, onPreview, timeoutMs });
+    const job = new PodJob({ onProgress, onPreview, onEvent, timeoutMs });
     session.job = job;
     const ack = await session.request({ cmd: 'submit', workflow, saveNodes });
     console.log(CAT, 'submit ack:', JSON.stringify(ack).slice(0, 200));

@@ -31,7 +31,7 @@ export function describeWorkflow(workflow, outputNode = '29') {
             if (Array.isArray(node.inputs?.[key])) sources[key] = ancestors(workflow, node.inputs[key][0]);
         }
         nodes[id] = { classType: node.class_type, inputs: structuredClone(node.inputs), sources,
-            onOutputPath: path.has(id), state: 'unknown' };
+            onOutputPath: path.has(id), state: path.has(id)?'unknown':'not-on-selected-output-path' };
     }
     return { outputNode, graphInterpretation: 'static-dependencies; custom node internal selection is unknown', nodes };
 }
@@ -41,7 +41,7 @@ export function withStagePreviews(input, outputNode = '29') {
     const stages = [];
     // Only outputs whose IMAGE slot is known, and which the selected output already
     // depends on. No extra decoder/sampler is introduced for an unused branch.
-    const imageNodes = new Set(['VAEDecode', 'VAEDecodeTiled', 'FaceDetailer', 'MaskDetailerPipe', 'ImageColorTransfer']);
+    const imageNodes = new Set(['VAEDecode', 'VAEDecodeTiled', 'FaceDetailer', 'MaskDetailerPipe', 'ImageColorTransferMira']);
     for (const id of ancestors(input, outputNode).reverse()) {
         if (!imageNodes.has(input[id].class_type)) continue;
         const output = `saa_preview_${id}`;

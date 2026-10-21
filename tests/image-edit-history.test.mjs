@@ -30,3 +30,17 @@ test('candidate, accept, branch, discard and failure preserve the parent across 
     assert.equal(editor.get(project.id).attempts.at(-1).status,'failed');
     assert.deepEqual(store.image('projects',project.id,'original.png'),image);
 });
+
+test('a storage failure releases the editor for a later attempt', async t => {
+    const root=fs.mkdtempSync(path.join(os.tmpdir(),'saa-edits-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+    const store=createWorkflowStore(root);
+    const image=await sharp({create:{width:16,height:16,channels:3,background:'red'}}).png().toBuffer();
+    const white=await sharp({create:{width:16,height:16,channels:3,background:'white'}}).png().toBuffer();
+    const editor=createImageEditor(store,{generate:async()=>({runId:'run',result:Promise.resolve({image:white})})});
+    const project=await editor.create(url(image));
+    const request={projectId:project.id,parentId:project.currentRevision,mask:url(white),settings:{},padding:0,feather:0};
+    const write=store.write;store.write=()=>{throw new Error('Disk full');};
+    await assert.rejects(editor.generate(request),/Disk full/);
+    store.write=write;
+    assert.equal((await editor.generate(request)).status,'review');
+});

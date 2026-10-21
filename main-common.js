@@ -29,6 +29,15 @@ async function setMutexBackendBusy(newValue) {
   }
 }
 
+async function tryAcquireBackendBusy() {
+  const release = await mutex.acquire();
+  try {
+    if (backendBusy) return false;
+    backendBusy = true;
+    return true;
+  } finally { release(); }
+}
+
 function getAppVersion() {
   return version;
 }
@@ -103,6 +112,7 @@ function setupIPCs(ws_service_result) {
 export {
   setupIPCs,
   getMutexBackendBusy,
+  tryAcquireBackendBusy,
   setMutexBackendBusy,
   getAppVersion,
   compressGzipThenBase64,

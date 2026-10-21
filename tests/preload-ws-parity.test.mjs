@@ -242,7 +242,7 @@ test('the browser client can reach every bridged method that is not host-only', 
         assert.ok(bridged.has(name), `${name} is still a bridged method`);
         assert.ok(!wsHandlers.has(name), `${name} is on the exception list but wsService now handles it - take it off`);
     }
-    assert.equal(missing.length, 33, 'the size of the gap is known; a new one has to be argued for');
+    assert.equal(missing.length, 47, '33 existing host-only methods plus 14 desktop workflow/edit methods');
 });
 
 test('every websocket handler answers a method some client asks for', opts, () => {
