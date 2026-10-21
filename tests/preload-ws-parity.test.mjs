@@ -126,6 +126,10 @@ for (const file of MAIN_FILES) {
 // Bridged methods a browser client is not meant to reach: each one drives the machine the
 // app itself runs on, not the generation backend.
 const BROWSER_UNSUPPORTED = new Map([
+    ...['workflowListRuns', 'workflowReadRun', 'workflowImage', 'workflowPreferences',
+        'imageEditCapabilities', 'imageEditList', 'imageEditGet', 'imageEditCreate', 'imageEditPreview',
+        'imageEditGenerate', 'imageEditCancel', 'imageEditAccept', 'imageEditDiscard', 'imageEditSelect']
+        .map(name => [name, 'workflow records and partial editing are desktop-only by product scope']),
     ['getBackendStatus', 'the header pills probe the host\'s own ComfyUI / Ollama'],
     ['saveSettingsSections', 'settings live in the host\'s userData; a browser client never writes them'],
     ['saveSettingsSectionsSync', 'the synchronous flush of the same store'],

@@ -22,6 +22,8 @@ import { RECIPE_CHUNK, TIME_CHUNK } from '../shared/recipe.js';
 import { createRunTimeline, summarizeRunTiming } from '../shared/runTiming.js';
 import { asciiJson, insertTextChunks } from '../shared/pngText.js';
 import { comfyOutputDir, savedImagePath, stampImageTime } from './imageRecord.js';
+import { requestedSettings } from '../shared/workflowRecord.js';
+import { executeRecordedWorkflow } from './workflowRuntime.js';
 
 const CAT = '[ComfyUI]';
 const TIMEOUT = 5000; // 5 seconds timeout for backend response
@@ -807,6 +809,7 @@ class ComfyUI {
   }
 
   cancelGenerate() {
+    if (this.trackedRun) return this.trackedRun.cancel();
     const apiUrl = httpApiUrl(this.addr, 'interrupt');
     let request = net.request({
       method: 'POST',
@@ -841,6 +844,17 @@ class ComfyUI {
   }
 
   async openWS(prompt_id, skipFirst = true, index='29'){
+    if (this.trackedRun?.promptId === prompt_id) {
+      try {
+        const { image } = await this.trackedRun.result;
+        return `data:image/png;base64,${image.toString('base64')}`;
+      } catch (error) {
+        return `Error: ${error.message}`;
+      } finally {
+        this.trackedRun = null;
+        setMutexBackendBusy(false);
+      }
+    }
     if (this.podRun || String(prompt_id ?? '').startsWith('pod-')) return this.awaitPod();
     return new Promise((resolve) => {
       this.prompt_id = prompt_id;
@@ -2610,6 +2624,17 @@ class ComfyUI {
     this.lastResult = null;
     const promptTimeout = Math.max(this.timeout, PROMPT_TIMEOUT);
     if (this.podEnabled()) return this.runPod(workflow);
+    if (!pythonRun && (!this.uuid || this.uuid === 'none')) {
+      return executeRecordedWorkflow({ addr: this.addr, auth: this.auth, workflow,
+        requested: this.requested ?? {},
+        outputNode: this.outputNode ?? '29',
+        onProgress: (value, max) => sendToRenderer(this.uuid, 'updateProgress', value, max),
+        onPreview: buffer => { if (this.refresh) sendToRenderer(this.uuid, 'updatePreview', `data:image/png;base64,${buffer.toString('base64')}`); },
+      }).then(run => {
+        this.trackedRun = run;
+        return JSON.stringify({ prompt_id: run.promptId, saa_run_id: run.runId });
+      }).catch(error => { setMutexBackendBusy(false); return `Error: ${error.message}`; });
+    }
     return new Promise((resolve, reject) => {
       const requestBody = {
         prompt: workflow,
@@ -2784,6 +2809,8 @@ async function runComfyUI_unguarded(generateData, remote = false) {
   }
   setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
+  backendComfyUI.requested = requestedSettings(generateData);
+  backendComfyUI.outputNode = '29';
 
   const prepareError = await prepareFastModeRun(generateData, getGlobalSettings(), remote);
   if (prepareError) return prepareError;
@@ -2822,6 +2849,8 @@ async function runComfyUI_Regional_unguarded(generateData, remote = false) {
   }
   setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
+  backendComfyUI.requested = requestedSettings(generateData);
+  backendComfyUI.outputNode = '29';
 
   const prepareError = await prepareFastModeRun(generateData, getGlobalSettings(), remote);
   if (prepareError) return prepareError;
@@ -2859,6 +2888,8 @@ async function runComfyUI_MiraITU_unguarded(generateData) {
   }
   setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
+  backendComfyUI.requested = requestedSettings(generateData);
+  backendComfyUI.outputNode = '29';
 
   let workflow;
   if (generateData.taggerOptions.method === 'Checkpoint') {
@@ -2895,6 +2926,8 @@ async function runComfyUI_ControlNet_unguarded(generateData) {
   }
   setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
+  backendComfyUI.requested = requestedSettings(generateData);
+  backendComfyUI.outputNode = '3';
 
   const workflow = backendComfyUI.createWorkflowControlnet(generateData)
   backendComfyUI.timeout = TIMEOUT; // Reset timeout to TIMEOUT(5s) for normal workflow

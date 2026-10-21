@@ -30,6 +30,8 @@ import { setupGenerateBackendComfyUI, sendToRenderer } from './scripts/main/gene
 import { stopPodSshSession } from './scripts/main/podSshTransport.js';
 import { registerProseStudent, stopProseStudent } from './scripts/main/proseStudent.js';
 import { setupGenerateBackendWebUI } from './scripts/main/generate_backend_webui.js';
+import { setupWorkflowRecords } from './scripts/main/workflowRuntime.js';
+import { setupImageEditing } from './scripts/main/imageEditBackend.js';
 import { getCachedFiles, setupCachedFiles } from './scripts/main/cachedFiles.js';
 import { setupWildcardsHandlers } from './scripts/main/wildCards.js';
 import { setupTagger } from './scripts/main/imageTagger.js';
@@ -118,6 +120,8 @@ async function initializeApp() {
   setupLoraBackend();
   setupModelApi();
   setupGenerateBackendComfyUI();
+  setupWorkflowRecords();
+  setupImageEditing();
   setupGenerateBackendWebUI();  
   setupTagger();
 

@@ -80,6 +80,20 @@ ipcRenderer.on('generate-backend', (event, { functionName, args }) => {
 
 // render to main
 contextBridge.exposeInMainWorld('api', {
+  workflowListRuns: () => ipcRenderer.invoke('workflow-list-runs'),
+  workflowReadRun: id => ipcRenderer.invoke('workflow-read-run', id),
+  workflowImage: (kind, id, name) => ipcRenderer.invoke('workflow-image', kind, id, name),
+  workflowPreferences: patch => ipcRenderer.invoke('workflow-preferences', patch),
+  imageEditCapabilities: () => ipcRenderer.invoke('image-edit-capabilities'),
+  imageEditList: () => ipcRenderer.invoke('image-edit-list'),
+  imageEditGet: id => ipcRenderer.invoke('image-edit-get', id),
+  imageEditCreate: (dataUrl, name) => ipcRenderer.invoke('image-edit-create', dataUrl, name),
+  imageEditPreview: request => ipcRenderer.invoke('image-edit-preview', request),
+  imageEditGenerate: request => ipcRenderer.invoke('image-edit-generate', request),
+  imageEditCancel: () => ipcRenderer.invoke('image-edit-cancel'),
+  imageEditAccept: (id, revision) => ipcRenderer.invoke('image-edit-accept', id, revision),
+  imageEditDiscard: (id, revision) => ipcRenderer.invoke('image-edit-discard', id, revision),
+  imageEditSelect: (id, revision) => ipcRenderer.invoke('image-edit-select', id, revision),
   // version
   getAppVersion: async () => ipcRenderer.invoke('get-saa-version'),
 
