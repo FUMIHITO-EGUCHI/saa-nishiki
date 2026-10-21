@@ -26,6 +26,7 @@ import { setupLoRA } from './renderer/slots/myLoRASlot.js';
 import { setupControlNet } from './renderer/slots/myControlNetSlot.js';
 import { setupJsonSlot } from './renderer/slots/myJsonSlot.js';
 import { setupADetailer } from './renderer/slots/myADetailerSlot.js';
+import { setupADetailerSettings } from './renderer/adetailerSettings.js';
 import { setupQueue } from './renderer/slots/myQueueSlot.js';
 import { setBlur, setNormal, showDialog } from './renderer/components/myDialog.js';
 import { setupImageUploadOverlay } from './renderer/imageInfo.js';
@@ -235,8 +236,8 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         tag_chip_alias: setupCheckbox('system-settings-tag-chip-alias', LANG.tag_chip_alias, SETTINGS.tag_chip_alias !== false, true,
             (value) => { globalThis.globalSettings.tag_chip_alias = value; document.dispatchEvent(new CustomEvent('saa:tag-aliases-updated')); }),
         wildcard_random: setupCheckbox('generate-wildcard-random', LANG.wildcard_random, SETTINGS.wildcard_random, true, (value) =>{ globalThis.globalSettings.wildcard_random = value; }),
-        sampler: mySimpleList('generate-sampler', LANG.api_model_sampler, ['Auto'], (index, value) =>{ globalThis.globalSettings.api_model_sampler = value; }, 20, false, false),
-        scheduler: mySimpleList('generate-scheduler', LANG.api_model_scheduler, ['Auto'], (index, value) =>{ globalThis.globalSettings.api_model_scheduler = value; }, 20, false, false),
+        sampler: mySimpleList('generate-sampler', LANG.api_model_sampler, ['Auto'], (index, values) =>{ globalThis.globalSettings.api_model_sampler = values[index]; }, 20, false, false),
+        scheduler: mySimpleList('generate-scheduler', LANG.api_model_scheduler, ['Auto'], (index, values) =>{ globalThis.globalSettings.api_model_scheduler = values[index]; }, 20, false, false),
 
         generate_single: setupButtons('generate-button-single', LANG.run_button, {
                 defaultColor: 'rgb(234,88,12)',
@@ -798,6 +799,7 @@ async function init(){
 
         // aDetailer
         globalThis.aDetailer = setupADetailer('adetailer-main');
+        setupADetailerSettings();
 
         // Queue management
         globalThis.queueManager = setupQueue('queue-main');

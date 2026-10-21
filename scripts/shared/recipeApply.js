@@ -40,7 +40,7 @@ export const RECIPE_ROWS = Object.freeze({
     size: {
         generation: ['width', 'height', 'api_image_landscape', 'api_hf_enable', 'api_hf_scale', 'api_hf_denoise', 'api_hf_upscaler_selected',
             'api_hf_colortransfer', 'api_hf_random_seed', 'api_hf_steps'],
-        adetailer: ['api_adetailer_enable', 'ad_slot'],
+        adetailer: ['api_adetailer_enable', 'api_adetailer_prompt_mode', 'api_adetailer_seed', 'ad_slot'],
     },
     regional: {
         generation: ['regional_condition', 'regional_swap', 'regional_overlap_ratio', 'regional_image_ratio', 'regional_str_left',

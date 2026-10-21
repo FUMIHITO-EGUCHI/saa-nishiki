@@ -369,16 +369,18 @@ const RECORDER = `(() => {
 
 const READY = `Boolean(globalThis.generate?.generate_single && globalThis.mainGallery?.appendImageData && globalThis.globalSettings && document.querySelector('.model-type .mydropdown-input'))`;
 
-export async function launchApp({ settings = {}, startTimeoutMs = 90_000, starterParts = false, partsDoc = null } = {}) {
+export async function launchApp({ settings = {}, startTimeoutMs = 90_000, starterParts = false, partsDoc = null, reuseSettingsDir = null } = {}) {
     const flat = e2eSettings(settings);
     const runDir = fs.mkdtempSync(path.join(os.tmpdir(), 'saa-e2e-'));
-    const settingsDir = path.join(runDir, 'settings');
-    writeSettings(settingsDir, flat);
+    const settingsDir = reuseSettingsDir ?? path.join(runDir, 'settings');
+    if (!reuseSettingsDir) writeSettings(settingsDir, flat);
     // the store merges the bundled starter set into any parts.json older than the set; the
     // tests that make their own parts start from an empty store already at the set's
     // version, `starterParts: true` from no file at all, `partsDoc` from that document
-    if (partsDoc) fs.writeFileSync(path.join(settingsDir, 'parts.json'), JSON.stringify(makeEnvelope('parts', partsDoc), null, 2));
-    else if (!starterParts) fs.writeFileSync(path.join(settingsDir, 'parts.json'), JSON.stringify(makeEnvelope('parts', { parts: {}, starterVersion: STARTER_SET_VERSION }), null, 2));
+    if (!reuseSettingsDir) {
+        if (partsDoc) fs.writeFileSync(path.join(settingsDir, 'parts.json'), JSON.stringify(makeEnvelope('parts', partsDoc), null, 2));
+        else if (!starterParts) fs.writeFileSync(path.join(settingsDir, 'parts.json'), JSON.stringify(makeEnvelope('parts', { parts: {}, starterVersion: STARTER_SET_VERSION }), null, 2));
+    }
     const port = await freePort();
     const log = fs.createWriteStream(path.join(runDir, 'app.log'));
     // Chromium stops animation frames in a window other windows cover (Windows occlusion

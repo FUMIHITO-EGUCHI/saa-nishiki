@@ -3122,3 +3122,9 @@ button.lora-cell { cursor: zoom-in; }
 .lora-retake-negative { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--saa-border-ctl); border-radius: 6px; background: var(--saa-bg-field); color: var(--saa-text); font: inherit; font-size: 12px; resize: vertical; }
 .lora-retake-negative[hidden] { display: none; }
 .lora-retake-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--saa-border); }
+
+/* Shared ComfyUI ADetailer controls, outside the reloadable slot list. */
+#adetailer-settings { display: flex; flex-wrap: wrap; gap: 12px; padding: 8px 12px; }
+#adetailer-settings[hidden] { display: none; }
+#adetailer-settings label { display: flex; flex: 1 1 210px; flex-direction: column; gap: 5px; font-size: 12px; }
+#adetailer-settings select, #adetailer-settings input { box-sizing: border-box; width: 100%; min-height: 32px; padding: 5px 8px; color: inherit; background: var(--saa-bg-field); border: 1px solid var(--saa-border-ctl); border-radius: 5px; font: inherit; }

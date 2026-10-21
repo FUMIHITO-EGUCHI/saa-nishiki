@@ -1,3 +1,4 @@
+import { resolveADetailerSeed } from '../shared/adetailerSettings.js';
 import { ipcMain, BrowserWindow, app, net } from 'electron';
 import { WebSocket } from 'ws';
 import fs from 'node:fs';
@@ -446,11 +447,10 @@ function applyControlnet(workflow, controlnet, workflowInfo){
 }
 
 function applyADetailer(workflow, adetailers, workflowInfo) {
-  const {startIndex, refiner, hiresfix, model} = workflowInfo;
+  const {startIndex, refiner, model, seed, conditioning} = workflowInfo;
   let index =startIndex + 1;
   const modelUSE = refiner?43:45; // 45: default   43: refiner (clip / vae; the model is the run's last LoRA'd one)
   let imageVAED = workflow["29"].inputs.images[0];
-  const randomSeed = globalThis.crypto.getRandomValues(new Uint32Array(1))[0]; // 4294967296 = 2^32
 
   for(const adetailer of adetailers) {
     if(adetailer.mask_filter_method === 'Off')
@@ -510,7 +510,7 @@ function applyADetailer(workflow, adetailers, workflowInfo) {
         "guide_size": 512,
         "guide_size_for": true,
         "max_size": 1024,
-        "seed": randomSeed,
+        "seed": resolveADetailerSeed(adetailer.seed, seed),
         "steps": adetailer.steps ?? 20,
         "cfg": adetailer.cfg ?? 8,
         "sampler_name": adetailer.sampler ?? "euler_ancestral",
@@ -548,14 +548,10 @@ function applyADetailer(workflow, adetailers, workflowInfo) {
           `${modelUSE}`,
           2
         ],
-        "positive": [
-          `${index + 2}`,
-          0
-        ],
-        "negative": [
-          `${index + 3}`,
-          0
-        ],
+        "positive": adetailer.promptMode !== 'empty' && !String(adetailer.prompt ?? '').trim()
+          ? conditioning.positive : [`${index + 2}`, 0],
+        "negative": adetailer.promptMode !== 'empty' && !String(adetailer.negative_prompt ?? '').trim()
+          ? conditioning.negative : [`${index + 3}`, 0],
         "bbox_detector": [
           `${index + 1}`,
           0
@@ -583,10 +579,9 @@ function applyADetailer(workflow, adetailers, workflowInfo) {
 }
 
 function applyADetailerUnet(workflow, adetailers, workflowInfo) {
-  const {startIndex, model, clip, vae, hiresfix, colorTransfer=28, normalVae=6} = workflowInfo;
+  const {startIndex, model, clip, vae, seed, conditioning} = workflowInfo;
   let index = startIndex + 1;
   let imageVAED = workflow["29"].inputs.images[0];
-  const randomSeed = globalThis.crypto.getRandomValues(new Uint32Array(1))[0]; // 4294967296 = 2^32
 
   for(const adetailer of adetailers) {
     if(adetailer.mask_filter_method === 'Off')
@@ -646,7 +641,7 @@ function applyADetailerUnet(workflow, adetailers, workflowInfo) {
         "guide_size": 512,
         "guide_size_for": true,
         "max_size": 1024,
-        "seed": randomSeed,
+        "seed": resolveADetailerSeed(adetailer.seed, seed),
         "steps": adetailer.steps ?? 20,
         "cfg": adetailer.cfg ?? 8,
         "sampler_name": adetailer.sampler ?? "euler_ancestral",
@@ -684,14 +679,10 @@ function applyADetailerUnet(workflow, adetailers, workflowInfo) {
           `${vae}`,
           0
         ],
-        "positive": [
-          `${index + 2}`,
-          0
-        ],
-        "negative": [
-          `${index + 3}`,
-          0
-        ],
+        "positive": adetailer.promptMode !== 'empty' && !String(adetailer.prompt ?? '').trim()
+          ? conditioning.positive : [`${index + 2}`, 0],
+        "negative": adetailer.promptMode !== 'empty' && !String(adetailer.negative_prompt ?? '').trim()
+          ? conditioning.negative : [`${index + 3}`, 0],
         "bbox_detector": [
           `${index + 1}`,
           0
@@ -1370,7 +1361,9 @@ class ComfyUI {
       startIndex: indexCN,
       refiner:    refinerActive,
       hiresfix:   hifix.enable,
-      model:      stages.last
+      model:      stages.last,
+      seed,
+      conditioning: workflowCN[hifix.enable ? "20" : refinerActive ? "37" : "36"].inputs
     };
     workflow = applyADetailer(workflowCN, adetailer, workflowInfo);
     return workflow;
@@ -1512,8 +1505,8 @@ class ComfyUI {
       model:      stages.last,
       clip:       50,
       vae:        52,
-      colorTransfer: 58,
-      hiresfix:   hifix.enable
+      seed,
+      conditioning: workflow[hifix.enable ? "61" : "36"].inputs
     };
 
     workflow = applyADetailerUnet(workflow, adetailer, workflowInfo);
@@ -1729,7 +1722,9 @@ class ComfyUI {
       startIndex: indexCN,
       refiner:    refinerActive,
       hiresfix:   hifix.enable,
-      model:      stages.last
+      model:      stages.last,
+      seed,
+      conditioning: workflowCN[hifix.enable ? "20" : refinerActive ? "37" : "36"].inputs
     };
     workflow = applyADetailer(workflowCN, adetailer, workflowInfo);
     return workflow;
@@ -1901,8 +1896,8 @@ class ComfyUI {
       model:      stages.last,
       clip:       60,
       vae:        61,
-      colorTransfer: 28,
-      hiresfix:   hifix.enable
+      seed,
+      conditioning: workflow[hifix.enable ? "20" : "36"].inputs
     };
 
     workflow = applyADetailerUnet(workflow, adetailer, workflowInfo);
@@ -2770,6 +2765,10 @@ function runRecord(generateData) {
         sampler: generateData.sampler,
         scheduler: generateData.scheduler,
         fast: fast?.lora ? { lora: fast.lora, strength: fast.strength } : null,
+        adetailer: (generateData.adetailer ?? []).filter(row => row.mask_filter_method !== 'Off').map(row => ({
+          seed: resolveADetailerSeed(row.seed, generateData.seed),
+          promptMode: row.promptMode === 'empty' ? 'empty' : 'inherit',
+        })),
       },
     },
   };
