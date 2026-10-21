@@ -46,3 +46,12 @@
 - `unit-tests.txt`：全体テストの結果。
 
 元画像のファイルバイト列も検証前後で同一。画像の保護契約そのものはファイルバイトではなくdecode後の全チャンネルを比較している。個々の結果画像はAPI promptをPNGへ再埋め込みせず、隣接するプロジェクト記録から対応runへ辿る。
+
+## experimentalへの統合
+
+同日、既存の`experimental`（`bbd100c`）へ上記の実装4コミットを取り込んだ。既存のLoRA・Library・画像のrecipe/timing機能を保持し、通常生成の実行記録経路にもrecipeの送信と保存先・生成時間の受け渡しを接続した。バージョン番号はexperimentalのものを維持した。
+
+- 統合後のunit test：1,339件中1,337成功、2スキップ、失敗0。
+- HTTP/WebSocket制御サーバーで、送信応答前のイベント、他jobの除外、PNG内のrecipe/timingと保存先の引き継ぎを確認。
+- 実機`tests/e2e/recipe.e2e.mjs`：2件成功。専用settingsでComfyUIから生成し、保存PNGのrecipe/timing、Info表示、「Use settings…」での設定読み戻しとUndoを確認。使用Checkpointは既存の`waiIllustriousSDXL_v170.safetensors`。
+- 実機テストのログとsettingsは`C:/Users/kurah/AppData/Local/Temp/saa-e2e-2pVfih/`に保存。元の実装時の部分編集検証は上記の記録を参照。

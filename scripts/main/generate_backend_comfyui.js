@@ -841,10 +841,10 @@ class ComfyUI {
 
   // ComfyUI's "executing" messages for this prompt: a node starting, or (node null) the
   // prompt done. They time the run; anything else is left to the handler below.
-  recordMessage(message) {
+  recordMessage(message, promptId = this.prompt_id) {
     if (!this.timeline || message?.type !== 'executing') return;
     const data = message.data ?? {};
-    if (data.prompt_id !== undefined && data.prompt_id !== this.prompt_id) return;
+    if (data.prompt_id !== undefined && data.prompt_id !== promptId) return;
     if (data.node === null) this.timeline.end();
     else this.timeline.node(data.node);
   }
@@ -852,7 +852,10 @@ class ComfyUI {
   async openWS(prompt_id, skipFirst = true, index='29'){
     if (this.trackedRun?.promptId === prompt_id) {
       try {
-        const { image } = await this.trackedRun.result;
+        const { image, record } = await this.trackedRun.result;
+        this.savedImage = record.output;
+        this.timeline?.end();
+        this.finishRecord();
         return `data:image/png;base64,${image.toString('base64')}`;
       } catch (error) {
         return `Error: ${error.message}`;
@@ -2644,9 +2647,12 @@ class ComfyUI {
         requested: this.requested ?? {},
         transforms: this.transforms ?? [],
         outputNode: this.outputNode ?? '29',
+        extraData: record?.recipe ? { extra_pnginfo: { [RECIPE_CHUNK]: record.recipe } } : undefined,
+        onEvent: (message, promptId) => this.recordMessage(message, promptId),
         onProgress: (value, max) => sendToRenderer(this.uuid, 'updateProgress', value, max),
         onPreview: buffer => { if (this.refresh) sendToRenderer(this.uuid, 'updatePreview', `data:image/png;base64,${buffer.toString('base64')}`); },
       }).then(run => {
+        this.prompt_id = run.promptId;
         this.trackedRun = run;
         return JSON.stringify({ prompt_id: run.promptId, saa_run_id: run.runId });
       }).catch(error => { this.trackedCancellation = null; setMutexBackendBusy(false); return `Error: ${error.message}`; });

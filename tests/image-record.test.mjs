@@ -3,14 +3,16 @@
 // goes out with the prompt, the run is timed, and the result is handed to the renderer.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import http from 'node:http';
 import { register } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import zlib from 'node:zlib';
+import { WebSocketServer } from 'ws';
 
 import { isLocalAddress, outputDirFromStats, savedImagePath, stampImageTime, writePngRecords } from '../scripts/main/imageRecord.js';
-import { crc32, readTextChunks } from '../scripts/shared/pngText.js';
+import { asciiJson, crc32, insertTextChunks, readTextChunks } from '../scripts/shared/pngText.js';
 
 function tinyPng() {
     const chunk = (type, data) => {
@@ -118,6 +120,7 @@ const { ComfyUI } = await import('../scripts/main/generate_backend_comfyui.js');
 
 test('a run with a recipe sends it as extra_pnginfo; a run without sends none', async () => {
     const backend = new ComfyUI('client');
+    backend.uuid = 'browser-client';
     backend.addr = '192.168.0.9:8188';
     backend.podEnabled = () => false;
     requests.length = 0;
@@ -133,6 +136,7 @@ test('a run with a recipe sends it as extra_pnginfo; a run without sends none', 
 
 test('the finished run hands its timing and recipe to the renderer once', async () => {
     const backend = new ComfyUI('client');
+    backend.uuid = 'browser-client';
     backend.addr = '192.168.0.9:8188';   // remote: no path on this disk
     backend.podEnabled = () => false;
     requests.length = 0;
@@ -150,6 +154,67 @@ test('the finished run hands its timing and recipe to the renderer once', async 
     assert.ok(Number.isFinite(result.timing.total));
     assert.deepEqual(backend.timeline, null);
     assert.equal(await backend.takeResult(), null, 'taken once');
+});
+
+test('a recorded desktop run preserves the recipe, saved path and node timing', async t => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'saa-recorded-recipe-'));
+    const previousSettingsDir = process.env.SAA_SETTINGS_DIR;
+    process.env.SAA_SETTINGS_DIR = path.join(dir, 'settings');
+    const file = path.join(dir, 'result.png');
+    const recipe = { v: 1, sections: {}, run: { seed: 42 } };
+    let submitted;
+    const server = http.createServer(async (req, res) => {
+        if (req.url === '/prompt') {
+            let body = '';
+            for await (const chunk of req) body += chunk;
+            submitted = JSON.parse(body);
+            fs.writeFileSync(file, insertTextChunks(tinyPng(), [['saa_recipe', asciiJson(submitted.extra_data?.extra_pnginfo?.saa_recipe)]]));
+            for (const client of ws.clients) {
+                client.send(JSON.stringify({ type: 'executing', data: { prompt_id: 'another-job', node: '37' } }));
+                client.send(JSON.stringify({ type: 'executing', data: { prompt_id: 'desktop-job', node: '36' } }));
+            }
+            res.end('{"prompt_id":"desktop-job"}');
+            return;
+        }
+        if (req.url === '/history/desktop-job') {
+            await new Promise(resolve => setTimeout(resolve, 30));
+            res.end(JSON.stringify({ 'desktop-job': { status: { completed: true }, outputs: {
+                '29': { images: [{ filename: 'result.png', subfolder: '', type: 'output' }] },
+            } } }));
+            return;
+        }
+        if (req.url.startsWith('/view?')) { res.end(fs.readFileSync(file)); return; }
+        if (req.url === '/system_stats') { res.end(JSON.stringify({ system: { argv: [path.join(dir, 'main.py'), '--output-directory', dir] } })); return; }
+        res.end('{}');
+    });
+    const ws = new WebSocketServer({ server });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    t.after(async () => {
+        for (const client of ws.clients) client.terminate();
+        ws.close();
+        await new Promise(resolve => server.close(resolve));
+        if (previousSettingsDir === undefined) delete process.env.SAA_SETTINGS_DIR;
+        else process.env.SAA_SETTINGS_DIR = previousSettingsDir;
+        fs.rmSync(dir, { recursive: true, force: true });
+    });
+    const backend = new ComfyUI('desktop-client');
+    backend.addr = `127.0.0.1:${server.address().port}`;
+    backend.podEnabled = () => false;
+    const reply = JSON.parse(await backend.run({
+        '36': { class_type: 'KSamplerAdvanced', inputs: {} },
+        '29': { class_type: 'ImageSaverMira', inputs: {} },
+    }, false, { recipe, before: { jobStart: Date.now() } }));
+    assert.ok(reply.saa_run_id);
+    assert.match(await backend.openWS(reply.prompt_id), /^data:image\/png;base64,/);
+    const result = await backend.takeResult();
+    assert.equal(result.path, file);
+    assert.deepEqual(result.recipe, recipe);
+    assert.ok(result.timing.segments.some(segment => segment.id === 'base' && segment.ms > 0));
+    assert.ok(!result.timing.segments.some(segment => segment.id === 'refiner'), 'other jobs are ignored');
+    const { records } = readTextChunks(fs.readFileSync(file));
+    assert.deepEqual(JSON.parse(records.saa_recipe), recipe);
+    assert.deepEqual(JSON.parse(records.saa_time), result.timing);
+    assert.equal(await backend.takeResult(), null);
 });
 
 test('a pod image gets the recipe and the time written in before it is saved', () => {

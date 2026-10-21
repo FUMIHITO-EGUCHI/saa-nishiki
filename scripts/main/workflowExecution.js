@@ -9,7 +9,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 // submission; history remains authoritative when events are lost or cached.
 export async function startWorkflowExecution({ addr, auth = '', workflow, requested = {}, transforms = [], outputNode = '29',
     stages = [], store, onProgress = () => {}, onPreview = () => {}, timeoutMs = 20 * 60_000,
-    cancellation = { cancelled: false } }) {
+    cancellation = { cancelled: false }, extraData, onEvent = () => {} }) {
     const clientId = randomUUID();
     const record = store.create('runs', { requested, transforms, submitted: false, status: 'preparing',
         apiPrompt: workflow, provenance: describeWorkflow(workflow, outputNode), events: [], stages: [],
@@ -47,9 +47,10 @@ export async function startWorkflowExecution({ addr, auth = '', workflow, reques
         await cancel();
         throw new Error('Cancelled');
     };
-    const event = message => {
+    const event = (message, live = true) => {
         const { type, data = {} } = message;
         if (data.prompt_id && data.prompt_id !== promptId) return;
+        if (live) onEvent(message, promptId);
         if (type === 'progress') { onProgress(data.value, data.max); return; }
         if (!['execution_start', 'execution_cached', 'executing', 'executed', 'execution_success', 'execution_error', 'execution_interrupted'].includes(type)) return;
         if (record.events.length < 5000) record.events.push({ type, node: data.node ?? data.node_id ?? null,
@@ -82,13 +83,13 @@ export async function startWorkflowExecution({ addr, auth = '', workflow, reques
         record.status = 'submitting';
         record.submissionAttemptedAt = new Date().toISOString();
         save();
-        const response = await (await request('prompt', { prompt: workflow, client_id: clientId })).json();
+        const response = await (await request('prompt', { prompt: workflow, client_id: clientId, extra_data: extraData })).json();
         if (!response.prompt_id) throw new Error('ComfyUI did not return a prompt ID');
         promptId = record.promptId = response.prompt_id;
         record.submitted = true;
         record.status = 'running';
         record.startedAt = new Date().toISOString();
-        pending.splice(0).forEach(event);
+        pending.splice(0).forEach(message => event(message));
         save();
     } catch (error) {
         if (promptId) await cancelRemote().catch(() => {});
@@ -114,7 +115,7 @@ export async function startWorkflowExecution({ addr, auth = '', workflow, reques
                     continue;
                 }
                 if (history) {
-                    for (const [type, data] of history.status?.messages ?? []) event({ type, data });
+                    for (const [type, data] of history.status?.messages ?? []) event({ type, data }, false);
                     if (remoteError) throw new Error(remoteError);
                     await checkCancelled();
                     if (history.status?.status_str === 'error') throw new Error('ComfyUI execution failed');
