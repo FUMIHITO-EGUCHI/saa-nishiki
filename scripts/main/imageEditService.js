@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { pngBytes, readOriginal, prepareEdit, compositeEdit } from './imageEditPixels.js';
 import { maskEditWorkflow } from './maskEditWorkflow.js';
 
@@ -19,10 +19,17 @@ export function createImageEditor(store, { generate: execute } = {}) {
     };
     return {
         get,
-        async create(dataUrl,name='Image',sourceRunId) {
+        async create(dataUrl,name='Image',sourceRunId,options={}) {
             const bytes=pngBytes(dataUrl), image=await readOriginal(bytes);
+            const sourceKey=String(options?.sourceKey??'').slice(0,4096);
+            const sourceDigest=createHash('sha256').update(`${image.width}:${image.height}:${image.channels}:`).update(image.data).digest('hex');
+            if(options?.resume===true&&sourceKey){
+                const existing=store.list('projects').find(item=>item.sourceKey===sourceKey&&item.sourceDigest===sourceDigest);
+                if(existing)return existing;
+            }
             const id=randomUUID();
             const project=store.create('projects',{ name:String(name).slice(0,120),width:image.width,height:image.height,
+                sourceKey,sourceDigest,
                 sourceRunId:sourceRunId?store.read('runs',sourceRunId).id:undefined,
                 channels:image.channels,currentRevision:id,attempts:[],revisions:[{id,asset:'original.png',parentId:null,status:'original',createdAt:new Date().toISOString()}] });
             store.putImage('projects',project.id,'original.png',bytes);

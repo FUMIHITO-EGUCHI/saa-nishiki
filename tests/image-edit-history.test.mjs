@@ -7,6 +7,19 @@ import sharp from 'sharp';
 import { createWorkflowStore } from '../scripts/main/workflowStore.js';
 import { createImageEditor } from '../scripts/main/imageEditService.js';
 const url = b => `data:image/png;base64,${b.toString('base64')}`;
+test('the library reopens the same source project after restart, but a replaced source starts a new one', async t => {
+    const root=fs.mkdtempSync(path.join(os.tmpdir(),'saa-library-edits-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+    const store=createWorkflowStore(root),editor=createImageEditor(store);
+    const original=await sharp({create:{width:16,height:16,channels:3,background:'red'}}).png().toBuffer();
+    const replacement=await sharp({create:{width:16,height:16,channels:3,background:'blue'}}).png().toBuffer();
+    const source={resume:true,sourceKey:'file:c:/images/original.png'};
+    const first=await editor.create(url(original),'original',undefined,source);
+    const reopened=createImageEditor(createWorkflowStore(root));
+    assert.equal((await reopened.create(url(original),'original',undefined,source)).id,first.id);
+    assert.notEqual((await reopened.create(url(replacement),'original',undefined,source)).id,first.id);
+    assert.notEqual((await reopened.create(url(original),'copy',undefined,{...source,sourceKey:'file:c:/images/copy.png'})).id,first.id);
+    assert.deepEqual(store.image('projects',first.id,'original.png'),original);
+});
 test('candidate, accept, branch, discard and failure preserve the parent across restart', async t => {
     const root=fs.mkdtempSync(path.join(os.tmpdir(),'saa-edits-')); t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
     const store=createWorkflowStore(root);
