@@ -132,7 +132,7 @@ test('splitFlat / mergeSections round-trip a flat settings object', () => {
     for (const key of Object.keys(DEFAULT_SETTINGS)) assert.ok(key in merged, key);
     assert.equal(merged.api_prompt, '1girl');
     assert.equal(merged.cfg, 4);
-    assert.deepEqual(pickSection(merged, 'adetailer'), { api_adetailer_enable: false, ad_slot: [['face_yolov8n.pt']] });
+    assert.deepEqual(pickSection(merged, 'adetailer'), { api_adetailer_enable: false, api_adetailer_prompt_mode: 'inherit', api_adetailer_seed: -1, ad_slot: [['face_yolov8n.pt']] });
 });
 
 test('envelope carries schema / section / version and rejects mismatches', () => {

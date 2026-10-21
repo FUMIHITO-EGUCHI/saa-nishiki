@@ -10,6 +10,7 @@
 import { REFINE_SYSTEM_PROMPT } from '../aiPromptRefiner.js';
 import { normalizeArtistSlots } from './artistSlots.js';
 import { uniqueSlotSides } from './characterSides.js';
+import { normalizeADetailerSeed } from './adetailerSettings.js';
 
 export const SCHEMA_VERSION = 1;
 
@@ -255,6 +256,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
 
     api_controlnet_enable: false,
     api_adetailer_enable: false,
+    api_adetailer_prompt_mode: 'inherit',
+    api_adetailer_seed: -1,
 
     lora_slot: [],
     ad_slot: [],
@@ -326,7 +329,7 @@ export const SECTION_KEYS = Object.freeze({
         'regional_str_left', 'regional_str_right', 'regional_option_left', 'regional_option_right', 'regional_split', 'regional_panels',
     ]),
     lora: Object.freeze(['lora_slot']),
-    adetailer: Object.freeze(['api_adetailer_enable', 'ad_slot']),
+    adetailer: Object.freeze(['api_adetailer_enable', 'api_adetailer_prompt_mode', 'api_adetailer_seed', 'ad_slot']),
     controlnet: Object.freeze(['api_controlnet_enable', 'controlnet_slot']),
 });
 
@@ -370,6 +373,10 @@ function sameType(defaultValue, value) {
 }
 
 function coerce(key, value, defaultValue) {
+    if (key === 'api_adetailer_prompt_mode') return value === 'empty' ? 'empty' : 'inherit';
+    if (key === 'api_adetailer_seed') return normalizeADetailerSeed(value);
+    // Older dropdown callbacks supplied a one-element array for these string settings.
+    if (['api_model_sampler', 'api_model_scheduler'].includes(key) && Array.isArray(value) && value.length === 1) value = value[0];
     if (typeof defaultValue === 'number') {
         if (typeof value === 'number') return Number.isFinite(value) ? value : defaultValue;
         if (typeof value === 'string' && value.trim() !== '') {

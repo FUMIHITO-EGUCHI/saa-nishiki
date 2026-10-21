@@ -1,3 +1,4 @@
+import { refreshADetailerSettings } from './adetailerSettings.js';
 import { decodeThumb } from './customThumbGallery.js';
 import { generateImage, startQueue } from './generate.js';
 import { generateRegionalImage } from './generate_regional.js';
@@ -269,6 +270,7 @@ async function applyModelType(value, previous, { clearPrompts }) {
 
 export async function callback_api_interface(index, selectedValue){
     globalThis.globalSettings.api_interface = selectedValue[0];
+    refreshADetailerSettings();
 
     const SETTINGS = globalThis.globalSettings;
     const LANG = globalThis.cachedFiles.language[SETTINGS.language];

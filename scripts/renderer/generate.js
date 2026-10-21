@@ -931,6 +931,8 @@ export function createADetailer(apiInterface) {
         } else {
             adData ={
                 model: `bbox/${ad_model}`,
+                promptMode: globalThis.globalSettings.api_adetailer_prompt_mode === 'empty' ? 'empty' : 'inherit',
+                seed: globalThis.globalSettings.api_adetailer_seed ?? -1,
                 prompt: ad_prompt,
                 negative_prompt: ad_negative_prompt,
                 // bbox_threshold

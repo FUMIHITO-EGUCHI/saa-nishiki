@@ -54,6 +54,9 @@ function cleanRun(run = {}) {
         sampler: text(run.sent.sampler),
         scheduler: text(run.sent.scheduler),
         fast: isObject(run.sent.fast) ? { lora: text(run.sent.fast.lora), strength: finite(run.sent.fast.strength) } : null,
+        ...(Array.isArray(run.sent.adetailer) ? { adetailer: run.sent.adetailer.map(row => ({
+            seed: finite(row?.seed), promptMode: row?.promptMode === 'empty' ? 'empty' : 'inherit',
+        })) } : {}),
     } : null;
     return {
         seed: finite(run.seed),
@@ -102,11 +105,23 @@ export function parseRecipe(value) {
         try { data = JSON.parse(value); } catch { return null; }
     }
     if (!isObject(data) || !Number.isInteger(data.v) || data.v < 1 || !isObject(data.sections)) return null;
+    const run = cleanRun(isObject(data.run) ? data.run : {});
+    const sections = Object.fromEntries(RECIPE_SECTIONS.map(section => [section, isObject(data.sections[section]) ? { ...data.sections[section] } : {}]));
+    // Repair old dropdown snapshots using the recorded send value. Fast deliberately
+    // overrides editor values, so its snapshots must remain the pre-Fast settings.
+    if (!data.app?.api_fast_enable && !run.sent?.fast) {
+        if (run.sent?.sampler) sections.generation.api_model_sampler = run.sent.sampler;
+        if (run.sent?.scheduler) sections.generation.api_model_scheduler = run.sent.scheduler;
+    }
+    // Historical recipes used empty conditioning. Loading one should make that
+    // choice explicit; new recipes always include both of these settings.
+    sections.adetailer.api_adetailer_prompt_mode ??= 'empty';
+    sections.adetailer.api_adetailer_seed ??= -1;
     return {
         ...data,
-        sections: Object.fromEntries(RECIPE_SECTIONS.map(section => [section, isObject(data.sections[section]) ? data.sections[section] : {}])),
+        sections,
         app: isObject(data.app) ? data.app : {},
-        run: cleanRun(isObject(data.run) ? data.run : {}),
+        run,
     };
 }
 
