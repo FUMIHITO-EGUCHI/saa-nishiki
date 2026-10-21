@@ -1,18 +1,20 @@
 import { createMaskCanvas } from './imageEditCanvas.js';
 import { element,button,field,select,number,tr,readFile } from './workflowUi.js';
 
-export async function showImageEditor(container,projectId,guard,refreshList) {
+export async function showImageEditor(container,projectId,guard,refreshList,{onBusyChange=()=>{},onDraftChange=()=>{},onRevisionChange=()=>{}}={}) {
     const api=globalThis.api;
     let project=await api.imageEditGet(projectId),candidate=null,permissionChecked=false,busy=false,previewing=false,capabilitiesReady=false;
     const parent=()=>project.revisions.find(r=>r.id===project.currentRevision);
-    container.replaceChildren(element('h3',project.name));
-    const history=element('div','','workflow-actions');container.append(history);
+    container.replaceChildren();
+    const workspace=element('div','','workflow-edit-workspace');container.append(workspace);
+    const visual=element('div','','workflow-edit-visual'),panel=element('aside','','workflow-edit-panel');workspace.append(visual,panel);
+    const history=element('div','','workflow-edit-history');
     const surface=element('div','','edit-canvas-scroll');
-    const tools=element('div','','workflow-actions');container.append(tools,surface);
-    const status=element('p',tr('緑：編集範囲　黄：Lock。原画は変更されません。','Green: editable. Yellow: Lock. The parent stays unchanged.'),'workflow-edit-status');status.setAttribute('role','status');container.append(status);
+    const tools=element('div','','workflow-actions');visual.append(tools,surface);
+    const status=element('p',tr('緑：編集範囲　黄：Lock。原画は変更されません。','Green: editable. Yellow: Lock. The parent stays unchanged.'),'workflow-edit-status');status.setAttribute('role','status');visual.append(status);
     const parentUrl=()=>api.workflowImage('projects',project.id,parent().asset);
     const comparisonParentUrl=()=>api.workflowImage('projects',project.id,project.revisions.find(r=>r.id===(candidate?.parentId??project.currentRevision)).asset);
-    const mask=await createMaskCanvas(surface,await parentUrl(),project.width,project.height,()=>{permissionChecked=false;});
+    const mask=await createMaskCanvas(surface,await parentUrl(),project.width,project.height,()=>{permissionChecked=false;onDraftChange(true);});
     const tool=select([{value:'edit',label:tr('編集','Edit')},{value:'lock',label:'Lock'},{value:'eraseEdit',label:tr('編集範囲を消す','Erase edit')},{value:'eraseLock',label:tr('Lockを消す','Erase Lock')}]);
     tool.id='edit-tool';field(tools,tr('ブラシ','Brush'),tool);tool.onchange=()=>mask.setTool(tool.value);
     const brush=number(tools,tr('太さ（原画px）','Size (original px)'),32,1,512);brush.oninput=()=>mask.setBrush(Number(brush.value));
@@ -24,10 +26,11 @@ export async function showImageEditor(container,projectId,guard,refreshList) {
         field(tools,name==='edit'?tr('編集マスク読込','Import edit mask'):tr('Lock読込','Import Lock'),input);
         input.onchange=()=>guard(async()=>{try{if(input.files[0])await apply(await readFile(input.files[0]));}finally{input.value='';}});
     }
-    const form=element('div','','workflow-edit-settings');container.append(form);
+    const form=element('div','','workflow-edit-settings');panel.append(form);
+    form.addEventListener('input',()=>onDraftChange(true));
     const positive=field(form,tr('編集後の内容','Describe the edited area'),element('textarea'));positive.id='edit-positive';positive.rows=3;
     const negative=field(form,tr('避けたい内容','Negative prompt'),element('textarea'));negative.id='edit-negative';negative.rows=2;
-    const advanced=element('details');advanced.open=true;advanced.append(element('summary',tr('生成設定（Checkpoint・ローカル）','Generation settings (Checkpoint · local)')));form.append(advanced);
+    const advanced=element('details');advanced.append(element('summary',tr('生成設定（Checkpoint・ローカル）','Generation settings (Checkpoint · local)')));form.append(advanced);
     const settingsGrid=element('div','','workflow-edit-grid');advanced.append(settingsGrid);
     const model=field(settingsGrid,tr('モデル','Model'),select([]));model.id='edit-model';
     const sampler=field(settingsGrid,'Sampler',select([])),scheduler=field(settingsGrid,'Scheduler',select([]));
@@ -38,9 +41,10 @@ export async function showImageEditor(container,projectId,guard,refreshList) {
     const maxSize=number(settingsGrid,tr('処理の最大サイズ px','Maximum processing size px'),1024,128,1536);
     guideSize.id='edit-guide-size';maxSize.id='edit-max-size';
     padding.onchange=feather.onchange=()=>{permissionChecked=false;};
-    const actions=element('div','','workflow-actions');container.append(actions);
+    const actions=element('div','','workflow-actions');panel.append(actions);
+    const historyDetails=element('details');historyDetails.append(element('summary',tr('版と編集履歴','Versions & edit history')),history);panel.append(historyDetails);
     const compare=select([{value:'parent',label:tr('親画像','Parent')},{value:'candidate-full',label:tr('生成候補（合成前）','Candidate before masking')},{value:'composite',label:tr('合成結果','Composite')}],'parent');
-    compare.id='edit-compare';field(actions,tr('同じ座標で比較','Compare at the same coordinates'),compare);
+    compare.id='edit-compare';field(visual,tr('同じ座標で比較','Compare at the same coordinates'),compare);
     compare.onchange=()=>guard(async()=>{if(compare.value==='parent')await mask.setImage(await comparisonParentUrl());else if(candidate)await mask.setImage(await api.workflowImage('projects',project.id,`${candidate.id}-${compare.value}.png`));toggleBusy();});
     const request=()=>({projectId:project.id,parentId:project.currentRevision,...mask.masks(),padding:Number(padding.value),feather:Number(feather.value),settings:{model:model.value,sampler:sampler.value,scheduler:scheduler.value,seed:Number(seed.value),steps:Number(steps.value),cfg:Number(cfg.value),denoise:Number(denoise.value),positive:positive.value,negative:negative.value,guideSize:Number(guideSize.value),maxSize:Number(maxSize.value)}});
     const preview=button(tr('変わる範囲を確認','Preview permitted area'),()=>guard(async()=>{
@@ -55,17 +59,17 @@ export async function showImageEditor(container,projectId,guard,refreshList) {
         busy=true;toggleBusy();status.textContent=tr('生成中。親画像は保持しています。','Generating. The parent is preserved.');
         const started=Date.now();
         const ticker=setInterval(()=>{status.textContent=`${tr('生成中。親画像は保持しています。','Generating. The parent is preserved.')} ${Math.floor((Date.now()-started)/1000)}s`;},1000);
-        try{candidate=await api.imageEditGenerate(request());
+        try{candidate=await api.imageEditGenerate(request());onDraftChange(false);
             if(candidate.status==='no-change'){status.textContent=tr('変更なし。現在版はそのままです。','No changes. Current revision is unchanged.');return;}
             project=await api.imageEditGet(project.id);await showCandidate(candidate);
         }catch(error){status.textContent=error.message;throw error;}
-        finally{clearInterval(ticker);busy=false;await refreshHistory();toggleBusy();await refreshList();}
+        finally{clearInterval(ticker);busy=false;toggleBusy();await refreshHistory();await refreshList();}
     }),'edit-generate');
     const cancel=button(tr('中止','Cancel'),()=>guard(()=>api.imageEditCancel()),'edit-cancel');cancel.disabled=true;
     const accept=button(tr('採用','Accept'),()=>guard(async()=>{
         project=await api.imageEditAccept(project.id,candidate.id);await mask.setImage(await parentUrl());mask.clear('edit');compare.value='parent';
         status.textContent=tr('採用しました。次の編集はこの版から始まります。','Accepted. The next edit starts from this revision.');
-        candidate=null;await refreshHistory();toggleBusy();await refreshList();
+        candidate=null;await refreshHistory();toggleBusy();onDraftChange(false);await onRevisionChange(project);await refreshList();
     }),'edit-accept');
     const discard=button(tr('破棄','Discard'),()=>guard(async()=>{project=await api.imageEditDiscard(project.id,candidate.id);candidate=null;compare.value='parent';await mask.setImage(await parentUrl());status.textContent=tr('破棄しました。現在版は変更されていません。','Discarded. Current revision is unchanged.');await refreshHistory();toggleBusy();}),'edit-discard');
     actions.append(preview,generate,cancel,accept,discard);
@@ -74,7 +78,7 @@ export async function showImageEditor(container,projectId,guard,refreshList) {
         const staleParent=candidate&&candidate.parentId!==project.currentRevision;
         const waiting=busy||previewing;
         container.dataset.workflowBusy=String(waiting);
-        for(const control of container.closest('.workflow-studio')?.querySelectorAll('aside input,aside button')??[])control.disabled=waiting;
+        onBusyChange(waiting);
         surface.inert=waiting||compare.value!=='parent'||staleParent;
         for(const control of container.querySelectorAll('input,textarea,select,button'))control.disabled=waiting;
         generate.disabled=waiting||!capabilitiesReady||staleParent;preview.disabled=waiting||staleParent;
@@ -86,7 +90,7 @@ export async function showImageEditor(container,projectId,guard,refreshList) {
         project=await api.imageEditGet(project.id);history.replaceChildren();
         const choices=select(project.revisions.filter(r=>['original','accepted'].includes(r.status)).map((r,i)=>({value:r.id,label:`${i} · ${r.status} · ${new Date(r.createdAt).toLocaleTimeString()}`})),project.currentRevision);
         choices.id='edit-revision';field(history,tr('採用済みの版','Accepted revisions'),choices);
-        history.append(button(tr('この版に戻る','Use this revision'),()=>guard(async()=>{project=await api.imageEditSelect(project.id,choices.value);candidate=null;mask.clear('edit');mask.clear('lock');compare.value='parent';await mask.setImage(await parentUrl());status.textContent=tr('選択した版を復元しました。編集範囲とLockを指定できます。','Selected revision restored. Set the edit area and Lock.');await refreshHistory();toggleBusy();}),'edit-restore'));
+        history.append(button(tr('この版に戻る','Use this revision'),()=>guard(async()=>{project=await api.imageEditSelect(project.id,choices.value);candidate=null;mask.clear('edit');mask.clear('lock');compare.value='parent';await mask.setImage(await parentUrl());status.textContent=tr('選択した版を復元しました。編集範囲とLockを指定できます。','Selected revision restored. Set the edit area and Lock.');await refreshHistory();toggleBusy();onDraftChange(false);await onRevisionChange(project);await refreshList();}),'edit-restore'));
         const current=parent();
         if(current.parentId)history.append(button(tr('直前の編集範囲をLock','Lock the last edit'),()=>guard(async()=>{await mask.importLock(await api.workflowImage('projects',project.id,`${current.id}-alpha.png`),true);}),'edit-lock-last'));
         const pending=project.attempts.filter(a=>a.status==='review');
@@ -104,7 +108,7 @@ export async function showImageEditor(container,projectId,guard,refreshList) {
                 for(const [control,key] of [[model,'model'],[sampler,'sampler'],[scheduler,'scheduler'],[seed,'seed'],[steps,'steps'],[cfg,'cfg'],[denoise,'denoise'],[positive,'positive'],[negative,'negative'],[guideSize,'guideSize'],[maxSize,'maxSize']])control.value=item.settings[key]??control.value;
                 padding.value=item.transform?.padding??32;feather.value=item.transform?.feather??4;permissionChecked=false;
                 status.textContent=tr('親・マスク・設定を復元しました。変わる範囲を再確認してください。','Parent, masks and settings restored. Preview the permitted area again.');
-                await refreshHistory();toggleBusy();
+                await refreshHistory();toggleBusy();await onRevisionChange(project);
             })));
             const details=element('details');details.append(element('summary',tr('親・変換・保持検査の記録','Parent, transform and preservation records')),element('pre',JSON.stringify(project,null,2)));history.append(details);
         }

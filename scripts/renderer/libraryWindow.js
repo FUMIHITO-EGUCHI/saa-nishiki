@@ -14,6 +14,9 @@ import { FAVORITES_CHANGED_EVENT, isFavorite, loadFavorites, setFavorite, showIn
 import { openUseSettings } from './useSettingsDialog.js';
 import { summarizeImage } from '../shared/imageSummary.js';
 import { formatDuration } from '../shared/runTiming.js';
+import { createLibraryViewer } from './libraryViewer.js';
+import { showWorkflowRun } from './workflowRunsView.js';
+import { button as makeButton, tr, readFile } from './workflowUi.js';
 
 const TILE_SIZES = Object.freeze({ S: 120, M: 160, L: 210 });
 const STORAGE_KEY = 'saa.library';
@@ -198,6 +201,43 @@ function createLibrary() {
     body.append(rail, gridArea, detail);
     shell.body.replaceChildren(toolbar, body);
     shell.footer.hidden = true;
+    const notice = element('p', 'library-notice');
+    notice.setAttribute('role', 'status');
+    const viewerHost = element('section');
+    shell.body.append(notice, viewerHost);
+    const viewer = createLibraryViewer(viewerHost, {
+        onBack: async () => { paintView(); await select(state.source ?? {view:'session'}); },
+    });
+    function paintView() {
+        body.hidden = toolbar.hidden = viewer.active();
+    }
+    async function action(fn) {
+        try { notice.textContent = ''; await fn(); }
+        catch (error) { notice.textContent = error.message; }
+    }
+    async function openImage(entry, image = null, edit = false) {
+        await viewer.openImage(async () => {
+            const loaded = image ?? await bridge()?.libraryImage(entry.path);
+            if (!loaded?.dataUrl) throw new Error(tr('画像を読み込めませんでした。', 'Could not read this image.'));
+            return {key:'file:'+entry.path.replaceAll('\\','/').toLowerCase(),name:entry.name,...loaded};
+        }, {edit});
+        paintView();
+    }
+    const importInput = element('input');
+    importInput.type = 'file'; importInput.accept = 'image/png'; importInput.hidden = true;
+    importInput.addEventListener('change', () => action(async () => {
+        try {
+            const file = importInput.files[0];
+            if (!file) return;
+            await viewer.openImage({key:'import:'+file.name, name:file.name, dataUrl:await readFile(file)}, {edit:true});
+            paintView();
+        } finally { importInput.value = ''; }
+    }));
+    const importButton = makeButton(tr('PNGを開く', 'Open PNG'), () => importInput.click(), 'library-import');
+    importButton.className = 'library-button';
+    const storageButton = makeButton(tr('編集データの場所', 'Edit data folder'), () => action(() => bridge().openSettingsFolder()));
+    storageButton.className = 'library-button';
+    toolbar.append(importButton, storageButton, importInput);
 
     function paintSizes() {
         for (const button of sizes.querySelectorAll('.library-size')) {
@@ -212,6 +252,8 @@ function createLibrary() {
     // ---------------------------------------------------------------- rail
 
     const VIEWS = [
+        ['projects', tr('編集した画像', 'Edited images')],
+        ['runs', tr('実行履歴', 'Run history')],
         ['session', text('library_view_session', 'This session')],
         ['favorites', `★ ${text('library_view_favorites', 'Favourites')}`],
         ['full', text('library_view_recipe', 'With SAA recipe')],
@@ -219,6 +261,7 @@ function createLibrary() {
     ];
 
     function viewCount(view) {
+        if (view === 'projects' || view === 'runs') return state.recordCounts?.[view] ?? '';
         if (view === 'session') return (globalThis.mainGallery?.sessionPaths?.() ?? []).length;
         if (view === 'favorites') return state.favoriteCount ?? '';
         if (!state.all) return '';
@@ -240,13 +283,17 @@ function createLibrary() {
     function renderRail() {
         rail.replaceChildren(element('span', 'library-rail-head', text('library_views', 'VIEWS')));
         for (const [view, label] of VIEWS) {
-            rail.append(railButton(label, viewCount(view), sameSource(state.source, { view }), () => select({ view })));
+            const button = railButton(label, viewCount(view), sameSource(state.source, { view }), () => action(() => select({ view })));
+            button.dataset.view = view;
+            rail.append(button);
         }
         for (const root of state.roots) {
             rail.append(element('span', 'library-rail-head', root.id === 'comfy' ? text('library_comfy_output', 'COMFYUI OUTPUT') : text('library_pod_saves', 'POD SAVES')));
             for (const folder of root.folders) {
                 const source = { root: root.id, folder: folder.id };
-                rail.append(railButton(folder.label, folder.count, sameSource(state.source, source), () => select(source), true));
+                const button = railButton(folder.label, folder.count, sameSource(state.source, source), () => action(() => select(source)), true);
+                button.dataset.root = root.id;
+                rail.append(button);
             }
         }
     }
@@ -271,12 +318,21 @@ function createLibrary() {
     }
 
     async function select(source) {
+        if (viewer.busy()) return;
+        clearTimeout(searchTimer);
+        ++state.detailToken;
         state.source = source;
         state.selected = '';
         renderRail();
         renderPath();
         gridArea.replaceChildren(element('div', 'library-empty', '…'));
         renderDetail(null);
+        detail.hidden = source.view === 'projects' || source.view === 'runs';
+        toolbar.hidden = false;
+        const recordsView = detail.hidden;
+        searchLabel.hidden = sortLabel.hidden = sizes.hidden = recordsView;
+        for (const control of Object.values(filterSelects)) control.parentElement.hidden = recordsView;
+        if (recordsView) { await renderRecords(source.view); return; }
         const api = bridge();
         let entries = [];
         if (!api) entries = [];
@@ -361,11 +417,13 @@ function createLibrary() {
         meta.append(element('span', '', Number.isFinite(entry.seed) ? `#${String(entry.seed).slice(-4)}` : ''), element('span', '', Number.isFinite(entry.time) ? formatDuration(entry.time) : '—'));
         button.append(meta);
         button.addEventListener('click', () => choose(entry.path));
+        button.addEventListener('dblclick', () => action(() => openImage(entry)));
         if (!known) observer?.observe(button);
         return button;
     }
 
     function renderGrid() {
+        if (['projects','runs'].includes(state.source?.view)) return;
         observer?.disconnect();
         pending = new Set();
         observer = typeof IntersectionObserver === 'function' ? new IntersectionObserver(items => {
@@ -402,6 +460,7 @@ function createLibrary() {
     function paintStars() {
         for (const button of gridArea.querySelectorAll('.library-tile')) {
             const frame = button.querySelector('.library-tile-frame');
+            if (!frame || !button.dataset.path) continue;
             const star = frame.querySelector('.library-tile-star');
             const on = isFavorite(button.dataset.path);
             if (on && !star) frame.append(element('span', 'library-tile-star', '★'));
@@ -411,6 +470,73 @@ function createLibrary() {
     }
 
     // ---------------------------------------------------------------- detail
+
+    async function renderRecords(view, offset = 0) {
+        const token = ++state.detailToken;
+        const api = bridge();
+        const records = await (view === 'projects' ? api.imageEditList(offset) : api.workflowListRuns());
+        if (token !== state.detailToken) return;
+        state.recordCounts ??= {};
+        state.recordCounts[view] = records.length === 100 || offset ? '' : records.length;
+        renderRail();
+        observer?.disconnect();
+        gridArea.replaceChildren();
+        count.textContent = countText(records.length);
+        if (view === 'projects' && (offset || records.length === 100)) {
+            const paging = element('div','workflow-actions');
+            if (offset) paging.append(makeButton(tr('前の100件','Previous 100'),()=>action(()=>renderRecords(view,Math.max(0,offset-100)))));
+            if (records.length === 100) paging.append(makeButton(tr('次の100件','Next 100'),()=>action(()=>renderRecords(view,offset+100))));
+            gridArea.append(paging);
+        }
+        if (view === 'runs') {
+            const prefs = await api.workflowPreferences();
+            if (token !== state.detailToken) return;
+            const label = element('label', 'library-capture', tr('次の生成から段階画像を記録', 'Capture stages in subsequent runs'));
+            const input = element('input'); input.type = 'checkbox'; input.checked = prefs.captureStages;
+            input.addEventListener('change', () => action(() => api.workflowPreferences({captureStages:input.checked})));
+            label.prepend(input); gridArea.append(label);
+        }
+        if (!records.length) {
+            gridArea.append(element('p','library-empty',view==='projects'
+                ? tr('画像を開いて「部分編集」を選ぶと、ここから編集を再開できます。','Open an image and choose Edit area. Resume those edits here.')
+                : tr('これから生成する画像の実行履歴を表示します。','New generation runs will appear here.')));
+            return;
+        }
+        const grid = element('div','library-grid');
+        gridArea.append(grid);
+        observer = new IntersectionObserver(items => {
+            for (const item of items) {
+                if (!item.isIntersecting) continue;
+                observer.unobserve(item.target);
+                const record = records.find(record => record.id === item.target.dataset.project);
+                if (record?.asset) api.workflowImage('projects',record.id,record.asset).then(src => {
+                    if (token === state.detailToken) item.target.querySelector('img').src = src;
+                }).catch(error => { notice.textContent = error.message; });
+            }
+        }, {root:gridArea});
+        for (const record of records) {
+            const tile = makeButton('', () => action(async () => {
+                if (view === 'projects') { await viewer.openProject(record.id); paintView(); }
+                else {
+                    const area = element('section','workflow-surface library-run');
+                    gridArea.replaceChildren(makeButton(tr('実行履歴に戻る','Back to run history'),()=>action(()=>renderRecords('runs'))),area);
+                    await showWorkflowRun(area,record.id,async(dataUrl,name,runId)=>{
+                        await viewer.openImage({key:'run:'+runId,dataUrl,name,runId},{edit:true});paintView();
+                    },action);
+                }
+            }));
+            tile.className = 'library-tile';
+            if (view === 'projects') {
+                tile.dataset.project = record.id;
+                const frame = element('span','library-tile-frame');
+                const image = element('img','library-tile-image'); image.alt = '';
+                if (record.width && record.height) frame.style.aspectRatio = record.width+'/'+record.height;
+                frame.append(image); tile.append(frame); observer.observe(tile);
+            }
+            tile.append(element('strong','',record.name ?? record.status),element('span','library-tile-meta',new Date(record.createdAt).toLocaleString()));
+            grid.append(tile);
+        }
+    }
 
     async function choose(file) {
         state.selected = file;
@@ -484,6 +610,13 @@ function createLibrary() {
         }
 
         const actions = element('div', 'library-detail-actions');
+        if (image) {
+            const open = makeButton(tr('ビュワーで開く', 'Open in viewer'), () => action(() => openImage(entry,image)));
+            open.className = 'viewer-primary-button library-view-image';
+            const edit = makeButton(tr('部分編集', 'Edit area'), () => action(() => openImage(entry,image,true)));
+            edit.className = 'library-button library-edit-image';
+            actions.append(open, edit);
+        }
         if (summary.state !== 'none' && image) {
             const use = element('button', 'viewer-primary-button', text('viewer_use_settings', 'Use settings…'));
             use.type = 'button';
@@ -534,16 +667,24 @@ function createLibrary() {
 
     // ---------------------------------------------------------------- open / close
 
-    async function open({ trigger = null } = {}) {
-        shell.open({ trigger, title: text('viewer_library', 'Library'), initialFocus: () => search });
+    async function open({ trigger = null, image = null, edit = false, view = null } = {}) {
+        shell.open({ trigger, title: text('viewer_library', 'Library'), initialFocus: () => viewer.active() ? viewerHost.querySelector('button') : search });
+        if (viewer.active() && !image && !view) { paintView(); viewerHost.querySelector('button')?.focus(); return; }
         await loadFavorites();
         const api = bridge();
         state.roots = api ? await api.libraryRoots().catch(() => []) : [];
         state.all = null;
         state.favoriteCount = (await api?.libraryFavorites?.().catch(() => []) ?? []).length;
+        if (image) { await action(async()=>{await viewer.openImage(image,{edit});paintView();}); return; }
+        if (view) {
+            if (viewer.busy()) { paintView(); return; }
+            viewerHost.hidden = true; paintView();
+            await select({view}); return;
+        }
         const first = state.roots[0]?.folders?.[0];
         const keep = state.source && (state.source.view || state.roots.some(root => root.id === state.source.root && root.folders.some(folder => folder.id === state.source.folder)));
         await select(keep ? state.source : first ? { root: state.roots[0].id, folder: first.id } : { view: 'session' });
+        paintView();
         // the views' counts need every image read once; the folders do not wait for it
         readAll().catch(error => console.warn('[Library] reading every image failed:', error?.message ?? error));
     }

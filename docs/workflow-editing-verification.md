@@ -55,3 +55,13 @@
 - HTTP/WebSocket制御サーバーで、送信応答前のイベント、他jobの除外、PNG内のrecipe/timingと保存先の引き継ぎを確認。
 - 実機`tests/e2e/recipe.e2e.mjs`：2件成功。専用settingsでComfyUIから生成し、保存PNGのrecipe/timing、Info表示、「Use settings…」での設定読み戻しとUndoを確認。使用Checkpointは既存の`waiIllustriousSDXL_v170.safetensors`。
 - 実機テストのログとsettingsは`C:/Users/kurah/AppData/Local/Temp/saa-e2e-2pVfih/`に保存。元の実装時の部分編集検証は上記の記録を参照。
+
+## Libraryのビュワーへの統合
+
+独立した編集ダイアログを廃止し、Library内の画像表示と部分編集を同じビュワーへ統合した。編集した画像と実行履歴もLibraryから開く。
+
+- 全体の自動テスト：1,346件中1,344成功、2スキップ、失敗0。画像読み込みの重複、画像切り替え後に届く古い編集処理、100件を超える履歴からの再開を含む。
+- 実機で元画像をLibraryから開き、マスク描画・候補生成・比較・採用・画像表示への切り替え・一覧からの再開を確認。採用後のビュワー画像と一覧サムネイルはいずれも現在版のPNGと一致した。
+- この統合確認で生成した候補は変更20,346画素、保護領域の変更0画素、保護領域の最大チャンネル差0。元の画像ファイルもバイト単位で不変。4 stepsでのUI動作確認であり、画質の追加評価には用いない。
+- 証拠は`reports/workflow-edit-2026-10-21/library-viewer-check.json`、`library-viewer-edit.png`、`library-viewer-accepted.png`。専用settingsは`C:/Users/kurah/AppData/Local/Temp/saa-e2e-5vvkQ5/`。
+- `tests/e2e/library-edit.e2e.mjs`は実ウィンドウで画像を開く、マスクを描く、許可範囲を確認する、Libraryを閉じて再表示する、一覧から同じプロジェクトを再開する経路を検証する。生成を伴う上記の実機検証とは分けている。
