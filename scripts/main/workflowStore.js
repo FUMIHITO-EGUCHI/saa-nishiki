@@ -16,6 +16,14 @@ export function createWorkflowStore(root) {
         return value;
     };
     const write = (kind, record) => { writeJsonAtomic(file(kind, record.id, 'record.json'), record); return record; };
+    const records = kind => {
+        if (!['runs','projects'].includes(kind)) throw new Error('Invalid record kind');
+        const folder=path.join(root,kind);
+        if(!fs.existsSync(folder))return [];
+        return fs.readdirSync(folder).filter(id=>ID.test(id)).map(id=>{
+            try{return read(kind,id);}catch{return null;}
+        }).filter(Boolean).sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
+    };
     return {
         root, read, write,
         recoverInterrupted() {
@@ -34,14 +42,11 @@ export function createWorkflowStore(root) {
             }
         },
         create(kind, data) { return write(kind, { ...data, schema: 1, id: randomUUID(), createdAt: new Date().toISOString() }); },
-        list(kind, limit = 100) {
-            if (!['runs', 'projects'].includes(kind)) throw new Error('Invalid record kind');
-            const folder = path.join(root, kind);
-            if (!fs.existsSync(folder)) return [];
-            return fs.readdirSync(folder).filter(id => ID.test(id)).map(id => {
-                try { return read(kind, id); } catch { return null; }
-            }).filter(Boolean).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, Math.min(100, limit));
+        list(kind, limit = 100, offset = 0) {
+            const start=Number.isInteger(offset)&&offset>=0?offset:0;
+            return records(kind).slice(start,start+Math.max(0,Math.min(100,limit)));
         },
+        findSourceProject(sourceKey,sourceDigest) { return records('projects').find(item=>item.sourceKey===sourceKey&&item.sourceDigest===sourceDigest); },
         putImage(kind, id, name, bytes) {
             if (!ASSET.test(name) || !Buffer.isBuffer(bytes)) throw new Error('Invalid image asset');
             read(kind, id);

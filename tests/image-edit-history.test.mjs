@@ -14,11 +14,14 @@ test('the library reopens the same source project after restart, but a replaced 
     const replacement=await sharp({create:{width:16,height:16,channels:3,background:'blue'}}).png().toBuffer();
     const source={resume:true,sourceKey:'file:c:/images/original.png'};
     const first=await editor.create(url(original),'original',undefined,source);
+    first.createdAt='2000-01-01T00:00:00.000Z';store.write('projects',first);
+    for(let i=0;i<100;i++)store.create('projects',{name:'Later project',sourceKey:'other:'+i});
     const reopened=createImageEditor(createWorkflowStore(root));
     assert.equal((await reopened.create(url(original),'original',undefined,source)).id,first.id);
     assert.notEqual((await reopened.create(url(replacement),'original',undefined,source)).id,first.id);
     assert.notEqual((await reopened.create(url(original),'copy',undefined,{...source,sourceKey:'file:c:/images/copy.png'})).id,first.id);
     assert.deepEqual(store.image('projects',first.id,'original.png'),original);
+    assert.equal(store.list('projects',100,100).some(item=>item.id===first.id),true,'older projects remain reachable on subsequent pages');
 });
 test('candidate, accept, branch, discard and failure preserve the parent across restart', async t => {
     const root=fs.mkdtempSync(path.join(os.tmpdir(),'saa-edits-')); t.after(()=>fs.rmSync(root,{recursive:true,force:true}));

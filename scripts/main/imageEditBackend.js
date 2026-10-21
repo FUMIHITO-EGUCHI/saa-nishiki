@@ -53,7 +53,7 @@ export function setupImageEditing() {
         generate:(workflow,requested,cancellation)=>executeRecordedWorkflow({...target(),workflow,requested,cancellation}),
     });
     ipcMain.handle('image-edit-capabilities',capabilities);
-    ipcMain.handle('image-edit-list',()=>getWorkflowStore().list('projects').map(({id,name,createdAt,currentRevision,revisions,width,height})=>({id,name,createdAt,currentRevision,width,height,asset:revisions.find(item=>item.id===currentRevision)?.asset})));
+    ipcMain.handle('image-edit-list',(_,offset)=>getWorkflowStore().list('projects',100,offset).map(({id,name,createdAt,currentRevision,revisions,width,height})=>({id,name,createdAt,currentRevision,width,height,asset:revisions.find(item=>item.id===currentRevision)?.asset})));
     ipcMain.handle('image-edit-get',(_,id)=>editor.get(id));
     ipcMain.handle('image-edit-create',(_,dataUrl,name,runId,options)=>editor.create(dataUrl,name,runId,options));
     ipcMain.handle('image-edit-preview',(_,request)=>editor.preview(request));

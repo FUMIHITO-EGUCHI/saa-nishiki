@@ -85,7 +85,7 @@ contextBridge.exposeInMainWorld('api', {
   workflowImage: (kind, id, name) => ipcRenderer.invoke('workflow-image', kind, id, name),
   workflowPreferences: patch => ipcRenderer.invoke('workflow-preferences', patch),
   imageEditCapabilities: () => ipcRenderer.invoke('image-edit-capabilities'),
-  imageEditList: () => ipcRenderer.invoke('image-edit-list'),
+  imageEditList: (offset) => ipcRenderer.invoke('image-edit-list', offset),
   imageEditGet: id => ipcRenderer.invoke('image-edit-get', id),
   imageEditCreate: (dataUrl, name, runId, options) => ipcRenderer.invoke('image-edit-create', dataUrl, name, runId, options),
   imageEditPreview: request => ipcRenderer.invoke('image-edit-preview', request),

@@ -24,7 +24,7 @@ export function createImageEditor(store, { generate: execute } = {}) {
             const sourceKey=String(options?.sourceKey??'').slice(0,4096);
             const sourceDigest=createHash('sha256').update(`${image.width}:${image.height}:${image.channels}:`).update(image.data).digest('hex');
             if(options?.resume===true&&sourceKey){
-                const existing=store.list('projects').find(item=>item.sourceKey===sourceKey&&item.sourceDigest===sourceDigest);
+                const existing=store.findSourceProject(sourceKey,sourceDigest);
                 if(existing)return existing;
             }
             const id=randomUUID();
