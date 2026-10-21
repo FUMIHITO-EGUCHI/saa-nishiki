@@ -449,7 +449,7 @@ function applyADetailer(workflow, adetailers, workflowInfo) {
   const {startIndex, refiner, hiresfix, model} = workflowInfo;
   let index =startIndex + 1;
   const modelUSE = refiner?43:45; // 45: default   43: refiner (clip / vae; the model is the run's last LoRA'd one)
-  let imageVAED = hiresfix?28:6;
+  let imageVAED = workflow["29"].inputs.images[0];
   const randomSeed = globalThis.crypto.getRandomValues(new Uint32Array(1))[0]; // 4294967296 = 2^32
 
   for(const adetailer of adetailers) {
@@ -585,7 +585,7 @@ function applyADetailer(workflow, adetailers, workflowInfo) {
 function applyADetailerUnet(workflow, adetailers, workflowInfo) {
   const {startIndex, model, clip, vae, hiresfix, colorTransfer=28, normalVae=6} = workflowInfo;
   let index = startIndex + 1;
-  let imageVAED = hiresfix?colorTransfer:normalVae; 
+  let imageVAED = workflow["29"].inputs.images[0];
   const randomSeed = globalThis.crypto.getRandomValues(new Uint32Array(1))[0]; // 4294967296 = 2^32
 
   for(const adetailer of adetailers) {
@@ -1194,6 +1194,7 @@ class ComfyUI {
 
     let workflow = structuredClone(WORKFLOW);
     let refiner_start_step = 1000;
+    const refinerActive = refiner.enable && model !== refiner.model;
 
     if (model !== 'Default') {
       // Set model name
@@ -1215,7 +1216,7 @@ class ComfyUI {
       }
     }
 
-    if (refiner.enable && model !== refiner.model) {
+    if (refinerActive) {
       // Set refiner model name
       workflow["43"].inputs.ckpt_name = refiner.model;
       if((refiner.vpred === 0 && (refiner.model.includes('vPred') || refiner.model.includes('VPR'))) || refiner.vpred === 1 || refiner.vpred === 2) {
@@ -1297,7 +1298,7 @@ class ComfyUI {
 
     // hires and ADetailer sample from the LoRA'd model of the last pass before them
     // (loraStageModels.js): 39 when a refiner checkpoint runs, else 34
-    const stages = loraStageModels(refiner.enable && model !== refiner.model ? "39" : "34", { text: positive, hires: hifix.enable });
+    const stages = loraStageModels(refinerActive ? "39" : "34", { text: positive, hires: hifix.enable });
 
     if (hifix.enable) {            
       // Set Hires fix seed and denoise
@@ -1316,7 +1317,7 @@ class ComfyUI {
         workflow["46"].inputs.scale_by = hifix.scale;
 
         // Check if refiner enabled
-        if (refiner.enable){
+        if (refinerActive){
           workflow["46"].inputs.samples = ["37", 0];
         }
 
@@ -1358,7 +1359,7 @@ class ComfyUI {
       startIndex: (vae.vae_override && vae.vae !== 'None')?47:46,
       now_pos:    2,
       now_neg:    3,
-      refiner:    refiner.enable,
+      refiner:    refinerActive,
       ref_pos:    41,
       ref_neg:    40,
       hiresfix:   hifix.enable
@@ -1367,7 +1368,7 @@ class ComfyUI {
 
     workflowInfo = {
       startIndex: indexCN,
-      refiner:    refiner.enable,
+      refiner:    refinerActive,
       hiresfix:   hifix.enable,
       model:      stages.last
     };
@@ -1535,6 +1536,7 @@ class ComfyUI {
     
     let workflow = structuredClone(WORKFLOW_REGIONAL);
     let refiner_start_step = 1000;
+    const refinerActive = refiner.enable && model !== refiner.model;
 
     if (model !== 'Default') {
         // Set model name
@@ -1555,7 +1557,7 @@ class ComfyUI {
         }
     }
 
-    if (refiner.enable && model !== refiner.model) {
+    if (refinerActive) {
         // Set refiner model name
         workflow["43"].inputs.ckpt_name = refiner.model;
         if((refiner.vpred === 0 && (refiner.model.includes('vPred') || refiner.model.includes('VPR'))) || refiner.vpred === 1 || refiner.vpred === 2) {
@@ -1655,7 +1657,7 @@ class ComfyUI {
     workflow["56"].inputs.strength = regional.str_right;
     workflow["56"].inputs.set_cond_area = regional.option_right;
 
-    const stages = loraStageModels(refiner.enable && model !== refiner.model ? "39" : "34", { text: positive_left, hires: hifix.enable });
+    const stages = loraStageModels(refinerActive ? "39" : "34", { text: positive_left, hires: hifix.enable });
 
     if (hifix.enable) {
       // Set Hires fix seed and denoise
@@ -1674,7 +1676,7 @@ class ComfyUI {
           workflow["58"].inputs.scale_by = hifix.scale;
 
           // Check if refiner enabled
-          if (refiner.enable){
+          if (refinerActive){
             workflow["58"].inputs.samples = ["37", 0];
           }
 
@@ -1716,7 +1718,7 @@ class ComfyUI {
       startIndex: REGIONAL_APPEND_INDEX,
       now_pos:    53,
       now_neg:    Number(REGIONAL_NEGATIVE_FIRST_PASS_NODE),
-      refiner:    refiner.enable,
+      refiner:    refinerActive,
       ref_pos:    57,
       ref_neg:    Number(REGIONAL_NEGATIVE_REFINER_NODE),
       hiresfix:   hifix.enable
@@ -1725,7 +1727,7 @@ class ComfyUI {
 
     workflowInfo = {
       startIndex: indexCN,
-      refiner:    refiner.enable,
+      refiner:    refinerActive,
       hiresfix:   hifix.enable,
       model:      stages.last
     };
