@@ -34,7 +34,11 @@ export async function startWorkflowExecution({ addr, auth = '', workflow, reques
         // The server atomically cancels this job only. A queue snapshot followed
         // by global /interrupt can accidentally interrupt the following job.
         cancellationPromise ??= request(`api/jobs/${encodeURIComponent(promptId)}/cancel`, {})
-            .then(() => { record.cancellationAcknowledged = true; });
+            .then(async response => {
+                const reply=await response.json();
+                record.cancellationAcknowledged = true;
+                record.remoteCancellationDispatched = reply.cancelled === true;
+            });
         return cancellationPromise;
     };
     const cancel = () => { cancellation.cancelled = true; return cancelRemote(); };

@@ -47,6 +47,7 @@ test('cancellation during submission waits for targeted remote cancellation befo
     await assert.rejects(run.result,/Cancelled/);
     assert.equal(cancelFinished,true);
     assert.equal(saved.status,'cancelled');
+    assert.equal(saved.remoteCancellationDispatched,true);
     assert.equal(saved.promptId,'cancel-me');
 });
 

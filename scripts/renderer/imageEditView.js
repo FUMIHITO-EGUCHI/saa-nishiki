@@ -22,7 +22,7 @@ export async function showImageEditor(container,projectId,guard,refreshList) {
     for(const [name,apply] of [['edit',mask.importEdit],['lock',mask.importLock]]){
         const input=document.createElement('input');input.type='file';input.accept='image/png';input.id=`edit-import-${name}`;
         field(tools,name==='edit'?tr('編集マスク読込','Import edit mask'):tr('Lock読込','Import Lock'),input);
-        input.onchange=()=>guard(async()=>{if(input.files[0])await apply(await readFile(input.files[0]));});
+        input.onchange=()=>guard(async()=>{try{if(input.files[0])await apply(await readFile(input.files[0]));}finally{input.value='';}});
     }
     const form=element('div','','workflow-edit-settings');container.append(form);
     const positive=field(form,tr('編集後の内容','Describe the edited area'),element('textarea'));positive.id='edit-positive';positive.rows=3;
@@ -86,7 +86,7 @@ export async function showImageEditor(container,projectId,guard,refreshList) {
         project=await api.imageEditGet(project.id);history.replaceChildren();
         const choices=select(project.revisions.filter(r=>['original','accepted'].includes(r.status)).map((r,i)=>({value:r.id,label:`${i} · ${r.status} · ${new Date(r.createdAt).toLocaleTimeString()}`})),project.currentRevision);
         choices.id='edit-revision';field(history,tr('採用済みの版','Accepted revisions'),choices);
-        history.append(button(tr('この版に戻る','Use this revision'),()=>guard(async()=>{project=await api.imageEditSelect(project.id,choices.value);candidate=null;mask.clear('edit');mask.clear('lock');compare.value='parent';await mask.setImage(await parentUrl());await refreshHistory();toggleBusy();}),'edit-restore'));
+        history.append(button(tr('この版に戻る','Use this revision'),()=>guard(async()=>{project=await api.imageEditSelect(project.id,choices.value);candidate=null;mask.clear('edit');mask.clear('lock');compare.value='parent';await mask.setImage(await parentUrl());status.textContent=tr('選択した版を復元しました。編集範囲とLockを指定できます。','Selected revision restored. Set the edit area and Lock.');await refreshHistory();toggleBusy();}),'edit-restore'));
         const current=parent();
         if(current.parentId)history.append(button(tr('直前の編集範囲をLock','Lock the last edit'),()=>guard(async()=>{await mask.importLock(await api.workflowImage('projects',project.id,`${current.id}-alpha.png`),true);}),'edit-lock-last'));
         const pending=project.attempts.filter(a=>a.status==='review');
@@ -103,6 +103,7 @@ export async function showImageEditor(container,projectId,guard,refreshList) {
                 if(item.assets?.lock)await mask.importLock(await api.workflowImage('projects',project.id,item.assets.lock));else mask.clear('lock');
                 for(const [control,key] of [[model,'model'],[sampler,'sampler'],[scheduler,'scheduler'],[seed,'seed'],[steps,'steps'],[cfg,'cfg'],[denoise,'denoise'],[positive,'positive'],[negative,'negative'],[guideSize,'guideSize'],[maxSize,'maxSize']])control.value=item.settings[key]??control.value;
                 padding.value=item.transform?.padding??32;feather.value=item.transform?.feather??4;permissionChecked=false;
+                status.textContent=tr('親・マスク・設定を復元しました。変わる範囲を再確認してください。','Parent, masks and settings restored. Preview the permitted area again.');
                 await refreshHistory();toggleBusy();
             })));
             const details=element('details');details.append(element('summary',tr('親・変換・保持検査の記録','Parent, transform and preservation records')),element('pre',JSON.stringify(project,null,2)));history.append(details);
