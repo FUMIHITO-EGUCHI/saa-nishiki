@@ -50,8 +50,10 @@ test('a tag and a parts: camera chip in the View row reach ComfyUI after Common,
     })()`);
     await page.waitFor(`Boolean(globalThis.partsUi.get('bird view'))`, { label: 'the part in the store' });
 
-    // the row is in the Scene, with its own parts button (the tag modal on its Parts tab)
-    assert.equal(await page.evaluate(`Boolean(document.querySelector('.prompt-scene .prompt-view .scene-parts-button'))`), true, 'the View row offers the parts picker');
+    // the row is in the Scene, with Insert part… in its ⋯ menu (the tag modal on its Parts tab)
+    await page.click('.prompt-scene .prompt-view .scene-menu-button');
+    assert.equal(await page.evaluate(`[...document.querySelectorAll('.prompt-scene .prompt-view .scene-row-menu button')].some(node => node.textContent === 'Insert part…')`), true, 'the View row offers the parts picker');
+    await page.click('.prompt-scene .prompt-view .scene-menu-button');
     assert.equal(await page.evaluate(`Boolean(document.querySelector('.dropdown-view'))`), false, 'the Angle / Camera dropdowns are gone');
 
     await typeView('dutch angle, parts:bird view');

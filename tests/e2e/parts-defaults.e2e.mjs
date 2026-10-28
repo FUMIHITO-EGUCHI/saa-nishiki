@@ -17,6 +17,12 @@ test.after(async () => { await app?.close(); });
 
 const OPEN_MODAL = '.selection-modal:not([hidden])';
 
+// the row's ⋯ menu, then Insert part… (the tag modal on its Parts tab)
+async function insertPart(row) {
+    await app.page.click(`${row} .scene-menu-button`);
+    await app.page.evaluate(`[...document.querySelectorAll('${row} .scene-row-menu button')].find(node => node.textContent === 'Insert part…').click()`);
+}
+
 test('a fresh install has the 295 starter parts, stored as its parts.json and offered on the Parts tab', async () => {
     const { page } = app;
     await page.waitFor(`globalThis.partsUi?.list?.().length === 295`, { label: 'the starter parts in the renderer' });
@@ -34,8 +40,8 @@ test('a fresh install has the 295 starter parts, stored as its parts.json and of
     assert.equal(envelope.section, 'parts');
     assert.equal(Object.keys(envelope.data.parts).length, 295);
 
-    // the row's "parts" button opens the row's tag modal on its Parts tab with every starter part a tile
-    await page.click('.prompt-positive .scene-parts-button');
+    // the row's Insert part… opens the row's tag modal on its Parts tab with every starter part a tile
+    await insertPart('.prompt-positive');
     await page.waitFor(`document.querySelectorAll('${OPEN_MODAL} .selection-modal-tile').length === 295`, { label: 'the row modal on its Parts tab with the starter tiles' });
     const names = JSON.parse(await page.evaluate(`JSON.stringify([...document.querySelectorAll('${OPEN_MODAL} .parts-tile-name')].map(node => node.textContent))`));
     assert.ok(names.includes('parts:sailor uniform'), 'the sailor uniform is among the tiles');
