@@ -16,7 +16,7 @@ test('shared body keeps every container the renderer looks up, in the new places
     'system-settings-ai-interface', 'system-settings-ai-local-prompt-mode', 'generate-hires-fix', 'generate-refiner', 'generate-adetailer', 'generate-controlnet',
     'hires-fix-model', 'hires-fix-scale', 'hires-fix-color-transfer', 'hires-fix-denoise', 'hires-fix-steps', 'hires-fix-random-seed', 'hires-fix-resolution',
     'refiner-model', 'refiner-vpred', 'refiner-ratio', 'refiner-addnoise', 'adetailer-main', 'controlnet-main', 'add-lora-main', 'jsonlist-main', 'queue-main',
-    'generate-random-seed', 'generate-width', 'generate-height', 'generate-landscape', 'generate-step', 'generate-cfg', 'generate-sampler', 'generate-scheduler', 'generate-batch',
+    'generate-random-seed', 'generate-width', 'generate-height', 'generate-step', 'generate-cfg', 'generate-sampler', 'generate-scheduler', 'generate-batch',
     'generate-button-single', 'generate-button-batch', 'generate-button-same', 'generate-button-skip', 'generate-button-cancel', 'queue-autostart-generate',
     'gallery-main-main', 'gallery-main-latest', 'gallery-main-keep', 'image-infobox-main', 'gallery-thumb-main', 'generate-tag-assist', 'generate-wildcard-random',
     'model-select', 'model-type', 'global-settings-language', 'model-vpred', 'thumb-select', 'vae-sdxl', 'vae-override', 'vae-unet', 'text-encoder',

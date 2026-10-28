@@ -2149,7 +2149,6 @@ body {
 .run-param-controls { display: flex; align-items: center; gap: 2px; }
 .run-param-controls > * { flex: none; }
 .run-number [class^="mySlider-"][class*="-value"] { min-width: 0; max-width: none; margin: 0; flex: none; }
-.run-param-x { font-size: 11px; color: var(--saa-muted); padding: 0 2px; }
 .run-number { margin: 0; position: relative; }
 .run-number [class^="mySlider-"][class*="-row"] { display: flex; }
 .run-number [class^="mySlider-"][class*="-span"] { display: none; }
@@ -2164,11 +2163,6 @@ body {
 .run-icon-button { width: 24px; min-width: 24px; flex: none; height: 26px; border: none; border-radius: 5px; background: transparent; color: var(--saa-muted2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
 .run-icon-button:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
 .run-icon-button:focus-visible { outline: 2px solid var(--saa-accent); }
-.run-icon-check { position: relative; width: 24px; height: 26px; margin: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; }
-.run-icon-check:hover { background: var(--saa-bg-hover); }
-.run-icon-check [class^="myCheckbox-"][class*="-span"] { display: none; }
-.run-icon-check [class^="myCheckbox-"][class*="-input"] { appearance: none; -webkit-appearance: none; flex: none; width: 16px; height: 16px; margin: 0; border: none; background: currentColor; color: var(--saa-muted2); cursor: pointer; -webkit-mask: url('../scripts/svg/swap.svg') no-repeat center; mask: url('../scripts/svg/swap.svg') no-repeat center; -webkit-mask-size: contain; mask-size: contain; }
-.run-icon-check [class^="myCheckbox-"][class*="-input"]:checked { color: var(--saa-accent); }
 .run-select { position: relative; margin: 0; }
 .run-select .mydropdown-container-1 { margin: 0; }
 .run-select .mydropdown-input, .run-select .mydropdown-select { height: 26px; box-sizing: border-box; font-size: 12px; min-width: 0; }

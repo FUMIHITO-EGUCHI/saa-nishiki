@@ -332,11 +332,15 @@ export const sharedBodyHTML = `
               <div class="run-param run-param-size">
                 <span class="run-param-label" id="run-size-label"><span data-ui-text="ui_run_size">Size</span> <span class="run-param-range" id="run-size-range" title="Size range for the current model type (Settings > Model)"></span></span>
                 <div class="run-param-controls">
+                  <div class="run-ratio" id="run-ratio">
+                    <button type="button" class="run-ratio-turn" id="run-ratio-turn"><span class="run-ratio-shape"></span></button>
+                    <button type="button" class="run-ratio-pick" id="run-ratio-pick" aria-haspopup="dialog" aria-expanded="false" aria-controls="run-ratio-popover"><span class="run-ratio-label"></span><span class="run-ratio-chevron"></span></button>
+                  </div>
                   <div class="generate-width run-number"></div>
-                  <span class="run-param-x">×</span>
+                  <button type="button" class="run-ratio-chain" id="run-ratio-chain" aria-pressed="true"></button>
                   <div class="generate-height run-number"></div>
-                  <div class="generate-landscape run-icon-check" title="Landscape"></div>
                 </div>
+                <div class="run-ratio-popover" id="run-ratio-popover" role="dialog" hidden></div>
               </div>
               <div class="run-param run-param-steps">
                 <span class="run-param-label" data-ui-text="ui_run_steps_cfg">Steps · CFG</span>
