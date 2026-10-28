@@ -215,6 +215,7 @@ test('the LoRA\'s trigger words and range come from loraUi: chips that switch, t
         slotWords: name => (name === 'detail.safetensors' ? { origin: 'multiple views', words: [{ word: 'charturn', on: true }, { word: 'back', on: false }] } : { words: [] }),
         slotRange: () => ({ min: 0.2, max: 1, def: 0.8, ticks: [0, 0.2, 0.4, 0.6, 0.8, 1] }),
         switchWord: (word, on) => switched.push([word, on]),
+        switchLoraWords: (name, on) => switched.push(['words', name, on]),
         hasSamples: () => true,
         openSamples: name => switched.push(['samples', name]),
     };
@@ -232,5 +233,89 @@ test('the LoRA\'s trigger words and range come from loraUi: chips that switch, t
         assert.equal(rowOf(container).querySelector('.lora-slot-range').textContent, '0.2 – 1');
         rowOf(container).querySelector('.lora-slot-samples').click();
         assert.deepEqual(switched.at(-1), ['samples', 'detail.safetensors'], 'Samples opens the viewer');
+        rowOf(container).querySelector('.lora-slot-switch').click();
+        rowOf(container).querySelector('.lora-slot-switch').click();
+        assert.deepEqual(switched.slice(-2), [['words', 'detail.safetensors', false], ['words', 'detail.safetensors', true]], 'the switch takes its words out and puts them back');
+    }, { loraUi });
+});
+
+test('the slider shows its ends and 0 in numbers, and the row the name the user gave the LoRA', async () => {
+    const loraUi = {
+        slotWords: () => ({ words: [] }),
+        slotRange: () => ({ min: -1, max: 2, def: 0.8, ticks: [0, -1, 2] }),
+        labelOf: name => (name === 'detail.safetensors' ? 'Detail boost' : ''),
+    };
+    await withLoRASlot(async ({ container, manager }) => {
+        manager.setRows([['detail.safetensors', '0.5', '0.5', 'ALL']]);
+        const marks = [...rowOf(container).querySelectorAll('.lora-slot-mark')];
+        assert.deepEqual(marks.map(mark => [mark.className, mark.textContent]), [['lora-slot-mark is-start', '-1'], ['lora-slot-mark is-end', '2'], ['lora-slot-mark is-zero', '0']]);
+        assert.equal(rowOf(container).querySelector('.lora-slot-name').textContent, 'Detail boost');
+        assert.equal(rowOf(container).querySelector('.lora-slot-name').title, 'detail.safetensors', 'the file under it');
+
+        manager.setRows([['detail.safetensors', '0.5', '0.5', 'ALL']]);
+        loraUi.slotRange = () => ({ min: 0.2, max: 1, def: 0.8, ticks: [] });
+        manager.refreshAll();
+        assert.deepEqual([...rowOf(container).querySelectorAll('.lora-slot-mark')].map(mark => mark.textContent), ['0', '1'], 'a slider from 0 has no 0 of its own');
+    }, { loraUi });
+});
+
+test('the wheel steps the focused weight field: 0.05 a notch, 0.25 with Shift (sideways, as Chromium sends it)', async () => {
+    await withLoRASlot(async ({ document, container, manager }) => {
+        manager.setRows([['detail.safetensors', '0.5', '0.5', 'ALL']]);
+        const field = rowOf(container).querySelector('.lora-slot-line .lora-slot-value');
+        let prevented = 0;
+        const wheel = (target, { deltaY = 0, deltaX = 0, shiftKey = false } = {}) => target.dispatchEvent({ type: 'wheel', bubbles: true, deltaY, deltaX, shiftKey, preventDefault() { prevented += 1; } });
+        wheel(field, { deltaY: -100 });
+        assert.deepEqual(manager.getValues()[0].slice(1, 3), ['0.5', '0.5'], 'not while another control has the focus');
+        assert.equal(prevented, 0, 'and the page scrolls');
+        field.focus();
+        wheel(field, { deltaY: -100 });
+        wheel(field, { deltaY: -100 });
+        assert.deepEqual(manager.getValues()[0].slice(1, 3), ['0.6', '0.6'], 'up a notch: +0.05, CLIP following');
+        assert.equal(rowOf(container).querySelector('.lora-slot-slider').value, '0.6', 'the slider too');
+        wheel(field, { deltaX: 100, shiftKey: true });
+        assert.equal(manager.getValues()[0][1], '0.35', 'Shift: 0.25 a notch');
+        assert.equal(prevented, 3, 'the page stays where it is');
+        assert.equal(document.activeElement, field, 'and the field keeps the focus');
+
+        rowOf(container).querySelector('.lora-slot-fold').click();
+        const clip = rowOf(container).querySelector('.lora-slot-clip');
+        clip.focus();
+        wheel(clip, { deltaY: 100 });
+        assert.deepEqual(manager.getValues()[0].slice(1, 3), ['0.35', '0.3'], 'CLIP steps to a value of its own');
+        assert.ok(rowOf(container).querySelector('.lora-slot-relink'), 'with ↺ to follow again');
+    });
+});
+
+test('the fold edits the LoRA\'s range and trigger words through loraUi; a range that is not one goes back', async () => {
+    const ranges = [];
+    const loraUi = {
+        slotWords: () => ({ words: [] }),
+        slotRange: () => ({ min: 0.2, max: 1, def: 0.8, ticks: [] }),
+        setRange: (name, patch) => {
+            ranges.push([name, patch]);
+            return (patch.min ?? 0) < 1 ? Promise.resolve() : undefined;
+        },
+        triggerEditor: (name, where) => {
+            const box = document.createElement('div');
+            box.className = 'stub-trigger-editor';
+            box.dataset.for = `${name}@${where}`;
+            box.appendChild(document.createElement('input'));
+            return box;
+        },
+    };
+    await withLoRASlot(async ({ container, manager }) => {
+        manager.setRows([['detail.safetensors', '0.8', '0.8', 'ALL']]);
+        rowOf(container).querySelector('.lora-slot-fold').click();
+        const min = rowOf(container).querySelector('.lora-slot-range-min');
+        const max = rowOf(container).querySelector('.lora-slot-range-max');
+        assert.deepEqual([min.value, max.value], ['0.2', '1']);
+        input(max, '1.5', 'change');
+        input(min, '3', 'change');
+        assert.deepEqual(ranges, [['detail.safetensors', { max: 1.5 }], ['detail.safetensors', { min: 3 }]]);
+        assert.equal(min.value, '0.2', 'a lowest weight above the highest: back to what it was');
+        const words = rowOf(container).querySelector('.lora-slot-triggers');
+        assert.equal(words.querySelector('.lora-slot-label').textContent, 'Trigger words');
+        assert.equal(words.querySelector('.stub-trigger-editor').dataset.for, 'detail.safetensors@row');
     }, { loraUi });
 });

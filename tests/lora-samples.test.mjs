@@ -34,6 +34,7 @@ function catalogApi({ samples = WEIGHTS.slice(0, 4) } = {}) {
 }
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+const later = (ms = 150) => new Promise(resolve => setTimeout(resolve, ms));
 const key = (document, name) => document.dispatchEvent({ type: 'keydown', key: name, preventDefault() {}, stopPropagation() {} });
 
 let moduleCase = 0;
@@ -176,5 +177,36 @@ test('Reset puts this LoRA back on the default, and Cancel keeps nothing', async
         await flush();
         assert.deepEqual(store.applied, []);
         assert.equal(document.querySelector('.lora-retake'), null);
+    });
+});
+
+test('Retake\'s tag search: the tag modal opens over the dialog, a tag it applies joins the chips, and Escape closes the modal first', async () => {
+    await withSamples(async ({ document, samples }) => {
+        globalThis.api.tagSearch = async () => ({ items: [], total: 0 });
+        // the modal tells the textarea with an InputEvent, which Node has not
+        globalThis.InputEvent ??= class InputEvent extends Event {};
+        samples.openRetakeDialog(NAME);
+        const retake = document.querySelector('.lora-retake');
+        document.querySelector('.lora-retake-chips .lora-retake-search').click();
+        await later();
+        const modal = [...document.querySelectorAll('.selection-modal')].find(node => !node.hidden);
+        assert.ok(modal, 'the tag modal is open');
+        assert.equal(retake.compareDocumentPosition(modal) & 4, 4, 'after the dialog in the page, so on top of it');
+        const search = modal.querySelector('.selection-modal-search');
+        search.value = 'from behind';
+        search.dispatchEvent({ type: 'input', bubbles: true });
+        search.dispatchEvent({ type: 'keydown', key: 'Enter', bubbles: true, preventDefault() {}, stopPropagation() {} });
+        modal.querySelector('.selection-modal-apply').click();
+        await later();
+        assert.ok([...document.querySelectorAll('.lora-retake-chip')].some(chip => chip.firstChild.textContent === 'from behind'), 'the typed tag is a chip');
+
+        document.querySelector('.lora-retake-negative-head .lora-retake-search').click();
+        await later();
+        assert.equal(document.querySelector('.lora-retake-negative').hidden, false, 'the negative opens for it');
+        document.dispatchEvent({ type: 'keydown', key: 'Escape', bubbles: true, preventDefault() {}, stopPropagation() {} });
+        assert.ok([...document.querySelectorAll('.selection-modal')].every(node => node.hidden), 'Escape closed the tag modal');
+        assert.ok(document.querySelector('.lora-retake'), 'and left the dialog open');
+        document.dispatchEvent({ type: 'keydown', key: 'Escape', bubbles: true, preventDefault() {}, stopPropagation() {} });
+        assert.equal(document.querySelector('.lora-retake'), null, 'the next one closes the dialog');
     });
 });
