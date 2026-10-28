@@ -7,6 +7,7 @@
 import { setupRunProgress } from './components/runProgress.js';
 import { SLIDER_RANGE_EVENT } from './components/mySlider.js';
 import { applySizeRange } from './callbacks.js';
+import { setupSizeRatio } from './sizeRatioUi.js';
 import { setupStatusPills } from './components/statusPills.js';
 import { AI_MODES, applyAiMode, deriveAiMode, describeAiStatus } from './components/aiModeLogic.js';
 import { PROSE_SCOPES, normalizeProseScope } from '../shared/prosePrompt.js';
@@ -425,6 +426,9 @@ function setupRunBar() {
 
     // Size range: the width / height boxes report an out-of-range typed value
     // (mySlider.js SLIDER_RANGE_EVENT); the label turns red while either box is over.
+    // Size ratio: the chip (turn | pick), the chain and the tiles (sizeRatioUi.js).
+    const sizeRatio = setupSizeRatio();
+
     const sizeLabel = document.getElementById('run-size-label');
     const sizeBoxes = [...bar.querySelectorAll('.run-param-size .run-number')];
     const overBoxes = new Set();
@@ -498,6 +502,7 @@ function setupRunBar() {
             setMarkup(queueStatus, `<span>${ICONS.layers}</span>${escapeHtml(`${uiText('ui_run_queue', 'Queue')} ${count} · ${auto}`)}`);
             queueStatus.classList.toggle('is-paused', !SETTINGS.generate_auto_start);
         }
+        sizeRatio?.settle();
         if (footnote) {
             const on = uiText('ui_on', 'on');
             const off = uiText('ui_off', 'off');

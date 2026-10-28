@@ -117,6 +117,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     height: 1360,
     batch: 3,
     api_image_landscape: false,
+    api_image_ratio: '',            // the Size chip's ratio (shared/sizeRatio.js RATIOS id); '' = taken from the size
+    api_image_ratio_linked: true,   // false = Free: the width and height boxes move on their own
     scroll_to_last: false,
     keep_gallery: true,
     gallery_max_images: 200,   // the gallery keeps this many data URLs; older ones are dropped
@@ -321,7 +323,7 @@ export const SECTION_KEYS = Object.freeze({
         'ai_prose_writer', 'ai_prose_student_server', 'ai_prose_student_model', 'ai_prose_student_port',
     ]),
     generation: Object.freeze([
-        'random_seed', 'cfg', 'step', 'width', 'height', 'batch', 'api_image_landscape', 'api_model_sampler', 'api_model_scheduler',
+        'random_seed', 'cfg', 'step', 'width', 'height', 'batch', 'api_image_landscape', 'api_image_ratio', 'api_image_ratio_linked', 'api_model_sampler', 'api_model_scheduler',
         'api_model_file_select', 'api_model_file_diffusion_select',
         'api_hf_enable', 'api_hf_scale', 'api_hf_denoise', 'api_hf_upscaler_selected', 'api_hf_colortransfer', 'api_hf_random_seed', 'api_hf_steps',
         'api_refiner_enable', 'api_refiner_add_noise', 'api_refiner_model', 'api_refiner_model_vpred', 'api_refiner_ratio',

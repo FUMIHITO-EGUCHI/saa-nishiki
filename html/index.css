@@ -3124,3 +3124,31 @@ button.lora-cell { cursor: zoom-in; }
 #adetailer-settings[hidden] { display: none; }
 #adetailer-settings label { display: flex; flex: 1 1 210px; flex-direction: column; gap: 5px; font-size: 12px; }
 #adetailer-settings select, #adetailer-settings input { box-sizing: border-box; width: 100%; min-height: 32px; padding: 5px 8px; color: inherit; background: var(--saa-bg-field); border: 1px solid var(--saa-border-ctl); border-radius: 5px; font: inherit; }
+
+/* Run bar Size: ratio chip (turn | pick), chain between the boxes, ratio tiles (sizeRatioUi.js) */
+.run-param-size { position: relative; }
+.run-ratio { display: inline-flex; align-items: stretch; height: 26px; margin-right: 4px; box-sizing: border-box; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); overflow: hidden; }
+.run-ratio.is-open { border-color: var(--saa-accent); }
+.run-ratio button { border: none; background: transparent; color: var(--saa-text); font: inherit; cursor: pointer; padding: 0; }
+.run-ratio button:hover { background: var(--saa-bg-hover); }
+.run-ratio button:focus-visible { outline: 2px solid var(--saa-accent); outline-offset: -2px; }
+.run-ratio .run-ratio-turn { width: 26px; display: grid; place-items: center; border-right: 1px solid var(--saa-border-ctl); color: var(--saa-muted2); }
+.run-ratio .run-ratio-pick { display: inline-flex; align-items: center; gap: 5px; padding: 0 7px; font-size: 12px; white-space: nowrap; }
+.run-ratio-chevron { display: inline-flex; color: var(--saa-muted2); }
+.run-ratio-shape { display: block; box-sizing: border-box; border: 1.5px solid currentColor; border-radius: 2px; }
+.run-ratio-shape.is-free { border-style: dashed; }
+.run-ratio-chain { width: 22px; height: 26px; flex: none; padding: 0; border: none; border-radius: 5px; background: transparent; color: var(--saa-muted); display: inline-grid; place-items: center; cursor: pointer; }
+.run-ratio-chain.is-linked { color: var(--saa-accent); }
+.run-ratio-chain:hover { background: var(--saa-bg-hover); }
+.run-ratio-chain:focus-visible { outline: 2px solid var(--saa-accent); }
+.run-ratio-popover { position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 50; width: 360px; box-sizing: border-box; padding: 10px; border: 1px solid var(--saa-border-strong); border-radius: 8px; background: var(--saa-bg-panel); box-shadow: 0 12px 40px var(--saa-shadow); }
+.run-ratio-popover[hidden] { display: none; }
+.run-ratio-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.run-ratio-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px 7px; border: 1px solid var(--saa-border-ctl); border-radius: 6px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; cursor: pointer; }
+.run-ratio-tile:hover { background: var(--saa-bg-hover); }
+.run-ratio-tile:focus-visible { outline: 2px solid var(--saa-accent); outline-offset: 1px; }
+.run-ratio-tile[aria-pressed="true"] { border-color: var(--saa-accent); background: color-mix(in srgb, var(--saa-accent) 14%, var(--saa-bg-control)); }
+.run-ratio-tile-frame { height: 44px; display: grid; place-items: center; color: var(--saa-muted2); }
+.run-ratio-tile[aria-pressed="true"] .run-ratio-tile-frame { color: var(--saa-accent); }
+.run-ratio-tile-label { font-size: 12px; font-weight: 600; }
+.run-ratio-tile-px { font-size: 10.5px; color: var(--saa-muted2); font-family: Consolas, "Cascadia Mono", "Courier New", monospace; }

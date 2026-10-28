@@ -53,6 +53,7 @@ import { setupEditHistoryUi } from './renderer/editHistoryUi.js';
 import { get_prompt_textBox_Heights, set_prompt_textBox_Heights } from './renderer/components/componentsManager.js';
 import { hiresCalculate } from './renderer/tools/hiresCalculation.js';
 import { SIZE_HARD_MAX, SIZE_LIMIT_STEP, SIZE_MIN, SIZE_STEP } from './shared/sizeLimits.js';
+import { createLandscapeShim } from './renderer/sizeRatioUi.js';
 import { refinerModelOptions } from './shared/refinerModel.js';
 import { applySizeRange } from './renderer/callbacks.js';
 
@@ -221,16 +222,19 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         seed: setupSlider('generate-random-seed', LANG.random_seed, {min:-1, max:4294967295, step:1, defaultValue:SETTINGS.random_seed}, (value) =>{globalThis.globalSettings.random_seed = value;}),
         cfg: setupSlider('generate-cfg', LANG.cfg, {min:0, max:20, step:0.01, defaultValue:SETTINGS.cfg}, (value) =>{globalThis.globalSettings.cfg = value;}),
         step: setupSlider('generate-step', LANG.step, {min:1, max:100, step:1, defaultValue:SETTINGS.step}, (value) =>{globalThis.globalSettings.step = value;}),
-        // the effective range narrows to the model type's limit (applySizeRange, callbacks.js)
-        width: setupSlider('generate-width', LANG.width, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.width}, (value) =>{globalThis.globalSettings.width = value; hiresCalculate(); }),
-        height: setupSlider('generate-height', LANG.height, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.height}, (value) =>{globalThis.globalSettings.height = value; hiresCalculate(); }),
+        // the effective range narrows to the model type's limit (applySizeRange, callbacks.js);
+        // the ratio chip follows whatever moves them (sizeRatioUi.js)
+        width: setupSlider('generate-width', LANG.width, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.width}, (value) =>{globalThis.globalSettings.width = value; hiresCalculate(); globalThis.sizeRatio?.settleSoon?.(); }),
+        height: setupSlider('generate-height', LANG.height, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.height}, (value) =>{globalThis.globalSettings.height = value; hiresCalculate(); globalThis.sizeRatio?.settleSoon?.(); }),
         batch: setupSlider('generate-batch', LANG.batch, {min:1, max:2038, step:1, defaultValue:SETTINGS.batch}, (value) =>{globalThis.globalSettings.batch = value;}),
         hifix: setupCheckbox('generate-hires-fix', LANG.api_hf_enable, SETTINGS.api_hf_enable, true, (value) => { globalThis.globalSettings.api_hf_enable = value; hiresCalculate(); }),
         refiner: setupCheckbox('generate-refiner', LANG.api_refiner_enable, SETTINGS.api_refiner_enable, true, (value) => { globalThis.globalSettings.api_refiner_enable = value; }),
         controlnet: setupCheckbox('generate-controlnet', LANG.api_controlnet_enable, SETTINGS.api_controlnet_enable, true, callback_controlnet),
         adetailer: setupCheckbox('generate-adetailer', LANG.api_adetailer_enable, SETTINGS.api_adetailer_enable, true, callback_adetailer),
 
-        landscape: setupCheckbox('generate-landscape', LANG.api_image_landscape, SETTINGS.api_image_landscape, true, (value) =>{globalThis.globalSettings.api_image_landscape = value;}),
+        // the orientation is the size itself (the ratio chip turns it); this only folds an old
+        // "landscape" value into the boxes
+        landscape: createLandscapeShim(),
         tag_assist: setupCheckbox('generate-tag-assist', LANG.tag_assist, SETTINGS.tag_assist, true, (value) =>{ globalThis.globalSettings.tag_assist = value; }),
         // translation on the chips (Settings > Prompt editing); the fields re-render through the alias event
         tag_chip_alias: setupCheckbox('system-settings-tag-chip-alias', LANG.tag_chip_alias, SETTINGS.tag_chip_alias !== false, true,

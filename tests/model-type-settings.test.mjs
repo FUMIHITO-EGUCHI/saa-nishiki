@@ -10,7 +10,7 @@ import { DEFAULT_SETTINGS, SECTION_KEYS, normalizeSection } from '../scripts/sha
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
-const checkpoint = { api_model_sampler: 'euler_ancestral', api_model_scheduler: 'karras', step: 28, cfg: 5, width: 832, height: 1216, api_image_landscape: false, api_hf_enable: true, api_hf_scale: 1.5, api_hf_denoise: 0.4, api_hf_steps: 20, api_hf_upscaler_selected: '4x-UltraSharp', regional_condition: true, random_seed: 3 };
+const checkpoint = { api_model_sampler: 'euler_ancestral', api_model_scheduler: 'karras', step: 28, cfg: 5, width: 832, height: 1216, api_image_landscape: false, api_image_ratio: '2-3', api_image_ratio_linked: false, api_hf_enable: true, api_hf_scale: 1.5, api_hf_denoise: 0.4, api_hf_steps: 20, api_hf_upscaler_selected: '4x-UltraSharp', regional_condition: true, random_seed: 3 };
 
 test('snapshotGeneration keeps only the generation keys', () => {
     const snapshot = snapshotGeneration(checkpoint);
