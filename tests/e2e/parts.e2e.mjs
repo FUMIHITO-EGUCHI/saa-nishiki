@@ -16,6 +16,12 @@ test.after(async () => { await app?.close(); });
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const OPEN_MODAL = '.selection-modal:not([hidden])';
 
+// the row's ⋯ menu, then Insert part… (the tag modal on its Parts tab)
+async function insertPart(row) {
+    await app.page.click(`${row} .scene-menu-button`);
+    await app.page.evaluate(`[...document.querySelectorAll('${row} .scene-row-menu button')].find(node => node.textContent === 'Insert part…').click()`);
+}
+
 test('the editor makes a part; it is stored as settings/parts.json and the Positive row offers the picker', async () => {
     const { page } = app;
     await page.evaluate(`globalThis.partsUi.openEditor()`);
@@ -41,8 +47,8 @@ test('the editor makes a part; it is stored as settings/parts.json and the Posit
     assert.match(fs.readFileSync(file, 'utf8'), /"sailor uniform"/);
     assert.equal(await page.evaluate(`Boolean(document.querySelector('.parts-editor-dialog'))`), false, 'the editor closed');
 
-    // the row's "parts" button opens the row's tag modal on its Parts tab, the new part a tile
-    await page.click('.prompt-positive .scene-parts-button');
+    // the row's Insert part… opens the row's tag modal on its Parts tab, the new part a tile
+    await insertPart('.prompt-positive');
     await page.waitFor(`document.querySelectorAll('${OPEN_MODAL} .selection-modal-tile').length === 1`, { label: 'the row modal on its Parts tab with one tile' });
     assert.equal(await page.evaluate(`document.querySelector('${OPEN_MODAL} .selection-modal-tab.is-active')?.textContent`), 'Parts');
     assert.equal(await page.evaluate(`document.querySelector('${OPEN_MODAL} .parts-tile-name')?.textContent`), 'parts:Sailor Uniform');
@@ -109,7 +115,7 @@ test('a sample on the mannequin runs through the queue, skips the gallery, and l
     assert.equal(await app.errorText(), '');
 
     // the tile now shows for this model: the Parts tab's tile carries an image
-    await page.click('.prompt-positive .scene-parts-button');
+    await insertPart('.prompt-positive');
     await page.waitFor(`Boolean(document.querySelector('${OPEN_MODAL} .selection-modal-tile .parts-tile-image img'))`, { label: 'the tile image' });
     assert.equal(await page.evaluate(`Boolean(document.querySelector('${OPEN_MODAL} .selection-modal-tile .parts-tile-image.is-missing'))`), false, 'the tile no longer says "No sample yet"');
     assert.match(await page.evaluate(`document.querySelector('${OPEN_MODAL} .parts-tile-meta')?.textContent`), /serafuku/, 'the tile line is the tags of the part');

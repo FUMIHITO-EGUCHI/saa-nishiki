@@ -365,14 +365,12 @@ export function setupPromptFieldManager() {
                 const n = tagCount(id);
                 count.textContent = n > 0 ? String(n) : '';
             }
-            // rename / polarity / delete follow the model type: a hand-made "Action" row
-            // is fixed only while the Cast is on
+            // rename follows the model type: a hand-made "Action" row is fixed only while
+            // the Cast is on (the ⋯ menu asks isFixed for polarity and delete when it opens)
             const custom = customOf(id);
             if (custom) {
-                const fixed = isFixed(id);
-                for (const button of container.querySelectorAll('.scene-polarity, .scene-delete')) button.hidden = fixed;
                 const label = container.querySelector('.scene-label');
-                if (label) label.title = fixed ? custom.name : text('ui_scene_rename_hint', 'Double-click to rename');
+                if (label) label.title = isFixed(id) ? custom.name : text('ui_scene_rename_hint', 'Double-click to rename');
             }
         }
         mutedNote.textContent = muted > 0 ? text('ui_scene_muted_count', '{0} off').replace('{0}', String(muted)) : '';
@@ -406,8 +404,10 @@ export function setupPromptFieldManager() {
         return scene ? [...scene.querySelectorAll('.prompt-field[data-scene-row]')] : [];
     }
 
-    // Row chrome, added once per container: grip · chevron · ● before the label,
-    // polarity / delete / ⋯ after the tools. Double-click on a custom label renames.
+    // Row chrome, added once per container: grip · chevron · ● before the label, ⋯ after
+    // the tools. Double-click on a custom label renames. An action the row already shows
+    // (● disables it, the grip moves it) is not in the ⋯ menu again, and one the menu
+    // holds (parts, polarity, delete) gets no button of its own.
     function decorateRow(container, id) {
         const header = container.querySelector('.tag-field-header');
         if (!header || header.querySelector(':scope > .scene-handle')) return;
@@ -452,33 +452,6 @@ export function setupPromptFieldManager() {
             tools = document.createElement('div');
             tools.className = 'tag-field-tools';
             header.appendChild(tools);
-        }
-        const custom = customOf(id);
-        // built for every custom row; applyRowStates hides them while the row is fixed
-        if (custom) {
-            const polarity = document.createElement('button');
-            polarity.type = 'button';
-            polarity.className = `scene-polarity is-${custom.polarity}`;
-            polarity.textContent = custom.polarity === 'negative' ? '−' : '+';
-            polarity.title = text('ui_scene_polarity', 'Positive / negative chain');
-            polarity.addEventListener('click', () => togglePolarity(id));
-            const remove = document.createElement('button');
-            remove.type = 'button';
-            remove.className = 'scene-delete';
-            remove.textContent = '×';
-            remove.title = text('ui_scene_delete', 'Delete field');
-            remove.addEventListener('click', () => deleteField(id));
-            tools.append(polarity, remove);
-        }
-        // "parts": the picker that puts a parts:<name> chip into this row (partsUi.js)
-        if (globalThis.partsUi?.available?.() && !container.classList.contains('prompt-action-field') && id !== 'characters') {
-            const parts = document.createElement('button');
-            parts.type = 'button';
-            parts.className = 'scene-parts-button';
-            parts.textContent = 'parts';
-            parts.title = text('parts_insert_title', 'Insert part…');
-            parts.addEventListener('click', event => { event.stopPropagation(); globalThis.partsUi.openPicker({ fieldKey: id, trigger: parts }); });
-            tools.appendChild(parts);
         }
         const menu = document.createElement('button');
         menu.type = 'button';
@@ -541,14 +514,7 @@ export function setupPromptFieldManager() {
         SETTINGS[from] = SETTINGS[from].filter(unitId => unitId !== id);
         persistFields();
         const container = unitContainer(id);
-        if (container) {
-            container.dataset.stripe = custom.polarity === 'negative' ? 'negative' : 'view';
-            const badge = container.querySelector('.scene-polarity');
-            if (badge) {
-                badge.className = `scene-polarity is-${custom.polarity}`;
-                badge.textContent = custom.polarity === 'negative' ? '−' : '+';
-            }
-        }
+        if (container) container.dataset.stripe = custom.polarity === 'negative' ? 'negative' : 'view';
         layoutScene();
     }
 
@@ -579,41 +545,6 @@ export function setupPromptFieldManager() {
         return field.id;
     }
 
-    // Up / down past the neighbouring row the Scene shows. The row steps inside the host it
-    // lives in - the Scene column, or the Regional side box - so a unit with no row there
-    // (the ai / artist / characters blocks, a checkpoint's hidden cast and Action rows, the
-    // other side's rows) is never swapped with: that changed the prompt order with nothing
-    // moving on screen. While Regional is on the block is one row of the Scene column: a
-    // shared row crossing it lands above / below every side row of its chain. The unit
-    // lands before (up) / after (down) the row it passed, as a drag onto it would.
-    function moveUnit(id, delta) {
-        const orderKey = chainOf(id);
-        const container = unitContainer(id);
-        const host = container?.parentElement;
-        const current = SETTINGS[orderKey];
-        if (!host || !current.includes(id)) return;
-        const isStep = node => (isRegional() && node === group)
-            || (node.dataset?.sceneRow === orderKey && isAvailable(node) && isMovable(idOfContainer(node)));
-        const steps = [...host.children].filter(isStep);
-        const at = steps.indexOf(container);
-        const step = at < 0 ? null : steps[at + delta];
-        if (!step) return;
-        const order = current.filter(unitId => unitId !== id);
-        let position;
-        if (step === group) {
-            // every side row hides behind the block's single row, so the unit clears them all
-            const inBlock = unitId => sideOf(unitId, fields) !== 'both';
-            const edge = delta < 0 ? order.findIndex(inBlock) : order.findLastIndex(inBlock);
-            if (edge < 0) return; // the block holds no row of this chain
-            position = delta < 0 ? edge : edge + 1;
-        } else {
-            position = order.indexOf(idOfContainer(step)) + (delta < 0 ? 0 : 1);
-        }
-        order.splice(position, 0, id);
-        SETTINGS[orderKey] = order;
-        layoutScene();
-    }
-
     // ------------------------------------------------------------- row menu (⋯)
     let openMenu = null;
     function closeRowMenu() {
@@ -636,11 +567,6 @@ export function setupPromptFieldManager() {
             button.addEventListener('click', () => { closeRowMenu(); action(); });
             menu.appendChild(button);
         };
-        item(isMuted(id) ? text('ui_scene_unmute', 'Enable this row') : text('ui_scene_mute', 'Disable this row (tags are kept)'), () => setMuted(id, !isMuted(id)));
-        if (isMovable(id)) {
-            item(text('ui_scene_move_up', 'Move up'), () => moveUnit(id, -1));
-            item(text('ui_scene_move_down', 'Move down'), () => moveUnit(id, 1));
-        }
         // Text / Chips for the whole card (the per-field toggle is hidden in the Scene)
         const set = globalThis.prompt?.tagCapsuleFields;
         if (set?.getMode && !container.classList.contains('prompt-action-field') && container.querySelector('.tag-view-toggle')) {
@@ -655,6 +581,7 @@ export function setupPromptFieldManager() {
         const preset = container.querySelector('.prompt-preset-button');
         if (preset) item(text('ui_scene_presets', 'Presets…'), () => preset.click());
         if (custom && !isFixed(id)) {
+            item(custom.polarity === 'negative' ? text('ui_scene_to_positive', 'Make positive') : text('ui_scene_to_negative', 'Make negative'), () => togglePolarity(id));
             item(text('ui_scene_rename', 'Rename'), () => startRename(container, id));
             item(text('ui_scene_delete', 'Delete field'), () => deleteField(id), { danger: true });
         }

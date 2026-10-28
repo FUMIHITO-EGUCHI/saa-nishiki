@@ -46,8 +46,8 @@ test('sides are a Regional concept: a new field takes one only while Regional is
     // the rows the app owns - a cast row ("@alias" per character slot) and cf_action - get
     // no rename / delete controls; a hand-made row named "Action" stays the user's own row
     assert.match(manager, /function isFixed\(id\) \{\s*const custom = customOf\(id\);\s*return !custom \|\| isDiffusionFieldId\(custom\.id\);\s*\}/);
-    // the controls follow the row's current state (scene-behaviour.test.mjs exercises it)
-    assert.match(manager, /for \(const button of container\.querySelectorAll\('\.scene-polarity, \.scene-delete'\)\) button\.hidden = fixed;/);
+    // the ⋯ menu offers them by the row's current state (scene-behaviour.test.mjs exercises it)
+    assert.match(manager, /if \(custom && !isFixed\(id\)\) \{\s*item\(custom\.polarity === 'negative'/);
     assert.match(manager, /if \(!custom \|\| isFixed\(id\) \|\| !label \|\| label\.hidden\) return;/);
 });
 

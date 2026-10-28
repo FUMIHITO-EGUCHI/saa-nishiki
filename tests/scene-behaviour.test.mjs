@@ -1,7 +1,7 @@
 // The Scene (promptFieldManager.js) with the real capsule field set, driven through a
 // small in-memory DOM: a muted row leaves generation, the Final prompt preview and the
 // batch plan; Swap moves texts, weight plans and mute together; a programmatic reload
-// keeps the stored plans; drags and Move up / down change only what the Scene shows.
+// keeps the stored plans; drags change only what the Scene shows.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -551,7 +551,7 @@ test('a reload that rewrites text and plans together (preset load, model-type re
     assert.deepEqual(planIds(set.get('cf_hat').getPlans()), ['cap#0']);
 });
 
-// ------------------------------------------------------------------ drag, Move up / down, fixed rows
+// ------------------------------------------------------------------ drag, the ⋯ menu, fixed rows
 
 function dataTransfer() {
     const data = new Map();
@@ -631,27 +631,32 @@ function clickMenuItem(document, row, label) {
     item.click();
 }
 
-test('Move up / down pass over the units the Scene does not show', () => {
-    const settings = sceneSettings({ character_slots: [{ key: 'alice' }, { key: 'bob' }] });
+const menuLabels = row => {
+    row.querySelector('.scene-menu-button').click();
+    const labels = [...row.querySelectorAll('.scene-row-menu button')].map(button => button.textContent);
+    row.querySelector('.scene-menu-button').click();
+    return labels;
+};
+
+test('the ⋯ menu holds what the row shows no control for: no disable or move; polarity and delete for a hand-made row, as no button', () => {
+    const settings = sceneSettings({ prompt_custom_fields: [{ id: 'cf_mine', name: 'Pose', polarity: 'positive', text: 'waving' }] });
     const { document } = bootScene(settings);
-    assert.deepEqual(settings.prompt_positive_order,
-        ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'cf_cast1', 'cf_cast2', 'positive', 'cf_action']);
-
-    clickMenuItem(document, rowOf(document, 'positive'), 'Move up');
-    assert.deepEqual(settings.prompt_positive_order,
-        ['common', 'views', 'background', 'positive', 'style', 'artist', 'ai', 'characters', 'cf_cast1', 'cf_cast2', 'cf_action']);
-
-    // below Style the chain holds only blocks and hidden rows: nothing to pass, nothing moves
-    const afterUp = [...settings.prompt_positive_order];
-    clickMenuItem(document, rowOf(document, 'style'), 'Move down');
-    assert.deepEqual(settings.prompt_positive_order, afterUp);
-
-    clickMenuItem(document, rowOf(document, 'positive'), 'Move down');
-    assert.deepEqual(settings.prompt_positive_order,
-        ['common', 'views', 'background', 'style', 'positive', 'artist', 'ai', 'characters', 'cf_cast1', 'cf_cast2', 'cf_action']);
+    const positive = rowOf(document, 'positive');
+    assert.equal(menuLabels(positive).some(label => /Disable|Enable|Move/.test(label)), false, 'the ● and the grip do those');
+    const mine = rowOf(document, 'cf_mine');
+    assert.equal(mine.querySelectorAll('.scene-polarity, .scene-delete, .scene-parts-button').length, 0);
+    assert.deepEqual(menuLabels(mine).filter(label => /^(Make|Rename|Delete)/.test(label)), ['Make negative', 'Rename', 'Delete field']);
+    clickMenuItem(document, mine, 'Make negative');
+    assert.equal(settings.prompt_custom_fields.find(field => field.id === 'cf_mine').polarity, 'negative');
+    assert.equal(rowOf(document, 'cf_mine').dataset.stripe, 'negative', 'the stripe shows it');
+    assert.ok(menuLabels(rowOf(document, 'cf_mine')).includes('Make positive'));
 });
 
-const rowControls = row => [...row.querySelectorAll('.scene-polarity, .scene-delete')].map(button => button.hidden);
+// whether the row's ⋯ menu leaves out [the polarity switch, Delete field]
+function rowControls(row) {
+    const labels = menuLabels(row);
+    return [!labels.some(label => /^Make (positive|negative)$/.test(label)), !labels.includes('Delete field')];
+}
 
 function doubleClickLabel(row) {
     row.querySelector('.scene-label').dispatchEvent(new Event('dblclick', { bubbles: true, cancelable: true }));
@@ -700,7 +705,7 @@ test("renaming or deleting the hand-made row that served as the Action brings th
     const first = bootScene(deleted);
     // a field named Action already serves the cast, so no cf_action row was added
     assert.equal(deleted.prompt_custom_fields.some(field => field.id === 'cf_action'), false);
-    rowOf(first.document, 'cf_mine').querySelector('.scene-delete').click();
+    clickMenuItem(first.document, rowOf(first.document, 'cf_mine'), 'Delete field');
     assert.equal(deleted.prompt_custom_fields.some(field => field.id === 'cf_mine'), false);
     assert.equal(deleted.prompt_custom_fields.find(field => field.id === 'cf_action')?.text, '');
     assert.ok(deleted.prompt_positive_order.includes('cf_action'));
@@ -712,50 +717,6 @@ test("renaming or deleting the hand-made row that served as the Action brings th
     assert.equal(renamed.prompt_custom_fields.find(field => field.id === 'cf_mine').name, 'Pose');
     assert.ok(renamed.prompt_custom_fields.some(field => field.id === 'cf_action'));
     assert.ok(rowOf(second.document, 'cf_action'));
-});
-
-// the Scene's row hosts: the shared column and the two side boxes; the block is one row
-const sceneColumn = document => [...document.querySelector('.prompt-scene').children]
-    .map(node => (node.classList.contains('scene-regional') ? 'BLOCK' : (node.dataset.fieldId ?? node.className.split(' ')[0])));
-const boxRows = (document, side) => [...document.querySelectorAll(`.scene-side.is-${side} .prompt-field[data-scene-row]`)]
-    .map(row => row.dataset.fieldId ?? row.className.split(' ')[0]);
-
-test('Move up / down inside the Regional block passes the rows of the same box only', () => {
-    const settings = sceneSettings({
-        regional_condition: true,
-        api_prompt: 'smile',
-        prompt_custom_fields: [
-            { id: 'cf_l', name: 'L', polarity: 'positive', text: 'sword', side: 'left' },
-            { id: 'cf_r', name: 'R', polarity: 'positive', text: 'shield', side: 'right' },
-            { id: 'cf_both', name: 'Both', polarity: 'positive', text: 'night' },
-        ],
-        prompt_positive_order: ['common', 'views', 'background', 'style', 'artist', 'ai', 'characters', 'positive', 'cf_l', 'cf_r', 'cf_both'],
-    });
-    const { document, set } = bootScene(settings);
-    const sides = () => ({ positive: set.expandAll(1, 0)[0].positive, right: set.expandAll(1, 0)[0].positiveRight });
-    assert.deepEqual(boxRows(document, 'left').slice(0, 2), ['prompt-positive', 'cf_l']);
-    assert.deepEqual(sides(), { positive: 'smile, sword, night', right: 'shield, night' });
-
-    // the other box's row is no neighbour: nothing above the right row, so nothing moves
-    const before = [...settings.prompt_positive_order];
-    clickMenuItem(document, rowOf(document, 'cf_r'), 'Move up');
-    assert.deepEqual(settings.prompt_positive_order, before);
-    assert.deepEqual(sides(), { positive: 'smile, sword, night', right: 'shield, night' });
-
-    // the shared row below the block crosses it as one row: above every side row, and back
-    assert.ok(sceneColumn(document).indexOf('cf_both') > sceneColumn(document).indexOf('BLOCK'));
-    clickMenuItem(document, rowOf(document, 'cf_both'), 'Move up');
-    assert.ok(sceneColumn(document).indexOf('cf_both') < sceneColumn(document).indexOf('BLOCK'));
-    // (cf_action is the hidden Action row the cast keeps at the chain's end)
-    assert.deepEqual(settings.prompt_positive_order.slice(-5), ['cf_both', 'positive', 'cf_l', 'cf_r', 'cf_action']);
-    assert.deepEqual(sides(), { positive: 'night, smile, sword', right: 'night, shield' });
-    clickMenuItem(document, rowOf(document, 'cf_both'), 'Move down');
-    assert.deepEqual(settings.prompt_positive_order, before);
-
-    // inside the box the rows still swap
-    clickMenuItem(document, rowOf(document, 'cf_l'), 'Move up');
-    assert.deepEqual(boxRows(document, 'left').slice(0, 2), ['cf_l', 'prompt-positive']);
-    assert.equal(sides().positive, 'sword, smile, night');
 });
 
 test('a row the model type hides keeps its weight plans and batch out of the expansion', () => {
