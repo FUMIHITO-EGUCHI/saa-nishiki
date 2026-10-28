@@ -514,6 +514,21 @@ export class FakeElement {
         return false;
     }
 
+    // tree order only: PRECEDING 2, FOLLOWING 4, CONTAINS 8, CONTAINED_BY 16
+    compareDocumentPosition(other) {
+        if (other === this) return 0;
+        if (this.contains(other)) return 16 | 4;
+        if (other?.contains?.(this)) return 8 | 2;
+        const chain = node => { const up = []; for (let current = node; current; current = current.parentElement) up.unshift(current); return up; };
+        const mine = chain(this);
+        const theirs = chain(other);
+        let depth = 0;
+        while (mine[depth] && mine[depth] === theirs[depth]) depth += 1;
+        const parent = mine[depth - 1];
+        if (!parent) return 1;
+        return parent.childNodes.indexOf(theirs[depth]) > parent.childNodes.indexOf(mine[depth]) ? 4 : 2;
+    }
+
     setAttribute(name, value) { this.attributes.set(name, String(value)); if (name === 'id') this.id = String(value); }
     getAttribute(name) { return this.attributes.has(name) ? this.attributes.get(name) : null; }
     hasAttribute(name) { return this.attributes.has(name); }
@@ -705,6 +720,19 @@ export const FakeCSS = {
     },
 };
 
+// a textarea's caret and range edits, as far as the tag modal writes into one
+const TEXT_SELECTION = {
+    setSelectionRange(start, end = start) {
+        this.selectionStart = start;
+        this.selectionEnd = end;
+    },
+    setRangeText(text, start = this.selectionStart ?? 0, end = this.selectionEnd ?? start, mode = 'preserve') {
+        const value = String(this.value ?? '');
+        this.value = value.slice(0, start) + text + value.slice(end);
+        if (mode === 'end') this.selectionStart = this.selectionEnd = start + String(text).length;
+    },
+};
+
 export function createFakeDocument() {
     const documentListeners = new Map();
     const document = {
@@ -714,6 +742,7 @@ export function createFakeDocument() {
             const name = String(tag).toLowerCase();
             const element = name === 'input' ? new FakeInput(document) : new FakeElement(document, tag);
             if (['select', 'option', 'textarea'].includes(name)) element.value = '';
+            if (name === 'textarea') Object.assign(element, TEXT_SELECTION);
             return element;
         },
         createElementNS: (namespace, tag) => new FakeElement(document, tag),

@@ -25,6 +25,8 @@ const FOCUSABLE_SELECTOR = [
 const DEFAULT_LIMIT = 200;
 let modalSequence = 0;
 
+const DOCUMENT_POSITION_FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
+
 function optionKey(option) {
     return normalizeSelectionKey(option?.key ?? option?.value ?? '');
 }
@@ -854,6 +856,7 @@ export function createSelectionModal({
     // the scroll stay where they are
     async function refreshOptions({ keep = false } = {}) {
         const generation = ++requestGeneration;
+        const activeKey = keep && visibleOptions[activeIndex] ? optionKey(visibleOptions[activeIndex]) : null;
         const config = {
             query: effectiveSearch().query.trim(),
             category: currentCategory(),
@@ -867,6 +870,12 @@ export function createSelectionModal({
         currentOptions = typeof activeConfig.loadOptions === 'function' ? takeLoaded(nextOptions) : currentOptions;
         if (keep) {
             renderOptions({ scrollActive: false });
+            // the item the panel is about stays, wherever the new list puts it (a rename moves it)
+            const index = activeKey === null ? -1 : visibleOptions.findIndex(option => optionKey(option) === activeKey);
+            if (index >= 0 && index !== activeIndex) {
+                activeIndex = index;
+                updateActiveDescendant({ scroll: false });
+            }
             renderActions();
             return;
         }
@@ -940,7 +949,20 @@ export function createSelectionModal({
         if (mode === 'single') listbox.focus();
     }
 
+    // a dialog opened over this one (from its panel, or a modal opened from that) comes
+    // later in the body: the keys are its own
+    function coveredByLaterDialog() {
+        if (typeof overlay.compareDocumentPosition !== 'function') return false;
+        const shown = node => { for (let current = node; current; current = current.parentElement) if (current.hidden) return false; return true; };
+        for (const other of document.querySelectorAll('[aria-modal="true"]')) {
+            if (overlay.contains(other) || !shown(other)) continue;
+            if (overlay.compareDocumentPosition(other) & DOCUMENT_POSITION_FOLLOWING) return true;
+        }
+        return false;
+    }
+
     function onDialogKeyDown(event) {
+        if (coveredByLaterDialog()) return;
         if (event.key === 'Escape') {
             if (event.isComposing || event.keyCode === 229) return;
             event.preventDefault();

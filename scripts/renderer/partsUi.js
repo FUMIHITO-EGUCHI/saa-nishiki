@@ -301,7 +301,7 @@ export function openPartEditor({ id = null, initial = {}, onSaved = null, trigge
         const words = loraState.loraTriggers ? globalThis.loraUi?.partTriggers?.(draft) ?? [] : [];
         const running = loraState.loras.filter(lora => draft.otherBase === 'use' || !loraEntry(lora.name) || loraEntry(lora.name).base === 'unknown'
             || loraFitsModel(loraEntry(lora.name).base, globalThis.globalSettings?.api_model_type === 'Diffusion' ? 'Diffusion' : 'Checkpoint'));
-        const lines = [[draft.tags, ...words].filter(Boolean).join(', '), ...running.map(lora => `+ LoRA  ${loraLabel(lora.name)}  ${lora.weight}`)];
+        const lines = [[draft.tags, ...words].filter(Boolean).join(', '), ...running.map(lora => `+ LoRA  ${loraEntry(lora.name)?.label ?? loraLabel(lora.name)}  ${lora.weight}`)];
         preview.replaceChildren(
             el('span', 'parts-field-title', text('parts_sends_as', 'Sends as')),
             el('code', 'parts-picker-token', partToken(name)),

@@ -1,9 +1,12 @@
-// The LoRA slots, the LoRA card of the Pipeline: one row per LoRA - a switch, the name,
+// The LoRA slots, the LoRA card of the Pipeline: one row per LoRA - a switch (its trigger
+// words leave the prompt and come back with it), the name,
 // its trigger words (on or off in the prompt), a weight slider marked at the weights its
-// samples were taken at, the weight, and a fold with the pass it runs in, the CLIP
-// strength (it follows the weight until a value of its own is typed; ↺ puts it back) and
-// the button that opens the samples. "+ LoRA" opens the LoRA picker (loraUi.js). The
-// LoRA's words, range and samples come from globalThis.loraUi when it is set up.
+// samples were taken at and scaled with its ends and 0, the weight (the wheel steps it
+// while it has the focus), and a fold with the pass it runs in, the CLIP strength (it
+// follows the weight until a value of its own is typed; ↺ puts it back), the LoRA's range
+// and trigger words to edit, and the button that opens the samples. "+ LoRA" opens the
+// LoRA picker (loraUi.js). The LoRA's name, words, range and samples come from
+// globalThis.loraUi when it is set up.
 //
 // Kept as before: settings.lora_slot rows [name, model, clip, mode], mode ALL, Base, HiFix
 // or OFF (an OFF row keeps its strengths and its pass comes back as All).
@@ -89,6 +92,31 @@ const strength = value => {
     return Number.isFinite(number) ? number : 0;
 };
 const formatted = value => String(Math.round(value * 100) / 100);
+
+// the wheel over a focused number field: a notch steps it, a larger step with Shift
+export const WHEEL_STEP = 0.05;
+export const WHEEL_STEP_SHIFT = 0.25;
+
+/**
+ * Lets the wheel step a number field while it has the focus (the page does not scroll
+ * then). The new value goes through the field's own input and change handlers.
+ */
+function wheelSteps(field) {
+    field.addEventListener('wheel', event => {
+        if (document.activeElement !== field || field.disabled) return;
+        // Shift turns the wheel sideways in Chromium: the notch comes as deltaX
+        const delta = event.deltaY || event.deltaX;
+        if (!delta) return;
+        event.preventDefault();
+        const step = event.shiftKey ? WHEEL_STEP_SHIFT : WHEEL_STEP;
+        field.value = formatted(strength(field.value) + (delta < 0 ? step : -step));
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    }, { passive: false });
+}
+
+// where on the slider a weight is, as the left of a mark under it (the thumb is 14px wide)
+const along = (weight, min, max) => `calc(7px + (100% - 14px) * ${((weight - min) / (max - min)).toFixed(4)})`;
 
 function lorasListed() {
     const list = globalThis.cachedFiles?.loraList;
@@ -214,10 +242,13 @@ class SlotManager {
         toggle.addEventListener('click', () => {
             row.on = !row.on;
             this.renderRow(row);
+            // its trigger words leave the prompt with it and come back with it
+            globalThis.loraUi?.switchLoraWords?.(row.name, row.on);
         });
 
         const main = element('div', 'lora-slot-main');
-        const name = element('div', 'lora-slot-name', loraLabel(row.name) || row.name);
+        const label = globalThis.loraUi?.labelOf?.(row.name) || loraLabel(row.name) || row.name;
+        const name = element('div', 'lora-slot-name', label);
         name.title = row.missing ? `${row.name} · ${text('lora_slot_missing', 'not in the LoRA folder')}` : row.name;
         const words = element('div', 'lora-slot-words');
         main.append(name, words);
@@ -228,7 +259,8 @@ class SlotManager {
         slider.step = '0.05';
         slider.setAttribute('aria-label', text('lora_weight', 'Weight'));
         const ticks = element('div', 'lora-slot-ticks');
-        weight.append(slider, ticks);
+        const scale = element('div', 'lora-slot-scale');
+        weight.append(slider, ticks, scale);
         const value = element('input', 'lora-slot-value');
         value.type = 'number';
         value.step = '0.05';
@@ -252,7 +284,15 @@ class SlotManager {
             slider.value = String(current);
             ticks.replaceChildren(...(range.ticks ?? []).filter(tick => tick >= min && tick <= max).map(tick => {
                 const mark = element('span', 'lora-slot-tick');
-                mark.style.left = `calc(7px + (100% - 14px) * ${((tick - min) / (max - min)).toFixed(4)})`;
+                mark.style.left = along(tick, min, max);
+                return mark;
+            }));
+            // the ends and 0 in numbers
+            const marks = [[min, 'is-start'], [max, 'is-end']];
+            if (min < 0 && max > 0) marks.push([0, 'is-zero']);
+            scale.replaceChildren(...marks.map(([at, side]) => {
+                const mark = element('span', `lora-slot-mark ${side}`, formatted(at));
+                if (side === 'is-zero') mark.style.left = along(0, min, max);
                 return mark;
             }));
             if (document.activeElement !== value) value.value = row.model;
@@ -277,6 +317,7 @@ class SlotManager {
             value.value = row.model;
             show();
         });
+        wheelSteps(value);
         show();
         line.append(toggle, main, weight, value, fold, remove);
         this.paintWords(row, words);
@@ -341,6 +382,7 @@ class SlotManager {
             row.clip = formatted(strength(clip.value));
             clip.value = row.clip;
         });
+        wheelSteps(clip);
         const relink = iconButton('lora-slot-icon lora-slot-relink', text('lora_clip_follow', 'Same as the weight'), ICONS.relink, () => {
             row.linked = true;
             row.clip = row.model;
@@ -350,9 +392,35 @@ class SlotManager {
         if (!row.linked) clipLine.append(relink);
         clipField.append(clipLine);
 
+        // the LoRA's range, the slider's ends (the catalog's: every row of the LoRA has it)
         const range = element('div', 'lora-slot-field');
+        range.append(element('span', 'lora-slot-label', text('lora_range', 'Range')));
         const span = globalThis.loraUi?.slotRange?.(row.name);
-        range.append(element('span', 'lora-slot-label', text('lora_range', 'Range')), element('span', 'lora-slot-range', span ? `${formatted(span.min)} – ${formatted(span.max)}` : '—'));
+        const ends = element('div', 'lora-slot-range');
+        if (span && globalThis.loraUi?.setRange) {
+            const end = (key, label) => {
+                const field = element('input', `lora-slot-value lora-slot-range-${key}`);
+                field.type = 'number';
+                field.step = '0.1';
+                field.value = formatted(span[key]);
+                field.setAttribute('aria-label', label);
+                field.addEventListener('change', () => {
+                    const parsed = Number(field.value);
+                    // a lowest weight not below the highest is not a range: back to what it was
+                    if (field.value === '' || !Number.isFinite(parsed) || !globalThis.loraUi.setRange(row.name, { [key]: parsed })) field.value = formatted(span[key]);
+                });
+                return field;
+            };
+            ends.append(end('min', text('lora_range_min', 'Lowest weight')), element('span', 'lora-slot-range-dash', '–'), end('max', text('lora_range_max', 'Highest weight')));
+        } else {
+            ends.textContent = span ? `${formatted(span.min)} – ${formatted(span.max)}` : '—';
+        }
+        range.append(ends);
+
+        // the LoRA's trigger words: the list itself (the row's chips put them in the prompt)
+        const words = element('div', 'lora-slot-field lora-slot-triggers');
+        const editor = globalThis.loraUi?.triggerEditor?.(row.name, 'row');
+        if (editor?.childElementCount) words.append(element('span', 'lora-slot-label', text('lora_triggers', 'Trigger words')), editor);
 
         const actions = element('div', 'lora-slot-actions');
         const samples = element('button', 'lora-button lora-slot-samples');
@@ -363,6 +431,7 @@ class SlotManager {
         actions.append(samples);
 
         fold.append(stage, clipField, range, actions);
+        if (words.childElementCount) fold.append(words);
         return fold;
     }
 

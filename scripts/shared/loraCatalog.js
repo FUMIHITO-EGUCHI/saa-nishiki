@@ -35,6 +35,11 @@ export function loraLabel(name) {
     return String(name ?? '').split(/[\\/]/).pop().replace(/\.(safetensors|ckpt|pt)$/i, '');
 }
 
+/** The name the user gave a LoRA, on one line; '' for none. */
+export function cleanAlias(alias) {
+    return typeof alias === 'string' ? alias.replace(/\s+/g, ' ').trim().slice(0, 80) : '';
+}
+
 /** A tag as the catalog compares it: lower case, spaces for underscores, trimmed. */
 export function tagKey(tag) {
     return String(tag ?? '').trim().toLowerCase().replaceAll('_', ' ').replace(/\s+/g, ' ');
@@ -155,12 +160,16 @@ export function cleanSamplePrompt(prompt) {
     return clean;
 }
 
-const cleanWords = list => [...new Set((Array.isArray(list) ? list : []).map(tagKey).filter(Boolean))];
+// a LoRA tag is no word to write: in a prompt it would load that LoRA whatever its row says
+const isLoraTag = word => /^<lora:/i.test(word);
+const cleanWords = list => [...new Set((Array.isArray(list) ? list : []).map(tagKey).filter(word => word && !isLoraTag(word)))];
 
 /** One stored entry, what the user set (missing parts mean "as derived"). */
 export function cleanLoraEntry(entry = {}) {
     if (!isObject(entry)) return {};
     const next = {};
+    const alias = cleanAlias(entry.alias);
+    if (alias) next.alias = alias;
     if (Array.isArray(entry.triggers)) next.triggers = cleanWords(entry.triggers);
     if (Array.isArray(entry.linked)) next.linked = cleanWords(entry.linked);
     const range = cleanRange(entry.range);
@@ -227,7 +236,7 @@ export function applyLoraChange(doc, change = {}) {
         if (change.patch?.favorite === false) delete next.favorite;
         if (isObject(change.patch) && 'samplePrompt' in change.patch && !cleanSamplePrompt(change.patch.samplePrompt)) delete next.samplePrompt;
     } else if (change.action === 'clear') {
-        next = cleanLoraEntry({ samples: entry.samples, sha256: entry.sha256, civitai: entry.civitai, favorite: entry.favorite, category: entry.category });
+        next = cleanLoraEntry({ samples: entry.samples, sha256: entry.sha256, civitai: entry.civitai, favorite: entry.favorite, category: entry.category, alias: entry.alias });
     } else if (change.action === 'add-sample') {
         const sample = cleanSample(change.sample);
         if (!sample) return null;
@@ -269,10 +278,13 @@ export function defaultCell(range = DEFAULT_RANGE) {
 export function loraView(file, stored = {}, { defaults = DEFAULT_RANGE, known = null } = {}) {
     const derived = deriveWords(file.frequency ?? [], known, { name: file.name });
     const range = stored.range ?? { ...defaults, src: 'default' };
-    const triggers = stored.triggers ?? derived.triggers;
+    const triggers = (stored.triggers ?? derived.triggers).filter(word => !isLoraTag(word));
     return {
         name: file.name,
-        label: loraLabel(file.name),
+        // the user's name for it, else the file's
+        label: stored.alias || loraLabel(file.name),
+        fileLabel: loraLabel(file.name),
+        alias: stored.alias ?? '',
         base: file.base ?? 'unknown',
         dim: file.dim ?? null,
         alpha: file.alpha ?? null,

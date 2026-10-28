@@ -29,6 +29,8 @@ import { castEnabled, isDiffusionFieldId } from '../shared/castMembers.js';
 import { resolveRefinerModel } from '../shared/refinerModel.js';
 import { stripDisabledTags } from './components/tagCapsuleLogic.js';
 import { expandParts } from './partsClient.js';
+import { swapSlotLoras, withSlotLoras } from '../shared/slotLoraLine.js';
+import { retakeWords } from './loraWordSwitch.js';
 import { captureRecipeSections, imageRecord, noteJobSteps, queuedRecipe, startJobClock, takeImageResult } from './imageRecipe.js';
 
 export const REPLACE_AI_MARK = '_|REPLACE_AI_PROMPT|_';
@@ -678,13 +680,22 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let refineContext = null;
     // the wildcard / "{a|b}" choices this image made, for whatever has to read the same text
     let materials = null;
+    // the LoRA card's line on the positive prompt (slotLoraLine.js)
+    let slotLora = '';
+    // the trigger words the LoRAs switched off took out of the rows (loraWordSwitch.js)
+    const takenWords = globalThis.loraUi?.takenWords?.() ?? [];
 
     if(runSame) {
         // Fixed slider seed is the seed (it used to stay -1 and fail ComfyUI validation);
         // a batch expansion override supplies seed + n − 1.
         const seed = overrideSeed(globalThis.generate.seed.getValue());
         randomSeed = (seed === -1) ? generateRandomSeed() : seed;
-        positivePrompt = globalThis.generate.lastPos;
+        // the last prompt with the LoRA card as it is now, not as it was for that run
+        slotLora = getLoRAs(apiInterface);
+        // and its trigger words with them: out for a LoRA switched off since, back for one switched on
+        const lastPrompt = swapSlotLoras(globalThis.generate.lastPos, globalThis.generate.lastLora, '');
+        const lastTaken = (globalThis.generate.lastTaken ?? []).filter(item => item.id !== 'positive_right');
+        positivePrompt = withSlotLoras(retakeWords(lastPrompt, lastTaken, takenWords), slotLora);
         positivePromptColored = globalThis.generate.lastPosColored;
         negativePrompt = globalThis.generate.lastNeg;
         charactersName = globalThis.generate.lastCharacter;
@@ -720,12 +731,10 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         posc = await replaceWildcardsAsync(posc, randomSeed, materials.replay());
         posc = processRandomString(posc, materials);
 
-        if(lora === ''){
-            positivePrompt = pos;
-        }
-        else{
+        slotLora = lora;
+        positivePrompt = withSlotLoras(pos, lora);
+        if(lora !== ''){
             const loraColor = (globalThis.globalSettings.css_style==='dark')?'AliceBlue':'DarkBlue';
-            positivePrompt = `${pos}\n${lora}`;
             finalInfo += `LoRA: [color=${loraColor}]${lora}[/color]\n`;
         }
         positivePromptColored = posc;
@@ -749,7 +758,7 @@ async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         img_prefix = image_prefix;
     }
 
-    return {finalInfo, randomSeed, positivePrompt, positivePromptColored, negativePrompt, thumbImage, charactersName, characterKeys, img_prefix, refineContext, materials}
+    return {finalInfo, randomSeed, positivePrompt, positivePromptColored, negativePrompt, thumbImage, charactersName, characterKeys, img_prefix, refineContext, materials, slotLora, takenWords}
 }
 
 export function createHiFix(randomSeed, apiInterface, brownColor){
@@ -1298,6 +1307,8 @@ export async function generateImage(dataPack){
         }
         
         globalThis.generate.lastPos = createPromptResult.positivePrompt;
+        globalThis.generate.lastLora = createPromptResult.slotLora;
+        globalThis.generate.lastTaken = createPromptResult.takenWords;
         globalThis.generate.lastPosColored = createPromptResult.positivePromptColored;
         globalThis.generate.lastNeg = createPromptResult.negativePrompt;
         globalThis.generate.lastCharacter = createPromptResult.charactersName;

@@ -1,6 +1,8 @@
 import { decodeThumb } from './customThumbGallery.js';
 import { jsonSlotFragment } from '../shared/jsonSlotPrompt.js';
 import { appendPromptEnd, regionalRatio, singleLinePrompt } from '../shared/regionalGeneration.js';
+import { swapSlotLoras, withSlotLoras } from '../shared/slotLoraLine.js';
+import { retakeWords } from './loraWordSwitch.js';
 import { generateRandomSeed, getTagAssist, getLoRAs, replaceWildcardsAsync, getRandomIndex, formatCharacterInfo, formatOriginalCharacterInfo,
     getViewTags, createHiFix, createRefiner, extractHostPort, checkVpred, extractAPISecure,
     createControlNet, createADetailer, toggleQueueColor, startQueue, REPLACE_AI_MARK,
@@ -439,15 +441,27 @@ export async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let charactersName = '';
     let img_prefix = '';
     let refineContext = null;
+    // the LoRA card's line on the left prompt (slotLoraLine.js)
+    let slotLora = '';
+    // the trigger words the LoRAs switched off took out of the rows (loraWordSwitch.js)
+    const takenWords = globalThis.loraUi?.takenWords?.() ?? [];
 
     if(runSame) {
         // a fixed slider seed is the seed (it stayed -1 and failed ComfyUI validation);
         // a batch expansion override supplies seed + n − 1
         const seed = overrideSeed(globalThis.generate.seed.getValue());
         randomSeed = (seed === -1) ? generateRandomSeed() : seed;
-        positivePromptLeft = globalThis.generate.lastPos;
+        // the last prompts with the LoRA card as it is now, not as it was for that run
+        slotLora = getLoRAs(apiInterface);
+        // and its trigger words with them: out for a LoRA switched off since, back for one switched on
+        const lastPrompt = swapSlotLoras(globalThis.generate.lastPos, globalThis.generate.lastLora, '');
+        const fromRight = item => item.id === 'positive_right';
+        const lastTaken = globalThis.generate.lastTaken ?? [];
+        positivePromptLeft = withSlotLoras(retakeWords(lastPrompt, lastTaken.filter(item => !fromRight(item)), takenWords), slotLora);
         positivePromptLeftColored = globalThis.generate.lastPosColored;
-        positivePromptRight = globalThis.generate.lastPosR;
+        positivePromptRight = typeof globalThis.generate.lastPosR === 'string'
+            ? retakeWords(globalThis.generate.lastPosR, lastTaken.filter(fromRight), takenWords)
+            : globalThis.generate.lastPosR;
         positivePromptRightColored = globalThis.generate.lastPosRColored;
         negativePrompt = globalThis.generate.lastNeg;
         negativePromptLeft = globalThis.generate.lastNegL ?? negativePrompt;
@@ -495,13 +509,14 @@ export async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
         posR = processRandomString(posR);
         posRc = processRandomString(posRc);
 
+        slotLora = lora;
         if(lora === ''){
             positivePromptLeft = posL;
             positivePromptRight = posR;
         }
         else{
             const loraColor = (globalThis.globalSettings.css_style==='dark')?'AliceBlue':'DarkBlue';
-            positivePromptLeft = `${posL}\n${lora}`; // only need all lora once
+            positivePromptLeft = withSlotLoras(posL, lora); // only need all lora once
             positivePromptRight = `${posR}\n`;
             finalInfo += `LoRA: [color=${loraColor}]${lora}[/color]\n`;
         }
@@ -529,7 +544,7 @@ export async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     return {finalInfo, randomSeed, positivePromptLeft, positivePromptRight, 
             positivePromptLeftColored, positivePromptRightColored, negativePrompt,
             negativePromptLeft, negativePromptRight,
-            thumbImage, charactersName, img_prefix, refineContext
+            thumbImage, charactersName, img_prefix, refineContext, slotLora, takenWords
     }
 }
 
@@ -657,6 +672,8 @@ export async function generateRegionalImage(dataPack){
         }
 
         globalThis.generate.lastPos = createPromptResult.positivePromptLeft;
+        globalThis.generate.lastLora = createPromptResult.slotLora;
+        globalThis.generate.lastTaken = createPromptResult.takenWords;
         globalThis.generate.lastPosColored = createPromptResult.positivePromptLeftColored;
         globalThis.generate.lastPosR = createPromptResult.positivePromptRight;
         globalThis.generate.lastPosRColored = createPromptResult.positivePromptRightColored;

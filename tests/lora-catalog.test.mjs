@@ -170,3 +170,24 @@ test('a .safetensors header is read without the weights; the store keeps choices
         fs.rmSync(dir, { recursive: true, force: true });
     }
 });
+
+test('a LoRA tag among the trigger words is dropped: written in the prompt it would load the LoRA whatever its row says', () => {
+    const name = 'glory-wall-illustriousxl-lora-nochekaiser.safetensors';
+    const doc = applyLoraChange(normalizeLoraDoc({}), { action: 'set', name, patch: { triggers: ['<lora:glory-wall-illustriousxl-lora-nochekaiser:1>', 'glory wall'] } });
+    assert.deepEqual(doc.loras[name].triggers, ['glory wall']);
+    assert.deepEqual(loraView({ name }, { triggers: ['<lora:glory-wall-illustriousxl-lora-nochekaiser:1>', 'glory wall'] }).triggers, ['glory wall'], 'a list stored before');
+});
+
+test('a name of the user\'s own: shown for the LoRA, kept through a clear, taken off by an empty one', () => {
+    let doc = normalizeLoraDoc({});
+    doc = applyLoraChange(doc, { action: 'set', name: 'sub/CharTurnIL_Dim32.safetensors', patch: { alias: '  Turnaround\n sheet ' } });
+    assert.equal(doc.loras['sub/CharTurnIL_Dim32.safetensors'].alias, 'Turnaround sheet', 'on one line, trimmed');
+    const view = loraView({ name: 'sub/CharTurnIL_Dim32.safetensors' }, doc.loras['sub/CharTurnIL_Dim32.safetensors']);
+    assert.deepEqual([view.label, view.fileLabel, view.alias], ['Turnaround sheet', 'CharTurnIL_Dim32', 'Turnaround sheet']);
+    doc = applyLoraChange(doc, { action: 'set', name: 'sub/CharTurnIL_Dim32.safetensors', patch: { triggers: ['charturn'] } });
+    doc = applyLoraChange(doc, { action: 'clear', name: 'sub/CharTurnIL_Dim32.safetensors' });
+    assert.deepEqual(doc.loras['sub/CharTurnIL_Dim32.safetensors'], { alias: 'Turnaround sheet' }, 'the guesses come back, the name stays');
+    doc = applyLoraChange(doc, { action: 'set', name: 'sub/CharTurnIL_Dim32.safetensors', patch: { alias: '' } });
+    assert.equal(doc.loras['sub/CharTurnIL_Dim32.safetensors'], undefined);
+    assert.equal(loraView({ name: 'sub/CharTurnIL_Dim32.safetensors' }, {}).label, 'CharTurnIL_Dim32', 'the file\'s name again');
+});

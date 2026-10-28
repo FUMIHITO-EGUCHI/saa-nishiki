@@ -10,6 +10,7 @@ import {
     cleanSamplePrompt, expandLoraWords, loraSamplePrompt, loraWords, promptTags, resolveSamplePrompt, sampleNegative, sampleWeights, samplesForModel,
 } from '../shared/loraCatalog.js';
 import { attachPartsSampleJob, partsSampleQueued } from './generate.js';
+import { openTagPicker } from './tagSelectionModal.js';
 
 function lang() {
     const settings = globalThis.globalSettings ?? {};
@@ -86,6 +87,8 @@ export const ICONS = Object.freeze({
     relink: ['M3.5 8a4.5 4.5 0 108-2.8', 'M11.8 2.2v3.2H8.6'],
     image: ['M2.5 3.5h11v9h-11z', 'M2.5 11.5l3.5-3.5 2.5 2.5 2-2 3 3'],
     plus: ['M8 3v10', 'M3 8h10'],
+    search: ['M7 11.5a4.5 4.5 0 100-9 4.5 4.5 0 000 9z', 'M10.3 10.3L13.5 13.5'],
+    pencil: ['M10.5 2.5l3 3-8 8h-3v-3z', 'M9 4l3 3'],
 });
 
 /** Whether a LoRA has a sample of any model to show. */
@@ -132,8 +135,12 @@ function overlayFrame(className, label, onKey) {
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
     overlay.setAttribute('aria-label', label);
+    // a modal opened from inside (the tag search) comes later in the body and is on top:
+    // its keys are its own
+    const covered = () => [...document.querySelectorAll('.selection-modal')]
+        .some(modal => !modal.hidden && overlay.compareDocumentPosition(modal) & 4); // Node.DOCUMENT_POSITION_FOLLOWING
     const keydown = event => {
-        if (!overlay.isConnected || event.isComposing) return;
+        if (!overlay.isConnected || event.isComposing || covered()) return;
         if (onKey(event)) {
             event.preventDefault();
             event.stopPropagation();
@@ -422,6 +429,32 @@ export function openRetakeDialog(name) {
     const negative = element('textarea', 'lora-retake-negative');
     negative.rows = 3;
     negative.setAttribute('aria-label', text('lora_negative', 'Negative'));
+    const searchButton = onClick => {
+        const search = button('lora-retake-search', '', () => onClick(search));
+        search.append(icon(ICONS.search, 14));
+        search.title = text('lora_search_tags', 'Search tags');
+        search.setAttribute('aria-label', search.title);
+        return search;
+    };
+    // the tag search of the prompt rows (Choose tags): the tags picked join the chips, by
+    // way of a textarea the modal writes into
+    const searchTags = searchButton(trigger => {
+        const proxy = document.createElement('textarea');
+        proxy.value = draft().tags.filter(tag => tag !== LORA_WORDS_TOKEN).join(', ');
+        proxy.addEventListener('input', () => addTags(proxy.value));
+        openTagPicker(proxy, { favGroup: 'positive', trigger });
+    });
+    // and on the negative, which it writes into as it does into a prompt row
+    const searchNegative = searchButton(trigger => {
+        if (!state.negativeOpen) {
+            state.negativeOpen = true;
+            paintNegative();
+        }
+        negative.setSelectionRange(negative.value.length, negative.value.length);
+        openTagPicker(negative, { favGroup: 'negative', trigger });
+    });
+    const negativeHead = element('div', 'lora-retake-negative-head');
+    negativeHead.append(negativeToggle, searchNegative);
 
     const draft = () => drafts[state.scope];
     const isWord = tag => tag === LORA_WORDS_TOKEN || words.includes(tag);
@@ -455,7 +488,7 @@ export function openRetakeDialog(name) {
             chip.append(remove);
             chips.append(chip);
         });
-        chips.append(add);
+        chips.append(add, searchTags);
     }
 
     function paintNegative() {
@@ -536,7 +569,7 @@ export function openRetakeDialog(name) {
         paint();
     });
     tools.append(fromPrompt, reset, element('span', 'lora-spacer'), seedLabel);
-    body.append(scopes, chips, tools, negativeToggle, negative);
+    body.append(scopes, chips, tools, negativeHead, negative);
 
     const foot = element('div', 'lora-retake-foot');
     const cancel = button('selection-modal-cancel', text('tag_ui_cancel', 'Cancel'), () => closeRetakeDialog());

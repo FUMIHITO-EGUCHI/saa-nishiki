@@ -2,12 +2,14 @@
 // tag modal's LoRA tab on its own, a click on a tile picks the LoRA, Add puts its row in
 // the card at its default weight and its trigger word in the Positive row; the row's
 // slider, switch and fold change what a run sends; Retake takes the six samples with the
-// prompt written in its dialog, and the sample viewer opens on all six and shows one large.
+// prompt written in its dialog, and the sample viewer opens on all six and shows one large;
+// Batch (Last) keeps the last prompt but sends the LoRA card, and the trigger words the
+// row's switch took out or put back, as they are now.
 // Run with `npm run test:e2e`.
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { launchApp } from './harness.mjs';
+import { launchApp, workflow } from './harness.mjs';
 
 const OPEN = '.selection-modal:not([hidden])';
 let app = null;
@@ -116,5 +118,35 @@ test('Retake takes the six samples with the dialog\'s prompt; the viewer opens o
     await page.waitFor(`document.querySelectorAll('.lora-viewer .lora-viewer-big').length === 6`, { label: 'back to all six' });
     await page.key('Escape');
     await page.waitFor(`!document.querySelector('.lora-viewer')`, { label: 'the viewer closed' });
+    assert.equal(await app.errorText(), '');
+});
+
+test('Batch (Last) keeps the last prompt but sends the LoRA card as it is now: switched off, not loaded and its trigger word gone; on again at a new weight, both back', async () => {
+    const { page } = app;
+    // the LoRA text every run handed the LoRA loader
+    const loraText = run => run.history.map(entry => workflow.executedChain(entry.workflow, entry.outputs)
+        .filter(node => node.class_type === 'LoRAfromText').map(node => workflow.text(entry.workflow, node.inputs?.text)).join('')).join('|');
+    const positive = run => workflow.positive(run.history[0].workflow, run.history[0].outputs);
+    const tags = run => positive(run).split(/[,\n]/).map(tag => tag.trim()).filter(Boolean).sort();
+    const row = () => page.evaluate(`document.querySelector('.myTextbox-prompt-positive-textarea').value`);
+    await app.setBatch(1);
+    await page.evaluate(`(() => { globalThis.globalSettings.lora_slot = [[${JSON.stringify(lora)}, '0.6', '0.6', 'ALL']]; globalThis.lora.flush(); })()`);
+    const first = await app.generate();
+    assert.match(loraText(first), /CharTurnIL[^>]*:0\.6:0\.6>/i, 'the first run carries it');
+    assert.ok(tags(first).includes('charturn'), 'and its trigger word');
+
+    await page.evaluate(`document.querySelector('.lora-slot-switch').click()`);
+    assert.doesNotMatch(await row(), /charturn/, 'switched off, its trigger word leaves the Positive row');
+    const off = await app.generate({ button: 'same' });
+    assert.equal(off.history.length, 1);
+    assert.doesNotMatch(loraText(off), /CharTurnIL/i, 'the last prompt runs without the LoRA');
+    assert.deepEqual(tags(off), tags(first).filter(tag => tag !== 'charturn'), 'and without its word, the rest as it was');
+
+    await page.evaluate(`document.querySelector('.lora-slot-switch').click()`);
+    assert.match(await row(), /charturn/, 'on again, the word is back in the row');
+    await page.evaluate(`(() => { const field = document.querySelector('.lora-slot-line .lora-slot-value'); field.value = '0.9'; field.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+    const weighted = await app.generate({ button: 'same' });
+    assert.match(loraText(weighted), /CharTurnIL[^>]*:0\.9:0\.9>/i, 'on again at 0.9: that weight');
+    assert.deepEqual(tags(weighted), tags(first), 'and the word back in the last prompt');
     assert.equal(await app.errorText(), '');
 });

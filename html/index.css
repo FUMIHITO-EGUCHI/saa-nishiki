@@ -2942,7 +2942,11 @@ button.lora-cell { cursor: zoom-in; }
 .lora-panel { display: flex; flex-direction: column; gap: 12px; }
 .lora-panel-empty { margin: 0; color: var(--saa-muted); }
 .lora-panel-head { display: flex; flex-direction: column; gap: 2px; }
-.lora-panel-name { margin: 0; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.lora-panel-name { display: flex; align-items: center; gap: 4px; margin: 0; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.lora-panel-title { min-width: 0; }
+.lora-rename { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--saa-muted); cursor: pointer; }
+.lora-rename:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
+.lora-rename-input { flex: 1; min-width: 0; height: 28px; padding: 0 8px; box-sizing: border-box; border: 1px solid var(--saa-accent); border-radius: 5px; background: var(--saa-bg-field); color: var(--saa-text); font: inherit; font-size: 14px; font-weight: 600; }
 .lora-panel-sub { font-size: 11.5px; color: var(--saa-muted); }
 .lora-category { padding: 0; border: 0; background: transparent; color: var(--saa-muted); font: inherit; font-size: 11.5px; cursor: pointer; }
 .lora-panel .lora-grid.is-large { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
@@ -2962,6 +2966,8 @@ button.lora-cell { cursor: zoom-in; }
 .lora-word-remove { width: 16px; height: 16px; padding: 0; border: 0; background: transparent; color: var(--saa-accent); cursor: pointer; }
 .lora-word-offer { padding: 3px 9px; border: 1px dashed var(--saa-border-strong); border-radius: 12px; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 12px; cursor: pointer; }
 .lora-word-offer.is-ask { color: var(--saa-muted); }
+.lora-word-input { flex: 0 1 110px; min-width: 70px; height: 24px; padding: 0 8px; box-sizing: border-box; border: 1px dashed var(--saa-border-strong); border-radius: 12px; background: transparent; color: var(--saa-text); font: inherit; font-size: 12px; }
+.lora-word-input:focus { border-style: solid; border-color: var(--saa-accent); outline: none; }
 .lora-default { display: flex; flex-direction: column; gap: 6px; }
 .lora-default-value { color: var(--saa-text); font-variant-numeric: tabular-nums; }
 .lora-default-slider { width: 100%; accent-color: var(--saa-accent); }
@@ -3037,6 +3043,11 @@ button.lora-cell { cursor: zoom-in; }
 .lora-slot-slider { width: 100%; margin: 0; accent-color: var(--saa-accent); cursor: pointer; }
 .lora-slot-ticks { position: relative; height: 6px; }
 .lora-slot-tick { position: absolute; top: 0; width: 1px; height: 5px; background: var(--saa-border-strong); }
+.lora-slot-scale { position: relative; height: 12px; font-size: 10px; line-height: 12px; color: var(--saa-muted); font-variant-numeric: tabular-nums; }
+.lora-slot-mark { position: absolute; top: 0; white-space: nowrap; }
+.lora-slot-mark.is-start { left: 0; }
+.lora-slot-mark.is-end { right: 0; }
+.lora-slot-mark.is-zero { transform: translateX(-50%); }
 .lora-slot-value { flex: none; width: 60px; height: 28px; padding: 0 6px; box-sizing: border-box; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-field); color: var(--saa-text); font: inherit; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
 .lora-slot-icon { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--saa-muted); cursor: pointer; }
 .lora-slot-icon:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
@@ -3048,7 +3059,9 @@ button.lora-cell { cursor: zoom-in; }
 .lora-slot-clip { color: var(--saa-muted); }
 .lora-slot-clip.is-own { color: var(--saa-warn); }
 .lora-slot-clip:disabled { opacity: 0.5; }
-.lora-slot-range { display: flex; align-items: center; height: 28px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.lora-slot-range { display: flex; align-items: center; gap: 4px; height: 28px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.lora-slot-range-dash { color: var(--saa-muted); }
+.lora-slot-triggers { flex: 1 0 100%; }
 .lora-slot-actions { display: flex; gap: 8px; margin-left: auto; }
 .lora-slot-samples { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; }
 .lora-slot-add-row { padding: 8px 4px 4px 48px; }
@@ -3060,8 +3073,8 @@ button.lora-cell { cursor: zoom-in; }
 
 /* ---- a LoRA's samples, large (loraSamples.js): all six, then the one picked ---- */
 /* above the tag modal (11000) and the chip popover */
-.lora-viewer, .lora-retake { position: fixed; inset: 0; z-index: 11010; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.72); }
-.lora-retake { z-index: 11020; background: rgba(0, 0, 0, 0.5); }
+.lora-viewer, .lora-retake { position: fixed; inset: 0; z-index: 11000; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.72); }
+.lora-retake { background: rgba(0, 0, 0, 0.5); }
 .lora-viewer-box { display: flex; flex-direction: column; gap: 18px; width: min(1400px, calc(100vw - 48px)); max-height: calc(100vh - 48px); padding: 0 0 20px; box-sizing: border-box; border: 1px solid var(--saa-border-strong); border-radius: 10px; background: var(--saa-bg-app); color: var(--saa-text); box-shadow: 0 20px 60px var(--saa-shadow); overflow: auto; }
 .lora-viewer-head { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--saa-border); }
 .lora-viewer-name { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
@@ -3116,6 +3129,10 @@ button.lora-cell { cursor: zoom-in; }
 .lora-retake-tools .lora-button { min-height: 30px; }
 .lora-retake-seed { display: flex; align-items: center; gap: 6px; }
 .lora-retake-seed .lora-range-input { width: 76px; }
+.lora-retake-negative-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.lora-retake-negative-head .lora-retake-negative-toggle { flex: 1; }
+.lora-retake-search { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--saa-muted); cursor: pointer; }
+.lora-retake-search:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
 .lora-retake-negative-toggle { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 0; border: 0; background: transparent; color: var(--saa-muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
 .lora-retake-negative-label { flex: none; color: var(--saa-danger); }
 .lora-retake-negative-preview { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -16,12 +16,13 @@
 
 import { LORA_CHANGED_EVENT, askCivitai, changeLora, loadLoraCatalog, loraCatalog, loraEntry, loraSampleImage, lorasForTag } from './loraClient.js';
 import { parsePromptToCapsules, serializeCapsules } from './components/tagCapsuleLogic.js';
-import { defaultCell, loraFitsModel, sampleWeights, samplesForModel, tagKey } from '../shared/loraCatalog.js';
+import { putWordsBack, takeWordsOut } from './loraWordSwitch.js';
+import { cleanAlias, defaultCell, loraFitsModel, loraLabel, promptTags, sampleWeights, samplesForModel, tagKey } from '../shared/loraCatalog.js';
 import { getPart, partLoras } from './partsClient.js';
 import { showDialog } from './components/myDialog.js';
 import { createSelectionModal } from './components/selectionModal.js';
 import {
-    button, comfyInterface, currentModel, element, hasSamples, insideSampleOverlay, modelType, number,
+    ICONS, button, comfyInterface, currentModel, element, hasSamples, icon, insideSampleOverlay, modelType, number,
     openRetakeDialog, openSampleViewer, queueLoraSamples, text,
 } from './loraSamples.js';
 
@@ -112,6 +113,104 @@ function wordChips(words, { onRemove = null, onAdd = null, addLabel = '' } = {})
     return box;
 }
 
+const afterRender = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
+/**
+ * A LoRA's trigger words to edit: x takes one off the list, the field adds what is typed
+ * (Enter or a comma), "+ word" adds a guessed one (on the panel; the card's row is kept
+ * short). The prompt itself is not touched: a word is put in or taken out of it on the
+ * LoRA card's row. `where` names the editor, for the field to keep the focus when the list
+ * comes back.
+ */
+export function triggerEditor(name, where = 'panel') {
+    const entry = loraEntry(name);
+    const box = element('div', 'lora-words lora-trigger-editor');
+    if (!entry) return box;
+    const save = async (triggers, { refocus = false } = {}) => {
+        await changeLora({ action: 'set', name: entry.name, patch: { triggers } });
+        if (!refocus) return;
+        await afterRender();
+        const again = [...document.querySelectorAll('.lora-word-input')].find(node => node.dataset.editor === where && node.dataset.lora === entry.name);
+        again?.focus();
+    };
+    for (const word of entry.triggers) {
+        const chip = element('span', 'lora-word');
+        chip.append(document.createTextNode(word));
+        const remove = button('lora-word-remove', '×', () => save(entry.triggers.filter(item => item !== word)));
+        remove.setAttribute('aria-label', `${text('lora_remove', 'Remove')} ${word}`);
+        chip.append(remove);
+        box.append(chip);
+    }
+    const field = element('input', 'lora-word-input');
+    field.type = 'text';
+    field.placeholder = text('lora_add_word', '+ word');
+    field.setAttribute('aria-label', text('lora_add_trigger', 'Add a trigger word'));
+    field.dataset.lora = entry.name;
+    field.dataset.editor = where;
+    const add = ({ refocus }) => {
+        const words = promptTags(field.value).map(tagKey).filter(word => word && !entry.triggers.includes(word));
+        field.value = '';
+        if (words.length) save([...entry.triggers, ...words], { refocus });
+    };
+    field.addEventListener('keydown', event => {
+        if (event.isComposing) return;
+        if (event.key === 'Enter' || event.key === ',') {
+            event.preventDefault();
+            add({ refocus: true });
+        }
+    });
+    field.addEventListener('blur', () => { if (field.value.trim()) add({ refocus: false }); });
+    box.append(field);
+    if (where === 'panel') for (const word of entry.candidates) box.append(button('lora-word-offer', `+ ${word}`, () => save([...entry.triggers, word])));
+    return box;
+}
+
+// The panel's title: the user's name for the LoRA (the file's when it has none), renamed
+// in place. The file's own name, or nothing, takes the user's name off.
+function nameEditor(entry) {
+    const title = element('h3', 'lora-panel-name');
+    const label = element('span', 'lora-panel-title', entry.label);
+    const rename = button('lora-rename', '', () => edit());
+    rename.append(icon(ICONS.pencil, 13));
+    rename.title = text('lora_rename', 'Rename');
+    rename.setAttribute('aria-label', rename.title);
+    label.addEventListener('dblclick', () => edit());
+    title.append(label, rename);
+    function edit() {
+        const field = element('input', 'lora-rename-input');
+        field.type = 'text';
+        field.value = entry.label;
+        field.placeholder = entry.fileLabel;
+        field.setAttribute('aria-label', rename.title);
+        let done = false;
+        const finish = keep => {
+            if (done) return;
+            done = true;
+            const alias = cleanAlias(field.value);
+            title.replaceChildren(label, rename);
+            if (!keep || alias === entry.label) return;
+            changeLora({ action: 'set', name: entry.name, patch: { alias: alias === entry.fileLabel ? '' : alias } });
+        };
+        field.addEventListener('keydown', event => {
+            if (event.isComposing) return;
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                finish(true);
+            } else if (event.key === 'Escape') {
+                // the name's own: the modal stays open
+                event.preventDefault();
+                event.stopPropagation();
+                finish(false);
+            }
+        });
+        field.addEventListener('blur', () => finish(true));
+        title.replaceChildren(field);
+        field.focus();
+        field.select();
+    }
+    return title;
+}
+
 function section(label, content) {
     const box = element('div', 'lora-panel-section');
     box.append(element('span', 'lora-panel-label', label), content);
@@ -121,7 +220,8 @@ function section(label, content) {
 async function imagesWith(entry, holder) {
     const api = globalThis.inBrowser ? null : globalThis.api;
     if (!api?.libraryLoraUses) return;
-    const uses = await api.libraryLoraUses(entry.label).catch(() => null);
+    // the images name the file, not the user's name for it
+    const uses = await api.libraryLoraUses(entry.fileLabel ?? loraLabel(entry.name)).catch(() => null);
     if (!uses || !holder.isConnected) return;
     holder.querySelector('.lora-uses-count').textContent = String(uses.total);
     const thumbs = holder.querySelector('.lora-uses-thumbs');
@@ -149,7 +249,7 @@ function panel(entry) {
     category.addEventListener('change', () => changeLora({ action: 'set', name: entry.name, patch: { category: category.value } }));
     const sub = element('span', 'lora-panel-sub');
     sub.append(category, document.createTextNode(` · ${baseLabel(entry.base)}`));
-    head.append(element('h3', 'lora-panel-name', entry.label), sub);
+    head.append(nameEditor(entry), sub);
     box.append(head);
 
     // the grid: a click opens the samples large (the default is made there, or below)
@@ -178,10 +278,7 @@ function panel(entry) {
     rangeRow.append(take);
     box.append(rangeRow);
 
-    box.append(section(text('lora_triggers', 'Trigger words'), wordChips({ active: entry.triggers, offered: entry.candidates }, {
-        onRemove: word => changeLora({ action: 'set', name: entry.name, patch: { triggers: entry.triggers.filter(item => item !== word) } }),
-        onAdd: word => changeLora({ action: 'set', name: entry.name, patch: { triggers: [...entry.triggers, word] } }),
-    })));
+    box.append(section(text('lora_triggers', 'Trigger words'), triggerEditor(entry.name, 'panel')));
 
     const weight = element('div', 'lora-default');
     const weightHead = element('label', 'lora-panel-label lora-default-head', text('lora_default_weight', 'Default weight'));
@@ -248,7 +345,7 @@ function optionFor(entry) {
         chipClass: 'is-lora',
         category: entry.category,
         attributes: loraFitsModel(entry.base, modelType()) ? ['fits'] : [],
-        keywords: [entry.name, ...entry.triggers, ...entry.linked],
+        keywords: [entry.name, entry.label, ...entry.triggers, ...entry.linked],
         lora: entry.name,
     };
 }
@@ -258,7 +355,7 @@ export function loraPickerTab({ fieldKey = null } = {}) {
     const matching = query => {
         const needle = String(query ?? '').trim().toLowerCase();
         if (!needle) return 0;
-        return loraCatalog().loras.filter(entry => entry.name.toLowerCase().includes(needle) || entry.triggers.some(word => word.includes(needle)) || entry.linked.some(tag => tag.includes(needle))).length;
+        return loraCatalog().loras.filter(entry => entry.name.toLowerCase().includes(needle) || entry.label.toLowerCase().includes(needle) || entry.triggers.some(word => word.includes(needle)) || entry.linked.some(tag => tag.includes(needle))).length;
     };
     const labelOf = item => String(item?.label ?? '');
     return {
@@ -579,6 +676,48 @@ export function switchWord(word, on) {
     notifySlots();
 }
 
+// what a LoRA switched off took out of the positive rows, by its name, until it is switched on; this session only
+const takenOut = new Map();
+
+/**
+ * A slot row switched off takes its trigger words out of the positive rows (not a word
+ * another row that is on has too); switched on, it puts them back. A row that was off
+ * when the app started has nothing to put back: its words go in the Positive row, as
+ * when it was added.
+ */
+export function switchLoraWords(name, on) {
+    const entry = loraEntry(name);
+    if (!entry) return;
+    const controls = positiveControls();
+    const texts = Object.fromEntries(controls.map(({ id, control }) => [id, String(control.getValue() ?? '')]));
+    let next = {};
+    if (on && takenOut.has(entry.name)) {
+        next = putWordsBack(texts, takenOut.get(entry.name));
+        takenOut.delete(entry.name);
+    } else if (on) {
+        addWordsToRow('positive', entry.triggers.filter(word => rowsWithWord(word).length === 0));
+    } else {
+        const inUse = new Set((globalThis.lora?.getValues?.() ?? [])
+            .filter(row => row[3] !== 'OFF')
+            .flatMap(row => loraEntry(row[0])?.triggers ?? [])
+            .map(tagKey));
+        const result = takeWordsOut(texts, entry.triggers.filter(word => !inUse.has(tagKey(word))));
+        takenOut.set(entry.name, result.taken);
+        next = result.texts;
+    }
+    for (const { id, control } of controls) if (id in next) control.commitValue(next[id]);
+    notifySlots();
+}
+
+/** What the LoRAs switched off now took out of the rows, less a word written in a row again since: a run records it for Batch (Last). */
+export function takenWords() {
+    const off = new Set((globalThis.lora?.getValues?.() ?? []).filter(row => row[3] === 'OFF').map(row => row[0]));
+    return [...takenOut]
+        .filter(([name]) => off.has(name))
+        .flatMap(([, taken]) => taken)
+        .filter(item => rowsWithWord(parsePromptToCapsules(item.token)[0]?.value ?? '').length === 0);
+}
+
 /** A slot row's trigger words, each on (in a positive row) or off, and where the LoRA came from. */
 export function slotWords(name) {
     const entry = loraEntry(name);
@@ -631,6 +770,15 @@ export function setupLoraUi() {
         slotWords,
         slotRange,
         switchWord,
+        switchLoraWords,
+        takenWords,
+        // the LoRA card's row: its name, its range and its trigger words, edited there
+        labelOf: name => loraEntry(name)?.label ?? loraLabel(name),
+        setRange: (name, patch) => {
+            const entry = loraEntry(name);
+            return entry ? setRange(entry, { ...patch, src: 'custom' }) : undefined;
+        },
+        triggerEditor,
         currentPromptText,
         partTriggers,
         partLorasForPrompt,

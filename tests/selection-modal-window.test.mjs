@@ -342,3 +342,39 @@ test('a click-previews grid: one click shows the tile in the panel, a double cli
         modal.destroy();
     });
 });
+
+test('a refresh keeps the panel on its item where the new list puts it (a rename moves it)', async () => {
+    await withFakeDom(async document => {
+        let options = PARTS;
+        const modal = createSelectionModal({ mode: 'multiple', fitWindow: true });
+        const view = ui(modal);
+        modal.open({ options: [], tabs: [partsTab(document, { clickPreviews: false, refreshEvent: 'test:refresh', loadOptions: async () => options })], tab: 'parts' });
+        await later();
+        view.tiles()[0].click();
+        assert.equal(view.panel.textContent, 'about blazer');
+        options = PARTS.map(option => (option.label === 'blazer' ? { ...option, label: 'zz blazer' } : option));
+        document.dispatchEvent({ type: 'test:refresh' });
+        await later();
+        assert.deepEqual(view.tiles().map(tile => tile.textContent), ['dutch angle', 'from above', 'sepia', 'zz blazer'], 'sorted by its new name');
+        assert.equal(view.panel.textContent, 'about zz blazer', 'the panel stays with it');
+        modal.destroy();
+    });
+});
+
+test('a dialog opened over the modal takes the keys: Escape closes that one, not the modal', async () => {
+    await withFakeDom(async document => {
+        const modal = createSelectionModal({ mode: 'multiple', fitWindow: true });
+        const view = ui(modal);
+        modal.open({ options: [], tabs: [partsTab(document)], tab: 'parts' });
+        await later();
+        const over = document.createElement('div');
+        over.setAttribute('aria-modal', 'true');
+        document.body.appendChild(over);
+        document.dispatchEvent({ type: 'keydown', key: 'Escape', preventDefault() {}, stopPropagation() {} });
+        assert.equal(view.root.hidden, false, 'the modal under it stays');
+        over.hidden = true;
+        document.dispatchEvent({ type: 'keydown', key: 'Escape', preventDefault() {}, stopPropagation() {} });
+        assert.equal(view.root.hidden, true, 'with that one closed, Escape is the modal\'s again');
+        modal.destroy();
+    });
+});
