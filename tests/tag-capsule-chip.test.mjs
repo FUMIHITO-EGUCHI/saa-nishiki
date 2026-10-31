@@ -140,9 +140,10 @@ test('createIcon draws the strokes of the icon it was asked for', async () => {
         assert.equal(close.getAttribute('width'), '12');
         assert.equal(close.getAttribute('aria-hidden'), 'true');
         assert.deepEqual(close.children.map(path => path.getAttribute('d')), ['M4 4l8 8', 'M12 4l-8 8']);
-        // random is the only mode icon made of shapes rather than paths
+        // random is the icon set's dice: the only mode icon made of shapes rather than paths
         const random = createIcon('random');
-        assert.deepEqual(random.children.map(node => node.tagName), ['RECT', 'CIRCLE', 'CIRCLE', 'CIRCLE']);
+        assert.deepEqual(random.children.map(node => node.tagName), ['RECT', 'CIRCLE', 'CIRCLE', 'CIRCLE', 'CIRCLE']);
+        assert.ok(random.classList.contains('tag-ui-icon-random'), 'the chip name stays the class');
         assert.deepEqual(createIcon('increment').children.map(path => path.getAttribute('d')), ['M3 12l10-8', 'M7 4h6v6']);
         assert.deepEqual(createIcon('decrement').children.map(path => path.getAttribute('d')), ['M3 4l10 8', 'M7 12h6V6']);
         // an icon nobody declared is an empty frame, not a crash

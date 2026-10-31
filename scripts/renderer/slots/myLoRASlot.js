@@ -13,6 +13,7 @@
 
 import { LORA_CHANGED_EVENT } from '../loraClient.js';
 import { loraLabel } from '../../shared/loraCatalog.js';
+import { iconElement } from '../../shared/iconSet.js';
 
 let instanceSlotManager = null;
 
@@ -38,14 +39,6 @@ export function generateGUID() {
 
 const STAGES = Object.freeze([['ALL', 'All'], ['Base', 'Base'], ['HiFix', 'Hires']]);
 const MODES = new Set(['ALL', 'Base', 'HiFix', 'OFF']);
-const SVG_NS = 'http://www.w3.org/2000/svg';
-const ICONS = Object.freeze({
-    down: 'M4 6l4 4 4-4',
-    close: 'M4 4l8 8M12 4l-8 8',
-    relink: ['M3.5 8a4.5 4.5 0 108-2.8', 'M11.8 2.2v3.2H8.6'],
-    image: ['M2.5 3.5h11v9h-11z', 'M2.5 11.5l3.5-3.5 2.5 2.5 2-2 3 3'],
-    plus: ['M8 3v10', 'M3 8h10'],
-});
 
 function lang() {
     const settings = globalThis.globalSettings ?? {};
@@ -64,25 +57,12 @@ function element(tag, className, content) {
     return node;
 }
 
-function icon(paths, size = 14) {
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    for (const [key, value] of Object.entries({ width: size, height: size, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', 'stroke-width': 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) {
-        svg.setAttribute(key, String(value));
-    }
-    for (const d of [paths].flat()) {
-        const path = document.createElementNS(SVG_NS, 'path');
-        path.setAttribute('d', d);
-        svg.append(path);
-    }
-    return svg;
-}
-
-function iconButton(className, label, paths, onClick) {
+function iconButton(className, label, name, onClick) {
     const node = element('button', className);
     node.type = 'button';
     node.setAttribute('aria-label', label);
     node.title = label;
-    node.append(icon(paths));
+    node.append(iconElement(name, 14));
     node.addEventListener('click', onClick);
     return node;
 }
@@ -169,7 +149,7 @@ class SlotManager {
         const addRow = element('div', 'lora-slot-add-row');
         this.addButton = element('button', 'lora-slot-add');
         this.addButton.type = 'button';
-        this.addButton.append(icon(ICONS.plus), document.createTextNode('LoRA'));
+        this.addButton.append(iconElement('plus', 14), document.createTextNode('LoRA'));
         this.addButton.addEventListener('click', () => globalThis.loraUi?.openPicker?.({ trigger: this.addButton }));
         addRow.append(this.addButton);
         this.container?.append(this.list, addRow);
@@ -266,12 +246,12 @@ class SlotManager {
         value.step = '0.05';
         value.setAttribute('aria-label', text('lora_model_strength', 'Model strength'));
 
-        const fold = iconButton('lora-slot-icon lora-slot-fold', text('lora_slot_details', 'Details'), ICONS.down, () => {
+        const fold = iconButton('lora-slot-icon lora-slot-fold', text('lora_slot_details', 'Details'), 'chevron-down', () => {
             row.open = !row.open;
             this.renderRow(row);
         });
         fold.setAttribute('aria-expanded', String(row.open));
-        const remove = iconButton('lora-slot-icon lora-slot-remove', text('lora_remove', 'Remove'), ICONS.close, () => this.removeRow(row));
+        const remove = iconButton('lora-slot-icon lora-slot-remove', text('lora_remove', 'Remove'), 'close', () => this.removeRow(row));
 
         // the weight: the slider and the field are the same value (CLIP too while it follows)
         const show = () => {
@@ -383,7 +363,7 @@ class SlotManager {
             clip.value = row.clip;
         });
         wheelSteps(clip);
-        const relink = iconButton('lora-slot-icon lora-slot-relink', text('lora_clip_follow', 'Same as the weight'), ICONS.relink, () => {
+        const relink = iconButton('lora-slot-icon lora-slot-relink', text('lora_clip_follow', 'Same as the weight'), 'reset', () => {
             row.linked = true;
             row.clip = row.model;
             this.renderRow(row);
@@ -425,7 +405,7 @@ class SlotManager {
         const actions = element('div', 'lora-slot-actions');
         const samples = element('button', 'lora-button lora-slot-samples');
         samples.type = 'button';
-        samples.append(icon(ICONS.image), document.createTextNode(text('lora_samples', 'Samples')));
+        samples.append(iconElement('image', 14), document.createTextNode(text('lora_samples', 'Samples')));
         samples.disabled = !globalThis.loraUi?.hasSamples?.(row.name);
         samples.addEventListener('click', () => globalThis.loraUi?.openSamples?.(row.name));
         actions.append(samples);

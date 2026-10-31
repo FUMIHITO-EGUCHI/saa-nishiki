@@ -7,14 +7,15 @@
 // api_image_ratio_linked (false = Free: the boxes move on their own).
 
 import { RATIOS, followSize, nearestRatio, ratioById, settleRatio, sizeAtArea } from '../shared/sizeRatio.js';
+import { iconMarkup } from '../shared/iconSet.js';
 
 const CAT = '[sizeRatio]';
 
 const CHAIN = {
-    linked: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6.8 9.2l2.4-2.4"/><path d="M7.4 4.6l1-1a2.6 2.6 0 013.7 3.7l-1 1"/><path d="M8.6 11.4l-1 1a2.6 2.6 0 01-3.7-3.7l1-1"/></svg>',
-    broken: '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M8.2 4l1-1a2.6 2.6 0 013.7 3.7l-1 1"/><path d="M7.8 12l-1 1a2.6 2.6 0 01-3.7-3.7l1-1"/><path d="M5.6 2.6v1.6M2.6 5.6h1.6M10.4 13.4v-1.6M13.4 10.4h-1.6"/></svg>',
+    linked: iconMarkup('link', 16),
+    broken: iconMarkup('unlink', 16),
 };
-const CHEVRON = '<svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>';
+const CHEVRON = iconMarkup('chevron-down', 10);
 
 function lang() {
     return globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language] ?? {};

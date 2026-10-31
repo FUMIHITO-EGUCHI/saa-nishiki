@@ -11,6 +11,8 @@
 // only their placement moved. Every "*-dummy" duplicate control is gone except
 // .regional-condition-trigger-dummy (it is the one real Regional switch).
 
+import { iconMarkup } from './shared/iconSet.js';
+
 export const sharedBodyHTML = `
     <div id="full-body">
       <div id="top-header">
@@ -58,10 +60,10 @@ export const sharedBodyHTML = `
                 <div class="gallery-main-latest"></div>
                 <div class="gallery-main-keep"></div>
                 <button type="button" class="viewer-tool-button" id="viewer-grid-toggle" aria-pressed="false" aria-label="Grid view" title="Grid view">
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="1.5" width="4.5" height="4.5"></rect><rect x="8" y="1.5" width="4.5" height="4.5"></rect><rect x="1.5" y="8" width="4.5" height="4.5"></rect><rect x="8" y="8" width="4.5" height="4.5"></rect></svg>
+                  ${iconMarkup('grid', 14)}
                 </button>
                 <button type="button" class="viewer-tool-button has-label" id="viewer-library-open">
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 1.5h3.5V5M5 10.5H1.5V7M10.5 1.5L7 5M1.5 10.5L5 7"></path></svg>
+                  ${iconMarkup('expand', 12)}
                   <span data-ui-text="viewer_library">Library</span>
                 </button>
                 <span class="gallery-main-header-span" hidden>
@@ -464,7 +466,7 @@ export const sharedBodyHTML = `
                   </div>
                 </div>
                 <div class="settings-group">
-                  <div class="settings-group-title" data-ui-text="ui_settings_output_group">Output</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_output_note">Save path: a folder under the backend's output directory (%date expands to today's date). Character name in folder prefix: the selected characters' names go in front of the output folder prefix.</span></span>
+                  <div class="settings-group-title" data-ui-text="ui_settings_output_group">Output</div><span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_settings_output_note">Save path: a folder under the backend's output directory (%date expands to today's date). Character name in folder prefix: the selected characters' names go in front of the output folder prefix.</span></span>
                   <div class="settings-grid">
                     <div class="system-settings-api-comfyui-image-save-path" data-when-api="ComfyUI"></div>
                     <div class="system-settings-api-webui-image-save-path" data-when-api="WebUI"></div>
@@ -479,7 +481,7 @@ export const sharedBodyHTML = `
                   </div>
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">
-                  <div class="settings-group-title" data-ui-text="ui_comfy_proc_title">ComfyUI process</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_comfy_proc_note">Launch command: a start script (.ps1 / .cmd; a path with spaces in double quotes) or python with the full path of main.py and its arguments. SAA asks once before it runs a new command. Start runs it and waits for the backend on the ComfyUI address above (loopback only); with Start ComfyUI with SAA on, it also runs at launch when the backend does not answer. Stop (also during a start) unloads the models, then ends the ComfyUI holding that port; a program that does not answer as ComfyUI is only ended after SAA asks about it by name.</span></span>
+                  <div class="settings-group-title" data-ui-text="ui_comfy_proc_title">ComfyUI process</div><span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_comfy_proc_note">Launch command: a start script (.ps1 / .cmd; a path with spaces in double quotes) or python with the full path of main.py and its arguments. SAA asks once before it runs a new command. Start runs it and waits for the backend on the ComfyUI address above (loopback only); with Start ComfyUI with SAA on, it also runs at launch when the backend does not answer. Stop (also during a start) unloads the models, then ends the ComfyUI holding that port; a program that does not answer as ComfyUI is only ended after SAA asks about it by name.</span></span>
                   <!-- Start / stop / restart of the local backend (scripts/renderer/comfyProcessControl.js);
                        hidden in the browser build, which has no process to talk to. -->
                   <div class="comfy-proc-panel">
@@ -499,13 +501,13 @@ export const sharedBodyHTML = `
                   </div>
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">
-                  <div class="settings-group-title">Runpod pod over SSH</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_pod_ssh_note">Generation and the LLM run on the pod over one SSH session. Images stream over SSH and are saved locally only; nothing is written to the pod's disks. The API address above is ignored while this is on. Start / Stop need a Runpod API key (used for start / stop only) and never terminate the pod. SSH target: podid-user@ssh.runpod.io. SSH private key: empty = ~/.ssh/id_ed25519. Pod id: empty = taken from the SSH target.</span></span>
+                  <div class="settings-group-title">Runpod pod over SSH</div><span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_settings_pod_ssh_note">Generation and the LLM run on the pod over one SSH session. Images stream over SSH and are saved locally only; nothing is written to the pod's disks. The API address above is ignored while this is on. Start / Stop need a Runpod API key (used for start / stop only) and never terminate the pod. SSH target: podid-user@ssh.runpod.io. SSH private key: empty = ~/.ssh/id_ed25519. Pod id: empty = taken from the SSH target.</span></span>
                   <!-- One state-driven panel (scripts/renderer/podControl.js): the pill reports
                        the pod, and an action is only rendered while it applies. -->
                   <div class="pod-panel">
                     <div class="pod-panel-head">
                       <span class="pod-panel-title" data-ui-text="ui_pod_panel_title">Runpod pod</span>
-                      <span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_pod_panel_sub">generation and the LLM run on the pod over one SSH session</span></span>
+                      <span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_pod_panel_sub">generation and the LLM run on the pod over one SSH session</span></span>
                       <div class="system-settings-api-pod-ssh-enable ui-switch pod-panel-switch"></div>
                     </div>
                     <div class="pod-panel-body">
@@ -561,7 +563,7 @@ export const sharedBodyHTML = `
                   <p class="settings-note system-settings-api-pod-result"></p>
                 </div>
                 <div class="settings-group" data-when-api="ComfyUI">
-                  <div class="settings-group-title" data-ui-text="ui_settings_fast_group">Fast generation</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_fast_note">One switch, a set of values per model type. A Checkpoint (SDXL) run applies a step-distillation LoRA (DMD2 / Hyper-SD / Lightning / LCM), a Diffusion (Anima) run the Anima Turbo LoRA; both override steps, CFG, sampler and scheduler for the base, Hires fix and ADetailer passes. ComfyUI flags (e.g. --use-sage-attention --fast) are process-wide: before a run that needs other flags, SAA restarts the local ComfyUI through the launch command, which has to pass extra arguments on to main.py. The LoRA works on the pod too; the flags only on the local ComfyUI.</span></span>
+                  <div class="settings-group-title" data-ui-text="ui_settings_fast_group">Fast generation</div><span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_settings_fast_note">One switch, a set of values per model type. A Checkpoint (SDXL) run applies a step-distillation LoRA (DMD2 / Hyper-SD / Lightning / LCM), a Diffusion (Anima) run the Anima Turbo LoRA; both override steps, CFG, sampler and scheduler for the base, Hires fix and ADetailer passes. ComfyUI flags (e.g. --use-sage-attention --fast) are process-wide: before a run that needs other flags, SAA restarts the local ComfyUI through the launch command, which has to pass extra arguments on to main.py. The LoRA works on the pod too; the flags only on the local ComfyUI.</span></span>
                   <div class="settings-grid">
                     <div class="system-settings-api-fast-enable ui-switch"></div>
                   </div>
@@ -617,15 +619,15 @@ export const sharedBodyHTML = `
               </section>
 
               <section id="settings-page-ai" class="settings-modal-page" role="tabpanel" data-settings-page-content="ai" aria-labelledby="settings-page-ai-title" tabindex="0" hidden>
-                <h2 id="settings-page-ai-title" data-settings-page-label="ai">AI<span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_ai_note">Mode (Off / Expand / Refine) and role are on the AI card of the prompt panel.</span></span></h2>
+                <h2 id="settings-page-ai-title" data-settings-page-label="ai">AI<span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_settings_ai_note">Mode (Off / Expand / Refine) and role are on the AI card of the prompt panel.</span></span></h2>
                 <div class="settings-group" data-when-ai="Local">
-                  <div class="settings-group-title">Local (Ollama / llama.cpp)</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_ai_local_note">Endpoint: an Ollama /api/chat or llama.cpp server URL. Prompt mode: Expand grows the prompt, Refine edits the existing prompts and weights.</span></span>
+                  <div class="settings-group-title">Local (Ollama / llama.cpp)</div><span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_settings_ai_local_note">Endpoint: an Ollama /api/chat or llama.cpp server URL. Prompt mode: Expand grows the prompt, Refine edits the existing prompts and weights.</span></span>
                   <div class="settings-grid">
                     <div class="system-settings-ai-local-address"></div>
                   </div>
                 </div>
                 <div class="settings-group">
-                  <div class="settings-group-title">Prose student (distilled 2B)</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_prose_student_note">The Prose card's Student writer: SAA starts this llama-server with the GGUF on the port when the first paragraph is asked for, and stops it on exit. About 1 s a paragraph on a 12 GB card beside ComfyUI.</span></span>
+                  <div class="settings-group-title">Prose student (distilled 2B)</div><span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_settings_prose_student_note">The Prose card's Student writer: SAA starts this llama-server with the GGUF on the port when the first paragraph is asked for, and stops it on exit. About 1 s a paragraph on a 12 GB card beside ComfyUI.</span></span>
                   <div class="settings-grid">
                     <div class="system-settings-ai-prose-student-server"></div>
                     <div class="system-settings-ai-prose-student-model"></div>
@@ -633,7 +635,7 @@ export const sharedBodyHTML = `
                   </div>
                 </div>
                 <div class="settings-group" data-when-ai="Pod">
-                  <div class="settings-group-title">Runpod pod (Ollama)</div><span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_pod_llm_note">The model list comes from the pod itself. Download fetches the named model into the pod's workspace (minutes); Unload frees the GPU, and image generation unloads the model by itself. Keep-alive: 10m, 1h, or 0 = unload after each call. The endpoint (https://{pod}-11434.proxy.runpod.net) and auth (Bearer token or user:pass) below are only used when Pod SSH is not configured.</span></span>
+                  <div class="settings-group-title">Runpod pod (Ollama)</div><span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_settings_pod_llm_note">The model list comes from the pod itself. Download fetches the named model into the pod's workspace (minutes); Unload frees the GPU, and image generation unloads the model by itself. Keep-alive: 10m, 1h, or 0 = unload after each call. The endpoint (https://{pod}-11434.proxy.runpod.net) and auth (Bearer token or user:pass) below are only used when Pod SSH is not configured.</span></span>
                   <!-- The model row IS the model list: listing is not an action, and Download /
                        Unload only appear in the state that calls for them. -->
                   <div class="pod-panel pod-llm-panel">
@@ -650,7 +652,7 @@ export const sharedBodyHTML = `
                       </div>
                       <div class="pod-row pod-row-llm-keep">
                         <span class="pod-row-label"></span>
-                        <span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_pod_llm_hint">unloaded automatically before each image generation</span></span>
+                        <span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_pod_llm_hint">unloaded automatically before each image generation</span></span>
                         <div class="system-settings-ai-pod-keep-alive pod-llm-keep"></div>
                       </div>
                     </div>
@@ -701,7 +703,7 @@ export const sharedBodyHTML = `
               </section>
 
               <section id="settings-page-lists" class="settings-modal-page" role="tabpanel" data-settings-page-content="lists" aria-labelledby="settings-page-lists-title" tabindex="0" hidden>
-                <h2 id="settings-page-lists-title" data-settings-page-label="lists">Lists<span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_lists_settings_note">Add, override or hide entries of the character / original character / angle / camera lists. Upstream data stays read-only; your edits are saved as a diff (settings/user_lists.json) and can be exported / imported.</span></span></h2>
+                <h2 id="settings-page-lists-title" data-settings-page-label="lists">Lists<span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_lists_settings_note">Add, override or hide entries of the character / original character / angle / camera lists. Upstream data stays read-only; your edits are saved as a diff (settings/user_lists.json) and can be exported / imported.</span></span></h2>
                 <div class="settings-grid">
                   <button id="list-manager-open" type="button" class="settings-action-button">
                     <span data-ui-text="ui_lists_open_settings">Open list manager…</span>
@@ -710,7 +712,7 @@ export const sharedBodyHTML = `
               </section>
 
               <section id="settings-page-advanced" class="settings-modal-page" role="tabpanel" data-settings-page-content="advanced" aria-labelledby="settings-page-advanced-title" tabindex="0" hidden>
-                <h2 id="settings-page-advanced-title" data-settings-page-label="advanced">Advanced<span class="settings-info" tabindex="0" role="note"><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M8 7.3v3.9"></path><circle cx="8" cy="5.1" r=".7" fill="currentColor" stroke="none"></circle></svg><span class="settings-info-text" data-ui-text="ui_settings_advanced_note">Settings are saved automatically (settings/app.json, state.json). Presets live in settings/presets/&lt;section&gt;/. SAAC web service and the CDP debug port are configured outside this window (app.json / SAA_CDP_PORT).</span></span></h2>
+                <h2 id="settings-page-advanced-title" data-settings-page-label="advanced">Advanced<span class="settings-info" tabindex="0" role="note">${iconMarkup('info', 14)}<span class="settings-info-text" data-ui-text="ui_settings_advanced_note">Settings are saved automatically (settings/app.json, state.json). Presets live in settings/presets/&lt;section&gt;/. SAAC web service and the CDP debug port are configured outside this window (app.json / SAA_CDP_PORT).</span></span></h2>
                 <div class="settings-grid">
                   <div class="global-refresh">
                     <button id="settings-open-folder" type="button" title="Open settings folder" class="settings-action-button">

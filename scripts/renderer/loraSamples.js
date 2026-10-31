@@ -11,6 +11,7 @@ import {
 } from '../shared/loraCatalog.js';
 import { attachPartsSampleJob, partsSampleQueued } from './generate.js';
 import { openTagPicker } from './tagSelectionModal.js';
+import { iconElement } from '../shared/iconSet.js';
 
 function lang() {
     const settings = globalThis.globalSettings ?? {};
@@ -55,41 +56,10 @@ export function comfyInterface() {
     return globalThis.generate?.api_interface?.getValue?.() === 'ComfyUI';
 }
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-
-/** A stroke icon from path data, for the icon-only buttons. */
-export function icon(paths, size = 16) {
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('width', String(size));
-    svg.setAttribute('height', String(size));
-    svg.setAttribute('viewBox', '0 0 16 16');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '1.8');
-    svg.setAttribute('stroke-linecap', 'round');
-    svg.setAttribute('stroke-linejoin', 'round');
-    svg.setAttribute('aria-hidden', 'true');
-    for (const d of [paths].flat()) {
-        const path = document.createElementNS(SVG_NS, 'path');
-        path.setAttribute('d', d);
-        svg.append(path);
-    }
-    return svg;
+/** An icon of the set (scripts/shared/iconSet.js), for the icon-only buttons. */
+export function icon(name, size = 16) {
+    return iconElement(name, size);
 }
-
-export const ICONS = Object.freeze({
-    close: 'M4 4l8 8M12 4l-8 8',
-    back: ['M13 8H3', 'M7 4L3 8l4 4'],
-    prev: 'M10 3L5 8l5 5',
-    next: 'M6 3l5 5-5 5',
-    down: 'M4 6l4 4 4-4',
-    right: 'M6 4l4 4-4 4',
-    relink: ['M3.5 8a4.5 4.5 0 108-2.8', 'M11.8 2.2v3.2H8.6'],
-    image: ['M2.5 3.5h11v9h-11z', 'M2.5 11.5l3.5-3.5 2.5 2.5 2-2 3 3'],
-    plus: ['M8 3v10', 'M3 8h10'],
-    search: ['M7 11.5a4.5 4.5 0 100-9 4.5 4.5 0 000 9z', 'M10.3 10.3L13.5 13.5'],
-    pencil: ['M10.5 2.5l3 3-8 8h-3v-3z', 'M9 4l3 3'],
-});
 
 /** Whether a LoRA has a sample of any model to show. */
 export function hasSamples(name) {
@@ -230,14 +200,14 @@ export function openSampleViewer(name) {
         const head = element('div', 'lora-viewer-head');
         if (state.mode === 'one') {
             const back = button('lora-viewer-round lora-viewer-back', '', () => show('all'));
-            back.append(icon(ICONS.back));
+            back.append(icon('arrow-left'));
             back.setAttribute('aria-label', text('lora_samples_all', 'All samples'));
             head.append(back);
         }
         head.append(element('span', 'lora-viewer-name', entry.label), element('span', 'lora-viewer-model', currentModel()));
         head.append(element('span', 'lora-spacer'));
         const close = button('lora-viewer-round', '', () => closeSampleViewer());
-        close.append(icon(ICONS.close, 14));
+        close.append(icon('close', 14));
         close.setAttribute('aria-label', text('tag_ui_close', 'Close'));
         head.append(close);
         return head;
@@ -287,10 +257,10 @@ export function openSampleViewer(name) {
         const cell = list[state.index];
         const main = element('div', 'lora-viewer-one');
         const prev = button('lora-viewer-round lora-viewer-step', '', () => step(-1));
-        prev.append(icon(ICONS.prev, 18));
+        prev.append(icon('chevron-left', 18));
         prev.setAttribute('aria-label', text('lora_weight_lower', 'Lower weight'));
         const next = button('lora-viewer-round lora-viewer-step', '', () => step(1));
-        next.append(icon(ICONS.next, 18));
+        next.append(icon('chevron-right', 18));
         next.setAttribute('aria-label', text('lora_weight_higher', 'Higher weight'));
         const frameBox = element('div', 'lora-viewer-large');
         frameBox.append(image(cell.sample, 'lora-viewer-image'));
@@ -405,7 +375,7 @@ export function openRetakeDialog(name) {
     const hasAny = samplesForModel(entry, currentModel()).samples.size > 0;
     head.append(element('span', 'lora-retake-title', hasAny ? text('lora_retake', 'Retake') : text('lora_take_samples', 'Take samples')), element('span', 'lora-retake-name', entry.label));
     const close = button('lora-viewer-round', '', () => closeRetakeDialog());
-    close.append(icon(ICONS.close, 14));
+    close.append(icon('close', 14));
     close.setAttribute('aria-label', text('tag_ui_close', 'Close'));
     head.append(close);
 
@@ -431,7 +401,7 @@ export function openRetakeDialog(name) {
     negative.setAttribute('aria-label', text('lora_negative', 'Negative'));
     const searchButton = onClick => {
         const search = button('lora-retake-search', '', () => onClick(search));
-        search.append(icon(ICONS.search, 14));
+        search.append(icon('search', 14));
         search.title = text('lora_search_tags', 'Search tags');
         search.setAttribute('aria-label', search.title);
         return search;
@@ -492,7 +462,7 @@ export function openRetakeDialog(name) {
     }
 
     function paintNegative() {
-        negativeToggle.replaceChildren(icon(state.negativeOpen ? ICONS.down : ICONS.right, 12), element('span', 'lora-retake-negative-label', text('lora_negative', 'Negative')));
+        negativeToggle.replaceChildren(icon(state.negativeOpen ? 'chevron-down' : 'chevron-right', 12), element('span', 'lora-retake-negative-label', text('lora_negative', 'Negative')));
         if (!state.negativeOpen) negativeToggle.append(element('span', 'lora-retake-negative-preview', draft().negative));
         negativeToggle.setAttribute('aria-expanded', String(state.negativeOpen));
         negative.hidden = !state.negativeOpen;

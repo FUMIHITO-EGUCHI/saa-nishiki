@@ -14,6 +14,7 @@ import { FAVORITES_CHANGED_EVENT, isFavorite, loadFavorites, setFavorite, showIn
 import { openUseSettings } from './useSettingsDialog.js';
 import { summarizeImage } from '../shared/imageSummary.js';
 import { formatDuration } from '../shared/runTiming.js';
+import { iconMarkup } from '../shared/iconSet.js';
 import { createLibraryViewer } from './libraryViewer.js';
 import { showWorkflowRun } from './workflowRunsView.js';
 import { button as makeButton, tr, readFile } from './workflowUi.js';
@@ -587,7 +588,7 @@ function createLibrary() {
             const label = text('viewer_seed_to_field', 'Put this seed in the Seed field');
             put.setAttribute('aria-label', label);
             put.title = label;
-            put.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M7 2.5h3v7H7M1.5 6h6M5 3.5L7.5 6 5 8.5"></path></svg>';
+            put.innerHTML = iconMarkup('put-in', 12);
             put.addEventListener('click', () => globalThis.generate?.seed?.setValue?.(summary.seed));
             seed.append(put, document.createTextNode(String(summary.seed)));
             row(text('viewer_seed', 'Seed'), seed);
