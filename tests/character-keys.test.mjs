@@ -6,6 +6,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { ORIGINAL_KEY_PREFIX, isNoneKey, isOriginalKey, originalCharacterName, originalKey } from '../scripts/shared/characterKeys.js';
+import { themeCss } from './helpers/cssRules.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n');
@@ -64,7 +65,7 @@ test('regional strength is a number box beside the side area; ratio and overlap 
     assert.match(html, /<div class="regional-condition-side regional-condition-side-left">\n\s+<div class="regional-condition-option-left"><\/div>\n\s+<div class="regional-condition-strength-left run-number"><\/div>/);
     assert.match(html, /<div class="regional-condition-settings-1">\n\s+<div class="regional-condition-split"><\/div>\n\s+<div class="regional-condition-panels ui-switch"><\/div>\n\s+<div class="regional-condition-image-ratio"><\/div>\n\s+<div class="regional-condition-overlap-ratio"><\/div>\n\s+<\/div>/);
     for (const css of ['html/index_dark.css', 'html/index_light.css']) {
-        const text = read(css);
+        const text = themeCss(css);
         assert.match(text, /\.characters-card \.regional-condition-settings-2 \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
         assert.match(text, /\.character-selection-oc-badge \{/);
     }

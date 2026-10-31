@@ -4,7 +4,7 @@ import test from 'node:test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { declarationsFor, hasSelector, parseStylesheet } from './helpers/cssRules.mjs';
+import { declarationsFor, hasSelector, parseStylesheet, themeCss } from './helpers/cssRules.mjs';
 
 // Layout contract for the 2026-08-30 shell (wai-stack/SAA-ui-redesign.md §3):
 // header → viewer + info panel on the left; Characters & Views → Prompts (+ AI card) → Pipeline
@@ -119,7 +119,7 @@ test('settings page labels resolve in every language (ui_* with legacy fallback)
 
 test('theme stylesheets style the shell through the generated token block', () => {
   for (const theme of ['html/index_dark.css', 'html/index_light.css']) {
-    const rules = parseStylesheet(read(theme));
+    const rules = parseStylesheet(themeCss(theme));
     for (const selector of ['.ui-card', '.pipeline-card .pipe-row-head', '#run-bar', '.ai-mode-segment', '.status-pill',
       '#info-panel', '.left-splitter', '.settings-grid', '#settings-modal-dialog', '.settings-modal-nav']) {
       assert.ok(hasSelector(rules, selector), `${theme} has a rule for ${selector}`);

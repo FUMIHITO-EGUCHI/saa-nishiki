@@ -748,7 +748,7 @@ html, body {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-weight: 500;
-    color: var(--saa-muted2, #969ca8);
+    color: var(--saa-muted2);
 }
 
 .prompts-card .prompt-scene .tag-field-label::before {
@@ -756,11 +756,11 @@ html, body {
 }
 
 .prompts-card .prompt-scene .prompt-field[data-stripe="negative"] .tag-field-label {
-    color: var(--saa-stripe-negative, #e07070);
+    color: var(--saa-stripe-negative);
 }
 
 .prompts-card .prompt-scene .prompt-cast-field .tag-field-label {
-    color: var(--saa-accent, #7fb0f5);
+    color: var(--saa-accent);
     font-weight: 600;
 }
 
@@ -800,9 +800,9 @@ html, body {
     min-height: 26px;
     margin: 2px 0;
     padding: 6px 8px;
-    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 6px;
-    background: var(--saa-bg-field, #16181d);
+    background: var(--saa-bg-field);
     box-shadow: none;
 }
 
@@ -864,7 +864,7 @@ html, body {
 .prompt-scene .prompt-field.prompt-action-field {
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 1px solid var(--saa-border, #343945);
+    border-top: 1px solid var(--saa-border);
 }
 
 /* the "@alias" buttons sit above the Action text, in its column; the tools stay at the right like every row */
@@ -892,7 +892,7 @@ html, body {
     justify-content: center;
     width: 14px;
     height: 18px;
-    color: var(--saa-border-strong, #474d5b);
+    color: var(--saa-border-strong);
     cursor: grab;
 }
 
@@ -924,7 +924,7 @@ html, body {
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: var(--saa-muted2, #969ca8);
+    color: var(--saa-muted2);
     cursor: pointer;
 }
 
@@ -941,16 +941,16 @@ html, body {
     width: 14px;
     height: 14px;
     padding: 0;
-    border: 1px solid var(--saa-accent, #7fb0f5);
+    border: 1px solid var(--saa-accent);
     border-radius: 50%;
-    background: var(--saa-accent, #7fb0f5);
-    box-shadow: inset 0 0 0 3px var(--saa-bg-panel, #1f2229);
+    background: var(--saa-accent);
+    box-shadow: inset 0 0 0 3px var(--saa-bg-panel);
     cursor: pointer;
 }
 
 .prompt-field.is-muted .scene-mute {
     background: transparent;
-    border-color: var(--saa-border-strong, #474d5b);
+    border-color: var(--saa-border-strong);
     box-shadow: none;
 }
 
@@ -960,7 +960,7 @@ html, body {
 
 .scene-count {
     font-size: 10px;
-    color: var(--saa-muted, #969ca8);
+    color: var(--saa-muted);
     margin-left: 2px;
 }
 
@@ -969,10 +969,10 @@ html, body {
     min-width: 0;
     height: 20px;
     padding: 0 6px;
-    border: 1px solid var(--saa-accent, #7fb0f5);
+    border: 1px solid var(--saa-accent);
     border-radius: 4px;
-    background: var(--saa-bg-control, #16181d);
-    color: var(--saa-text, #e4e6ea);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     font: inherit;
     font-size: 12px;
 }
@@ -1006,10 +1006,10 @@ html, body {
     min-width: 20px;
     height: 20px;
     padding: 0 5px;
-    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 4px;
-    background: var(--saa-bg-control, #262a33);
-    color: var(--saa-muted2, #969ca8);
+    background: var(--saa-bg-control);
+    color: var(--saa-muted2);
     font: inherit;
     font-size: 11px;
     line-height: 1;
@@ -1017,7 +1017,7 @@ html, body {
 }
 
 .scene-menu-button:hover {
-    background: var(--saa-bg-hover, #2c303a);
+    background: var(--saa-bg-hover);
 }
 
 .prompt-scene .prompt-field > .myTextbox-wrapper > .tag-field-tools {
@@ -1033,9 +1033,9 @@ html, body {
     flex-direction: column;
     min-width: 180px;
     padding: 4px;
-    border: 1px solid var(--saa-border, #343945);
+    border: 1px solid var(--saa-border);
     border-radius: 6px;
-    background: var(--saa-bg-panel, #1f2229);
+    background: var(--saa-bg-panel);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
@@ -1045,7 +1045,7 @@ html, body {
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: var(--saa-text, #e4e6ea);
+    color: var(--saa-text);
     font: inherit;
     font-size: 11.5px;
     text-align: left;
@@ -1053,11 +1053,11 @@ html, body {
 }
 
 .scene-row-menu button:hover {
-    background: var(--saa-bg-hover, #2c303a);
+    background: var(--saa-bg-hover);
 }
 
 .scene-row-menu button.is-danger {
-    color: var(--saa-danger, #e07070);
+    color: var(--saa-danger);
 }
 
 .scene-row-menu button:disabled {
@@ -1071,18 +1071,18 @@ html, body {
 }
 
 .prompt-scene .prompt-field.is-drop-before {
-    box-shadow: inset 0 2px 0 var(--saa-accent, #7fb0f5);
+    box-shadow: inset 0 2px 0 var(--saa-accent);
 }
 
 .prompt-scene.is-drop-target,
 .scene-side.is-drop-target {
-    outline: 1px dashed var(--saa-accent, #7fb0f5);
+    outline: 1px dashed var(--saa-accent);
     outline-offset: 2px;
 }
 
 /* a chip dropped on another row's header moves there (Ctrl / Alt = copy) */
 .prompt-scene .tag-field-header.is-drop-target {
-    outline: 2px dashed var(--saa-accent, #7fb0f5);
+    outline: 2px dashed var(--saa-accent);
     outline-offset: -2px;
     border-radius: 4px;
 }
@@ -1098,18 +1098,18 @@ html, body {
 .scene-add-button {
     height: 24px;
     padding: 0 10px;
-    border: 1px dashed var(--saa-border-ctl, #474d5b);
+    border: 1px dashed var(--saa-border-ctl);
     border-radius: 5px;
     background: transparent;
-    color: var(--saa-muted, #969ca8);
+    color: var(--saa-muted);
     font: inherit;
     font-size: 11px;
     cursor: pointer;
 }
 
 .scene-add-button:hover {
-    background: var(--saa-bg-hover, #2c303a);
-    color: var(--saa-text, #e4e6ea);
+    background: var(--saa-bg-hover);
+    color: var(--saa-text);
 }
 
 .scene-add-pop {
@@ -1122,9 +1122,9 @@ html, body {
     gap: 6px;
     min-width: 300px;
     padding: 8px 10px;
-    border: 1px solid var(--saa-border, #343945);
+    border: 1px solid var(--saa-border);
     border-radius: 7px;
-    background: var(--saa-bg-panel, #1f2229);
+    background: var(--saa-bg-panel);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
 }
 
@@ -1138,10 +1138,10 @@ html, body {
     min-width: 0;
     height: 24px;
     padding: 0 6px;
-    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 4px;
-    background: var(--saa-bg-control, #16181d);
-    color: var(--saa-text, #e4e6ea);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     font: inherit;
     font-size: 12px;
 }
@@ -1149,7 +1149,7 @@ html, body {
 .scene-add-polarity {
     display: inline-flex;
     overflow: hidden;
-    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
 }
 
@@ -1157,9 +1157,9 @@ html, body {
     height: 22px;
     padding: 0 8px;
     border: none;
-    border-left: 1px solid var(--saa-border-ctl, #474d5b);
-    background: var(--saa-bg-control, #262a33);
-    color: var(--saa-muted, #969ca8);
+    border-left: 1px solid var(--saa-border-ctl);
+    background: var(--saa-bg-control);
+    color: var(--saa-muted);
     font: inherit;
     font-size: 11px;
     cursor: pointer;
@@ -1170,17 +1170,17 @@ html, body {
 }
 
 .scene-add-polarity button.is-selected {
-    background: var(--saa-bg-selected, #2a3550);
-    color: var(--saa-text, #e4e6ea);
+    background: var(--saa-bg-selected);
+    color: var(--saa-text);
     font-weight: 600;
 }
 
 .scene-add-submit {
     height: 24px;
     padding: 0 10px;
-    border: 1px solid var(--saa-accent, #7fb0f5);
+    border: 1px solid var(--saa-accent);
     border-radius: 5px;
-    background: var(--saa-accent, #7fb0f5);
+    background: var(--saa-accent);
     color: #0f1013;
     font: inherit;
     font-size: 11px;
@@ -1191,7 +1191,7 @@ html, body {
 .scene-muted-note {
     font-size: 10.5px;
     white-space: nowrap;
-    color: var(--saa-warn, #e0a458);
+    color: var(--saa-warn);
 }
 
 .scene-muted-note:empty {
@@ -1208,7 +1208,7 @@ html, body {
     gap: 4px;
     margin: 4px 0;
     padding: 4px 8px 6px;
-    border: 1px solid var(--saa-warn, #e0a458);
+    border: 1px solid var(--saa-warn);
     border-radius: 8px;
 }
 
@@ -1228,7 +1228,7 @@ html, body {
 .scene-regional-title {
     font-size: 12px;
     font-weight: 600;
-    color: var(--saa-warn, #e0a458);
+    color: var(--saa-warn);
 }
 
 /* the On / Off switch beside the title, its label hidden (the title says it) */
@@ -1253,7 +1253,7 @@ html, body {
 .scene-split-seg {
     display: inline-flex;
     height: 22px;
-    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
     overflow: hidden;
 }
@@ -1261,9 +1261,9 @@ html, body {
 .scene-split-seg button {
     padding: 0 8px;
     border: none;
-    border-right: 1px solid var(--saa-border-ctl, #474d5b);
+    border-right: 1px solid var(--saa-border-ctl);
     background: transparent;
-    color: var(--saa-muted2, #9aa0ad);
+    color: var(--saa-muted2);
     font: inherit;
     font-size: 10.5px;
     cursor: pointer;
@@ -1274,8 +1274,8 @@ html, body {
 }
 
 .scene-split-seg button[aria-checked="true"] {
-    background: var(--saa-bg-hover, #2a2d36);
-    color: var(--saa-text, #e6e6e6);
+    background: var(--saa-bg-hover);
+    color: var(--saa-text);
     font-weight: 600;
 }
 
@@ -1315,7 +1315,7 @@ html, body {
 .scene-regional-settings [class^="mySlider-regional-condition-"][class*="-span"] {
     order: 0;
     font-size: 11px;
-    color: var(--saa-muted2, #9aa0ad);
+    color: var(--saa-muted2);
     white-space: nowrap;
 }
 
@@ -1358,9 +1358,9 @@ html, body {
     display: none;
     margin: 2px 0 2px 32px;
     padding: 3px 8px;
-    border: 1px dashed var(--saa-accent, #7fb0f5);
+    border: 1px dashed var(--saa-accent);
     border-radius: 6px;
-    color: var(--saa-accent, #7fb0f5);
+    color: var(--saa-accent);
     font-size: 11px;
     background: rgba(127, 176, 245, 0.07);
 }
@@ -1374,12 +1374,12 @@ html, body {
     flex-direction: column;
     gap: 2px;
     padding: 4px 0 4px 8px;
-    border-left: 3px solid var(--saa-stripe-positive, #7fd0a0);
+    border-left: 3px solid var(--saa-stripe-positive);
     border-radius: 0 6px 6px 0;
 }
 
 .scene-side.is-right {
-    border-left-color: var(--saa-warn, #e0a458);
+    border-left-color: var(--saa-warn);
 }
 
 .scene-side-head {
@@ -1393,11 +1393,11 @@ html, body {
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.06em;
-    color: var(--saa-stripe-positive, #7fd0a0);
+    color: var(--saa-stripe-positive);
 }
 
 .scene-side.is-right .scene-side-name {
-    color: var(--saa-warn, #e0a458);
+    color: var(--saa-warn);
 }
 
 /* the region's character, chosen in the Characters card's side column */
@@ -1449,10 +1449,10 @@ html, body {
 .prompt-action-cast-chip {
     height: 20px;
     padding: 0 8px;
-    border: 1px solid var(--saa-accent, #7fb0f5);
+    border: 1px solid var(--saa-accent);
     border-radius: 10px;
     background: transparent;
-    color: var(--saa-accent, #7fb0f5);
+    color: var(--saa-accent);
     font: inherit;
     font-size: 11px;
     font-weight: 600;
@@ -1460,7 +1460,7 @@ html, body {
 }
 
 .prompt-action-cast-chip:hover {
-    background: var(--saa-bg-selected, rgba(127, 176, 245, 0.15));
+    background: var(--saa-bg-selected);
 }
 
 /* Prose card (Diffusion only) */
@@ -1474,7 +1474,7 @@ html, body {
 
 .prose-scope-label {
     font-size: 11px;
-    color: var(--saa-muted, #969ca8);
+    color: var(--saa-muted);
     margin-right: 4px;
 }
 
@@ -1490,10 +1490,10 @@ html, body {
     width: 100%;
     min-height: 72px;
     padding: 6px 8px;
-    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 6px;
-    background: var(--saa-bg-control, #16181d);
-    color: var(--saa-text, #e4e6ea);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     font: inherit;
     font-size: 12px;
     line-height: 1.5;
@@ -1514,17 +1514,17 @@ html, body {
     flex: 1 1 auto;
     min-width: 0;
     font-size: 11px;
-    color: var(--saa-muted, #969ca8);
+    color: var(--saa-muted);
 }
 
 .prose-button,
 .run-mini-button {
     height: 24px;
     padding: 0 10px;
-    border: 1px solid var(--saa-border-ctl, #474d5b);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
-    background: var(--saa-bg-control, #16181d);
-    color: var(--saa-text, #e4e6ea);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     font: inherit;
     font-size: 11px;
     white-space: nowrap;
@@ -1641,8 +1641,8 @@ html, body {
 
 .selection-modal-favonly.is-on {
     opacity: 1;
-    color: var(--saa-warn, #b8860b);
-    border-color: var(--saa-warn, #b8860b);
+    color: var(--saa-warn);
+    border-color: var(--saa-warn);
 }
 
 .selection-modal-favonly:focus-visible {
@@ -1667,11 +1667,11 @@ html, body {
 
 .selection-modal-option-fav.is-fav {
     opacity: 1;
-    color: var(--saa-warn, #b8860b);
+    color: var(--saa-warn);
 }
 
 .selection-modal-option.is-fav {
-    background: color-mix(in srgb, var(--saa-warn, #b8860b) 10%, transparent);
+    background: color-mix(in srgb, var(--saa-warn) 10%, transparent);
 }
 
 /* a favorite is told by its amber segment and border (theme sheets); the ground stays the chip's */
@@ -2418,7 +2418,7 @@ html, body {
 }
 
 .artist-selection-trigger.is-empty {
-    color: var(--saa-placeholder, #77777f);
+    color: var(--saa-placeholder);
 }
 
 
@@ -2442,7 +2442,7 @@ html, body {
 .artist-selection-dialog .selection-modal-option-category {
     flex: none;
     padding: 0 6px;
-    border: 1px solid var(--saa-border-ctl, #4a4a52);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 8px;
     font-size: 0.68em;
     letter-spacing: 0.04em;
@@ -2456,7 +2456,7 @@ html, body {
     gap: 10px;
     min-height: 0;
     padding: 10px;
-    border: 1px solid var(--saa-border-ctl, #4a4a52);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
     overflow-y: auto;
 }
@@ -2507,7 +2507,7 @@ html, body {
     gap: 4px;
     height: 21px;
     padding: 0 8px;
-    border: 1px solid var(--saa-border-ctl, #4a4a52);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 11px;
     font-size: 0.76em;
 }
@@ -2550,7 +2550,7 @@ html, body {
     height: 5px;
     border-radius: 3px;
     overflow: hidden;
-    background: var(--saa-bar-track, #2c2c32);
+    background: var(--saa-bar-track);
 }
 
 .artist-profile-bar i {
@@ -2956,14 +2956,14 @@ button.lora-cell { cursor: zoom-in; }
 .lora-uses-thumb { display: block; width: 100%; aspect-ratio: 832 / 1216; object-fit: cover; border-radius: 4px; background: var(--saa-bg-field); }
 .lora-panel-file { margin: 0; font-size: 11.5px; color: var(--saa-muted); line-height: 1.5; word-break: break-all; }
 .lora-panel-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: auto; }
-.selection-modal-chip.is-lora { border-color: #8b5cf6; }
-.selection-modal-chip.is-lora .selection-modal-chip-prefix { margin-right: 3px; color: #c084fc; font-size: 0.85em; }
+.selection-modal-chip.is-lora { border-color: var(--saa-lora-border); }
+.selection-modal-chip.is-lora .selection-modal-chip-prefix { margin-right: 3px; color: var(--saa-lora-mark); font-size: 0.85em; }
 
 /* ---- LoRA marks on the prompt (loraUi.js): chip badge, popover, slot trigger words ---- */
-.tag-capsule-chip .tag-capsule-chip-lora { display: inline-flex; align-items: center; height: 17px; margin-left: 2px; padding: 0 6px; border: 1px solid #8b5cf6; border-radius: 9px; background: #2e2440; color: #d8c4ff; font-size: 10.5px; font-weight: 700; cursor: pointer; }
+.tag-capsule-chip .tag-capsule-chip-lora { display: inline-flex; align-items: center; height: 17px; margin-left: 2px; padding: 0 6px; border: 1px solid var(--saa-lora-border); border-radius: 9px; background: var(--saa-lora-bg); color: var(--saa-lora-text); font-size: 10.5px; font-weight: 700; cursor: pointer; }
 .tag-capsule-chip .tag-capsule-chip-lora:hover { background: #3b2d55; }
-.tag-capsule-chip.is-from-lora { border-color: #5b4a80; }
-.tag-capsule-chip .tag-capsule-chip-from-lora { display: inline-flex; color: #c084fc; margin-right: -1px; }
+.tag-capsule-chip.is-from-lora { border-color: var(--saa-lora-from); }
+.tag-capsule-chip .tag-capsule-chip-from-lora { display: inline-flex; color: var(--saa-lora-mark); margin-right: -1px; }
 .lora-popover { position: fixed; z-index: 10002; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border: 1px solid var(--saa-border-strong); border-radius: 8px; background: var(--saa-bg-panel); color: var(--saa-text); box-shadow: 0 10px 30px var(--saa-shadow); }
 .lora-popover-title { font-weight: 600; }
 .lora-popover-body { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }

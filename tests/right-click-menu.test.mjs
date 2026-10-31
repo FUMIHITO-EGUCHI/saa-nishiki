@@ -8,7 +8,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { hasSelector, parseStylesheet } from './helpers/cssRules.mjs';
+import { hasSelector, parseStylesheet, themeCss } from './helpers/cssRules.mjs';
 import { FakeElement, withFakeDom } from './helpers/fakeDom.mjs';
 import { addSpellCheckSuggestions, setupRightClickMenu } from '../scripts/renderer/components/myRightClickMenu.js';
 
@@ -746,7 +746,7 @@ test('the capsule field publishes the field key and the drag payload the menu an
 
 test('both themes style the accordion submenu and the cross-field drop target', () => {
     for (const theme of ['html/index_dark.css', 'html/index_light.css']) {
-        const rules = parseStylesheet(read(theme));
+        const rules = parseStylesheet(themeCss(theme));
         assert.ok(hasSelector(rules, '.right-click-menu .menu-submenu'), `${theme} has a rule for the submenu`);
         assert.ok(hasSelector(rules, '.right-click-menu .menu-subitem'), `${theme} has a rule for a submenu entry`);
         assert.ok(hasSelector(rules, '.tag-capsule-chips.is-drop-target'), `${theme} has a rule for the drop target`);

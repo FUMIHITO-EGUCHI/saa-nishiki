@@ -10,7 +10,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { withFakeDom } from './helpers/fakeDom.mjs';
-import { declarationsFor, parseStylesheet } from './helpers/cssRules.mjs';
+import { declarationsFor, parseStylesheet, themeCss } from './helpers/cssRules.mjs';
 import { showDialog } from '../scripts/renderer/components/myDialog.js';
 
 // the input dialog's textbox measures its line height a tick after it is built
@@ -54,7 +54,7 @@ test('an input dialog without Cancel keeps OK alone in the row', async () => {
 
 test('the list edit form and the AI Refine footers sit at the right', () => {
     for (const theme of ['index_dark.css', 'index_light.css']) {
-        const rules = stylesheet(theme);
+        const rules = parseStylesheet(themeCss(theme));
         assert.equal(declarationsFor(rules, '.list-manager-edit-buttons').get('justify-content'), 'flex-end', theme);
         assert.equal(declarationsFor(rules, '.ai-result-modal-actions').get('justify-content'), 'flex-end', theme);
         assert.equal(declarationsFor(rules, '.ai-result-modal-actions .ai-result-modal-copy').get('margin-right'), 'auto', `${theme}: Copy is not a footer choice, it stays left`);

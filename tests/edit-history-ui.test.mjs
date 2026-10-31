@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 import { classifyHistoryInput, historyShortcut } from '../scripts/renderer/editHistoryUi.js';
+import { themeCss } from './helpers/cssRules.mjs';
 
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -42,8 +43,8 @@ test('renderer wires global history controls, managed prompt input, focus restor
     }
   }
   for (const file of ['html/index_dark.css', 'html/index_light.css']) {
-    assert.match(read(file), /\.edit-history-button \{/);
-    assert.match(read(file), /\.edit-history-button:focus-visible/);
+    assert.match(themeCss(file), /\.edit-history-button \{/);
+    assert.match(themeCss(file), /\.edit-history-button:focus-visible/);
   }
 });
 

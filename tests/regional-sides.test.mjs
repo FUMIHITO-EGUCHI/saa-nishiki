@@ -8,6 +8,7 @@ import { migrateRegionalSwap, normalizeSide, sideOf, sideOrder, swapSidesPatch, 
 import { normalizeCustomFields } from '../scripts/shared/promptFieldOrder.js';
 import { DEFAULT_SETTINGS, SECTION_KEYS, normalizeSection } from '../scripts/shared/settingsSections.js';
 import { WORKFLOW_REGIONAL, WORKFLOW_REIONAL_UNET, REGIONAL_NEGATIVE_RIGHT_NODE, REGIONAL_APPEND_INDEX } from '../scripts/main/comfyui_workflow.js';
+import { themeCss } from './helpers/cssRules.mjs';
 
 const projectRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = relativePath => fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
@@ -184,7 +185,7 @@ test('the Scene holds a Regional block with a LEFT / RIGHT box each (swap, chara
     assert.match(manager, /if \(side === 'both'\) delete custom\.side; else custom\.side = side;/);
     assert.match(manager, /negative_left: '\.prompt-negative-left',\s*negative_right: '\.prompt-negative-right',/);
     for (const theme of ['html/index_dark.css', 'html/index_light.css']) {
-        const css = read(theme);
+        const css = themeCss(theme);
         for (const cls of ['.prompt-side-swap', '.scene-side-character', '.character-selection-side']) {
             assert.match(css, new RegExp(cls.replace(/[.]/g, '\\.')), `${theme} styles ${cls}`);
         }

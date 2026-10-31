@@ -7,6 +7,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PRESET_SECTIONS } from '../scripts/shared/settingsSections.js';
+import { themeCss } from './helpers/cssRules.mjs';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(testDirectory, '..');
@@ -75,7 +76,7 @@ test('language.json carries the preset strings in en-US and zh-CN', () => {
 
 test('the theme CSS block styles the preset control', () => {
     for (const file of ['html/index_dark.css', 'html/index_light.css']) {
-        const css = read(file);
+        const css = themeCss(file);
         assert.match(css, /\.preset-control \{/, file);
         assert.match(css, /\.run-saved \{/, file);
     }

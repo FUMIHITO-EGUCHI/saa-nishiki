@@ -1,8 +1,8 @@
 export function setupButtons(containerId, buttonText = 'Button', options = {}, callback = null) {
     let {
-        defaultColor = '#007bff', 
-        hoverColor = '#0056b3', 
-        disabledColor = '#cccccc',
+        defaultColor = 'var(--saa-legacy-blue)', 
+        hoverColor = 'var(--saa-legacy-blue-hover)', 
+        disabledColor = 'var(--saa-legacy-disabled)',
         width = '100px', 
         height = '40px',
         hidden = false,

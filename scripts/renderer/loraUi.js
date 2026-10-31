@@ -28,9 +28,10 @@ import {
 
 export { queueLoraSamples };
 
+// values: design/tokens.json
 const CATEGORY_COLORS = Object.freeze({
-    Composition: '#38bdf8', Character: '#f472b6', Style: '#c084fc', Concept: '#4ade80',
-    Pose: '#facc15', Clothing: '#e0a72f', Speed: '#ffb454', Unsorted: '#6b7280',
+    Composition: 'var(--saa-cat-sky)', Character: 'var(--saa-cat-pink)', Style: 'var(--saa-cat-violet)', Concept: 'var(--saa-cat-green)',
+    Pose: 'var(--saa-cat-yellow)', Clothing: 'var(--saa-cat-amber)', Speed: 'var(--saa-cat-apricot)', Unsorted: 'var(--saa-cat-gray)',
 });
 
 export function baseLabel(base) {

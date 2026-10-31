@@ -29,7 +29,7 @@ test('the Parts tab asks the modal for the rail, a click that picks, two sort or
     assert.match(tab, /clickPreviews: false,/);
     assert.match(tab, /attributes: \[\],/, 'no Sample filter: the tile says when a sample is missing');
     assert.match(tab, /color: CATEGORY_COLORS\[category\]/);
-    for (const category of PART_CATEGORIES) assert.match(ui, new RegExp(`\\b${category}: '#[0-9a-f]{6}'`), `${category} has a rail colour`);
+    for (const category of PART_CATEGORIES) assert.match(ui, new RegExp(`\\b${category}: 'var\\(--saa-cat-[a-z]+\\)'`), `${category} has a rail colour`);
     assert.match(tab, /\{ value: 'name', label: text\('parts_sort_name', 'Name'\)/);
     assert.match(tab, /\{ value: 'newest', label: text\('parts_sort_newest', 'Newest'\)/);
     assert.match(tab, /\{ value: 's', label: 'S', px: 120/);

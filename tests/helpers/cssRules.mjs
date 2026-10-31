@@ -2,6 +2,17 @@
 // `[^}]*` chain breaks as soon as two declarations swap places and passes on the wrong
 // value; these helpers hand a test the rules of a stylesheet, so it can ask for one
 // property by name and compare the value it actually has.
+import fs from 'node:fs';
+
+// A theme as the app loads it: the rules both themes share (html/theme.css), then the
+// theme's own file (its token values and the few rules only it has). `theme` is 'dark',
+// 'light' or a theme file name such as 'html/index_dark.css'.
+export function themeCss(theme) {
+    const name = String(theme).match(/dark|light/)?.[0];
+    if (!name) throw new Error(`not a theme: ${theme}`);
+    const html = new URL('../../html/', import.meta.url);
+    return `${fs.readFileSync(new URL('theme.css', html), 'utf8')}\n${fs.readFileSync(new URL(`index_${name}.css`, html), 'utf8')}`;
+}
 
 function parseDeclarations(block) {
     const declarations = new Map();
