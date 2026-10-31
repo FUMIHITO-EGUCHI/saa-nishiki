@@ -397,7 +397,7 @@ export function setupPromptFieldManager() {
         grip.className = 'scene-grip';
         grip.title = text('ui_scene_drag', 'Drag to move');
         grip.appendChild(iconElement('grip', 12));
-        grip.hidden = !isMovable(id);
+        grip.classList.toggle('is-pinned', !isMovable(id));
         grip.addEventListener('mousedown', () => armDrag(container));
 
         const chevron = document.createElement('button');

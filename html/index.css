@@ -908,9 +908,9 @@ html, body {
     -webkit-user-drag: element;
 }
 
-/* a pinned row keeps the grip's space so the chevrons line up */
-.scene-grip[hidden] {
-    display: inline-flex;
+/* a pinned row keeps the grip's space so the chevrons line up (not the hidden
+   attribute: the tag header hides [hidden] children with !important) */
+.scene-grip.is-pinned {
     visibility: hidden;
 }
 

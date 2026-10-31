@@ -4,6 +4,7 @@
 // keeps the stored plans; drags change only what the Scene shows.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 import { setupTextbox } from '../scripts/renderer/components/myTextbox.js';
 import { setupTagCapsuleFields } from '../scripts/renderer/components/tagCapsuleField.js';
@@ -11,6 +12,7 @@ import { setupPromptFieldManager } from '../scripts/renderer/components/promptFi
 import { readPromptValue } from '../scripts/renderer/tools/promptBatchExpansion.js';
 import { getCustomFieldTexts, getViewTags } from '../scripts/renderer/generate.js';
 import { getNegativePrompts } from '../scripts/renderer/generate_regional.js';
+import { declarationsFor, parseStylesheet, themeCss } from './helpers/cssRules.mjs';
 
 // ------------------------------------------------------------------ in-memory DOM
 
@@ -772,4 +774,17 @@ test('the Exclude row switched off stops marking the chips of the other rows', (
 
     manager.setMuted('exclude', false);
     assert.deepEqual(excluded(), ['blush']);
+});
+
+test('a pinned row keeps the grip\'s place with a class, so its chevron lines up with the movable rows', () => {
+    const { document } = bootScene(sceneSettings());
+    const grip = className => document.querySelector(`.${className} .scene-grip`);
+    assert.equal(grip('prompt-exclude').classList.contains('is-pinned'), true);
+    assert.equal(grip('prompt-positive').classList.contains('is-pinned'), false);
+    // the tag header hides any [hidden] child with !important, which would take the place too
+    assert.equal(grip('prompt-exclude').hidden, false);
+    assert.match(declarationsFor(parseStylesheet(themeCss('dark')), '.tag-field-header [hidden]').get('display'), /none !important/);
+    const pinned = declarationsFor(parseStylesheet(fs.readFileSync(new URL('../html/index.css', import.meta.url), 'utf8')), '.scene-grip.is-pinned');
+    assert.equal(pinned.get('visibility'), 'hidden');
+    assert.equal(pinned.has('display'), false);
 });
