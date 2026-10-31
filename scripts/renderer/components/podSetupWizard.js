@@ -7,6 +7,7 @@
 // ever writes and runs its own fixed paths.
 import { createDialogShell } from './dialogShell.js';
 import { reloadModelLists } from './myCollapsed.js';
+import { element as el } from '../dom.js';
 
 const CAT = '[PodWizard]';
 const LOG_POLL_MS = 2000;
@@ -39,13 +40,6 @@ function lang() {
 function text(key, fallback) {
     const value = lang()[key];
     return typeof value === 'string' && value ? value : fallback;
-}
-
-function el(tag, className, content = '') {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (content) node.textContent = content;
-    return node;
 }
 
 export function formatBytes(bytes) {

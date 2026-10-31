@@ -80,6 +80,30 @@ function writeToken(value, weight) {
 }
 
 /**
+ * The LoRAs the enabled part tokens of `text` bring, nested parts included:
+ * [{ name, weight, part }] in the order they come, each LoRA once.
+ */
+export function partLorasIn(text, resolve, { depth = 0, trail = new Set(), found = new Map() } = {}) {
+    const source = String(text ?? '');
+    if (!source.toLowerCase().includes(PART_PREFIX)) return [...found.values()];
+    const lookup = typeof resolve === 'function' ? resolve : () => null;
+    mapPromptTokens(source, token => {
+        const { disabled, value } = readToken(token);
+        const name = partNameOf(value);
+        if (name === null || disabled) return null;
+        const id = partId(name);
+        const entry = lookup(id);
+        if (!entry || depth >= PART_MAX_DEPTH || trail.has(id)) return null;
+        for (const lora of Array.isArray(entry.loras) ? entry.loras : []) {
+            if (!found.has(lora.name)) found.set(lora.name, { ...lora, part: id });
+        }
+        partLorasIn(entry.tags, lookup, { depth: depth + 1, trail: new Set([...trail, id]), found });
+        return null;
+    });
+    return [...found.values()];
+}
+
+/**
  * The prompt text with every part token replaced by its tags. `resolve(id)` answers a
  * part entry ({ tags }) or null. Disabled members and disabled part tokens vanish; a
  * weighted token scales every member. Text that holds no part token comes back as is.
@@ -199,6 +223,15 @@ function cleanSample(raw) {
     };
 }
 
+// A LoRA a part carries: { name, weight }, the name as the LoRA list has it
+function cleanPartLora(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const name = String(raw.name ?? '').trim();
+    const weight = Number(raw.weight);
+    if (!name || name.toLowerCase() === 'none') return null;
+    return { name, weight: Number.isFinite(weight) ? weight : 1 };
+}
+
 /** A complete, typed part entry from loose input, or null when it has no name. */
 export function cleanPart(raw, fallbackId = '') {
     if (!raw || typeof raw !== 'object') return null;
@@ -217,6 +250,11 @@ export function cleanPart(raw, fallbackId = '') {
         updated: typeof source.updated === 'string' ? source.updated : '',
         // from the bundled starter set (the picker says "starter" instead of "yours")
         starter: source.starter === true,
+        // the LoRAs the part brings into a prompt with it, whether their trigger words come
+        // too, and what happens on a model of another base: skip them, or use them anyway
+        loras: (Array.isArray(source.loras) ? source.loras : []).map(cleanPartLora).filter(Boolean),
+        loraTriggers: source.loraTriggers !== false,
+        otherBase: source.otherBase === 'use' ? 'use' : 'skip',
     };
 }
 

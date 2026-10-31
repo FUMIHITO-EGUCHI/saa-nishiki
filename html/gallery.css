@@ -1,10 +1,12 @@
+/* Gallery, image info and the upstream slot rows, for both themes (colours: --saa-* tokens). */
+
 /* Custom Gallery */
 .gallery-main {
     box-sizing: border-box;
     padding: 10px;
-    background: #111;
+    background: var(--saa-bg-app);
     border-radius: 8px;
-    border: 2px solid #333;
+    border: 2px solid var(--saa-border);
     height: 864px;
     overflow-y: hidden;
     overflow-x: hidden;
@@ -25,7 +27,7 @@
 .cg-gallery-item {
     overflow: hidden;
     border-radius: 5px;
-    background: #333;
+    background: var(--saa-bar-track);
     opacity: 0;
     transform: translateX(-20px);
     transition: opacity 0.3s ease, transform 0.3s ease;
@@ -97,7 +99,7 @@
 #cg-privacy-button {
     left: 10px;
     top: 50px;
-    background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet);
+    background: var(--saa-privacy-bg);
     font-weight: bold;
 }
 
@@ -109,7 +111,7 @@
     height: 100px;
     border-radius: 50%; /* Always circular */
     background-color: transparent; /* Ensure transparency for PNG */
-    color: white;
+    color: var(--saa-text);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -137,7 +139,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.9);
+    background: var(--saa-backdrop);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -155,7 +157,7 @@
 
 /* Error Message */
 .cg-error-message {
-    color: #ff4d4f;
+    color: var(--saa-danger);
     font-size: 16px;
     text-align: center;
     margin-top: 20px;
@@ -167,8 +169,8 @@
     top: 20%;
     left: 50%;
     transform: translate(-50%, -20%);
-    background: rgba(17, 17, 17, 0.8);
-    color: white;
+    background: var(--saa-bg-panel);
+    color: var(--saa-text);
     padding: 15px;
     border-radius: 8px;
     display: flex;
@@ -177,7 +179,7 @@
     gap: 10px;
     z-index: 10000;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    border: 2px solid #333;
+    border: 2px solid var(--saa-border);
     max-width: 320px;
 }
 
@@ -191,8 +193,8 @@
 }
 
 .cg-overlay-error {
-    border: 2px solid #ff4d4f;
-    background: rgba(17, 17, 17, 0.9);
+    border: 2px solid var(--saa-danger);
+    background: var(--saa-bg-panel);
 }
 
 .cg-error-content {
@@ -224,7 +226,7 @@
     position: fixed;
     will-change: left, top;
     transition: none;
-    background: rgba(0, 0, 0, 0.8);
+    background: var(--saa-bg-panel);
     border-radius: 5px;
     box-sizing: border-box;
 }
@@ -238,7 +240,7 @@
 }
 
 .cg-minimize-button {
-    background-color: #3498db;
+    background-color: var(--saa-accent);
     width: 12px;
     height: 12px;
     min-width: 12px;
@@ -259,7 +261,7 @@
     padding: 10px 15px;
     border-radius: 5px;
     border: none;
-    color: white;
+    color: var(--saa-text);
     cursor: pointer;
     transition: opacity 0.3s ease;
 }
@@ -268,9 +270,9 @@
 .info-main {
     box-sizing: border-box;
     padding: 10px;
-    background: rgb(39,39,42);
+    background: var(--saa-bg-panel);
     border-radius: 8px;
-    border: 2px solid #333;
+    border: 2px solid var(--saa-border);
     position: relative;
     width: 100%;
     height: 302px; 
@@ -288,7 +290,7 @@
     overflow-x: hidden;
     box-sizing: border-box;
     padding: 10px;
-    background: rgb(39,39,42); 
+    background: var(--saa-bg-panel); 
 }
 
 [class^="myInfoBox-"][class*="-content"] pre {
@@ -306,7 +308,7 @@
     flex-direction: row;    
     width: 100%; 
     box-sizing: none;
-    background: rgb(39,39,42);
+    background: var(--saa-bg-panel);
     padding: 0;
     border: none;
     border-radius: none;
@@ -316,9 +318,9 @@
 [class^="mySlider-"][class*="-span"] {
     flex: 1;
     text-align: left; 
-    color: #ccc; 
+    color: var(--saa-muted2); 
     box-sizing: none;
-    background: rgb(39,39,42);
+    background: var(--saa-bg-panel);
     padding: 0;
     border: none;
     border-radius: none;
@@ -328,8 +330,8 @@
 [class^="mySlider-"][class*="-value"] {
     flex: 0;
     text-align: right;
-    background: rgb(39,39,42);
-    color: #eee; 
+    background: var(--saa-bg-panel);
+    color: var(--saa-text); 
     border: none;
     border-radius: 4px;
     padding: 4px; 
@@ -351,7 +353,7 @@
     display: block;
     width: 100%; 
     height: 12px;
-    background: linear-gradient(90deg, #3498db 0%, #ad5cea 100%); 
+    background: linear-gradient(90deg, var(--saa-accent) 0%, var(--saa-accent) 100%); 
     border-radius: 4px; 
     outline: none; 
     appearance: none;
@@ -366,8 +368,8 @@
     appearance: none;
     width: 12px; 
     height: 12px;
-    background: #1ce088;
-    border: 2px solid #333; 
+    background: var(--saa-accent);
+    border: 2px solid var(--saa-border); 
     border-radius: 50%;
     cursor: pointer; 
 }
@@ -398,63 +400,18 @@
     grid-template-columns: 0.5fr 10fr 0.5fr; 
 }
 
-[class^="myTextbox-slot-row-text1-"]{
-    color: rgb(179,157,219) !important;
+/* the queue tells consecutive runs apart by the colour of the job id; the numbers of the
+   ADetailer, ControlNet and JSON rows are plain text */
+.queue-row [class^="myTextbox-slot-row-text1-"] {
+    color: var(--saa-slot-text) !important;
 }
 
-[class^="myTextbox-slot-row-text2-"]{
-    color: rgb(255,213,0) !important;
+.queue-row [class^="myTextbox-slot-row-text2-"] {
+    color: var(--saa-slot-text-2) !important;
 }
 
-.slot-action {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-}
-
-.slot-action-add-toggle {
-    background: green;
-    border: 4px solid green;
-}
-
-.slot-action-add:hover .slot-action-add-toggle:hover {
-    background: chartreuse;
-    border: 4px solid chartreuse;
-    opacity: 1;
-}
-
-.slot-action-del-toggle {
-    background: red;
-    border: 4px solid red;    
-}
-
-.slot-action-del:hover .slot-action-del-toggle:hover {
-    background: orangered;
-    border: 4px solid orangered;
-    opacity: 1;
-}
-
-.slot-action-info-toggle {    
-    background: darkorange;
-    border: 4px solid darkorange;
-}
-
-.slot-action-info-toggle:hover {
-    background: Gold;
-    border: 4px solid Gold;
-    opacity: 1;
-}
-
-.slot-action-add-toggle, .slot-action-del-toggle, .slot-action-info-toggle {
-    margin-top: 2px;
-    width: 18px;
-    height: 18px;
-    opacity: 0.8;
-    border-radius: 8px;
-    transition: opacity 0.3s ease, background 0.3s ease, border 0.3s ease;
-}
+/* add / remove / info of a slot row (a .saa-icon-btn) sit in the middle of their cell */
+.slot-action { justify-self: center; }
 
 /* lora information overlay */
 .cg-drag-handle {
@@ -463,7 +420,7 @@
     left: 0;
     width: 100%;
     height: 30px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--saa-border);
     cursor: grab;
     z-index: 10001;
     pointer-events: auto;
@@ -479,9 +436,9 @@
     right: 8px; 
     width: 12px;
     height: 12px;
-    background: linear-gradient(45deg, #3498db, #ad5cea);
+    background: linear-gradient(45deg, var(--saa-accent), var(--saa-accent));
     border-radius: 50%;
-    border: 1px solid #333;
+    border: 1px solid var(--saa-border);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     cursor: se-resize;
     z-index: 10002;
@@ -490,12 +447,12 @@
 
 .cg-resize-handle:hover {
     transform: scale(1.5);
-    background: linear-gradient(45deg, #1ce088, #ad5cea); 
+    background: linear-gradient(45deg, var(--saa-accent), var(--saa-accent)); 
 }
 
 .cg-custom-overlay {
-    background: rgba(17, 17, 17, 0.9);
-    border: 2px solid #333;
+    background: var(--saa-bg-panel);
+    border: 2px solid var(--saa-border);
     max-width: min(1600px, 90vw); 
     min-width: 200px;
     min-height: 150px;
@@ -536,7 +493,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(39, 39, 42, 0.8);
+    background: var(--saa-bg-panel);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -555,14 +512,14 @@
 .cg-mode-switch-spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #3498db;
+    border: 4px solid var(--saa-accent);
     border-top: 4px solid transparent;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 
 .cg-mode-switch-text {
-    color: #eee;
+    color: var(--saa-text);
     font-size: 16px;
     margin-top: 10px;
 }
@@ -580,8 +537,8 @@
     z-index: 9999;
     display: flex;
     flex-direction: column;
-    background-color: rgba(30, 30, 35, 0.9); 
-    border: 2px solid #333;
+    background-color: var(--saa-bg-panel); 
+    border: 2px solid var(--saa-border);
     position: fixed;
     box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
     border-radius: 8px;
@@ -589,13 +546,13 @@
 }
 
 .im-image-upload-overlay.dragover {
-    background-color: rgba(52, 152, 219, 0.3);
-    border: 2px dashed #3498db;
-    border-color: #1e90ff;
+    background-color: var(--saa-accent-soft);
+    border: 2px dashed var(--saa-accent);
+    border-color: var(--saa-accent);
 }
 
 .cg-close-button {
-    background-color: #ff5555;
+    background-color: var(--saa-danger);
     width: 20px;
     height: 20px;
     border-radius: 50%;
@@ -613,7 +570,7 @@
 }
 
 .cg-close-button:hover {
-    background-color: #ff0000;
+    background-color: var(--saa-danger);
 }
 
 #upload-svg-icon {
@@ -655,10 +612,10 @@
     padding: 15px;
     white-space: pre-wrap;
     word-break: break-word;
-    background-color: rgba(20, 20, 25, 0.8);
-    color: #f0f0f0;
+    background-color: var(--saa-bg-panel);
+    color: var(--saa-text);
     line-height: 1.4;
-    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    border-top: 1px solid var(--saa-border);
     border-radius: 0 0 8px 8px;
 }
 
@@ -670,7 +627,7 @@
 .metadata-label {
     font-weight: bold;
     margin-bottom: 4px;
-    color: #3498db;
+    color: var(--saa-accent);
 }
 
 .metadata-value {
@@ -721,30 +678,30 @@
 }
 
 .copy-all-metadata, .image-tagger-process, .mira-itu-tagger {
-    background-color: rgb(61,154,215);
-    color: rgb(30, 30, 30);
+    background-color: var(--saa-bg-control);
+    color: var(--saa-text);
     border: none;
 }
 
 .copy-all-metadata:hover, .image-tagger-process:hover, .mira-itu-tagger:hover {
-    background-color: rgb(49,130,182);
+    background-color: var(--saa-bg-hover);
 }
 
 .send-metadata, .controlnet-postprocess, .mira-itu  {
-    background-color: rgb(229,87,32);
-    color: rgb(30, 30, 30);
+    background-color: var(--saa-bg-control);
+    color: var(--saa-text);
     border: none;
 }
 
 .send-metadata:hover, .controlnet-postprocess:hover, .mira-itu:hover {
-    background-color: rgb(190,65,26);
+    background-color: var(--saa-bg-hover);
 }
 
 .controlnet-select, #mira-itu-textarea, #mira-itu-tagger-textarea {
     overflow-wrap: break-word;
-    background-color: rgb(20, 20, 25);
-    color: #f0f0f0;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--saa-bg-field);
+    color: var(--saa-text);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 8px;
     max-width: 576px;
     width: 100%;
@@ -759,25 +716,25 @@
 }
 
 .myTextbox-prompt-common-textarea {
-    color: darkorange !important;
+    color: var(--saa-text) !important;
 }
 
 .myTextbox-prompt-positive-textarea {
-    color: LawnGreen !important;
+    color: var(--saa-text) !important;
 }
 
 .myTextbox-prompt-positive-right-textarea{
-    color: LightSkyBlue !important;
+    color: var(--saa-text) !important;
 }
 
 .myTextbox-prompt-negative-textarea {
-    color: red !important;
+    color: var(--saa-text) !important;
 }
 
 .myTextbox-prompt-ai-textarea {
-    color: hotpink !important;
+    color: var(--saa-text) !important;
 }
 
 .myTextbox-prompt-exclude-textarea {
-    color: SaddleBrown !important;
+    color: var(--saa-text) !important;
 }

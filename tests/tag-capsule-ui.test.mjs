@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { TAG_UI_DEFAULTS, createTextResolver, formatText } from '../scripts/renderer/components/tagUiText.js';
+import { themeCss } from './helpers/cssRules.mjs';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(testDirectory, '..');
@@ -18,8 +19,8 @@ const shell = read('scripts/renderer/components/dialogShell.js');
 const finalPrompt = read('scripts/renderer/components/finalPromptDisclosure.js');
 const selectionModal = read('scripts/renderer/components/selectionModal.js');
 const renderer = read('scripts/renderer.js');
-const darkTheme = read('html/index_dark.css');
-const lightTheme = read('html/index_light.css');
+const darkTheme = themeCss('dark');
+const lightTheme = themeCss('light');
 const language = JSON.parse(read('data/language.json'));
 
 test('the capsule prototype is replaced by the field / chip / popover / dialog / disclosure split', () => {

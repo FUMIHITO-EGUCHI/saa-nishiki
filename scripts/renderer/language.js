@@ -1,3 +1,4 @@
+import { refreshADetailerSettings } from './adetailerSettings.js';
 import { applySizeRange, callback_api_model_type, callback_regional_condition, syncRegionalCharacters } from './callbacks.js';
 import { migrateSlotSides } from '../shared/characterSides.js';
 import { hiresCalculate } from './tools/hiresCalculation.js';
@@ -305,6 +306,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.imageInfo.updateHintText(LANG.image_info_drag_hint_top, LANG.image_info_drag_hint_bottom);
 
     globalThis.uiShell?.updateLanguage?.();
+    refreshADetailerSettings();
     globalThis.editHistoryUi?.updateLanguage?.();
     hiresCalculate();
 }
@@ -510,6 +512,7 @@ export function updateSettings() {
     globalThis.refiner.ratio.setValue(SETTINGS.api_refiner_ratio);
 
     globalThis.generate.adetailer?.setValue?.(SETTINGS.api_adetailer_enable);
+    refreshADetailerSettings();
     globalThis.generate.controlnet?.setValue?.(SETTINGS.api_controlnet_enable);
 
     callback_api_model_type(0, [globalThis.dropdownList.model_type.getValue()]); //Model Type

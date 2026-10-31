@@ -5,6 +5,7 @@ import { generateControlnetImage } from '../generate.js';
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
 import { resizeImageToControlNetResolution } from '../components/imageInfoUtils.js';
 import { CONTROL_TYPE_AUTO, CONTROL_TYPE_OPTIONS, normalizeControlType } from '../../shared/controlNetUnion.js';
+import { iconMarkup } from '../../shared/iconSet.js';
 
 const controlNetValuesComfyUI = [
     "none",
@@ -206,7 +207,7 @@ function createControlNetSlotsFromValues(slotManager, slotValues, options = {}) 
             const preProcessResolutionComponent = setupTextbox(
                 slot.itemClasses.pre_process_resolution,
                 LANG.api_controlnet_pre_process_resolution,
-                { value: preProcessResolution, defaultTextColor: 'rgb(179,157,219)', maxLines: 1 },
+                { value: preProcessResolution, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -266,7 +267,7 @@ function createControlNetSlotsFromValues(slotManager, slotValues, options = {}) 
             const postProcessStrengthComponent = setupTextbox(
                 slot.itemClasses.post_process_strength,
                 LANG.api_controlnet_post_process_strength,
-                { value: postProcessStrength, defaultTextColor: 'rgb(255,213,0)', maxLines: 1 },
+                { value: postProcessStrength, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -278,7 +279,7 @@ function createControlNetSlotsFromValues(slotManager, slotValues, options = {}) 
             const postProcessStartComponent = setupTextbox(
                 slot.itemClasses.post_process_start,
                 LANG.api_controlnet_post_process_start,
-                { value: postProcessStart, defaultTextColor: 'rgb(255,213,0)', maxLines: 1 },
+                { value: postProcessStart, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -290,7 +291,7 @@ function createControlNetSlotsFromValues(slotManager, slotValues, options = {}) 
             const postProcessEndComponent = setupTextbox(
                 slot.itemClasses.post_process_end,
                 LANG.api_controlnet_post_process_end,
-                { value: postProcessEnd, defaultTextColor: 'rgb(255,213,0)', maxLines: 1 },
+                { value: postProcessEnd, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -510,9 +511,7 @@ class ControlNetSlotManager {
         const row = document.createElement('div');
         row.className = `slot-row add-row ${className}`;
         row.innerHTML = `            
-            <div class="slot-action slot-action-add" data-action="info" data-slot="${className}">
-                <img class="slot-action-add-toggle" src="scripts/svg/add.svg" alt="+">
-            </div>
+            <button type="button" class="saa-icon-btn slot-action slot-action-add" data-action="info" data-slot="${className}" aria-label="Add">${iconMarkup('plus', 14)}</button>
             <div></div>
             <div></div>
             <div></div>
@@ -549,20 +548,14 @@ class ControlNetSlotManager {
             /*
             Hide info button
 
-            <div class="slot-action slot-action-info" data-action="info" data-slot="${className}">
-                <img class="slot-action-info-toggle" src="scripts/svg/info.svg" alt="?">
-            </div>
+            <button type="button" class="saa-icon-btn slot-action slot-action-info" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
             */
             candidateRow.innerHTML = `
-                <div class="slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}">
-                    <img class="slot-action-del-toggle" src="scripts/svg/del.svg" alt="-">
-                </div>                
+                <button type="button" class="saa-icon-btn slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>                
                 <div class="${slot.itemClasses.pre_process_model}"></div>
                 <div class="${slot.itemClasses.pre_process_resolution}"></div>
                 <div class="${slot.itemClasses.control_type}" style="grid-column: span 2;"></div>
-                <div class="slot-action slot-action-info" data-action="add" data-slot="${className}">
-                    <img class="slot-action-info-toggle" src="scripts/svg/refresh.svg" alt="Refresh">
-                </div>                
+                <button type="button" class="saa-icon-btn slot-action slot-action-info" data-action="add" data-slot="${className}" aria-label="Refresh">${iconMarkup('refresh', 14)}</button>                
 
                 <div></div>
                 <div class="${slot.itemClasses.post_model}"></div>

@@ -16,6 +16,12 @@ test.after(async () => { await app?.close(); });
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const OPEN_MODAL = '.selection-modal:not([hidden])';
 
+// the row's ⋯ menu, then Insert part… (the tag modal on its Parts tab)
+async function insertPart(row) {
+    await app.page.click(`${row} .scene-menu-button`);
+    await app.page.evaluate(`[...document.querySelectorAll('${row} .scene-row-menu button')].find(node => node.textContent === 'Insert part…').click()`);
+}
+
 test('the editor makes a part; it is stored as settings/parts.json and the Positive row offers the picker', async () => {
     const { page } = app;
     await page.evaluate(`globalThis.partsUi.openEditor()`);
@@ -41,8 +47,8 @@ test('the editor makes a part; it is stored as settings/parts.json and the Posit
     assert.match(fs.readFileSync(file, 'utf8'), /"sailor uniform"/);
     assert.equal(await page.evaluate(`Boolean(document.querySelector('.parts-editor-dialog'))`), false, 'the editor closed');
 
-    // the row's "parts" button opens the row's tag modal on its Parts tab, the new part a tile
-    await page.click('.prompt-positive .scene-parts-button');
+    // the row's Insert part… opens the row's tag modal on its Parts tab, the new part a tile
+    await insertPart('.prompt-positive');
     await page.waitFor(`document.querySelectorAll('${OPEN_MODAL} .selection-modal-tile').length === 1`, { label: 'the row modal on its Parts tab with one tile' });
     assert.equal(await page.evaluate(`document.querySelector('${OPEN_MODAL} .selection-modal-tab.is-active')?.textContent`), 'Parts');
     assert.equal(await page.evaluate(`document.querySelector('${OPEN_MODAL} .parts-tile-name')?.textContent`), 'parts:Sailor Uniform');
@@ -109,7 +115,7 @@ test('a sample on the mannequin runs through the queue, skips the gallery, and l
     assert.equal(await app.errorText(), '');
 
     // the tile now shows for this model: the Parts tab's tile carries an image
-    await page.click('.prompt-positive .scene-parts-button');
+    await insertPart('.prompt-positive');
     await page.waitFor(`Boolean(document.querySelector('${OPEN_MODAL} .selection-modal-tile .parts-tile-image img'))`, { label: 'the tile image' });
     assert.equal(await page.evaluate(`Boolean(document.querySelector('${OPEN_MODAL} .selection-modal-tile .parts-tile-image.is-missing'))`), false, 'the tile no longer says "No sample yet"');
     assert.match(await page.evaluate(`document.querySelector('${OPEN_MODAL} .parts-tile-meta')?.textContent`), /serafuku/, 'the tile line is the tags of the part');
@@ -134,7 +140,7 @@ test('the row\'s Choose tags modal: the Tags tab links the same search to the Pa
     await page.click('.prompt-positive .tag-capsule-add');
     await page.waitFor(`Boolean(document.querySelector('${OPEN_MODAL}'))`, { label: 'the tag modal' });
     const tabs = JSON.parse(await page.evaluate(`JSON.stringify([...document.querySelectorAll('${OPEN_MODAL} .selection-modal-tab')].map(tab => [tab.textContent, tab.getAttribute('aria-selected')]))`));
-    assert.deepEqual(tabs, [['Tags', 'true'], ['Parts', 'false']], 'the tag list first, the parts beside it');
+    assert.deepEqual(tabs, [['Tags', 'true'], ['Parts', 'false'], ['LoRA', 'false']], 'the tag list first, the parts and the LoRAs beside it');
     // the toolbar's ends: the search box first, the star last, on both tabs
     const toolbarEnds = `(() => { const shown = [...document.querySelectorAll('${OPEN_MODAL} .selection-modal-toolbar > *')].filter(node => !node.hidden); return [shown[0]?.className, shown.at(-1)?.className].join(' | '); })()`;
     assert.equal(await page.evaluate(toolbarEnds), 'selection-modal-search-label | selection-modal-favonly');
@@ -153,13 +159,11 @@ test('the row\'s Choose tags modal: the Tags tab links the same search to the Pa
     assert.deepEqual(JSON.parse(await page.evaluate(`JSON.stringify([...document.querySelectorAll('${OPEN_MODAL} .selection-modal-filter-label')].map(node => node.hidden))`)), [true, true], 'no Category or Sample box beside the rail');
 
     // a tile joins the selection as a part chip; Apply writes the token into the row
-    // a click previews the tile in the panel; the panel's button (or a double click) picks it
+    // a click picks the tile, as a tag is picked, and shows it in the panel
     await page.click(`${OPEN_MODAL} .selection-modal-tile`);
-    await page.waitFor(`Boolean(document.querySelector('${OPEN_MODAL} .selection-modal-tile.is-previewed'))`, { label: 'the tile previewed' });
-    assert.equal(await page.evaluate(`document.querySelectorAll('${OPEN_MODAL} .selection-modal-chip.is-part').length`), 0, 'a click alone does not pick');
-    assert.match(await page.evaluate(`document.querySelector('${OPEN_MODAL} .selection-modal-panel').textContent`), /serafuku/, 'the panel shows the previewed part\'s tags');
-    await page.click(`${OPEN_MODAL} .parts-picker-add`);
     await page.waitFor(`Boolean(document.querySelector('${OPEN_MODAL} .selection-modal-chip.is-part'))`, { label: 'the part among the selected chips' });
+    assert.match(await page.evaluate(`document.querySelector('${OPEN_MODAL} .selection-modal-panel').textContent`), /serafuku/, 'the panel shows the picked part\'s tags');
+    assert.equal(await page.evaluate(`Boolean(document.querySelector('${OPEN_MODAL} .parts-picker-add'))`), false, 'no second button to pick with');
     assert.equal(await page.evaluate(`document.querySelector('${OPEN_MODAL} .selection-modal-chip.is-part .selection-modal-chip-label').textContent`), 'parts:Sailor Uniform');
     await page.click(`${OPEN_MODAL} .selection-modal-apply`);
     await page.waitFor(`!document.querySelector('${OPEN_MODAL}')`, { label: 'the modal to close' });

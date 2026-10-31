@@ -130,6 +130,9 @@ export async function reloadFiles(){
         }
     }
         
+    // the LoRA catalog follows the list (a LoRA added or removed)
+    globalThis.loraUi?.reload?.();
+
     if (SETTINGS.api_interface === 'WebUI') {
         // reset few list for Forge Neo
         globalThis.cachedFiles.controlnetProcessorListWebUI = 'none';

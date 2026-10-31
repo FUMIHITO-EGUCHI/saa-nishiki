@@ -4,7 +4,7 @@ import test from 'node:test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { declarationsFor, hasSelector, parseStylesheet } from './helpers/cssRules.mjs';
+import { declarationsFor, hasSelector, parseStylesheet, themeCss } from './helpers/cssRules.mjs';
 
 // Layout contract for the 2026-08-30 shell (wai-stack/SAA-ui-redesign.md §3):
 // header → viewer + info panel on the left; Characters & Views → Prompts (+ AI card) → Pipeline
@@ -74,11 +74,15 @@ test('pipeline rows: one switch or count per feature, no duplicate enable checkb
 
 test('run bar carries seed / size / steps·cfg / sampler / batch, the run buttons and the queue drawer', () => {
   const runBar = rightMarkup.slice(rightMarkup.indexOf('id="run-bar"'));
-  for (const cls of ['generate-random-seed', 'generate-width', 'generate-height', 'generate-landscape', 'generate-step', 'generate-cfg', 'generate-sampler', 'generate-scheduler', 'generate-batch',
+  for (const cls of ['generate-random-seed', 'generate-width', 'generate-height', 'generate-step', 'generate-cfg', 'generate-sampler', 'generate-scheduler', 'generate-batch',
     'generate-button-single', 'generate-button-batch', 'generate-button-same', 'generate-button-skip', 'generate-button-cancel', 'queue-autostart-generate', 'queue-main']) {
     assert.match(runBar, new RegExp(`class="${cls}\\b`), `.${cls} in run bar`);
   }
   assert.match(runBar, /id="seed-random-button"/);
+  // Size: the ratio chip (turn | pick) before the boxes, the chain between them, the tiles; no Landscape switch
+  for (const id of ['run-ratio-turn', 'run-ratio-pick', 'run-ratio-chain', 'run-ratio-popover']) assert.match(runBar, new RegExp(`id="${id}"`));
+  assert.match(runBar, /id="run-ratio"[\s\S]*generate-width[\s\S]*id="run-ratio-chain"[\s\S]*generate-height/);
+  assert.doesNotMatch(runBar, /generate-landscape/);
   assert.match(runBar, /id="generate-batch-menu-list"/);
   assert.match(runBar, /id="queue-drawer" hidden/);
   assert.match(runBar, /id="run-progress"/);
@@ -115,7 +119,7 @@ test('settings page labels resolve in every language (ui_* with legacy fallback)
 
 test('theme stylesheets style the shell through the generated token block', () => {
   for (const theme of ['html/index_dark.css', 'html/index_light.css']) {
-    const rules = parseStylesheet(read(theme));
+    const rules = parseStylesheet(themeCss(theme));
     for (const selector of ['.ui-card', '.pipeline-card .pipe-row-head', '#run-bar', '.ai-mode-segment', '.status-pill',
       '#info-panel', '.left-splitter', '.settings-grid', '#settings-modal-dialog', '.settings-modal-nav']) {
       assert.ok(hasSelector(rules, selector), `${theme} has a rule for ${selector}`);

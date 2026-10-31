@@ -282,6 +282,45 @@ test('the sort box orders the grid and is remembered; the tile size sets the gri
     }, { localStorage: storage });
 });
 
+test('a grid without click-previews: a click picks the tile and shows it in the panel, a second click lets it go', async () => {
+    await withFakeDom(async document => {
+        const modal = createSelectionModal({ mode: 'multiple', fitWindow: true });
+        const view = ui(modal);
+        modal.open({ options: [], tabs: [partsTab(document, { clickPreviews: false })], tab: 'parts' });
+        await later();
+        const tiles = view.tiles();
+        tiles[1].click();
+        assert.equal(view.chips().length, 1, 'picked at once, as a tag is');
+        assert.equal(view.panel.textContent, 'about dutch angle');
+        view.tiles()[1].click();
+        assert.equal(view.chips().length, 0, 'and let go the same way');
+        modal.destroy();
+    });
+});
+
+test('a sole tab: the tab alone, no strip or main tab, with the caller\'s title and Apply words', async () => {
+    await withFakeDom(async document => {
+        const modal = createSelectionModal({ mode: 'multiple', fitWindow: true });
+        const view = ui(modal);
+        modal.open({ modalTitle: 'LoRA', tabs: [partsTab(document, { clickPreviews: false })], tab: 'parts', soleTab: true, applyLabel: count => (count ? `Add (${count})` : 'Add') });
+        await later();
+        assert.equal(view.root.querySelector('.selection-modal-tabs').hidden, true, 'no tab strip');
+        assert.equal(view.root.querySelector('.selection-modal-title').textContent, 'LoRA');
+        assert.equal(view.root.querySelector('.selection-modal-apply').textContent, 'Add');
+        view.tiles()[0].click();
+        assert.equal(view.root.querySelector('.selection-modal-apply').textContent, 'Add (1)');
+        document.dispatchEvent({ type: 'keydown', key: 'Tab', ctrlKey: true, preventDefault() {}, stopPropagation() {} });
+        assert.equal(modal.activeTab(), 'parts', 'Ctrl+Tab has no main tab to go to');
+        modal.close();
+        // the next opening with tabs brings the strip back
+        modal.open({ options: [], tabs: [partsTab(document)], tab: 'parts' });
+        await later();
+        assert.equal(view.root.querySelector('.selection-modal-tabs').hidden, false);
+        assert.notEqual(view.root.querySelector('.selection-modal-apply').textContent, 'Add');
+        modal.destroy();
+    });
+});
+
 test('a click-previews grid: one click shows the tile in the panel, a double click or Enter picks it', async () => {
     await withFakeDom(async document => {
         const modal = createSelectionModal({ mode: 'multiple', fitWindow: true });
@@ -300,6 +339,42 @@ test('a click-previews grid: one click shows the tile in the panel, a double cli
         fire(view.listbox, 'keydown', { key: 'Enter' });
         assert.equal(view.chips().length, 2, 'Enter picks the tile the arrows reached');
         assert.equal(view.panel.textContent, 'about from above');
+        modal.destroy();
+    });
+});
+
+test('a refresh keeps the panel on its item where the new list puts it (a rename moves it)', async () => {
+    await withFakeDom(async document => {
+        let options = PARTS;
+        const modal = createSelectionModal({ mode: 'multiple', fitWindow: true });
+        const view = ui(modal);
+        modal.open({ options: [], tabs: [partsTab(document, { clickPreviews: false, refreshEvent: 'test:refresh', loadOptions: async () => options })], tab: 'parts' });
+        await later();
+        view.tiles()[0].click();
+        assert.equal(view.panel.textContent, 'about blazer');
+        options = PARTS.map(option => (option.label === 'blazer' ? { ...option, label: 'zz blazer' } : option));
+        document.dispatchEvent({ type: 'test:refresh' });
+        await later();
+        assert.deepEqual(view.tiles().map(tile => tile.textContent), ['dutch angle', 'from above', 'sepia', 'zz blazer'], 'sorted by its new name');
+        assert.equal(view.panel.textContent, 'about zz blazer', 'the panel stays with it');
+        modal.destroy();
+    });
+});
+
+test('a dialog opened over the modal takes the keys: Escape closes that one, not the modal', async () => {
+    await withFakeDom(async document => {
+        const modal = createSelectionModal({ mode: 'multiple', fitWindow: true });
+        const view = ui(modal);
+        modal.open({ options: [], tabs: [partsTab(document)], tab: 'parts' });
+        await later();
+        const over = document.createElement('div');
+        over.setAttribute('aria-modal', 'true');
+        document.body.appendChild(over);
+        document.dispatchEvent({ type: 'keydown', key: 'Escape', preventDefault() {}, stopPropagation() {} });
+        assert.equal(view.root.hidden, false, 'the modal under it stays');
+        over.hidden = true;
+        document.dispatchEvent({ type: 'keydown', key: 'Escape', preventDefault() {}, stopPropagation() {} });
+        assert.equal(view.root.hidden, true, 'with that one closed, Escape is the modal\'s again');
         modal.destroy();
     });
 });

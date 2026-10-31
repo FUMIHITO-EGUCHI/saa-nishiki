@@ -1,3 +1,4 @@
+import { refreshADetailerSettings } from './adetailerSettings.js';
 import { decodeThumb } from './customThumbGallery.js';
 import { generateImage, startQueue } from './generate.js';
 import { generateRegionalImage } from './generate_regional.js';
@@ -137,6 +138,8 @@ export function applyGenerationSettings(values = {}) {
     if ('width' in values) generate.width?.setValue?.(values.width);
     if ('height' in values) generate.height?.setValue?.(values.height);
     if ('api_image_landscape' in values) generate.landscape?.setValue?.(values.api_image_landscape);
+    // the ratio chip reads the stored choice back against the size it now has
+    if ('api_image_ratio' in values || 'api_image_ratio_linked' in values) globalThis.sizeRatio?.settleSoon?.();
     if ('api_hf_enable' in values) generate.hifix?.setValue?.(values.api_hf_enable);
     if ('api_hf_scale' in values) hifix.scale?.setValue?.(values.api_hf_scale);
     if ('api_hf_denoise' in values) hifix.denoise?.setValue?.(values.api_hf_denoise);
@@ -269,6 +272,7 @@ async function applyModelType(value, previous, { clearPrompts }) {
 
 export async function callback_api_interface(index, selectedValue){
     globalThis.globalSettings.api_interface = selectedValue[0];
+    refreshADetailerSettings();
 
     const SETTINGS = globalThis.globalSettings;
     const LANG = globalThis.cachedFiles.language[SETTINGS.language];

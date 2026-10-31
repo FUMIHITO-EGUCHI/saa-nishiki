@@ -150,6 +150,15 @@ const BROWSER_UNSUPPORTED = new Map([
     ['exportUserLists', 'writes to a folder the user picked on the host'],
     ['importUserLists', 'reads from a folder the user picked on the host'],
     ['downloadURL', 'writes the downloaded file to a path on the host'],
+    ['libraryFavorites', "the stars name image files on the host's disks"],
+    ['librarySetFavorite', "the stars name image files on the host's disks"],
+    ['libraryShowInFolder', "opens a window in the host's file manager"],
+    ['libraryRoots', "the Library's folders are on the host's disks"],
+    ['libraryImages', "the Library's folders are on the host's disks"],
+    ['libraryThumbs', "the Library's folders are on the host's disks"],
+    ['libraryImage', "the Library's folders are on the host's disks"],
+    ['libraryTrash', "moves a file on the host's disks to its trash"],
+    ['libraryLoraUses', "the Library's folders are on the host's disks"],
 ]);
 
 // Handlers the websocket offers that the preload bridge has no method for: the browser
@@ -229,7 +238,7 @@ test('the browser client can reach every bridged method that is not host-only', 
         assert.ok(bridged.has(name), `${name} is still a bridged method`);
         assert.ok(!wsHandlers.has(name), `${name} is on the exception list but wsService now handles it - take it off`);
     }
-    assert.equal(missing.length, 24, 'the size of the gap is known; a new one has to be argued for');
+    assert.equal(missing.length, 33, 'the size of the gap is known; a new one has to be argued for');
 });
 
 test('every websocket handler answers a method some client asks for', opts, () => {

@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { setupGallery } from '../scripts/renderer/customGallery.js';
+import { setupGallery, VIEWER_SELECT_EVENT } from '../scripts/renderer/customGallery.js';
 import { withFakeDom } from './helpers/fakeDom.mjs';
 
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
@@ -187,12 +187,11 @@ test('a lazy thumbnail only gets its real src once it is on screen', async () =>
 });
 
 test('removing the selected image keeps seeds, tags and info lined up and steps back', async () => {
-    await withGallery(async ({ document, container, gallery, info, copied }) => {
+    await withGallery(async ({ container, gallery, info }) => {
         for (const [index, name] of ['a', 'b', 'c'].entries()) {
             globalThis.generate.infoBySeed.set(`${index}`, `info ${name}`);
-            gallery.appendImageData(png(name), `${index}`, `tag ${name}`, 'True', true);
+            gallery.appendImageData(png(name), `${index}`, `tag ${name}`, 'True', true, '', { recipe: null, timing: null, path: '', note: name });
         }
-        globalThis.generate.seed = { getValue: () => -1, setValue() {} };
         assert.equal(info.at(-1), 'info c');
 
         // remove the oldest, not the newest: everything behind it has to move up with it
@@ -200,12 +199,8 @@ test('removing the selected image keeps seeds, tags and info lined up and steps 
         gallery.removeCurrentImage();
         assert.deepEqual(previews(container).map(image => image.dataset.src), [png('c'), png('b')]);
         assert.equal(info.at(-1), 'info b', 'the image now selected shows its own info');
-        await withoutLongTimers(async () => {
-            document.getElementById('cg-seed-button').click();
-            document.getElementById('cg-tag-button').click();
-            await flush();
-            assert.deepEqual(copied, ['1', 'tag b'], 'its seed and tags moved up with it');
-        });
+        const shown = gallery.currentEntry();
+        assert.deepEqual([shown.seed, shown.tags, shown.record.note], ['1', 'tag b', 'b'], 'its seed, tags and record moved up with it');
 
         gallery.removeCurrentImage();   // b, the selection steps back to what is left
         assert.equal(info.at(-1), 'info c');
@@ -229,22 +224,62 @@ test('clearGallery drops the images and the info behind them', async () => {
     });
 });
 
-test('the Seed and Tags buttons copy what the selected image carries', async () => {
-    await withGallery(async ({ document, gallery, copied }) => {
-        const seeds = [];
-        gallery.appendImageData(png('a'), ' 4242 ', ' blonde hair, smile ', 'True', true);
-        globalThis.generate.seed = { getValue: () => -1, setValue: value => seeds.push(value) };
+test('the image carries no Seed, Tags or Info buttons: the Info tab and the context menu have them', async () => {
+    await withGallery(async ({ document, container, gallery }) => {
+        gallery.appendImageData(png('a'), '4242', 'blonde hair, smile', 'True', true);
+        for (const id of ['cg-seed-button', 'cg-tag-button', 'cg-info-button', 'cg-switch-mode-button']) {
+            assert.equal(document.getElementById(id), null, `${id} is gone`);
+        }
+        const buttons = container.querySelectorAll('.cg-main-image-container button').map(button => button.getAttribute('aria-label'));
+        assert.deepEqual(buttons, ['Newer image', 'Older image', 'Favourite']);
+    });
+});
 
-        await withoutLongTimers(async () => {
-            document.getElementById('cg-seed-button').click();
-            await flush();
-            assert.deepEqual(copied, ['4242']);
-            assert.deepEqual(seeds, [4242], 'the copied seed also goes back into the seed box');
+test('the arrows step through the images, newer to the left, and wrap', async () => {
+    await withGallery(async ({ container, gallery }) => {
+        for (const name of ['a', 'b', 'c']) gallery.appendImageData(png(name), name, '', 'True', true);
+        const [newer, older] = container.querySelectorAll('.cg-nav-button');
+        older.click();
+        assert.equal(gallery.currentEntry().seed, 'b');
+        older.click();
+        assert.equal(gallery.currentEntry().seed, 'a');
+        newer.click();
+        assert.equal(gallery.currentEntry().seed, 'b');
+        newer.click();
+        newer.click();
+        assert.equal(gallery.currentEntry().seed, 'a', 'past the newest it wraps to the oldest');
+        assert.equal(container.querySelector('.cg-main-image').src, png('a'));
+        assert.ok(previews(container)[2].parentElement.classList.contains('is-current'), 'the strip marks the image on show');
+    });
+});
 
-            document.getElementById('cg-tag-button').click();
-            await flush();
-            assert.deepEqual(copied, ['4242', 'blonde hair, smile']);
-        });
+test('a star on an image that was never saved stays with it for the session', async () => {
+    await withGallery(async ({ container, gallery }) => {
+        gallery.appendImageData(png('a'), '1', '', 'True', true);
+        gallery.appendImageData(png('b'), '2', '', 'True', true);
+        const star = container.querySelector('.cg-star-button');
+        star.click();
+        await flush();
+        assert.equal(star.getAttribute('aria-pressed'), 'true');
+        assert.ok(previews(container)[0].parentElement.classList.contains('is-starred'));
+        clickPreview(container, previews(container)[1]);
+        assert.equal(star.getAttribute('aria-pressed'), 'false', 'the other image has none');
+        assert.equal(gallery.isStarred(1), true);
+    });
+});
+
+test('while a run is on, the strip starts with a tile for the image on its way', async () => {
+    await withGallery(async ({ container, gallery }) => {
+        gallery.appendImageData(png('a'), '1', '', 'True', true);
+        globalThis.generate.loadingMessage = 'Rice Shower\n[1/4] <3/8>';
+        gallery.showLoading('Now generating...', 'Elapsed time:', 'seconds');
+        const tile = container.querySelector('.cg-preview-container').firstElementChild;
+        assert.ok(tile.classList.contains('cg-progress-tile'));
+        assert.equal(tile.querySelector('.cg-progress-percent').textContent, '38%');
+        gallery.appendImageData(png('b'), '2', '', 'True', true);
+        assert.ok(container.querySelector('.cg-preview-container').firstElementChild.classList.contains('cg-progress-tile'), 'it stays first');
+        gallery.hideLoading('success', '');
+        assert.equal(container.querySelector('.cg-progress-tile'), null);
     });
 });
 
@@ -290,13 +325,10 @@ test('grid mode lays the images out newest first and removes the one that was ri
     await withGallery(async ({ container, gallery }) => {
         for (const name of ['a', 'b', 'c']) gallery.appendImageData(png(name), '1', '', 'True', true);
 
-        // <3> on the switch button is the gallery's own count
-        const button = container.querySelector('#cg-switch-mode-button');
-        assert.equal(button.textContent, '<3>');
-        await withoutLongTimers(async () => {
-            button.click();
-            await new Promise(resolve => setTimeout(resolve, 200));   // the switch waits 100ms
-        });
+        // the viewer header's grid button
+        gallery.setGridMode(true);
+        await flush();
+        assert.equal(gallery.isGridMode(), true);
 
         const items = container.querySelectorAll('.cg-gallery-item');
         assert.deepEqual(items.map(item => item.querySelector('img').dataset.src), [png('c'), png('b'), png('a')]);
@@ -306,5 +338,25 @@ test('grid mode lays the images out newest first and removes the one that was ri
         assert.deepEqual(
             container.querySelectorAll('.cg-gallery-item').map(item => item.querySelector('img').dataset.src),
             [png('c'), png('a')]);
+    });
+});
+
+test('an image keeps its record, and every selection announces the image on show', async () => {
+    await withGallery(async ({ container, gallery, document }) => {
+        const seen = [];
+        document.addEventListener(VIEWER_SELECT_EVENT, event => seen.push(event.detail));
+        const record = { recipe: { v: 1 }, timing: { total: 10200, segments: [] }, path: 'C:\\out\\a.png', interface: 'ComfyUI' };
+        gallery.appendImageData(png('a'), '7', 'tag a', 'True', true, '', record);
+        gallery.appendImageData(png('b'), '8', 'tag b', 'True', true);
+        assert.equal(gallery.currentEntry().record, null, 'an image from elsewhere has no record');
+        assert.equal(seen.at(-1).seed, '8');
+
+        clickPreview(container, previews(container)[1]);
+        assert.equal(gallery.currentEntry().record, record);
+        assert.equal(seen.at(-1).record, record);
+        assert.equal(seen.at(-1).image, png('a'));
+
+        gallery.clearGallery();
+        assert.equal(gallery.currentEntry(), null);
     });
 });

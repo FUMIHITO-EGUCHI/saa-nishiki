@@ -84,6 +84,31 @@ const regional = { ratio: '1,1', split: 'left-right', str_left: 1, str_right: 1,
 const ofType = (workflow, type) => Object.values(workflow).filter(node => node.class_type === type);
 const detailerModels = workflow => ofType(workflow, 'FaceDetailer').map(node => node.inputs.model);
 
+test('ADetailer follows the selected hires image, including the color-transfer switch', () => {
+    for (const [method, extra] of [
+        ['createWorkflow', { positive: 'basket of apples' }],
+        ['createWorkflowRegional', { regional, positive_left: 'basket', positive_right: 'cloth' }],
+    ]) {
+        const wf = builder[method](checkpoint({ ...extra, hifix: { ...hiresOn, colorTransfer: 'None' } }));
+        assert.deepEqual(ofType(wf, 'FaceDetailer')[0].inputs.image, ['18', 0], method);
+    }
+    const wf = builder.createWorkflowUNet(common({ unet, positive: 'basket', hifix: hiresOn }));
+    assert.deepEqual(ofType(wf, 'FaceDetailer')[0].inputs.image, ['62', 0]);
+});
+
+test('same-checkpoint refiner stays bypassed when latent hires is selected', () => {
+    for (const [method, extra, latent] of [
+        ['createWorkflow', { positive: 'basket' }, '46'],
+        ['createWorkflowRegional', { regional, positive_left: 'basket', positive_right: 'cloth' }, '58'],
+    ]) {
+        const wf = builder[method](checkpoint({ ...extra,
+            refiner: { enable: true, model: 'waiIllustriousSDXL_v160.safetensors', ratio: 0.8, vpred: 0 },
+            hifix: { ...hiresOn, model: 'Latent (nearest-exact)' },
+        }));
+        assert.deepEqual(wf[latent].inputs.samples, ['36', 0], method);
+    }
+});
+
 test('Anima: hires and ADetailer sample from the same LoRA\'d model as the first pass', () => {
     const wf = builder.createWorkflowUNet(common({ unet, positive: `1girl, waving, ${FAST_TAG}` }));
     assert.deepEqual(wf['36'].inputs.model, ['34', 0]);

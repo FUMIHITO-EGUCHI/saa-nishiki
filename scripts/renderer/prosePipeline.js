@@ -346,7 +346,8 @@ function dropReferenceMarks(generateData, job) {
 /**
  * Rewrites `generateData.positive` in place when the queued `job` (captureProseJob) has
  * Prose on. Returns a report for the image info: `{ applied, prompt, reason, cached,
- * edited, unknown, retried?, cancelled? }`, or null when the job has no Prose.
+ * edited, unknown, retried?, cancelled? }` (an applied one also carries the `fields` it
+ * was written from, which the image's recipe keeps), or null when the job has no Prose.
  */
 export async function applyProse(generateData, {
     job = null,
@@ -404,7 +405,7 @@ export async function applyProse(generateData, {
         notify();
     }
     generateData.positive = composeProsePositive(entry.prompt, loraLines);
-    return { applied: true, prompt: entry.prompt, reason: '', cached, edited, unknown };
+    return { applied: true, prompt: entry.prompt, reason: '', cached, edited, unknown, fields };
 }
 
 /** The paragraph of the last image, for the Prose card (null before the first one). */
@@ -429,6 +430,22 @@ export function setProseParagraph(text, { key = last?.key } = {}) {
         last = { ...last, prompt, edited: prompt !== entry.original };
         notify();
     }
+}
+
+/**
+ * An image's own paragraph, taken back into the cache under the fields it was written
+ * from ("Use settings…" with the Prose row on): the next image with the same fields - the
+ * same tags - sends this text instead of asking for a new one. Different tags ask anew.
+ */
+export function pinProseParagraph({ fields, paragraph } = {}) {
+    const text = String(paragraph ?? '');
+    if (!fields || typeof fields !== 'object' || !text.trim()) return false;
+    const key = proseCacheKey(fields, proseTarget(globalThis.globalSettings ?? {}));
+    remember(cache, key, { prompt: text, original: text });
+    for (const failure of [...failed.keys()]) if (failure.endsWith(`\n${key}`)) failed.delete(failure);
+    last = { key, fields, prompt: text, original: text, edited: false };
+    notify();
+    return true;
 }
 
 export function revertProseParagraph() {

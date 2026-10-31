@@ -10,6 +10,7 @@
 import { REFINE_SYSTEM_PROMPT } from '../aiPromptRefiner.js';
 import { normalizeArtistSlots } from './artistSlots.js';
 import { uniqueSlotSides } from './characterSides.js';
+import { normalizeADetailerSeed } from './adetailerSettings.js';
 
 export const SCHEMA_VERSION = 1;
 
@@ -116,6 +117,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     height: 1360,
     batch: 3,
     api_image_landscape: false,
+    api_image_ratio: '',            // the Size chip's ratio (shared/sizeRatio.js RATIOS id); '' = taken from the size
+    api_image_ratio_linked: true,   // false = Free: the width and height boxes move on their own
     scroll_to_last: false,
     keep_gallery: true,
     gallery_max_images: 200,   // the gallery keeps this many data URLs; older ones are dropped
@@ -255,6 +258,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
 
     api_controlnet_enable: false,
     api_adetailer_enable: false,
+    api_adetailer_prompt_mode: 'inherit',
+    api_adetailer_seed: -1,
 
     lora_slot: [],
     ad_slot: [],
@@ -318,7 +323,7 @@ export const SECTION_KEYS = Object.freeze({
         'ai_prose_writer', 'ai_prose_student_server', 'ai_prose_student_model', 'ai_prose_student_port',
     ]),
     generation: Object.freeze([
-        'random_seed', 'cfg', 'step', 'width', 'height', 'batch', 'api_image_landscape', 'api_model_sampler', 'api_model_scheduler',
+        'random_seed', 'cfg', 'step', 'width', 'height', 'batch', 'api_image_landscape', 'api_image_ratio', 'api_image_ratio_linked', 'api_model_sampler', 'api_model_scheduler',
         'api_model_file_select', 'api_model_file_diffusion_select',
         'api_hf_enable', 'api_hf_scale', 'api_hf_denoise', 'api_hf_upscaler_selected', 'api_hf_colortransfer', 'api_hf_random_seed', 'api_hf_steps',
         'api_refiner_enable', 'api_refiner_add_noise', 'api_refiner_model', 'api_refiner_model_vpred', 'api_refiner_ratio',
@@ -326,7 +331,7 @@ export const SECTION_KEYS = Object.freeze({
         'regional_str_left', 'regional_str_right', 'regional_option_left', 'regional_option_right', 'regional_split', 'regional_panels',
     ]),
     lora: Object.freeze(['lora_slot']),
-    adetailer: Object.freeze(['api_adetailer_enable', 'ad_slot']),
+    adetailer: Object.freeze(['api_adetailer_enable', 'api_adetailer_prompt_mode', 'api_adetailer_seed', 'ad_slot']),
     controlnet: Object.freeze(['api_controlnet_enable', 'controlnet_slot']),
 });
 
@@ -370,6 +375,10 @@ function sameType(defaultValue, value) {
 }
 
 function coerce(key, value, defaultValue) {
+    if (key === 'api_adetailer_prompt_mode') return value === 'empty' ? 'empty' : 'inherit';
+    if (key === 'api_adetailer_seed') return normalizeADetailerSeed(value);
+    // Older dropdown callbacks supplied a one-element array for these string settings.
+    if (['api_model_sampler', 'api_model_scheduler'].includes(key) && Array.isArray(value) && value.length === 1) value = value[0];
     if (typeof defaultValue === 'number') {
         if (typeof value === 'number') return Number.isFinite(value) ? value : defaultValue;
         if (typeof value === 'string' && value.trim() !== '') {

@@ -81,20 +81,17 @@ test('the Selected row keeps its one line however many chips it holds, and the P
     const rowHeight = await page.evaluate(`document.querySelector('${OPEN} .selection-modal-selected').getBoundingClientRect().height`);
     assert.equal(Math.round(rowHeight), 40, 'the Selected row is 40px with two chips');
 
-    // the rail narrows the grid; a click previews in the panel, the panel's button picks
+    // the rail narrows the grid; a click picks the tile and shows it in the panel
     await page.click(`${OPEN} .selection-modal-rail-item[data-category="camera"]`);
     await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-tile').length === ${CAMERA}`, { label: 'the camera tiles' });
     await page.click(`${OPEN} .selection-modal-tile`);
-    await page.waitFor(`document.querySelector('${OPEN} .selection-modal-tile.is-previewed') && document.querySelector('${OPEN} .parts-picker-add')`, { label: 'the tile previewed in the panel' });
-    assert.equal(await page.evaluate(`document.querySelectorAll('${OPEN} .selection-modal-chip.is-part').length`), 0, 'a click does not pick');
+    await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-chip.is-part').length === 1 && document.querySelector('${OPEN} .parts-picker-token')`, { label: 'the part picked and shown in the panel' });
     const first = await page.evaluate(`document.querySelector('${OPEN} .selection-modal-tile .parts-tile-name').textContent`);
     assert.match(await page.evaluate(`document.querySelector('${OPEN} .parts-picker-token').textContent`), /^parts:/, 'the panel says what the chip sends');
     assert.match(await page.evaluate(`document.querySelector('${OPEN} .parts-panel-sub').textContent`), /starter$/, 'a starter part says so');
-    await page.click(`${OPEN} .parts-picker-add`);
-    await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-chip.is-part').length === 1`, { label: 'the part among the selected chips' });
     // every other camera tile too: the strip fills but the row does not grow
     for (let i = 1; i < CAMERA; i++) {
-        await page.evaluate(`document.querySelectorAll('${OPEN} .selection-modal-tile')[${i}].dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`);
+        await page.evaluate(`document.querySelectorAll('${OPEN} .selection-modal-tile')[${i}].dispatchEvent(new MouseEvent('click', { bubbles: true }))`);
     }
     await page.waitFor(`document.querySelectorAll('${OPEN} .selection-modal-selected-list .selection-modal-chip').length === ${CAMERA + 2}`, { label: `${CAMERA + 2} chips in the strip` });
     assert.equal(Math.round(await page.evaluate(`document.querySelector('${OPEN} .selection-modal-selected').getBoundingClientRect().height`)), 40, `still 40px with ${CAMERA + 2} chips`);

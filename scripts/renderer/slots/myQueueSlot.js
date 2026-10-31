@@ -1,6 +1,7 @@
 import { setupTextbox } from '../components/myTextbox.js';
 import { generateGUID } from './myLoRASlot.js';
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
+import { iconMarkup } from '../../shared/iconSet.js';
 let instanceQueueManager = null;
 
 async function cancelGenerate(slotClass) {
@@ -132,9 +133,7 @@ class QueueManager {
 
         row.className = `slot-row add-row ${className}`;        
         row.innerHTML = `
-            <div class="slot-action slot-action-add ${itemClasses.add}" data-action="add" data-slot="${className}">
-                <img class="slot-action-add-toggle" src="scripts/svg/add.svg" alt="+">
-            </div>
+            <button type="button" class="saa-icon-btn slot-action slot-action-add ${itemClasses.add}" data-action="add" data-slot="${className}" aria-label="Add">${iconMarkup('plus', 14)}</button>
             <div></div>
             <div></div>
         `;
@@ -177,13 +176,9 @@ class QueueManager {
         const row = document.createElement('div');
         row.className = `slot-row content-row queue-row ${className}`;
         row.innerHTML = `
-            <div class="slot-action slot-action-del ${itemClasses.delete}" data-action="delete" data-slot="${className}">
-                <img class="slot-action-del-toggle" src="scripts/svg/del.svg" alt="-">
-            </div>
+            <button type="button" class="saa-icon-btn slot-action slot-action-del ${itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>
             <div class="${itemClasses.jobID}"></div>            
-            <div class="slot-action slot-action-info ${itemClasses.info}" data-action="info" data-slot="${className}">
-                <img class="slot-action-info-toggle" src="scripts/svg/info.svg" alt="?">
-            </div>
+            <button type="button" class="saa-icon-btn slot-action slot-action-info ${itemClasses.info}" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
         `;
         return row;
     }
@@ -283,13 +278,9 @@ class QueueManager {
         const existingRow = this.container.querySelector(`.${className}`);
         if (existingRow) {
             existingRow.innerHTML = `
-                <div class="slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}">
-                    <img class="slot-action-del-toggle" src="scripts/svg/del.svg" alt="-">
-                </div>
+                <button type="button" class="saa-icon-btn slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>
                 <div class="${slot.itemClasses.jobID}"></div>            
-                <div class="slot-action slot-action-info ${slot.itemClasses.info}" data-action="info" data-slot="${className}">
-                    <img class="slot-action-info-toggle" src="scripts/svg/info.svg" alt="?">
-                </div>
+                <button type="button" class="saa-icon-btn slot-action slot-action-info ${slot.itemClasses.info}" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
             `;
         }
 

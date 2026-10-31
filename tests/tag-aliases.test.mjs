@@ -7,13 +7,14 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { aliasKey, aliasMapFor, translationOf } from '../scripts/shared/tagAliases.js';
+import { themeCss } from './helpers/cssRules.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('the chips carry no translation (neither at rest, on hover nor on focus); the popover header carries it', () => {
     for (const file of ['html/index_dark.css', 'html/index_light.css']) {
-        const css = read(file);
+        const css = themeCss(file);
         assert.doesNotMatch(css, /tag-capsule-chip-alias/, `${file}: no chip alias rule`);
         assert.match(css, /\.tag-weight-popover-title-alias \{/, `${file}: translation line in the popover header`);
     }

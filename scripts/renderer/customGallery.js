@@ -1,5 +1,10 @@
 import { customCommonOverlay, addDragFunctionality } from './customOverlay.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
+import { parseLoadingMessage } from './components/runProgress.js';
+import { FAVORITES_CHANGED_EVENT, isFavorite, loadFavorites, setFavorite } from './libraryClient.js';
+
+// fired with the image on show (mainGallery.currentEntry()) whenever the selection changes
+export const VIEWER_SELECT_EVENT = 'saa:viewer-select';
 
 function setupScrollableContainer(container) {
     let isDragging = false, startX, scrollLeft;
@@ -30,81 +35,6 @@ function setupScrollableContainer(container) {
     });
 }
 
-function createModeSwitchOverlay(container) {
-    let overlay = document.getElementById('cg-mode-switch-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'cg-mode-switch-overlay';
-        overlay.className = 'cg-mode-switch-overlay';
-        overlay.innerHTML = `
-            <div class="cg-mode-switch-spinner"></div>
-            <div class="cg-mode-switch-text">Switching Gallery Mode...</div>
-        `;
-        container.appendChild(overlay);
-    }
-    return overlay;
-}
-
-function ensureSwitchModeButton(container, toggleFunction, id, images_length) {
-    let button = document.getElementById(id);
-    if (button) {
-        button.textContent = images_length > 0 ? `<${images_length}>` : '<>';        
-    } else {
-        button = document.createElement('button');
-        button.id = id;
-        button.className = 'cg-button';
-        button.textContent = images_length > 0 ? `<${images_length}>` : '<>';
-        button.addEventListener('click', () => handleSwitchModeClick(container, toggleFunction));
-        container.appendChild(button);
-    }
-}
-
-async function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function handleSwitchModeClick(container, toggleFunction) {
-    const overlay = createModeSwitchOverlay(container);
-    overlay.classList.add('visible');
-
-    await delay(100); 
-    toggleFunction();
-
-    hideAndRemoveOverlay(overlay);
-}
-
-function hideAndRemoveOverlay(overlay) {
-    requestAnimationFrame(() => {
-        setTimeout(() => {
-            overlay.classList.remove('visible');
-            setTimeout(() => overlay.remove(), 300);
-        }, 10000); // 10 seconds
-    });
-}
-
-function adjustPreviewContainer(previewContainer) {
-    const previewImages = previewContainer.querySelectorAll('.cg-preview-image');
-    if (previewImages.length > 0) {
-        previewImages[0].onload = () => {
-            const containerWidth = previewContainer.offsetWidth;
-            const firstImageWidth = previewImages[0].offsetWidth || 50;
-            const totalImagesWidth = firstImageWidth * previewImages.length;
-            if (totalImagesWidth < (containerWidth - firstImageWidth)) {
-                previewContainer.style.justifyContent = 'center';
-            } else {
-                previewContainer.style.justifyContent = 'flex-start';
-                if (previewImages.length > 10) {
-                    const minWidth = Math.max(50, containerWidth / previewImages.length);
-                    for (const img of previewImages) {
-                        img.style.maxWidth = `${minWidth}px`;
-                    }
-                }
-            }
-            previewContainer.scrollLeft = 0;
-        };
-    }
-}
-
 function process_oberserver(entries, observer) {
     for (const entry of entries) {
         if (entry.isIntersecting) {
@@ -129,7 +59,8 @@ export function setupGallery(containerId) {
     let seeds = [];
     let tags = [];
     let infos = [];   // per-image generation info (BBCode) shown in the Info panel
-    let renderedImageCount = 0;
+    let records = []; // per-image { recipe, timing, path, interface } (imageRecipe.js), or null
+let renderedImageCount = 0;
 
     const container = document.querySelector(`.${containerId}`);
     if (!container) {
@@ -142,6 +73,7 @@ export function setupGallery(containerId) {
         seeds = [];
         tags = [];
         infos = [];
+        records = [];
         renderedImageCount = 0;
         currentIndex = 0;
         container.innerHTML = '';
@@ -155,6 +87,7 @@ export function setupGallery(containerId) {
                 seeds.splice(index, 1);
                 tags.splice(index, 1);
                 infos.splice(index, 1);
+                records.splice(index, 1);
 
                 renderedImageCount = images.length;
                 currentIndex = 0;
@@ -165,7 +98,8 @@ export function setupGallery(containerId) {
             seeds.splice(currentIndex, 1);
             tags.splice(currentIndex, 1);
             infos.splice(currentIndex, 1);
-            renderedImageCount = images.length;
+            records.splice(currentIndex, 1);
+renderedImageCount = images.length;
             currentIndex = currentIndex - 1;
             if(currentIndex < 0)
                 currentIndex = 0;
@@ -173,7 +107,9 @@ export function setupGallery(containerId) {
         }            
     };
 
-    globalThis.mainGallery.appendImageData = function (base64, seed, tagsString, keep_gallery, switchToLatest = false, info = '') {
+    // `record` is what the run knows of the image beyond its pixels: its recipe, timing
+    // and saved file (imageRecipe.js imageRecord); null for an image from elsewhere.
+    globalThis.mainGallery.appendImageData = function (base64, seed, tagsString, keep_gallery, switchToLatest = false, info = '', record = null) {
         if ('False' === keep_gallery) {
             globalThis.mainGallery.clearGallery();
         }
@@ -191,6 +127,7 @@ export function setupGallery(containerId) {
         if (typeof info === 'string' && info !== '') ownInfo = info;
         else if (info !== null) ownInfo = globalThis.generate?.infoBySeed?.get?.(String(seed)) ?? '';
         infos.push(ownInfo);
+        records.push(record && typeof record === 'object' ? record : null);
 
         if (seeds.length !== tags.length || images.length !== seeds.length) {
             console.warn('[appendImageData] Mismatch: images:', images.length, 'seeds:', seeds.length, 'tags:', tags.length);
@@ -230,13 +167,122 @@ export function setupGallery(containerId) {
             seeds.splice(victim, 1);
             tags.splice(victim, 1);
             infos.splice(victim, 1);
-            if (victim < currentIndex) currentIndex -= 1;
+            records.splice(victim, 1);
+if (victim < currentIndex) currentIndex -= 1;
             dropped += 1;
         }
         if (dropped > 0) renderedImageCount = 0;
         return dropped > 0;
     }
     globalThis.mainGallery.imageCount = () => images.length;
+
+    // A star: a saved image keeps it in the Library store (by its path); one that was
+    // never saved (WebUI, a browser client) keeps it for the session in its record.
+    function isStarred(index) {
+        const record = records[index];
+        return record?.path ? isFavorite(record.path) : record?.starred === true;
+    }
+
+    async function toggleStar(index) {
+        const record = records[index];
+        if (record?.path) {
+            await setFavorite(record.path, !isFavorite(record.path));
+        } else if (index >= 0 && index < images.length) {
+            records[index] = { ...(record ?? {}), starred: !(record?.starred === true) };
+        }
+        paintStars();
+    }
+
+    function paintStars() {
+        const star = container.querySelector('.cg-star-button');
+        if (star) {
+            const on = isStarred(currentIndex);
+            star.classList.toggle('is-on', on);
+            star.setAttribute('aria-pressed', String(on));
+        }
+        for (const tile of container.querySelectorAll('.cg-preview-tile')) {
+            const index = images.length - 1 - Number.parseInt(tile.querySelector('.cg-preview-image')?.dataset.domIndex ?? '-1', 10);
+            tile.classList.toggle('is-starred', isStarred(index));
+        }
+    }
+    document.addEventListener(FAVORITES_CHANGED_EVENT, paintStars);
+    loadFavorites();
+    globalThis.mainGallery.isStarred = isStarred;
+    // the saved files of this session's images, newest first (the Library's "This session")
+    globalThis.mainGallery.sessionPaths = () => records.map(record => record?.path).filter(Boolean).reverse();
+    globalThis.mainGallery.toggleStar = () => toggleStar(currentIndex);
+
+    // Grid or the single image with its strip; the viewer header's grid button flips it.
+    const gridToggle = document.getElementById('viewer-grid-toggle');
+    function paintGridToggle() {
+        gridToggle?.setAttribute('aria-pressed', String(isGridMode));
+        gridToggle?.classList.toggle('is-active', isGridMode);
+    }
+    globalThis.mainGallery.setGridMode = function (on) {
+        isGridMode = on === true;
+        currentIndex = images.length - 1;
+        paintGridToggle();
+        if (isGridMode) gallery_renderGridMode();
+        else gallery_renderSplitMode();
+    };
+    globalThis.mainGallery.isGridMode = () => isGridMode;
+    gridToggle?.addEventListener('click', () => globalThis.mainGallery.setGridMode(!isGridMode));
+    paintGridToggle();
+
+    // Newer is the higher index (the newest image is the last one)
+    function step(delta) {
+        if (images.length < 2) return;
+        currentIndex = (currentIndex + delta + images.length) % images.length;
+        const mainImage = container.querySelector('.cg-main-image');
+        if (mainImage) mainImage.src = images[currentIndex];
+        updatePreviewBorders();
+    }
+    globalThis.mainGallery.showNewer = () => step(1);
+    globalThis.mainGallery.showOlder = () => step(-1);
+
+    // While a run is on, the strip starts with a tile for the image on its way.
+    let progressTimer = null;
+    function paintProgressTile() {
+        const strip = container.querySelector('.cg-preview-container');
+        let tile = container.querySelector('.cg-progress-tile');
+        if (!globalThis.mainGallery.isLoading || !strip) {
+            tile?.remove();
+            return;
+        }
+        if (!tile) {
+            tile = document.createElement('div');
+            tile.className = 'cg-progress-tile';
+            tile.setAttribute('role', 'progressbar');
+            tile.setAttribute('aria-valuemin', '0');
+            tile.setAttribute('aria-valuemax', '100');
+            tile.innerHTML = '<span class="cg-progress-percent"></span><span class="cg-progress-track"><i></i></span>';
+        }
+        if (strip.firstElementChild !== tile) strip.prepend(tile);
+        const { step: done, total } = parseLoadingMessage(globalThis.generate?.loadingMessage);
+        const percent = Number.isFinite(done) && Number.isFinite(total) && total > 0 ? Math.round((done / total) * 100) : null;
+        tile.querySelector('.cg-progress-percent').textContent = percent === null ? '…' : `${percent}%`;
+        tile.querySelector('.cg-progress-track i').style.width = `${percent ?? 0}%`;
+        if (percent === null) tile.removeAttribute('aria-valuenow');
+        else tile.setAttribute('aria-valuenow', String(percent));
+    }
+    function startProgressTile() {
+        paintProgressTile();
+        if (!progressTimer) progressTimer = setInterval(paintProgressTile, 250);
+    }
+    function stopProgressTile() {
+        if (progressTimer) clearInterval(progressTimer);
+        progressTimer = null;
+        paintProgressTile();
+    }
+    // the image on show, with everything the gallery keeps of it; null when empty
+    globalThis.mainGallery.currentEntry = () => (images.length === 0 ? null : {
+        index: currentIndex,
+        image: images[currentIndex],
+        seed: seeds[currentIndex],
+        tags: tags[currentIndex],
+        info: infos[currentIndex],
+        record: records[currentIndex] ?? null,
+    });
 
     globalThis.mainGallery.showLoading = function (loadingMEssage, elapsedTimePrefix, elapsedTimeSuffix) {
         // A new run supersedes any earlier failure; otherwise the error overlay
@@ -261,6 +307,7 @@ export function setupGallery(containerId) {
         }
         addDragFunctionality(loadingOverlay, buttonOverlay);
         globalThis.mainGallery.isLoading = true;
+        startProgressTile();
     };
 
     globalThis.mainGallery.hideLoading = function (errorMessage, copyMessage) {
@@ -288,6 +335,7 @@ export function setupGallery(containerId) {
             document.getElementById('cg-error-overlay')?.remove();
         }
         globalThis.mainGallery.isLoading = false;
+        stopProgressTile();
     };
 
     function ensurePrivacyButton() {
@@ -558,12 +606,6 @@ export function setupGallery(containerId) {
             renderedImageCount = images.length;
     
             localStorage.setItem('gridAspectRatio', aspectRatio.toString());
-    
-            ensureSwitchModeButton(container, () => {
-                isGridMode = !isGridMode;
-                currentIndex = images.length - 1;
-                isGridMode ? gallery_renderGridMode() : gallery_renderSplitMode();
-            }, 'cg-switch-mode-button', images.length);
             ensurePrivacyButton();
         };
         firstImage.onerror = () => {
@@ -594,6 +636,11 @@ export function setupGallery(containerId) {
             mainImage.className = 'cg-main-image';
             mainImage.addEventListener('click', () => enterFullscreen(currentIndex));
             mainImageContainer.appendChild(mainImage);
+            mainImageContainer.append(
+                viewerButton('cg-nav-button cg-nav-newer', '\u2039', 'viewer_newer', 'Newer image', () => step(1)),
+                viewerButton('cg-nav-button cg-nav-older', '\u203a', 'viewer_older', 'Older image', () => step(-1)),
+                viewerButton('cg-star-button', '\u2605', 'viewer_favourite', 'Favourite', () => toggleStar(currentIndex)),
+            );
             container.appendChild(mainImageContainer);
 
             mainImageContainer.addEventListener('click', (e) => {
@@ -601,7 +648,7 @@ export function setupGallery(containerId) {
                 const rect = mainImageContainer.getBoundingClientRect();
                 const clickX = e.clientX - rect.left;
                 const isLeft = clickX < rect.width / 2;
-                if (e.target !== mainImage && images.length > 1) {
+                if (e.target === mainImageContainer && images.length > 1) {
                     if (isLeft) {
                         currentIndex = (currentIndex + 1) % images.length;
                     } else {
@@ -645,29 +692,17 @@ export function setupGallery(containerId) {
 
         if (incremental && renderedImageCount < images.length) {
             for (let i = renderedImageCount; i < images.length; i++) {
-                const previewImage = document.createElement('img');
-                previewImage.className = 'cg-preview-image';
-                previewImage.dataset.src = images[i];
-                previewImage.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-                previewImage.loading = 'lazy';
-                previewImage.dataset.domIndex = images.length - 1 - i;
-                fragment.appendChild(previewImage);
-                observer.observe(previewImage);
+                fragment.appendChild(previewTile(i, observer));
             }
         } else {
             for (let i = images.length - 1; i >= 0; i--) {
-                const previewImage = document.createElement('img');
-                previewImage.className = 'cg-preview-image';
-                previewImage.dataset.src = images[i];
-                previewImage.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-                previewImage.loading = 'lazy';
-                previewImage.dataset.domIndex = images.length - 1 - i;
-                fragment.appendChild(previewImage);
-                observer.observe(previewImage);
+                fragment.appendChild(previewTile(i, observer));
             }
         }
 
         previewContainer.prepend(fragment);
+        container.querySelector('.cg-progress-tile')?.remove();
+        paintProgressTile();
         renderedImageCount = images.length;
 
         updatePreviewBorders();
@@ -676,16 +711,39 @@ export function setupGallery(containerId) {
             currentPreview.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }
 
-        ensureSwitchModeButton(container, () => {
-            isGridMode = !isGridMode;
-            currentIndex = images.length - 1;
-            isGridMode ? gallery_renderGridMode() : gallery_renderSplitMode();
-        }, 'cg-switch-mode-button', images.length);
-        ensureSeedButton();
-        ensureTagButton();
-        ensureInfoButton();
         ensurePrivacyButton();
-        adjustPreviewContainer(previewContainer);
+    }
+
+    function viewerButton(className, glyph, langKey, fallback, onClick) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = className;
+        button.textContent = glyph;
+        const language = globalThis.cachedFiles?.language?.[globalThis.globalSettings?.language] ?? {};
+        const label = typeof language[langKey] === 'string' && language[langKey] ? language[langKey] : fallback;
+        button.setAttribute('aria-label', label);
+        button.title = label;
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            onClick();
+        });
+        return button;
+    }
+
+    // One thumbnail of the strip: the image (lazy, `observer` fills its src on screen)
+    // in a tile that carries the star mark.
+    function previewTile(index, observer) {
+        const tile = document.createElement('span');
+        tile.className = 'cg-preview-tile';
+        const previewImage = document.createElement('img');
+        previewImage.className = 'cg-preview-image';
+        previewImage.dataset.src = images[index];
+        previewImage.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+        previewImage.loading = 'lazy';
+        previewImage.dataset.domIndex = images.length - 1 - index;
+        tile.appendChild(previewImage);
+        observer.observe(previewImage);
+        return tile;
     }
     
     function updatePreviewBorders() {
@@ -693,8 +751,9 @@ export function setupGallery(containerId) {
         for (const [domIndex, child] of [...previewImages].entries()) {
             const index = images.length - 1 - domIndex;
             child.dataset.domIndex = domIndex;
-            child.style.border = index === currentIndex ? '2px solid #3498db' : 'none';
+            child.parentElement?.classList?.toggle('is-current', index === currentIndex);
         }
+        paintStars();
         const domIndex = images.length - 1 - currentIndex;
         if (domIndex >= 0 && domIndex < previewImages.length) {
             previewImages[domIndex].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
@@ -706,6 +765,7 @@ export function setupGallery(containerId) {
     // has it, otherwise the parameters embedded in the file (loaded / older images).
     let infoSyncToken = 0;
     function syncInfoPanel() {
+        document.dispatchEvent(new CustomEvent(VIEWER_SELECT_EVENT, { detail: globalThis.mainGallery.currentEntry() }));
         const box = globalThis.infoBox?.image;
         if (!box?.setValue || images.length === 0) return;
         const index = currentIndex;
@@ -731,120 +791,5 @@ export function setupGallery(containerId) {
                 console.warn('[gallery] embedded metadata read failed:', error?.message ?? error);
             }
         })();
-    }
-
-    function ensureSeedButton() {
-        let seedButton = document.getElementById('cg-seed-button');
-        if (!seedButton) {
-            seedButton = document.createElement('button');
-            seedButton.id = 'cg-seed-button';
-            seedButton.className = 'cg-button';
-            seedButton.textContent = 'Seed';
-            seedButton.addEventListener('click', async () => {
-                if (!seeds?.[currentIndex]) return;
-    
-                const seedToCopy = seeds[currentIndex].trim();
-                try {
-                    await navigator.clipboard.writeText(seedToCopy);
-                    seedButton.textContent = 'Copied!';
-                } catch (err) {
-                    seedButton.textContent = 'Copy failed!';
-                    console.warn('Failed to copy seed:', err);
-                    const SETTINGS = globalThis.globalSettings;
-                    const FILES = globalThis.cachedFiles;
-                    const LANG = FILES.language[SETTINGS.language];
-                    globalThis.overlay.custom.createCustomOverlay(
-                        'none', LANG.saac_macos_clipboard.replace('{0}', seedToCopy), 
-                        384, 'center', 'left', null, 'Clipboard');
-                } finally {                                        
-                    setTimeout(() => {
-                        seedButton.textContent = 'Seed';
-                    }, 2000);
-                    updateSeedInputs(seedToCopy);
-                }
-            });
-            container.appendChild(seedButton);
-        }
-    }
-    
-    function updateSeedInputs(seedToCopy) {
-        const lastSeed = globalThis.generate.seed.getValue();
-        const newSeed = Number.parseInt(seedToCopy);
-        if(lastSeed === newSeed) {
-            globalThis.generate.seed.setValue(-1);
-        } else {
-            globalThis.generate.seed.setValue(newSeed);
-        }
-    }
-
-    function ensureInfoButton() {
-        let infoButton = document.getElementById('cg-info-button');
-        if (!infoButton) {
-            infoButton = document.createElement('button');
-            infoButton.id = 'cg-info-button';
-            infoButton.className = 'cg-button';
-            infoButton.textContent = 'Info';
-            infoButton.addEventListener('click', async () => {
-                const dataUrl = images?.[currentIndex];
-                if (!dataUrl?.startsWith?.('data:image/')) return;
-
-                // Image Info overlay (metadata, Send, ControlNet, Tagger) on the shown image
-                try {
-                    const seed = seeds?.[currentIndex];
-                    if (await globalThis.imageInfo?.openImage?.(dataUrl, seed ? `gallery_${seed}.png` : 'gallery.png')) return;
-                } catch (error) {
-                    console.warn('[gallery] Image Info failed, showing metadata text instead:', error?.message ?? error);
-                }
-
-                let text = '';
-                try {
-                    const result = globalThis.inBrowser
-                        ? await sendWebSocketMessage({ type: 'API', method: 'readBase64Image', params: [dataUrl] })
-                        : await globalThis.api.readBase64Image(dataUrl);
-                    // PNG carries "parameters", JPEG/WebP carry "data"
-                    text = result?.metadata?.parameters || result?.metadata?.data || '';
-                } catch (error) {
-                    console.warn('Failed to read image metadata:', error);
-                }
-                globalThis.overlay.custom.closeCustomOverlaysByGroup('Info'); // close exist
-                globalThis.overlay.custom.createCustomOverlay(
-                    'none', `\n\n${text || 'No generation metadata found in this image.'}`,
-                    384, 'center', 'left', null, 'Info');
-            });
-            container.appendChild(infoButton);
-        }
-    }
-
-    function ensureTagButton() {
-        let tagButton = document.getElementById('cg-tag-button');
-        if (!tagButton) {
-            tagButton = document.createElement('button');
-            tagButton.id = 'cg-tag-button';
-            tagButton.className = 'cg-button';
-            tagButton.textContent = 'Tags';
-            tagButton.addEventListener('click', async () => {
-                if (!tags?.[currentIndex]) return;
-    
-                const tagToCopy = tags[currentIndex].trim();
-                try {
-                    await navigator.clipboard.writeText(tagToCopy);
-                    tagButton.textContent = 'Copied!';                    
-                } catch (err) {
-                    tagButton.textContent = 'Copy failed!';
-                    console.warn('Failed to copy tag:', err);
-                    const SETTINGS = globalThis.globalSettings;
-                    const FILES = globalThis.cachedFiles;
-                    const LANG = FILES.language[SETTINGS.language];
-                    globalThis.overlay.custom.createCustomOverlay(
-                        'none', LANG.saac_macos_clipboard.replace('{0}', tagToCopy),
-                        384, 'center', 'left', null, 'Clipboard');
-                } finally {
-                    setTimeout(() => {
-                        tagButton.textContent = 'Tags';
-                    }, 2000);
-                }
-            });
-            container.appendChild(tagButton);
-        }
     }
 }

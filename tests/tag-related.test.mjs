@@ -17,6 +17,7 @@ import {
     trimTop,
 } from '../scripts/shared/tagRelated.js';
 import { aliasKey } from '../scripts/shared/tagAliases.js';
+import { themeCss } from './helpers/cssRules.mjs';
 
 const projectRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = relativePath => fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
@@ -147,7 +148,7 @@ test('renderer, preload, web socket API and main process are wired for related t
     assert.match(popover, /let lastTabKind = 'weight';/, 'the tab kind is remembered for the next open');
     assert.match(popover, /aliasFor\(tag\)/, 'each suggestion carries its translation');
     for (const file of ['html/index_dark.css', 'html/index_light.css']) {
-        const css = read(file);
+        const css = themeCss(file);
         assert.match(css, /\.tag-weight-related \{[^}]*max-height: 220px;/, `${file}: the Related tab scrolls inside the popover`);
         assert.match(css, /\.tag-weight-related-chip\.is-present \{/, `${file}: present tags dimmed`);
         assert.doesNotMatch(css, /\.tag-capsule-suggest \{/, `${file}: the old in-field panel is gone`);

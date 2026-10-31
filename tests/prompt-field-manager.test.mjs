@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { themeCss } from './helpers/cssRules.mjs';
 
 const read = relativePath => fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
 
@@ -27,7 +28,7 @@ test('field manager wires custom fields into the prompt registry and settings', 
 
 test('both themes style the preset panel; the retired Fields editor and field list are gone', () => {
   for (const file of ['html/index_dark.css', 'html/index_light.css']) {
-    const css = read(file);
+    const css = themeCss(file);
     assert.match(css, /\.prompt-field \{ position: relative; \}/);
     assert.match(css, /\.prompt-preset-panel \{ position: absolute;/);
     // preset button renders inline in the header tool row (not floating over the capsule toggle)
@@ -73,7 +74,7 @@ test('Scene: every unit is a row edited in place (drag, rename, mute, add), Regi
   const css = read('html/index.css');
   assert.match(css, /\.prompt-scene \.prompt-field > \.myTextbox-wrapper \{\s*display: grid;/);
   assert.match(css, /\.prompt-field\.is-muted \.tag-capsule-chip \{\s*border-style: dashed;/);
-  assert.match(css, /\.scene-side\.is-right \{\s*border-left-color: var\(--saa-warn, #e0a458\);/);
+  assert.match(css, /\.scene-side\.is-right \{\s*border-left-color: var\(--saa-warn\);/);
   // Regional runs on a diffusion model too (2026-09-27): cast mode hides Refiner and ControlNet only
   assert.doesNotMatch(css, /\.cast-mode \.regional-condition-trigger-dummy/);
   assert.doesNotMatch(css, /\.cast-mode \.scene-regional/);

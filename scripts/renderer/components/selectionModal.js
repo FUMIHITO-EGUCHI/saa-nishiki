@@ -12,6 +12,7 @@ import {
     writeStoredPreference,
     writeStoredSize,
 } from './selectionModalLogic.js';
+import { element as createElement } from '../dom.js';
 
 const NARROW_DIALOG = 1400;    // under this width the rail and the panel take their narrow widths
 
@@ -25,6 +26,8 @@ const FOCUSABLE_SELECTOR = [
 const DEFAULT_LIMIT = 200;
 let modalSequence = 0;
 
+const DOCUMENT_POSITION_FOLLOWING = 4; // Node.DOCUMENT_POSITION_FOLLOWING
+
 function optionKey(option) {
     return normalizeSelectionKey(option?.key ?? option?.value ?? '');
 }
@@ -32,13 +35,6 @@ function optionKey(option) {
 function optionLabel(option) {
     const label = typeof option?.label === 'function' ? option.label() : option?.label;
     return String(label ?? option?.value ?? option?.key ?? '');
-}
-
-function createElement(tagName, className, text = '') {
-    const element = document.createElement(tagName);
-    if (className) element.className = className;
-    if (text) element.textContent = text;
-    return element;
 }
 
 function normalizeSelectOptions(options) {
@@ -238,6 +234,8 @@ export function createSelectionModal({
     let sortValue = '';            // the sort order on a tab that offers some
     let tileSize = '';             // the tile size on a grid tab that offers some
     let popoverOpen = false;       // the Selected list unfolded
+    let soleTab = false;           // the one extra tab is the whole modal: no strip, no main tab
+    let applyText = null;          // count -> the Apply button's words, when the caller names them
     let activeConfig = { categories: [], attributes: [], onOptionHover, onOptionLeave, onActiveOption, favorites: null, sorts: [], tileSizes: [], optionLimit };
 
     // Everything a tab can set: its filters (and what they are called), its loader, its
@@ -249,6 +247,8 @@ export function createSelectionModal({
             categories: Array.isArray(tab.categories) ? tab.categories : [],
             defaultCategory: typeof tab.defaultCategory === 'string' ? tab.defaultCategory : '',
             attributes: Array.isArray(tab.attributes) ? tab.attributes : [],
+            // the attribute the tab opens on (the LoRA tab: the ones that fit the model)
+            defaultAttribute: typeof tab.defaultAttribute === 'string' ? tab.defaultAttribute : '',
             categoryLabel: tab.categoryLabel ?? 'Category',
             attributeLabel: tab.attributeLabel ?? 'Attribute',
             categoryAll: tab.categoryAll ?? 'All categories',
@@ -386,7 +386,8 @@ export function createSelectionModal({
     }
 
     function renderApplyLabel() {
-        applyButton.textContent = mode === 'multiple' && selectedOptions.length > 0
+        if (typeof applyText === 'function') applyButton.textContent = applyText(selectedOptions.length);
+        else applyButton.textContent = mode === 'multiple' && selectedOptions.length > 0
             ? tagText('tag_ui_apply_count', selectedOptions.length)
             : tagText('tag_ui_apply');
         cancelButton.textContent = tagText('tag_ui_cancel');
@@ -593,8 +594,8 @@ export function createSelectionModal({
 
     function renderTabs() {
         tabStrip.replaceChildren();
-        tabStrip.hidden = tabs.length === 0;
-        if (tabs.length === 0) return;
+        tabStrip.hidden = tabs.length === 0 || soleTab;
+        if (tabStrip.hidden) return;
         const entries = [{ id: null, label: mainTabLabel, tab: null }, ...tabs.map(tab => ({ id: tab.id, label: tab.label ?? tab.id, tab }))];
         for (const entry of entries) {
             const button = createElement('button', 'selection-modal-tab', entry.label);
@@ -668,7 +669,9 @@ export function createSelectionModal({
             && (activeConfig.categories ?? []).some(entry => (typeof entry === 'string' ? entry : entry?.value) === activeConfig.defaultCategory);
         categorySelect.value = preset && !activeConfig.rail ? activeConfig.defaultCategory : '';
         railCategory = preset && activeConfig.rail ? activeConfig.defaultCategory : '';
-        attributeSelect.value = '';
+        const presetAttribute = typeof activeConfig.defaultAttribute === 'string' && activeConfig.defaultAttribute !== ''
+            && (activeConfig.attributes ?? []).some(entry => (typeof entry === 'string' ? entry : entry?.value) === activeConfig.defaultAttribute);
+        attributeSelect.value = presetAttribute ? activeConfig.defaultAttribute : '';
         renderSortSelect();
         renderSizeSegment();
         listbox.classList.toggle('is-grid', activeConfig.view === 'grid');
@@ -847,6 +850,7 @@ export function createSelectionModal({
     // the scroll stay where they are
     async function refreshOptions({ keep = false } = {}) {
         const generation = ++requestGeneration;
+        const activeKey = keep && visibleOptions[activeIndex] ? optionKey(visibleOptions[activeIndex]) : null;
         const config = {
             query: effectiveSearch().query.trim(),
             category: currentCategory(),
@@ -860,6 +864,12 @@ export function createSelectionModal({
         currentOptions = typeof activeConfig.loadOptions === 'function' ? takeLoaded(nextOptions) : currentOptions;
         if (keep) {
             renderOptions({ scrollActive: false });
+            // the item the panel is about stays, wherever the new list puts it (a rename moves it)
+            const index = activeKey === null ? -1 : visibleOptions.findIndex(option => optionKey(option) === activeKey);
+            if (index >= 0 && index !== activeIndex) {
+                activeIndex = index;
+                updateActiveDescendant({ scroll: false });
+            }
             renderActions();
             return;
         }
@@ -933,7 +943,20 @@ export function createSelectionModal({
         if (mode === 'single') listbox.focus();
     }
 
+    // a dialog opened over this one (from its panel, or a modal opened from that) comes
+    // later in the body: the keys are its own
+    function coveredByLaterDialog() {
+        if (typeof overlay.compareDocumentPosition !== 'function') return false;
+        const shown = node => { for (let current = node; current; current = current.parentElement) if (current.hidden) return false; return true; };
+        for (const other of document.querySelectorAll('[aria-modal="true"]')) {
+            if (overlay.contains(other) || !shown(other)) continue;
+            if (overlay.compareDocumentPosition(other) & DOCUMENT_POSITION_FOLLOWING) return true;
+        }
+        return false;
+    }
+
     function onDialogKeyDown(event) {
+        if (coveredByLaterDialog()) return;
         if (event.key === 'Escape') {
             if (event.isComposing || event.keyCode === 229) return;
             event.preventDefault();
@@ -945,7 +968,7 @@ export function createSelectionModal({
             close({ apply: false });
             return;
         }
-        if (tabs.length > 0 && event.ctrlKey && !event.altKey && !event.metaKey) {
+        if (tabs.length > 0 && !soleTab && event.ctrlKey && !event.altKey && !event.metaKey) {
             // Ctrl+Tab cycles the tabs, Ctrl+1…9 jumps to one
             const all = [null, ...tabs];
             if (event.key === 'Tab') {
@@ -1127,8 +1150,13 @@ export function createSelectionModal({
             tabs: extraTabs = [],
             tab: initialTab = null,
             tabLabel = 'Items',
+            // the modal is the `tab` alone (the LoRA card's "+ LoRA": the LoRA tab, titled LoRA)
+            soleTab: onlyTab = false,
+            // count -> the Apply button's words ("Add (2)"); the modal's own when null
+            applyLabel = null,
         } = {}) {
             lastTrigger = trigger;
+            applyText = typeof applyLabel === 'function' ? applyLabel : null;
             fallbackFocus = fallback;
             unhookRefreshEvent();
             mainConfig = {
@@ -1159,6 +1187,7 @@ export function createSelectionModal({
             tabs = (Array.isArray(extraTabs) ? extraTabs : []).filter(tab => tab && typeof tab === 'object' && tab.id);
             mainTabLabel = tabLabel;
             activeTab = tabs.find(tab => tab.id === initialTab) ?? null;
+            soleTab = Boolean(onlyTab) && activeTab !== null;
             activeConfig = configFor(activeTab);
             favOnly = false;
             heading.textContent = modalTitle;

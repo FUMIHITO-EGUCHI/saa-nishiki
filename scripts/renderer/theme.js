@@ -30,18 +30,15 @@ export function applyTheme(theme) {
     const baseTheme = 'html/index.css'; 
     loadCSS(baseTheme, 'base-theme');   
     
-    const galleryDarkTheme = 'html/gallery_dark.css'; 
-    const galleryLightTheme = 'html/gallery_light.css';     
-    const lightTheme = 'html/index_light.css'; 
-    const darkTheme = 'html/index_dark.css'; 
+    // only the token values switch: theme.css and gallery.css serve both themes
+    const lightTheme = 'html/index_light.css';
+    const darkTheme = 'html/index_dark.css';
 
     if (theme === 'dark') {
         loadCSS(darkTheme, 'theme-style');
-        loadCSS(galleryDarkTheme, 'gallery-theme');
         themeIcon.src = 'scripts/svg/sun.svg';
     } else {
         loadCSS(lightTheme, 'theme-style');
-        loadCSS(galleryLightTheme, 'gallery-theme');
         themeIcon.src = 'scripts/svg/moon.svg';
     }
 }

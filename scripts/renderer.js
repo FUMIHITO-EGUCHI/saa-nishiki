@@ -26,6 +26,7 @@ import { setupLoRA } from './renderer/slots/myLoRASlot.js';
 import { setupControlNet } from './renderer/slots/myControlNetSlot.js';
 import { setupJsonSlot } from './renderer/slots/myJsonSlot.js';
 import { setupADetailer } from './renderer/slots/myADetailerSlot.js';
+import { setupADetailerSettings } from './renderer/adetailerSettings.js';
 import { setupQueue } from './renderer/slots/myQueueSlot.js';
 import { setBlur, setNormal, showDialog } from './renderer/components/myDialog.js';
 import { setupImageUploadOverlay } from './renderer/imageInfo.js';
@@ -38,6 +39,10 @@ import { setupUiShell } from './renderer/uiShell.js';
 import { setupListManager } from './renderer/listManager.js';
 import { loadParts } from './renderer/partsClient.js';
 import { setupPartsUi } from './renderer/partsUi.js';
+import { setupViewerInfo } from './renderer/viewerInfo.js';
+import { setupUseSettings } from './renderer/useSettingsDialog.js';
+import { setupLibrary } from './renderer/libraryWindow.js';
+import { setupLoraUi } from './renderer/loraUi.js';
 import { filterPrompts } from './renderer/tools/promptFilter.js';
 import { setupRightClickMenu, addSpellCheckSuggestions } from './renderer/components/myRightClickMenu.js';
 import { extractHostPort } from './renderer/generate.js';
@@ -48,6 +53,7 @@ import { setupEditHistoryUi } from './renderer/editHistoryUi.js';
 import { get_prompt_textBox_Heights, set_prompt_textBox_Heights } from './renderer/components/componentsManager.js';
 import { hiresCalculate } from './renderer/tools/hiresCalculation.js';
 import { SIZE_HARD_MAX, SIZE_LIMIT_STEP, SIZE_MIN, SIZE_STEP } from './shared/sizeLimits.js';
+import { createLandscapeShim } from './renderer/sizeRatioUi.js';
 import { refinerModelOptions } from './shared/refinerModel.js';
 import { applySizeRange } from './renderer/callbacks.js';
 
@@ -216,28 +222,31 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         seed: setupSlider('generate-random-seed', LANG.random_seed, {min:-1, max:4294967295, step:1, defaultValue:SETTINGS.random_seed}, (value) =>{globalThis.globalSettings.random_seed = value;}),
         cfg: setupSlider('generate-cfg', LANG.cfg, {min:0, max:20, step:0.01, defaultValue:SETTINGS.cfg}, (value) =>{globalThis.globalSettings.cfg = value;}),
         step: setupSlider('generate-step', LANG.step, {min:1, max:100, step:1, defaultValue:SETTINGS.step}, (value) =>{globalThis.globalSettings.step = value;}),
-        // the effective range narrows to the model type's limit (applySizeRange, callbacks.js)
-        width: setupSlider('generate-width', LANG.width, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.width}, (value) =>{globalThis.globalSettings.width = value; hiresCalculate(); }),
-        height: setupSlider('generate-height', LANG.height, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.height}, (value) =>{globalThis.globalSettings.height = value; hiresCalculate(); }),
+        // the effective range narrows to the model type's limit (applySizeRange, callbacks.js);
+        // the ratio chip follows whatever moves them (sizeRatioUi.js)
+        width: setupSlider('generate-width', LANG.width, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.width}, (value) =>{globalThis.globalSettings.width = value; hiresCalculate(); globalThis.sizeRatio?.settleSoon?.(); }),
+        height: setupSlider('generate-height', LANG.height, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.height}, (value) =>{globalThis.globalSettings.height = value; hiresCalculate(); globalThis.sizeRatio?.settleSoon?.(); }),
         batch: setupSlider('generate-batch', LANG.batch, {min:1, max:2038, step:1, defaultValue:SETTINGS.batch}, (value) =>{globalThis.globalSettings.batch = value;}),
         hifix: setupCheckbox('generate-hires-fix', LANG.api_hf_enable, SETTINGS.api_hf_enable, true, (value) => { globalThis.globalSettings.api_hf_enable = value; hiresCalculate(); }),
         refiner: setupCheckbox('generate-refiner', LANG.api_refiner_enable, SETTINGS.api_refiner_enable, true, (value) => { globalThis.globalSettings.api_refiner_enable = value; }),
         controlnet: setupCheckbox('generate-controlnet', LANG.api_controlnet_enable, SETTINGS.api_controlnet_enable, true, callback_controlnet),
         adetailer: setupCheckbox('generate-adetailer', LANG.api_adetailer_enable, SETTINGS.api_adetailer_enable, true, callback_adetailer),
 
-        landscape: setupCheckbox('generate-landscape', LANG.api_image_landscape, SETTINGS.api_image_landscape, true, (value) =>{globalThis.globalSettings.api_image_landscape = value;}),
+        // the orientation is the size itself (the ratio chip turns it); this only folds an old
+        // "landscape" value into the boxes
+        landscape: createLandscapeShim(),
         tag_assist: setupCheckbox('generate-tag-assist', LANG.tag_assist, SETTINGS.tag_assist, true, (value) =>{ globalThis.globalSettings.tag_assist = value; }),
         // translation on the chips (Settings > Prompt editing); the fields re-render through the alias event
         tag_chip_alias: setupCheckbox('system-settings-tag-chip-alias', LANG.tag_chip_alias, SETTINGS.tag_chip_alias !== false, true,
             (value) => { globalThis.globalSettings.tag_chip_alias = value; document.dispatchEvent(new CustomEvent('saa:tag-aliases-updated')); }),
         wildcard_random: setupCheckbox('generate-wildcard-random', LANG.wildcard_random, SETTINGS.wildcard_random, true, (value) =>{ globalThis.globalSettings.wildcard_random = value; }),
-        sampler: mySimpleList('generate-sampler', LANG.api_model_sampler, ['Auto'], (index, value) =>{ globalThis.globalSettings.api_model_sampler = value; }, 20, false, false),
-        scheduler: mySimpleList('generate-scheduler', LANG.api_model_scheduler, ['Auto'], (index, value) =>{ globalThis.globalSettings.api_model_scheduler = value; }, 20, false, false),
+        sampler: mySimpleList('generate-sampler', LANG.api_model_sampler, ['Auto'], (index, values) =>{ globalThis.globalSettings.api_model_sampler = values[index]; }, 20, false, false),
+        scheduler: mySimpleList('generate-scheduler', LANG.api_model_scheduler, ['Auto'], (index, values) =>{ globalThis.globalSettings.api_model_scheduler = values[index]; }, 20, false, false),
 
         generate_single: setupButtons('generate-button-single', LANG.run_button, {
-                defaultColor: 'rgb(234,88,12)',
-                hoverColor: 'rgb(194,65,12)',
-                disabledColor: 'rgb(136, 121, 115)',
+                defaultColor: 'var(--saa-run)',
+                hoverColor: 'var(--saa-run-hover)',
+                disabledColor: 'var(--saa-run-disabled)',
                 width: '100%',
                 height: '32px',
                 hidden: false,
@@ -246,9 +255,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 await callback_generate_start('normal', {loops:1, runSame:false});
             }),
         generate_batch: setupButtons('generate-button-batch', LANG.run_random_button, {
-                defaultColor: 'rgb(185,28,28)',
-                hoverColor: 'rgb(153,27,27)',
-                disabledColor: 'rgb(134, 103, 103)',
+                defaultColor: 'var(--saa-run-batch)',
+                hoverColor: 'var(--saa-run-batch-hover)',
+                disabledColor: 'var(--saa-run-batch-disabled)',
                 width: '100%',
                 height: '32px',
                 hidden: false,
@@ -258,9 +267,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 await callback_generate_start('normal', {loops:globalThis.generate.batch.getValue(), runSame:false});
             }),
         generate_same: setupButtons('generate-button-same', LANG.run_same_button, {
-                defaultColor: 'rgb(20,28,46)',
-                hoverColor: 'rgb(40,48,66)',
-                disabledColor: 'rgb(112, 123, 148)',
+                defaultColor: 'var(--saa-run-same)',
+                hoverColor: 'var(--saa-run-same-hover)',
+                disabledColor: 'var(--saa-run-same-disabled)',
                 width: '100%',
                 height: '32px',
                 hidden: false,
@@ -270,9 +279,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 await callback_generate_start('normal', {loops:globalThis.generate.batch.getValue(), runSame:true});
             }),
         generate_skip: setupButtons('generate-button-skip', LANG.run_skip_button, {
-                defaultColor: 'rgb(82,82,91)',
-                hoverColor: 'rgb(63,63,70)',
-                disabledColor: 'rgb(175, 175, 182)',
+                defaultColor: 'var(--saa-run-stop)',
+                hoverColor: 'var(--saa-run-stop-hover)',
+                disabledColor: 'var(--saa-run-stop-disabled)',
                 width: '100%',
                 height: '26px',
                 hidden: false,
@@ -281,9 +290,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 callback_generate_skip();
             }),
         generate_cancel: setupButtons('generate-button-cancel', LANG.run_cancel_button, {
-                defaultColor: 'rgb(82,82,91)',
-                hoverColor: 'rgb(63,63,70)',
-                disabledColor: 'rgb(175, 175, 182)',
+                defaultColor: 'var(--saa-run-stop)',
+                hoverColor: 'var(--saa-run-stop-hover)',
+                disabledColor: 'var(--saa-run-stop-disabled)',
                 width: '100%',
                 height: '26px',
                 hidden: false,
@@ -538,6 +547,8 @@ export async function createPrompt(SETTINGS, FILES, LANG) {
     // Parts ("parts:<name>" tag bundles): the picker / card / editor the Scene rows and
     // the chips open; before the fields, whose rows ask for it as they are built
     setupPartsUi();
+    // the LoRA tab of the rows' tag modal
+    setupLoraUi();
     globalThis.prompt.tagCapsuleFields = setupTagCapsuleFields([
         globalThis.prompt.common,
         globalThis.prompt.views,
@@ -792,6 +803,7 @@ async function init(){
 
         // aDetailer
         globalThis.aDetailer = setupADetailer('adetailer-main');
+        setupADetailerSettings();
 
         // Queue management
         globalThis.queueManager = setupQueue('queue-main');
@@ -819,6 +831,12 @@ async function init(){
 
         // 2026-08-30 layout glue (pipeline rows, AI card, run bar, left panel, status pills)
         setupUiShell();
+
+        // the viewer's Info tab: time and recipe of the image on show, and Use settings… under it
+        setupUseSettings();
+        setupViewerInfo();
+        // the Library: every image in the folders SAA saves to
+        setupLibrary();
 
         // Parts: the document the chips and the prompt expand from
         loadParts();

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 import { classifyHistoryInput, historyShortcut } from '../scripts/renderer/editHistoryUi.js';
+import { themeCss } from './helpers/cssRules.mjs';
 
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -41,9 +42,11 @@ test('renderer wires global history controls, managed prompt input, focus restor
       assert.equal(typeof language[locale][key], 'string', `${locale} ${key}`);
     }
   }
+  // undo and redo are the shared icon buttons (Design System: IconButton), with their focus ring
+  assert.match(html, /id="edit-history-undo" class="saa-icon-btn"/);
+  assert.match(html, /id="edit-history-redo" class="saa-icon-btn"/);
   for (const file of ['html/index_dark.css', 'html/index_light.css']) {
-    assert.match(read(file), /\.edit-history-button \{/);
-    assert.match(read(file), /\.edit-history-button:focus-visible/);
+    assert.match(themeCss(file), /\.saa-icon-btn:focus-visible/);
   }
 });
 

@@ -4,7 +4,7 @@
 // session; every change replaces it and fires PARTS_CHANGED_EVENT on the document so
 // the chips, the picker and the Lists tab repaint.
 import {
-    expandPartTokens, listParts, normalizePartsDoc, partId, pickSample,
+    expandPartTokens, listParts, normalizePartsDoc, partId, partLorasIn, pickSample,
 } from '../shared/parts.js';
 
 export const PARTS_CHANGED_EVENT = 'saa:parts-changed';
@@ -73,9 +73,23 @@ export function partList(category = '') {
     return listParts(doc, category);
 }
 
+// A part as the prompt expands it: its tags, and the trigger words of the LoRAs it carries
+// when it says so and those LoRAs run on this model (loraUi.js decides that)
+function expandable(id) {
+    const entry = doc.parts[id] ?? null;
+    if (!entry?.loras?.length || entry.loraTriggers === false) return entry;
+    const words = globalThis.loraUi?.partTriggers?.(entry) ?? [];
+    return words.length ? { ...entry, tags: [entry.tags, words.join(', ')].filter(Boolean).join(', ') } : entry;
+}
+
 /** The prompt text with every "parts:<name>" token expanded (the store as loaded now). */
 export function expandParts(text) {
-    return expandPartTokens(text, id => doc.parts[id] ?? null);
+    return expandPartTokens(text, expandable);
+}
+
+/** The LoRAs the part tokens of `text` bring: [{ name, weight, part }]. */
+export function partLoras(text) {
+    return partLorasIn(text, id => doc.parts[id] ?? null);
 }
 
 export async function applyPartsChange(change) {

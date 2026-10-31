@@ -2,90 +2,17 @@
 import { chipKind, describePlan, formatTagWeight, normalizeWeightPlan, weightWarning } from './tagCapsuleLogic.js';
 import { PART_PREFIX, isPartToken, partNameOf } from '../../shared/parts.js';
 import { heatLabel, heatTier } from '../../shared/tagHeat.js';
+import { ICON_SHAPES, iconElement, iconMarkup } from '../../shared/iconSet.js';
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-
-const ICON_PATHS = Object.freeze({
-    increment: ['M3 12l10-8', 'M7 4h6v6'],
-    decrement: ['M3 4l10 8', 'M7 12h6V6'],
-    random: null,
-    close: ['M4 4l8 8', 'M12 4l-8 8'],
-    plus: ['M8 3v10', 'M3 8h10'],
-    text: ['M2.5 4h11', 'M2.5 8h11', 'M2.5 12h7'],
-    search: ['M10.5 10.5L14 14'],
-    layers: ['M8 2.5l6 3-6 3-6-3 6-3z', 'M2 9.5l6 3 6-3'],
-    chevronRight: ['M6 4l4 4-4 4'],
-    chevronLeft: ['M10 4l-4 4 4 4'],
-    chevronDown: ['M4 6l4 4 4-4'],
-    minus: ['M3 8h10'],
-    check: ['M3 8.4l3.2 3.2L13 4.6'],
-    lock: ['M5.5 7V5a2.5 2.5 0 0 1 5 0v2'],
-    star: ['M8 2.2l1.8 3.7 4.1.6-3 2.9.7 4.1L8 11.6l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 2.2z'],
-    undo: ['M6 5L3 8l3 3', 'M3 8h6a4 4 0 0 1 4 4'],
-    redo: ['M10 5l3 3-3 3', 'M13 8H7a4 4 0 0 0-4 4'],
-    spark: ['M8 2.5v11', 'M2.5 8h11', 'M4.1 4.1l7.8 7.8', 'M11.9 4.1l-7.8 7.8'],
-    arrowRight: ['M3 8h10', 'M9 4l4 4-4 4'],
+// the chip and popover names of the icons, where they differ from the icon set's
+const ICON_SHAPE_OF = Object.freeze({
+    random: 'dice', chevronDown: 'chevron-down', chevronLeft: 'chevron-left', chevronRight: 'chevron-right', arrowRight: 'arrow-right',
 });
 
 export function createIcon(name, size = 14) {
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('width', String(size));
-    svg.setAttribute('height', String(size));
-    svg.setAttribute('viewBox', '0 0 16 16');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '1.5');
-    svg.setAttribute('stroke-linecap', 'round');
-    svg.setAttribute('stroke-linejoin', 'round');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.classList.add('tag-ui-icon', `tag-ui-icon-${name}`);
-
-    const addPath = d => {
-        const path = document.createElementNS(SVG_NS, 'path');
-        path.setAttribute('d', d);
-        svg.appendChild(path);
-    };
-    const addCircle = (cx, cy, r, filled = false) => {
-        const circle = document.createElementNS(SVG_NS, 'circle');
-        circle.setAttribute('cx', String(cx));
-        circle.setAttribute('cy', String(cy));
-        circle.setAttribute('r', String(r));
-        if (filled) circle.setAttribute('fill', 'currentColor');
-        svg.appendChild(circle);
-    };
-    const addRect = (x, y, w, h, rx) => {
-        const rect = document.createElementNS(SVG_NS, 'rect');
-        rect.setAttribute('x', String(x));
-        rect.setAttribute('y', String(y));
-        rect.setAttribute('width', String(w));
-        rect.setAttribute('height', String(h));
-        rect.setAttribute('rx', String(rx));
-        svg.appendChild(rect);
-    };
-
-    switch (name) {
-        case 'random':
-            addRect(2.5, 2.5, 11, 11, 2);
-            addCircle(5.5, 5.5, 0.9, true);
-            addCircle(8, 8, 0.9, true);
-            addCircle(10.5, 10.5, 0.9, true);
-            break;
-        case 'pill':
-            addRect(1.5, 4.5, 13, 7, 3.5);
-            addPath('M6 4.5v7');
-            break;
-        case 'search':
-            addCircle(7, 7, 4.5);
-            addPath('M10.5 10.5L14 14');
-            break;
-        case 'lock':
-            addRect(3.5, 7, 9, 6.5, 1.5);
-            addPath('M5.5 7V5a2.5 2.5 0 0 1 5 0v2');
-            break;
-        default:
-            for (const d of ICON_PATHS[name] ?? []) addPath(d);
-    }
-    return svg;
+    const shape = ICON_SHAPE_OF[name] ?? name;
+    // a name with no icon (the "fixed" weight mode) keeps its place as an empty box
+    return iconElement(ICON_SHAPES[shape] ? shape : null, size, { className: `tag-ui-icon tag-ui-icon-${name}` });
 }
 
 export function modeIconName(mode) {
@@ -96,13 +23,47 @@ export function modeIconName(mode) {
 export function chipSignature(capsule, options = {}) {
     const plan = normalizeWeightPlan(capsule.weightPlan);
     const part = options.part ? `${options.part.exists ? 1 : 0}:${options.part.count}` : '';
+    const lora = options.lora ? `${options.lora.suggest ?? 0}:${options.lora.from ? 1 : 0}` : '';
     return [capsule.id, capsule.value, plan.mode, plan.min, plan.max, plan.step, plan.seed,
         options.excluded ? 1 : 0, options.favorite ? 1 : 0, capsule.disabled ? 1 : 0, options.status ?? '', part,
-        options.heat ?? ''].join('|');
+        options.heat ?? '', lora].join('|');
+}
+
+const LINK_ICON = iconMarkup('link', 11);
+
+// The LoRA marks of a chip (loraUi.js chipInfo): the badge counting the LoRAs suggested
+// for the tag, which opens their popover, and the link mark on a trigger word that came
+// in with a LoRA of the slots.
+function paintLoraMarks(chip, lora) {
+    const from = Boolean(lora?.from);
+    const suggest = Number(lora?.suggest) || 0;
+    chip.classList.toggle('is-from-lora', from);
+    let mark = chip.querySelector('.tag-capsule-chip-from-lora');
+    if (from && !mark) {
+        mark = document.createElement('span');
+        mark.className = 'tag-capsule-chip-from-lora';
+        mark.innerHTML = LINK_ICON;
+        chip.insertBefore(mark, chip.querySelector('.tag-capsule-chip-name'));
+    } else if (!from) {
+        mark?.remove();
+    }
+    let badge = chip.querySelector('.tag-capsule-chip-lora');
+    if (suggest > 0) {
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'tag-capsule-chip-lora';
+            badge.setAttribute('role', 'button');
+            chip.appendChild(badge);
+        }
+        badge.textContent = `LoRA ${suggest}`;
+        badge.setAttribute('aria-label', `LoRAs that know ${chip.querySelector('.tag-capsule-chip-name')?.title ?? ''}`);
+    } else {
+        badge?.remove();
+    }
 }
 
 export function createChip(capsule, options = {}) {
-    const { text, excluded = false, favorite = false, status = '', part = null, heat = null } = options;
+    const { text, excluded = false, favorite = false, status = '', part = null, heat = null, lora = null } = options;
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'tag-capsule-chip';
@@ -128,19 +89,19 @@ export function createChip(capsule, options = {}) {
     chip.appendChild(weight);
     // no × on the chip: a tag is removed from the context menu or with Delete
 
-    updateChip(chip, capsule, { text, excluded, favorite, status, part, heat });
+    updateChip(chip, capsule, { text, excluded, favorite, status, part, heat, lora });
     return chip;
 }
 
 export function updateChip(chip, capsule, options = {}) {
-    const { text, excluded = false, favorite = false, status = '', part = null, heat = null } = options;
+    const { text, excluded = false, favorite = false, status = '', part = null, heat = null, lora = null } = options;
     const plan = normalizeWeightPlan(capsule.weightPlan);
     const kind = chipKind(plan);
     const description = describePlan(plan);
     const modeIcon = modeIconName(plan.mode);
 
     chip.dataset.capsuleId = capsule.id;
-    chip.dataset.signature = chipSignature(capsule, { excluded, favorite, status, part, heat });
+    chip.dataset.signature = chipSignature(capsule, { excluded, favorite, status, part, heat, lora });
     // a "parts:<name>" token: the gold prefix, the name, and the member count at the right
     chip.classList.toggle('is-part', Boolean(part));
     chip.classList.toggle('is-part-missing', Boolean(part) && !part.exists);
@@ -213,13 +174,14 @@ export function updateChip(chip, capsule, options = {}) {
     }
     chip.setAttribute('aria-label', labelParts.join(', '));
     chip.title = titleParts.join(' — ');
+    paintLoraMarks(chip, part ? null : lora);
     return chip;
 }
 
 // Keyed diff: reuses chip elements by capsule id, re-renders only changed ones,
 // and keeps `trailing` (the add-tag slot) as the last child.
 export function renderChips(container, capsules, options = {}) {
-    const { text, excludedSet = new Set(), trailing = null, isFavorite = null, tagStatus = null, tagHeat = null, partInfo = null } = options;
+    const { text, excludedSet = new Set(), trailing = null, isFavorite = null, tagStatus = null, tagHeat = null, partInfo = null, loraInfo = null } = options;
     const existing = new Map();
     for (const child of container.querySelectorAll(':scope > .tag-capsule-chip')) {
         existing.set(child.dataset.capsuleId, child);
@@ -233,12 +195,13 @@ export function renderChips(container, capsules, options = {}) {
         const part = typeof partInfo === 'function' && isPartToken(capsule.value) ? partInfo(capsule.value) : null;
         const status = !part && typeof tagStatus === 'function' ? tagStatus(capsule.value) : '';
         const heat = !part && status === 'known' && typeof tagHeat === 'function' ? tagHeat(capsule.value) : null;
+        const lora = !part && typeof loraInfo === 'function' ? loraInfo(capsule.value) : null;
         let chip = existing.get(capsule.id);
         if (chip) {
             existing.delete(capsule.id);
-            if (chip.dataset.signature !== chipSignature(capsule, { excluded, favorite, status, part, heat })) updateChip(chip, capsule, { text, excluded, favorite, status, part, heat });
+            if (chip.dataset.signature !== chipSignature(capsule, { excluded, favorite, status, part, heat, lora })) updateChip(chip, capsule, { text, excluded, favorite, status, part, heat, lora });
         } else {
-            chip = createChip(capsule, { text, excluded, favorite, status, part, heat });
+            chip = createChip(capsule, { text, excluded, favorite, status, part, heat, lora });
         }
         ordered.push(chip);
     }

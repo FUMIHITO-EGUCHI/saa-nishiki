@@ -7,9 +7,11 @@
 import { setupRunProgress } from './components/runProgress.js';
 import { SLIDER_RANGE_EVENT } from './components/mySlider.js';
 import { applySizeRange } from './callbacks.js';
+import { setupSizeRatio } from './sizeRatioUi.js';
 import { setupStatusPills } from './components/statusPills.js';
 import { AI_MODES, applyAiMode, deriveAiMode, describeAiStatus } from './components/aiModeLogic.js';
 import { PROSE_SCOPES, normalizeProseScope } from '../shared/prosePrompt.js';
+import { iconMarkup } from '../shared/iconSet.js';
 import { describeProseEndpoint, onProseChange, proseState, regenerateProse, revertProseParagraph, setProseParagraph, PROSE_WRITERS, proseWriter } from './prosePipeline.js';
 import {
     countLabel, summarizeADetailer, summarizeControlNet, summarizeHires, summarizeJson, summarizeLoRA, summarizeRefiner,
@@ -18,10 +20,10 @@ import {
 const CAT = '[UiShell]';
 
 const ICONS = {
-    dice: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><circle cx="6" cy="6" r=".9" fill="currentColor"/><circle cx="10" cy="10" r=".9" fill="currentColor"/><circle cx="10" cy="6" r=".9" fill="currentColor"/><circle cx="6" cy="10" r=".9" fill="currentColor"/></svg>',
-    lock: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2"/></svg>',
-    chevD: '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6l5 5 5-5"/></svg>',
-    layers: '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5l6 3-6 3-6-3z"/><path d="M2 8.5l6 3 6-3M2 11l6 3 6-3"/></svg>',
+    dice: iconMarkup('dice', 14),
+    lock: iconMarkup('lock', 14),
+    chevD: iconMarkup('chevron-down', 12),
+    layers: iconMarkup('layers', 13),
 };
 
 const PIPE_TABS = { 'highres-fix': 'hires', refiner: 'refiner', adetailer: 'aDetailer', controlnet: 'controlnet', 'add-lora': 'lora', jsonlist: 'jsonlist' };
@@ -425,6 +427,9 @@ function setupRunBar() {
 
     // Size range: the width / height boxes report an out-of-range typed value
     // (mySlider.js SLIDER_RANGE_EVENT); the label turns red while either box is over.
+    // Size ratio: the chip (turn | pick), the chain and the tiles (sizeRatioUi.js).
+    const sizeRatio = setupSizeRatio();
+
     const sizeLabel = document.getElementById('run-size-label');
     const sizeBoxes = [...bar.querySelectorAll('.run-param-size .run-number')];
     const overBoxes = new Set();
@@ -498,6 +503,7 @@ function setupRunBar() {
             setMarkup(queueStatus, `<span>${ICONS.layers}</span>${escapeHtml(`${uiText('ui_run_queue', 'Queue')} ${count} · ${auto}`)}`);
             queueStatus.classList.toggle('is-paused', !SETTINGS.generate_auto_start);
         }
+        sizeRatio?.settle();
         if (footnote) {
             const on = uiText('ui_on', 'on');
             const off = uiText('ui_off', 'off');
@@ -601,6 +607,7 @@ function setupLeftPanel() {
         actions.className = 'ai-result-modal-actions';
         const copy = document.createElement('button');
         copy.type = 'button';
+        copy.className = 'ai-result-modal-copy';
         copy.textContent = 'Copy';
         copy.addEventListener('click', async () => {
             try {
@@ -688,7 +695,7 @@ function setupLeftPanel() {
                 container.remove();
                 onDiscard?.();
             });
-            actions.append(apply, discard);
+            actions.append(discard, apply);
             container.append(actions);
         }
         aiPanel.append(container);
@@ -707,7 +714,9 @@ function setupLeftPanel() {
     };
     let stored = null;
     try { stored = Number(localStorage.getItem('saa.infoHeight')); } catch { /* ignore */ }
-    setHeight(Number.isFinite(stored) && stored > 0 ? stored : 200);
+    // the Info tab (viewerInfo.js) needs room for the time legend beside the recipe
+    const DEFAULT_HEIGHT = 300;
+    setHeight(Number.isFinite(stored) && stored > 0 ? stored : DEFAULT_HEIGHT);
     if (splitter) {
         let dragging = false;
         let startY = 0;
@@ -732,7 +741,7 @@ function setupLeftPanel() {
             const current = panel.getBoundingClientRect().height;
             setHeight(current + (event.key === 'ArrowUp' ? 24 : -24));
         });
-        splitter.addEventListener('dblclick', () => setHeight(200));
+        splitter.addEventListener('dblclick', () => setHeight(DEFAULT_HEIGHT));
     }
 
     const status = document.getElementById('viewer-status');
@@ -742,8 +751,8 @@ function setupLeftPanel() {
         const rendered = document.querySelectorAll('.gallery-main-main .cg-gallery-image, .gallery-main-main .cg-preview-image');
         const count = rendered.length;
         if (count === 0) { status.textContent = ''; return; }
-        const last = globalThis.generate?.lastSeed;
-        status.textContent = `${count} ${uiText(count === 1 ? 'ui_viewer_image' : 'ui_viewer_images', count === 1 ? 'image' : 'images')}${Number.isFinite(last) && last >= 0 ? ` · seed ${last}` : ''}`;
+        // the seed of each image is in the Info tab
+        status.textContent = `${count} ${uiText(count === 1 ? 'ui_viewer_image' : 'ui_viewer_images', count === 1 ? 'image' : 'images')}`;
     }
     refreshViewerStatus();
 

@@ -1,6 +1,7 @@
 import { mySimpleList } from '../components/myDropdown.js';
 import { setupTextbox } from '../components/myTextbox.js';
 import { generateGUID } from './myLoRASlot.js';
+import { iconMarkup } from '../../shared/iconSet.js';
 
 const aDetailerWebUI = [
     "face_yolov8n.pt",
@@ -68,7 +69,7 @@ function createADetailerSlotsFromValues(slotManager, slotValues, options = {}) {
             const adConfidenceComponent = setupTextbox(
                 slot.itemClasses.ad_confidence,
                 LANG.api_adetailer_confidence,
-                { value: ad_confidence, defaultTextColor: 'rgb(179,157,219)', maxLines: 1 },
+                { value: ad_confidence, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -80,7 +81,7 @@ function createADetailerSlotsFromValues(slotManager, slotValues, options = {}) {
             const adMaskKComponent = setupTextbox(
                 slot.itemClasses.ad_mask_k,
                 LANG.api_adetailer_mask_k,
-                { value: ad_mask_k, defaultTextColor: 'rgb(179,157,219)', maxLines: 1 },
+                { value: ad_mask_k, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -105,7 +106,7 @@ function createADetailerSlotsFromValues(slotManager, slotValues, options = {}) {
             const adPromptComponent = setupTextbox(
                 slot.itemClasses.ad_prompt,
                 LANG.api_adetailer_prompt,
-                { value: ad_prompt, defaultTextColor: 'rgb(255,213,0)', maxLines: 2 },
+                { value: ad_prompt, maxLines: 2 },
                 false,
                 null,
                 false,
@@ -117,7 +118,7 @@ function createADetailerSlotsFromValues(slotManager, slotValues, options = {}) {
             const adDilateErodeComponent = setupTextbox(
                 slot.itemClasses.ad_dilate_erode,
                 LANG.api_adetailer_dilate_erode,
-                { value: ad_dilate_erode, defaultTextColor: 'rgb(179,157,219)', maxLines: 1 },
+                { value: ad_dilate_erode, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -143,7 +144,7 @@ function createADetailerSlotsFromValues(slotManager, slotValues, options = {}) {
             const adNegativePromptComponent = setupTextbox(
                 slot.itemClasses.ad_negative_prompt,
                 LANG.api_adetailer_negative_prompt,
-                { value: ad_negative_prompt, defaultTextColor: 'rgb(255,100,100)', maxLines: 2 },
+                { value: ad_negative_prompt, maxLines: 2 },
                 false,
                 null,
                 false,
@@ -155,7 +156,7 @@ function createADetailerSlotsFromValues(slotManager, slotValues, options = {}) {
             const adMaskBlurComponent = setupTextbox(
                 slot.itemClasses.ad_mask_blur,
                 LANG.api_adetailer_mask_blur,
-                { value: ad_mask_blur, defaultTextColor: 'rgb(179,157,219)', maxLines: 1 },
+                { value: ad_mask_blur, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -167,7 +168,7 @@ function createADetailerSlotsFromValues(slotManager, slotValues, options = {}) {
             const adDenoiseComponent = setupTextbox(
                 slot.itemClasses.ad_denoise,
                 LANG.api_adetailer_denoise,
-                { value: ad_denoise, defaultTextColor: 'rgb(255,213,0)', maxLines: 1 },
+                { value: ad_denoise, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -278,7 +279,7 @@ class ADetailerSlotManager {
             const adConfidenceComponent = setupTextbox(
                 slot.itemClasses.ad_confidence,
                 LANG.api_adetailer_confidence,
-                { value: 0.3, defaultTextColor: 'rgb(179,157,219)', maxLines: 1 },
+                { value: 0.3, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -290,7 +291,7 @@ class ADetailerSlotManager {
             const adMaskKComponent = setupTextbox(
                 slot.itemClasses.ad_mask_k,
                 LANG.api_adetailer_mask_k,
-                { value: 0, defaultTextColor: 'rgb(179,157,219)', maxLines: 1 },
+                { value: 0, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -315,7 +316,7 @@ class ADetailerSlotManager {
             const adPromptComponent = setupTextbox(
                 slot.itemClasses.ad_prompt,
                 LANG.api_adetailer_prompt,
-                { value: "", defaultTextColor: 'rgb(255,213,0)', maxLines: 2, placeholder: 'ADetailer Prompt' },
+                { value: "", maxLines: 2, placeholder: 'ADetailer Prompt' },
                 false,
                 null,
                 false,
@@ -327,7 +328,7 @@ class ADetailerSlotManager {
             const adDilateErodeComponent = setupTextbox(
                 slot.itemClasses.ad_dilate_erode,
                 LANG.api_adetailer_dilate_erode,
-                { value: 4, defaultTextColor: 'rgb(179,157,219)', maxLines: 1 },
+                { value: 4, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -353,7 +354,7 @@ class ADetailerSlotManager {
             const adNegativePromptComponent = setupTextbox(
                 slot.itemClasses.ad_negative_prompt,
                 LANG.api_adetailer_negative_prompt,
-                { value: "", defaultTextColor: 'rgb(255,100,100)', maxLines: 2, placeholder: 'ADetailer Negative Prompt' },
+                { value: "", maxLines: 2, placeholder: 'ADetailer Negative Prompt' },
                 false,
                 null,
                 false,
@@ -365,7 +366,7 @@ class ADetailerSlotManager {
             const adMaskBlurComponent = setupTextbox(
                 slot.itemClasses.ad_mask_blur,
                 LANG.api_adetailer_mask_blur,
-                { value: 4, defaultTextColor: 'rgb(179,157,219)', maxLines: 1 },
+                { value: 4, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -377,7 +378,7 @@ class ADetailerSlotManager {
             const adDenoiseComponent = setupTextbox(
                 slot.itemClasses.ad_denoise,
                 LANG.api_adetailer_denoise,
-                { value: 0.5, defaultTextColor: 'rgb(255,213,0)', maxLines: 1 },
+                { value: 0.5, maxLines: 1 },
                 false,
                 null,
                 false,
@@ -451,9 +452,7 @@ class ADetailerSlotManager {
         const row = document.createElement('div');
         row.className = `slot-row add-row ${className}`;
         row.innerHTML = `            
-            <div class="slot-action slot-action-add" data-action="add" data-slot="${className}">
-                <img class="slot-action-add-toggle" src="scripts/svg/add.svg" alt="+">
-            </div>
+            <button type="button" class="saa-icon-btn slot-action slot-action-add" data-action="add" data-slot="${className}" aria-label="Add">${iconMarkup('plus', 14)}</button>
             <div></div>
             <div></div>
             <div></div>
@@ -486,9 +485,7 @@ class ADetailerSlotManager {
             candidateRow.classList.remove('add-row');
             candidateRow.classList.add('adetailer-row');
             candidateRow.innerHTML = `
-                <div class="slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}">
-                    <img class="slot-action-del-toggle" src="scripts/svg/del.svg" alt="-">
-                </div>                
+                <button type="button" class="saa-icon-btn slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>                
                 <div class="${slot.itemClasses.ad_model}"></div>
                 <div class="${slot.itemClasses.ad_confidence}"></div>
                 <div class="${slot.itemClasses.ad_mask_k}"></div>

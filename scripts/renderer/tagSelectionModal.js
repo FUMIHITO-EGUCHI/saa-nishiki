@@ -13,12 +13,23 @@ const DETAILED_TAG_FILTERS = TAG_FILTERS.filter(filter => filter.options?.catego
 // cast list or an Action sentence (promptFieldManager marks those rows)
 const NO_PARTS_FIELDS = new Set(['characters']);
 
-// The Parts tab of a row's modal, from partsUi.js when it is set up (globalThis, as the
-// row tools reach it: partsUi imports this module for its own tag picker)
+// The rows that take no LoRA: a LoRA is a positive thing (its trigger words go in the
+// row), so the negative rows and Exclude have no LoRA tab
+const NO_LORA_FIELDS = new Set(['characters', 'negative', 'negative_left', 'negative_right', 'exclude']);
+
+function negativeCustomField(fieldKey) {
+    const fields = globalThis.globalSettings?.prompt_custom_fields;
+    return Array.isArray(fields) && fields.some(field => field?.id === fieldKey && field.polarity === 'negative');
+}
+
+// The Parts and LoRA tabs of a row's modal, from partsUi.js / loraUi.js when they are set
+// up (globalThis, as the row tools reach them: partsUi imports this module for its own
+// tag picker)
 function fieldTabs(fieldKey, textbox, trigger) {
     if (NO_PARTS_FIELDS.has(fieldKey) || textbox?.closest?.('.prompt-action-field')) return [];
-    const tab = globalThis.partsUi?.pickerTab?.({ fieldKey, trigger });
-    return tab ? [tab] : [];
+    const tabs = [globalThis.partsUi?.pickerTab?.({ fieldKey, trigger })];
+    if (!NO_LORA_FIELDS.has(fieldKey) && !negativeCustomField(fieldKey)) tabs.push(globalThis.loraUi?.pickerTab?.({ fieldKey, trigger }));
+    return tabs.filter(Boolean);
 }
 
 function stripMarkup(value) {
@@ -236,12 +247,15 @@ export function setupTagSelectionModal(textboxes = [], keys = []) {
             fitWindow: true,
             onOpen: () => trigger.setAttribute('aria-expanded', 'true'),
             onClose: () => trigger.setAttribute('aria-expanded', 'false'),
-            onApply: selected => applyTagsToTextbox(
-                textbox,
-                selected,
-                storedCursor(textbox, 'tagModalStart', textbox.value.length),
-                storedCursor(textbox, 'tagModalEnd', textbox.value.length),
-            ),
+            onApply: async selected => {
+                const start = storedCursor(textbox, 'tagModalStart', textbox.value.length);
+                const end = storedCursor(textbox, 'tagModalEnd', textbox.value.length);
+                // a LoRA goes to the LoRA slots; its trigger words join the row's tags
+                const loras = selected.filter(option => option.lora);
+                const triggers = loras.length ? await globalThis.loraUi?.addToSlots?.(loras.map(option => option.lora)) ?? [] : [];
+                const tags = [...selected.filter(option => !option.lora), ...triggers.map(word => ({ key: word, value: word }))];
+                applyTagsToTextbox(textbox, tags, start, end);
+            },
         });
 
         // `tab`: the tab to open on (null = the tag list); `source`: the button that

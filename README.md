@@ -104,7 +104,7 @@ Fork versions follow `<upstream-version>-nishiki.<generation>` (for example `2.8
 
 | Verified | [ComfyUI](https://github.com/comfyanonymous/ComfyUI)  | [Forge Neo](https://github.com/Haoming02/sd-webui-forge-classic/tree/neo) |
 | --- | --- | --- |
-| Release | 0.28.0 | 2.27 |
+| Release | 0.40.0 | 2.27 |
 | Refiner (SDXL) | Yes | Yes |
 | Image Color Transfer (ALL) | Yes | No |
 | Regional Condition / Couple (SDXL/Anima) | Yes | Yes |

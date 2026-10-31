@@ -1,6 +1,7 @@
 import { mySimpleList } from '../components/myDropdown.js';
 import { generateGUID } from './myLoRASlot.js';
 import { setupTextbox } from '../components/myTextbox.js';
+import { iconMarkup } from '../../shared/iconSet.js';
 
 const regionalPositions = ['Both', 'Left', 'Right'];
 const promptPositions = ["BOP", "BOC", "EOC", "EOP", "Off"];
@@ -73,7 +74,7 @@ function createJsonSlotFromValues(slotManager, jsonObj,
         const jsonStrengthComponent = setupTextbox(
             slot.itemClasses.json_strength,
             LANG.jsonlist_strength || 'Strength',
-            { value: selectedStrength, defaultTextColor: 'rgb(255,213,0)', maxLines: 1 },
+            { value: selectedStrength, maxLines: 1 },
             false,
             null,
             false,
@@ -238,9 +239,7 @@ class JsonSlotManager {
         const row = document.createElement('div');
         row.className = `slot-row add-row ${className}`;
         row.innerHTML = `
-            <div class="slot-action slot-action-add" data-action="add" data-slot="${className}">
-                <img class="slot-action-add-toggle" src="scripts/svg/add.svg" alt="+">
-            </div>
+            <button type="button" class="saa-icon-btn slot-action slot-action-add" data-action="add" data-slot="${className}" aria-label="Add">${iconMarkup('plus', 14)}</button>
             <div class="controlnet-slot-image">
                 <img class="filter-controlnet-icon" id="global-file-upload-icon" src="scripts/svg/file-upload.svg" max-width="48px" height="48px">
                 <img class="filter-controlnet-icon" id="global-clipboard-paste-icon" src="scripts/svg/paste.svg" max-width="48px" height="48px">
@@ -266,16 +265,12 @@ class JsonSlotManager {
             candidateRow.classList.remove('add-row');
             candidateRow.classList.add('content-row');
             candidateRow.innerHTML = `
-                <div class="slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}">
-                    <img class="slot-action-del-toggle" src="scripts/svg/del.svg" alt="-">
-                </div>
+                <button type="button" class="saa-icon-btn slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>
                 <div class="${slot.itemClasses.json_name}"></div>
                 <div class="${slot.itemClasses.json_strength}"></div>
                 <div class="${slot.itemClasses.json_regional}"></div>
                 <div class="${slot.itemClasses.json_position}"></div>
-                <div class="slot-action slot-action-info" data-action="info" data-slot="${className}">
-                    <img class="slot-action-info-toggle" src="scripts/svg/info.svg" alt="?">
-                </div>
+                <button type="button" class="saa-icon-btn slot-action slot-action-info" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
             `;
         }
 

@@ -153,6 +153,20 @@ contextBridge.exposeInMainWorld('api', {
   partsApply: async (change) => ipcRenderer.invoke('parts-apply', change),
   partsAddSample: async (id, meta, dataUrl) => ipcRenderer.invoke('parts-add-sample', id, meta, dataUrl),
   partsSampleImage: async (id, sampleId) => ipcRenderer.invoke('parts-sample-image', id, sampleId),
+  libraryFavorites: async () => ipcRenderer.invoke('library-favorites'),
+  librarySetFavorite: async (file, on) => ipcRenderer.invoke('library-set-favorite', file, on),
+  libraryShowInFolder: async (file) => ipcRenderer.invoke('library-show-in-folder', file),
+  libraryRoots: async () => ipcRenderer.invoke('library-roots'),
+  libraryImages: async (query) => ipcRenderer.invoke('library-images', query),
+  libraryThumbs: async (paths) => ipcRenderer.invoke('library-thumbs', paths),
+  libraryImage: async (file) => ipcRenderer.invoke('library-image', file),
+  libraryTrash: async (file) => ipcRenderer.invoke('library-trash', file),
+  libraryLoraUses: async (label) => ipcRenderer.invoke('library-lora-uses', label),
+  loraCatalog: async () => ipcRenderer.invoke('lora-catalog'),
+  loraApply: async (change) => ipcRenderer.invoke('lora-apply', change),
+  loraAddSample: async (name, meta, dataUrl) => ipcRenderer.invoke('lora-add-sample', name, meta, dataUrl),
+  loraSampleImage: async (name, sampleId) => ipcRenderer.invoke('lora-sample-image', name, sampleId),
+  loraCivitai: async (name) => ipcRenderer.invoke('lora-civitai', name),
   // AI
   remoteAI: async (options) => ipcRenderer.invoke('request-ai-remote', options),
   localAI: async (options) => ipcRenderer.invoke('request-ai-local', options),
@@ -166,6 +180,7 @@ contextBridge.exposeInMainWorld('api', {
   runComfyUI_MiraITU: async (generateData) => ipcRenderer.invoke('generate-backend-comfyui-run-mira-itu', generateData),
   openWsComfyUI: async (prompt_id, skipFirst, isIndex) => ipcRenderer.invoke('generate-backend-comfyui-open-ws', prompt_id, skipFirst, isIndex),
   closeWsComfyUI: async () => ipcRenderer.invoke('generate-backend-comfyui-close-ws'),
+  takeComfyUIResult: async () => ipcRenderer.invoke('generate-backend-comfyui-take-result'),
   cancelComfyUI: async () => ipcRenderer.invoke('generate-backend-comfyui-cancel'),
 
   // generate_backend WebUI

@@ -16,6 +16,9 @@ import {
 } from './components/tagCapsuleLogic.js';
 import { openFieldTagModal, openTagPicker } from './tagSelectionModal.js';
 import { attachPartsSampleJob, partsSampleQueued } from './generate.js';
+import { loraCatalog, loraEntry } from './loraClient.js';
+import { loraFitsModel, loraLabel } from '../shared/loraCatalog.js';
+import { element as el } from './dom.js';
 
 const CAT = '[PartsUI]';
 
@@ -28,13 +31,6 @@ function text(key, fallback, ...args) {
     let out = typeof value === 'string' && value ? value : fallback;
     args.forEach((arg, index) => { out = out.replaceAll(`{${index}}`, String(arg)); });
     return out;
-}
-
-function el(tag, className, content) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (content !== undefined) node.textContent = content;
-    return node;
 }
 
 function button(className, label, onClick, { title = '' } = {}) {
@@ -154,6 +150,86 @@ function openFrame({ title, className = '', onClose = null }) {
 
 // ---------------------------------------------------------------- the editor
 
+// The LoRAs a part carries, as the editor shows them: a row per LoRA (the LoRA, its
+// weight, whether it fits the model in use), whether its trigger words come along, and
+// what a model of another base does with it. `state` is { loras, loraTriggers, otherBase }.
+function partLoraEditor(state, onChange) {
+    const box = el('div', 'parts-lora-box');
+    const rows = el('div', 'parts-lora-rows');
+    const modelLabel = name => String(name ?? '').split(/[\\/]/).pop().replace(/\.safetensors$/i, '');
+    const fits = name => {
+        const entry = loraEntry(name);
+        if (!entry || entry.base === 'unknown') return null;
+        return loraFitsModel(entry.base, globalThis.globalSettings?.api_model_type === 'Diffusion' ? 'Diffusion' : 'Checkpoint');
+    };
+    const baseText = name => {
+        const entry = loraEntry(name);
+        if (!entry || entry.base === 'unknown') return '';
+        const label = entry.base === 'anima' ? 'Anima' : 'Illustrious';
+        return fits(name) ? `${label} ✓` : label;
+    };
+    const paint = () => {
+        rows.replaceChildren();
+        state.loras.forEach((lora, index) => {
+            const row = el('div', 'parts-lora-row');
+            const select = el('select', 'parts-lora-select');
+            select.setAttribute('aria-label', 'LoRA');
+            const names = Array.isArray(globalThis.cachedFiles?.loraList) ? globalThis.cachedFiles.loraList.filter(name => name && name !== 'None') : [];
+            for (const name of names.includes(lora.name) ? names : [lora.name, ...names]) {
+                const option = el('option', '', modelLabel(name));
+                option.value = name;
+                select.append(option);
+            }
+            select.value = lora.name;
+            select.addEventListener('change', () => { state.loras[index] = { ...lora, name: select.value }; paint(); onChange(); });
+            const weight = el('input', 'parts-lora-weight');
+            weight.type = 'number';
+            weight.step = '0.05';
+            weight.value = String(lora.weight);
+            weight.setAttribute('aria-label', text('parts_lora_weight', 'Weight'));
+            weight.addEventListener('change', () => {
+                const value = Number(weight.value);
+                if (Number.isFinite(value)) { state.loras[index] = { ...state.loras[index], weight: value }; onChange(); }
+            });
+            const base = el('span', `parts-lora-base${fits(lora.name) === false ? ' is-other' : fits(lora.name) ? ' is-fit' : ''}`, baseText(lora.name));
+            const remove = button('parts-lora-remove', '×', () => { state.loras.splice(index, 1); paint(); onChange(); }, { title: text('parts_lora_remove', 'Remove LoRA') });
+            row.append(select, weight, base, remove);
+            rows.append(row);
+        });
+        triggers.hidden = state.loras.length === 0;
+        otherBase.hidden = state.loras.length === 0;
+    };
+    // its own class: the editor's .parts-check is the sample switch (and the E2E story's)
+    const triggers = el('label', 'parts-lora-check');
+    const triggersCheck = document.createElement('input');
+    triggersCheck.type = 'checkbox';
+    triggersCheck.checked = state.loraTriggers !== false;
+    triggersCheck.addEventListener('change', () => { state.loraTriggers = triggersCheck.checked; onChange(); });
+    triggers.append(triggersCheck, el('span', '', text('parts_lora_triggers', 'Add trigger words')));
+    const add = button('parts-lora-add', text('parts_lora_add', '+ Add LoRA'), () => {
+        const first = loraCatalog().loras.find(entry => fits(entry.name) !== false) ?? loraCatalog().loras[0];
+        const name = first?.name ?? (globalThis.cachedFiles?.loraList ?? []).find(item => item && item !== 'None');
+        if (!name) return;
+        state.loras.push({ name, weight: first?.range?.def ?? 0.8 });
+        paint();
+        onChange();
+    });
+    const otherBase = el('label', 'parts-field-label parts-lora-other');
+    otherBase.append(el('span', '', text('parts_lora_other_base', 'Other base')));
+    const otherSelect = el('select', 'parts-lora-other-select');
+    for (const [value, label] of [['skip', text('parts_lora_skip', 'Skip LoRA')], ['use', text('parts_lora_use', 'Use anyway')]]) {
+        const option = el('option', '', label);
+        option.value = value;
+        otherSelect.append(option);
+    }
+    otherSelect.value = state.otherBase === 'use' ? 'use' : 'skip';
+    otherSelect.addEventListener('change', () => { state.otherBase = otherSelect.value; onChange(); });
+    otherBase.append(otherSelect);
+    box.append(el('span', 'parts-field-title', text('parts_loras', 'LoRAs')), rows, triggers, add, otherBase);
+    paint();
+    return box;
+}
+
 /**
  * Make or change a part. `initial` = { name, category, tags }; `id` names the part
  * being edited (null for a new one). `onSaved(entry, { id })` runs after the store
@@ -206,6 +282,32 @@ export function openPartEditor({ id = null, initial = {}, onSaved = null, trigge
     pickRow.append(pick);
     form.append(tagsLabel, pickRow);
 
+    // the LoRAs the part brings, and what the part becomes in a prompt
+    const loraState = {
+        loras: (existing?.loras ?? []).map(lora => ({ ...lora })),
+        loraTriggers: existing?.loraTriggers !== false,
+        otherBase: existing?.otherBase === 'use' ? 'use' : 'skip',
+    };
+    const preview = el('div', 'parts-expand-preview');
+    const paintPreview = () => {
+        const name = nameInput.value.trim() || text('parts_name_placeholder', 'name');
+        const draft = { tags: tagsInput.value.trim(), ...loraState };
+        const words = loraState.loraTriggers ? globalThis.loraUi?.partTriggers?.(draft) ?? [] : [];
+        const running = loraState.loras.filter(lora => draft.otherBase === 'use' || !loraEntry(lora.name) || loraEntry(lora.name).base === 'unknown'
+            || loraFitsModel(loraEntry(lora.name).base, globalThis.globalSettings?.api_model_type === 'Diffusion' ? 'Diffusion' : 'Checkpoint'));
+        const lines = [[draft.tags, ...words].filter(Boolean).join(', '), ...running.map(lora => `+ LoRA  ${loraEntry(lora.name)?.label ?? loraLabel(lora.name)}  ${lora.weight}`)];
+        preview.replaceChildren(
+            el('span', 'parts-field-title', text('parts_sends_as', 'Sends as')),
+            el('code', 'parts-picker-token', partToken(name)),
+            el('span', 'parts-field-title', text('parts_expands_to', 'Expands to')),
+            el('code', 'parts-expand-code', lines.join('\n')),
+        );
+    };
+    form.append(partLoraEditor(loraState, paintPreview), preview);
+    nameInput.addEventListener('input', paintPreview);
+    tagsInput.addEventListener('input', paintPreview);
+    paintPreview();
+
     const sampleBox = el('div', 'parts-sample-options');
     const generateLabel = el('label', 'parts-check');
     const generateCheck = document.createElement('input');
@@ -249,7 +351,7 @@ export function openPartEditor({ id = null, initial = {}, onSaved = null, trigge
             // overwrite = remove the other part first (its samples go with it)
             await applyPartsChange({ action: 'remove', id: targetId });
         }
-        const change = { action: 'set', entry: { name, category: categorySelect.value, tags } };
+        const change = { action: 'set', entry: { name, category: categorySelect.value, tags, loras: loraState.loras, loraTriggers: loraState.loraTriggers, otherBase: loraState.otherBase } };
         if (id) change.id = id;
         const doc = await applyPartsChange(change);
         if (!doc) { console.warn(CAT, 'save refused', change); return; }
@@ -535,9 +637,10 @@ function lackingSamples() {
 }
 
 // The rail's colour per category (the modal's category rail, selectionModal.js)
+// values: design/tokens.json
 const CATEGORY_COLORS = Object.freeze({
-    outfit: '#e0a72f', hair: '#d97757', body: '#c084fc', background: '#4ade80', camera: '#7fb0ff',
-    composition: '#38bdf8', tone: '#f472b6', pose: '#facc15', expression: '#fb923c', other: '#9aa0a6',
+    outfit: 'var(--saa-cat-amber)', hair: 'var(--saa-cat-clay)', body: 'var(--saa-cat-violet)', background: 'var(--saa-cat-green)', camera: 'var(--saa-cat-blue)',
+    composition: 'var(--saa-cat-sky)', tone: 'var(--saa-cat-pink)', pose: 'var(--saa-cat-yellow)', expression: 'var(--saa-cat-orange)', other: 'var(--saa-cat-stone)',
 });
 
 // The sample of the model in use, or null: a sample of the other model is not shown
@@ -569,7 +672,7 @@ function pickerTile(id) {
 // The panel beside the grid of the row modal's Parts tab: the name, where the part
 // came from, the sample of the model in use, the tags, what the chip sends, and Add
 // to selection / Edit / Sample
-function pickerPanel(id, { trigger = null, api = null, toOption = null, onChanged = null } = {}) {
+function pickerPanel(id, { trigger = null, onChanged = null } = {}) {
     const entry = id ? getPart(id) : null;
     const panel = el('div', 'parts-panel-content parts-picker-panel');
     if (!entry) {
@@ -599,15 +702,12 @@ function pickerPanel(id, { trigger = null, api = null, toOption = null, onChange
     panel.append(chips);
     panel.append(el('span', 'parts-section-label', text('parts_sends_as', 'Sends as').toUpperCase()));
     panel.append(el('code', 'parts-picker-token', partToken(entry.name)));
+    // picking happens on the tile (as a tag is picked); the panel edits and resamples
     const actions = el('div', 'parts-picker-actions');
-    const option = toOption ? toOption(entry) : null;
-    const selected = Boolean(option && api?.isSelected?.(option));
-    const add = button(`parts-picker-add${selected ? ' is-selected' : ''}`, selected ? text('parts_remove_from_selection', 'Remove from selection') : text('parts_add_to_selection', 'Add to selection'), () => { if (option) api?.toggle?.(option); });
-    add.disabled = !option;
     const edit = button('list-manager-button parts-picker-edit', text('parts_edit_short', 'Edit'), () => openPartEditor({ id, trigger, onSaved: () => onChanged?.() }));
     const sampleButton = button('list-manager-button parts-picker-sample', text('parts_sample_short', 'Sample'), () => queuePartSample(id, { base: 'mannequin' }), { title: text('parts_new_sample', 'New sample') });
     sampleButton.disabled = !comfyInterface();
-    actions.append(add, edit, sampleButton);
+    actions.append(edit, sampleButton);
     panel.append(actions);
     return panel;
 }
@@ -702,8 +802,8 @@ export function partsPickerTab({ fieldKey = null, trigger = null } = {}) {
         categoryAll: text('parts_category_all', 'All'),
         // no Sample box: a tile without a sample of the model in use says so itself
         attributes: [],
-        // one click shows the tile in the panel, a double click (or Enter) picks it
-        clickPreviews: true,
+        // a click picks the tile and shows it in the panel, as on the tag list
+        clickPreviews: false,
         sorts: [
             { value: 'name', label: text('parts_sort_name', 'Name'), compare: (a, b) => optionLabelOf(a).localeCompare(optionLabelOf(b)) },
             { value: 'newest', label: text('parts_sort_newest', 'Newest'), compare: (a, b) => created(b).localeCompare(created(a)) || optionLabelOf(a).localeCompare(optionLabelOf(b)) },
@@ -724,7 +824,7 @@ export function partsPickerTab({ fieldKey = null, trigger = null } = {}) {
             return partList().map(option);
         },
         renderOption: item => pickerTile(item.part),
-        panel: (item, api) => pickerPanel(item?.part ?? null, { trigger, api, toOption: option, onChanged: () => api.refresh() }),
+        panel: (item, api) => pickerPanel(item?.part ?? null, { trigger, onChanged: () => api.refresh() }),
         actions: [
             { label: text('parts_new', '+ New part'), onClick: api => openPartEditor({ trigger, onSaved: () => api.refresh() }) },
             {

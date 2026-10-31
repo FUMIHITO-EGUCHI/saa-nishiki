@@ -114,6 +114,6 @@ export function applyFastMode(generateData, settings) {
             : slot));
     }
 
-    result.fastMode = { lora: fast.lora, steps: fast.steps, cfg: fast.cfg, sampler: fast.sampler, scheduler: fast.scheduler };
+    result.fastMode = { lora: fast.lora, strength: fast.strength, steps: fast.steps, cfg: fast.cfg, sampler: fast.sampler, scheduler: fast.scheduler };
     return result;
 }
