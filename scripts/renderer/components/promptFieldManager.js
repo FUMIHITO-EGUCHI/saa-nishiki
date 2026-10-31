@@ -24,6 +24,7 @@ import { SPLITS, normalizeSplit, sideLabel, sideOf, sideOrder, splitLabel, swapS
 import { splitPromptTokens } from './tagCapsuleLogic.js';
 import { castEnabled, castRoster, isActionNamed, isCastFieldId, isDiffusionFieldId, syncCastFields } from '../../shared/castMembers.js';
 import { regionalSlots, slotSideLabels } from '../../shared/characterSides.js';
+import { iconElement } from '../../shared/iconSet.js';
 
 const BUILTIN_LABELS = {
     common: 'Common',
@@ -296,28 +297,6 @@ export function setupPromptFieldManager() {
         return !custom || isDiffusionFieldId(custom.id);
     }
 
-    // ------------------------------------------------------------------ icons
-    function svgIcon(path, size = 10) {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', String(size));
-        svg.setAttribute('height', String(size));
-        svg.setAttribute('viewBox', '0 0 16 16');
-        svg.setAttribute('fill', 'none');
-        svg.setAttribute('stroke', 'currentColor');
-        svg.setAttribute('stroke-width', '1.7');
-        svg.setAttribute('stroke-linecap', 'round');
-        svg.setAttribute('stroke-linejoin', 'round');
-        svg.setAttribute('aria-hidden', 'true');
-        for (const d of [].concat(path)) {
-            const element = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            element.setAttribute('d', d);
-            svg.appendChild(element);
-        }
-        return svg;
-    }
-    const ICON_CHEVRON_RIGHT = 'M6 4l4 4-4 4';
-    const ICON_SWAP = ['M2 5.5h10M9.5 3l2.5 2.5L9.5 8', 'M14 10.5H4M6.5 8L4 10.5 6.5 13'];
-    const ICON_GRIP = ['M6 4h.01M10 4h.01M6 8h.01M10 8h.01M6 12h.01M10 12h.01'];
 
     // ------------------------------------------------------------ mute / collapse
 
@@ -417,7 +396,7 @@ export function setupPromptFieldManager() {
         const grip = document.createElement('span');
         grip.className = 'scene-grip';
         grip.title = text('ui_scene_drag', 'Drag to move');
-        grip.appendChild(svgIcon(ICON_GRIP, 12));
+        grip.appendChild(iconElement('grip', 12));
         grip.hidden = !isMovable(id);
         grip.addEventListener('mousedown', () => armDrag(container));
 
@@ -425,7 +404,7 @@ export function setupPromptFieldManager() {
         chevron.type = 'button';
         chevron.className = 'scene-chevron';
         chevron.title = text('ui_scene_collapse', 'Collapse / expand');
-        chevron.appendChild(svgIcon(ICON_CHEVRON_RIGHT, 12));
+        chevron.appendChild(iconElement('chevron-right', 12));
         chevron.addEventListener('click', () => toggleCollapsed(id));
 
         const mute = document.createElement('button');
@@ -859,7 +838,7 @@ export function setupPromptFieldManager() {
         swap.type = 'button';
         swap.className = 'prompt-side-swap';
         swap.title = 'Swap left and right: prompts, negatives, characters, strengths';
-        swap.appendChild(svgIcon(ICON_SWAP, 12));
+        swap.appendChild(iconElement('swap', 12));
         swap.appendChild(document.createTextNode('Swap'));
         swap.addEventListener('click', () => swapSides());
         right.appendChild(swap);

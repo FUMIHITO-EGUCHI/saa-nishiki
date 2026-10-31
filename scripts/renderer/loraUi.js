@@ -22,7 +22,7 @@ import { getPart, partLoras } from './partsClient.js';
 import { showDialog } from './components/myDialog.js';
 import { createSelectionModal } from './components/selectionModal.js';
 import {
-    ICONS, button, comfyInterface, currentModel, element, hasSamples, icon, insideSampleOverlay, modelType, number,
+    button, comfyInterface, currentModel, element, hasSamples, icon, insideSampleOverlay, modelType, number,
     openRetakeDialog, openSampleViewer, queueLoraSamples, text,
 } from './loraSamples.js';
 
@@ -172,7 +172,7 @@ function nameEditor(entry) {
     const title = element('h3', 'lora-panel-name');
     const label = element('span', 'lora-panel-title', entry.label);
     const rename = button('lora-rename', '', () => edit());
-    rename.append(icon(ICONS.pencil, 13));
+    rename.append(icon('pencil', 13));
     rename.title = text('lora_rename', 'Rename');
     rename.setAttribute('aria-label', rename.title);
     label.addEventListener('dblclick', () => edit());

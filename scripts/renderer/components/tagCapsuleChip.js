@@ -2,90 +2,17 @@
 import { chipKind, describePlan, formatTagWeight, normalizeWeightPlan, weightWarning } from './tagCapsuleLogic.js';
 import { PART_PREFIX, isPartToken, partNameOf } from '../../shared/parts.js';
 import { heatLabel, heatTier } from '../../shared/tagHeat.js';
+import { ICON_SHAPES, iconElement, iconMarkup } from '../../shared/iconSet.js';
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-
-const ICON_PATHS = Object.freeze({
-    increment: ['M3 12l10-8', 'M7 4h6v6'],
-    decrement: ['M3 4l10 8', 'M7 12h6V6'],
-    random: null,
-    close: ['M4 4l8 8', 'M12 4l-8 8'],
-    plus: ['M8 3v10', 'M3 8h10'],
-    text: ['M2.5 4h11', 'M2.5 8h11', 'M2.5 12h7'],
-    search: ['M10.5 10.5L14 14'],
-    layers: ['M8 2.5l6 3-6 3-6-3 6-3z', 'M2 9.5l6 3 6-3'],
-    chevronRight: ['M6 4l4 4-4 4'],
-    chevronLeft: ['M10 4l-4 4 4 4'],
-    chevronDown: ['M4 6l4 4 4-4'],
-    minus: ['M3 8h10'],
-    check: ['M3 8.4l3.2 3.2L13 4.6'],
-    lock: ['M5.5 7V5a2.5 2.5 0 0 1 5 0v2'],
-    star: ['M8 2.2l1.8 3.7 4.1.6-3 2.9.7 4.1L8 11.6l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 2.2z'],
-    undo: ['M6 5L3 8l3 3', 'M3 8h6a4 4 0 0 1 4 4'],
-    redo: ['M10 5l3 3-3 3', 'M13 8H7a4 4 0 0 0-4 4'],
-    spark: ['M8 2.5v11', 'M2.5 8h11', 'M4.1 4.1l7.8 7.8', 'M11.9 4.1l-7.8 7.8'],
-    arrowRight: ['M3 8h10', 'M9 4l4 4-4 4'],
+// the chip and popover names of the icons, where they differ from the icon set's
+const ICON_SHAPE_OF = Object.freeze({
+    random: 'dice', chevronDown: 'chevron-down', chevronLeft: 'chevron-left', chevronRight: 'chevron-right', arrowRight: 'arrow-right',
 });
 
 export function createIcon(name, size = 14) {
-    const svg = document.createElementNS(SVG_NS, 'svg');
-    svg.setAttribute('width', String(size));
-    svg.setAttribute('height', String(size));
-    svg.setAttribute('viewBox', '0 0 16 16');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '1.5');
-    svg.setAttribute('stroke-linecap', 'round');
-    svg.setAttribute('stroke-linejoin', 'round');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.classList.add('tag-ui-icon', `tag-ui-icon-${name}`);
-
-    const addPath = d => {
-        const path = document.createElementNS(SVG_NS, 'path');
-        path.setAttribute('d', d);
-        svg.appendChild(path);
-    };
-    const addCircle = (cx, cy, r, filled = false) => {
-        const circle = document.createElementNS(SVG_NS, 'circle');
-        circle.setAttribute('cx', String(cx));
-        circle.setAttribute('cy', String(cy));
-        circle.setAttribute('r', String(r));
-        if (filled) circle.setAttribute('fill', 'currentColor');
-        svg.appendChild(circle);
-    };
-    const addRect = (x, y, w, h, rx) => {
-        const rect = document.createElementNS(SVG_NS, 'rect');
-        rect.setAttribute('x', String(x));
-        rect.setAttribute('y', String(y));
-        rect.setAttribute('width', String(w));
-        rect.setAttribute('height', String(h));
-        rect.setAttribute('rx', String(rx));
-        svg.appendChild(rect);
-    };
-
-    switch (name) {
-        case 'random':
-            addRect(2.5, 2.5, 11, 11, 2);
-            addCircle(5.5, 5.5, 0.9, true);
-            addCircle(8, 8, 0.9, true);
-            addCircle(10.5, 10.5, 0.9, true);
-            break;
-        case 'pill':
-            addRect(1.5, 4.5, 13, 7, 3.5);
-            addPath('M6 4.5v7');
-            break;
-        case 'search':
-            addCircle(7, 7, 4.5);
-            addPath('M10.5 10.5L14 14');
-            break;
-        case 'lock':
-            addRect(3.5, 7, 9, 6.5, 1.5);
-            addPath('M5.5 7V5a2.5 2.5 0 0 1 5 0v2');
-            break;
-        default:
-            for (const d of ICON_PATHS[name] ?? []) addPath(d);
-    }
-    return svg;
+    const shape = ICON_SHAPE_OF[name] ?? name;
+    // a name with no icon (the "fixed" weight mode) keeps its place as an empty box
+    return iconElement(ICON_SHAPES[shape] ? shape : null, size, { className: `tag-ui-icon tag-ui-icon-${name}` });
 }
 
 export function modeIconName(mode) {
@@ -102,7 +29,7 @@ export function chipSignature(capsule, options = {}) {
         options.heat ?? '', lora].join('|');
 }
 
-const LINK_ICON = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 7l2-2M4.5 4.5L3 6a2 2 0 003 3l1.5-1.5M7.5 7.5L9 6a2 2 0 00-3-3L4.5 4.5"></path></svg>';
+const LINK_ICON = iconMarkup('link', 11);
 
 // The LoRA marks of a chip (loraUi.js chipInfo): the badge counting the LoRAs suggested
 // for the tag, which opens their popover, and the link mark on a trigger word that came
