@@ -19,6 +19,7 @@ import { addViewerInfoAction } from './viewerInfo.js';
 import { RECIPE_APP_KEYS, parseRecipe, recipeFromParameters, recipeModel, recipeSize } from '../shared/recipe.js';
 import { compareRecipeFields, planRecipeLoad, recipeLoraRows, rowDiffers } from '../shared/recipeApply.js';
 import { detailerLabel, modelLabel } from '../shared/imageSummary.js';
+import { element } from './dom.js';
 
 const ROWS = ['tags', 'prose', 'lora', 'model', 'size', 'regional', 'seed'];
 
@@ -30,13 +31,6 @@ function lang() {
 function text(key, fallback) {
     const value = lang()[key];
     return typeof value === 'string' && value ? value : fallback;
-}
-
-function element(tag, className, content) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (content !== undefined && content !== null) node.textContent = String(content);
-    return node;
 }
 
 function number(value) {

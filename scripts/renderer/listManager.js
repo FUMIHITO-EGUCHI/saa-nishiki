@@ -9,6 +9,7 @@ import { openTagPicker } from './tagSelectionModal.js';
 import { PARTS_CHANGED_EVENT, applyPartsChange, partList, partsAvailable } from './partsClient.js';
 import { sampleTile } from './partsUi.js';
 import { PART_CATEGORIES, pickSample, sampleModelLabels } from '../shared/parts.js';
+import { element as el } from './dom.js';
 
 const CAT = '[ListManager]';
 const ROW_LIMIT = 200;
@@ -29,13 +30,6 @@ function lang() {
 function text(key, fallback) {
     const value = lang()[key];
     return typeof value === 'string' && value ? value : fallback;
-}
-
-function el(tag, className, textContent) {
-    const element = document.createElement(tag);
-    if (className) element.className = className;
-    if (textContent !== undefined) element.textContent = textContent;
-    return element;
 }
 
 // Current merged rows of one list: [{ name, tag, meta }] (meta from cachedFiles.userListMeta).

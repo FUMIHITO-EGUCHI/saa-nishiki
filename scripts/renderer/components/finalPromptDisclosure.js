@@ -2,15 +2,9 @@
 // Shows expandAll()[n] — the exact strings the field set hands to generate.js.
 import { createIcon } from './tagCapsuleChip.js';
 import { tagText } from './tagUiText.js';
+import { element as el } from '../dom.js';
 
 const WEIGHTED_TOKEN = /\(([^()]*?):(-?\d+(?:\.\d+)?)\)/g;
-
-function el(tag, className, text = '') {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text) node.textContent = text;
-    return node;
-}
 
 // Highlights (tag:weight) tokens using text nodes and spans only.
 export function renderWeightedText(target, value) {

@@ -20,6 +20,7 @@ import { TAG_ALIASES_EVENT, aliasFor, ensureAliases } from '../tagAliasClient.js
 import { heatLabel } from '../../shared/tagHeat.js';
 import { tagHeat } from './tagDictionaryStatus.js';
 import { lookupKey, promptTagForm } from '../../shared/tagRelated.js';
+import { element as el } from '../dom.js';
 
 const POPOVER_WIDTH = 336;
 const VIEWPORT_MARGIN = 8;
@@ -33,13 +34,6 @@ let lastTabKind = 'weight';
 
 function displayTag(tag) {
     return String(tag ?? '').replaceAll('_', ' ');
-}
-
-function el(tag, className, text = '') {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text) node.textContent = text;
-    return node;
 }
 
 function numberInput(className, step, ariaLabel) {

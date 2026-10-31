@@ -434,9 +434,10 @@ export function setupPromptFieldManager() {
         }
         const menu = document.createElement('button');
         menu.type = 'button';
-        menu.className = 'scene-menu-button';
+        menu.className = 'saa-icon-btn scene-menu-button';
         menu.textContent = '⋯';
         menu.title = text('ui_scene_more', 'More');
+        menu.setAttribute('aria-label', menu.title);
         menu.addEventListener('click', event => { event.stopPropagation(); toggleRowMenu(container, id, menu); });
         tools.appendChild(menu);
         // the tools sit at the row's right end (the design), not under the label:

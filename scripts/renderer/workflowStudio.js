@@ -22,7 +22,7 @@ export function setupWorkflowStudio() {
         }});
     }, 'viewer-edit-current');
     const history = button(tr('履歴','History'), () => openLibrary({trigger:history,view:'runs'}), 'viewer-run-history');
-    edit.className = history.className = 'viewer-tool-button has-label';
+    edit.className = history.className = 'saa-icon-btn is-framed has-label';
     tools?.append(edit,history);
     const update = () => { edit.disabled = !globalThis.mainGallery?.currentEntry?.()?.image; };
     document.addEventListener(VIEWER_SELECT_EVENT,update); update();

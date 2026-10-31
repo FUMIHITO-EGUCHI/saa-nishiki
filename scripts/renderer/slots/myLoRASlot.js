@@ -14,6 +14,7 @@
 import { LORA_CHANGED_EVENT } from '../loraClient.js';
 import { loraLabel } from '../../shared/loraCatalog.js';
 import { iconElement } from '../../shared/iconSet.js';
+import { element, iconButton } from '../dom.js';
 
 let instanceSlotManager = null;
 
@@ -48,23 +49,6 @@ function lang() {
 function text(key, fallback) {
     const value = lang()[key];
     return typeof value === 'string' && value ? value : fallback;
-}
-
-function element(tag, className, content) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (content !== undefined && content !== null) node.textContent = String(content);
-    return node;
-}
-
-function iconButton(className, label, name, onClick) {
-    const node = element('button', className);
-    node.type = 'button';
-    node.setAttribute('aria-label', label);
-    node.title = label;
-    node.append(iconElement(name, 14));
-    node.addEventListener('click', onClick);
-    return node;
 }
 
 const strength = value => {
@@ -246,12 +230,12 @@ class SlotManager {
         value.step = '0.05';
         value.setAttribute('aria-label', text('lora_model_strength', 'Model strength'));
 
-        const fold = iconButton('lora-slot-icon lora-slot-fold', text('lora_slot_details', 'Details'), 'chevron-down', () => {
+        const fold = iconButton('chevron-down', text('lora_slot_details', 'Details'), { className: 'lora-slot-fold', size: 28, onClick: () => {
             row.open = !row.open;
             this.renderRow(row);
-        });
+        } });
         fold.setAttribute('aria-expanded', String(row.open));
-        const remove = iconButton('lora-slot-icon lora-slot-remove', text('lora_remove', 'Remove'), 'close', () => this.removeRow(row));
+        const remove = iconButton('close', text('lora_remove', 'Remove'), { className: 'lora-slot-remove', size: 28, onClick: () => this.removeRow(row) });
 
         // the weight: the slider and the field are the same value (CLIP too while it follows)
         const show = () => {
@@ -363,11 +347,11 @@ class SlotManager {
             clip.value = row.clip;
         });
         wheelSteps(clip);
-        const relink = iconButton('lora-slot-icon lora-slot-relink', text('lora_clip_follow', 'Same as the weight'), 'reset', () => {
+        const relink = iconButton('reset', text('lora_clip_follow', 'Same as the weight'), { className: 'lora-slot-relink', size: 28, onClick: () => {
             row.linked = true;
             row.clip = row.model;
             this.renderRow(row);
-        });
+        } });
         clipLine.append(clip);
         if (!row.linked) clipLine.append(relink);
         clipField.append(clipLine);

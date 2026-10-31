@@ -133,7 +133,7 @@ class QueueManager {
 
         row.className = `slot-row add-row ${className}`;        
         row.innerHTML = `
-            <button type="button" class="slot-action slot-action-add ${itemClasses.add}" data-action="add" data-slot="${className}" aria-label="Add">${iconMarkup('plus', 14)}</button>
+            <button type="button" class="saa-icon-btn slot-action slot-action-add ${itemClasses.add}" data-action="add" data-slot="${className}" aria-label="Add">${iconMarkup('plus', 14)}</button>
             <div></div>
             <div></div>
         `;
@@ -176,9 +176,9 @@ class QueueManager {
         const row = document.createElement('div');
         row.className = `slot-row content-row queue-row ${className}`;
         row.innerHTML = `
-            <button type="button" class="slot-action slot-action-del ${itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>
+            <button type="button" class="saa-icon-btn slot-action slot-action-del ${itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>
             <div class="${itemClasses.jobID}"></div>            
-            <button type="button" class="slot-action slot-action-info ${itemClasses.info}" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
+            <button type="button" class="saa-icon-btn slot-action slot-action-info ${itemClasses.info}" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
         `;
         return row;
     }
@@ -278,9 +278,9 @@ class QueueManager {
         const existingRow = this.container.querySelector(`.${className}`);
         if (existingRow) {
             existingRow.innerHTML = `
-                <button type="button" class="slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>
+                <button type="button" class="saa-icon-btn slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>
                 <div class="${slot.itemClasses.jobID}"></div>            
-                <button type="button" class="slot-action slot-action-info ${slot.itemClasses.info}" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
+                <button type="button" class="saa-icon-btn slot-action slot-action-info ${slot.itemClasses.info}" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
             `;
         }
 

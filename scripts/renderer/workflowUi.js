@@ -1,5 +1,7 @@
+import { element as makeElement } from './dom.js';
 export const tr=(ja,en)=>globalThis.globalSettings?.language==='ja-JP'?ja:en;
-export function element(tag,text='',className='') {const node=document.createElement(tag);node.textContent=text;if(className)node.className=className;return node;}
+// text before the class here; dom.js makes the element
+export function element(tag,text='',className='') {return makeElement(tag,className,text);}
 export function button(text,action,id) {const node=element('button',text);node.type='button';if(id)node.id=id;node.addEventListener('click',action);return node;}
 export function field(parent,text,input) {const label=element('label',text,'workflow-field');label.append(input);parent.append(label);return input;}
 export function select(options,value) {const node=document.createElement('select');for(const item of options){const option=element('option',typeof item==='string'?item:item.label);option.value=typeof item==='string'?item:item.value;node.append(option);}if(value!==undefined)node.value=value;return node;}

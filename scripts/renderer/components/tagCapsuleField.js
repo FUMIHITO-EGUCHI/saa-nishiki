@@ -47,6 +47,7 @@ import { isPartToken } from '../../shared/parts.js';
 import { customFieldExtras, isCustomFieldId, normalizeCustomFields, normalizeOrder, setCustomFieldExtras } from '../../shared/promptFieldOrder.js';
 import { sideOrder } from '../../shared/regionalSides.js';
 import { castEnabled, isDiffusionFieldId } from '../../shared/castMembers.js';
+import { element as el } from '../dom.js';
 
 // Unit ids of each prompt in generation order (scripts/shared/regionalSides.js), so
 // the Final prompt preview and the batch dialogs mirror what generate.js assembles.
@@ -74,13 +75,6 @@ export function chainFromSettings(stored = {}) {
 }
 
 export const PROMPT_FIELD_KEYS = Object.freeze(['common', 'views', 'background', 'style', 'positive', 'positive_right', 'negative', 'negative_left', 'negative_right', 'exclude']);
-
-function el(tag, className, text = '') {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text) node.textContent = text;
-    return node;
-}
 
 function setTextboxValue(textboxControl, textbox, value, guard) {
     guard(true);

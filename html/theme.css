@@ -1852,20 +1852,40 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 100000; 
-    background: rgba(0, 0, 0, 0.5); 
+    z-index: 100000;
+    background: var(--saa-backdrop);
 }
 
+/* the frame of the Dialog component (as .selection-modal-dialog); the buttons are its footer buttons */
 .dialog-container {
     position: relative;
     background: var(--saa-bg-app);
-    border: 2px solid var(--saa-border);
-    border-radius: 8px;
+    border: 2px solid var(--saa-border-strong);
+    border-radius: 9px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
     padding: 20px;
     max-width: 500px;
     margin: 15% auto;
-    z-index: 100001; 
+    z-index: 100001;
     color: var(--saa-text);
+}
+
+.dialog-message {
+    font-size: 16px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.dialog-button-row,
+[class^="dialog-button-container-"] {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.dialog-container > .dialog-button-row,
+.dialog-container > [class^="dialog-button-container-"] {
+    margin-top: 12px;
 }
 
 /* Global scroll bar style */
@@ -1902,6 +1922,22 @@ body {
 }
 
 /* === UI shell === */
+
+/* ---- icon buttons (Design System: IconButton; scripts/renderer/dom.js iconButton) ----
+   One icon and no text, so the name is the aria-label. 24px in rows and panels, is-26 in the run
+   bar, is-28 in the LoRA rows, is-framed (a face and an edge) for the viewer's tools. */
+.saa-icon-btn { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; padding: 0; box-sizing: border-box; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--saa-muted2); font: inherit; line-height: 1; cursor: pointer; }
+.saa-icon-btn:hover:not(:disabled) { background: var(--saa-bg-hover); color: var(--saa-text); }
+.saa-icon-btn:disabled { opacity: .32; cursor: default; }
+.saa-icon-btn:focus-visible { outline: 2px solid var(--saa-accent); outline-offset: 1px; }
+.saa-icon-btn.is-26 { width: 26px; height: 26px; }
+.saa-icon-btn.is-28 { width: 28px; height: 28px; border-radius: 6px; color: var(--saa-muted); }
+.saa-icon-btn.is-framed { width: 28px; border-color: var(--saa-border-ctl); background: var(--saa-bg-control); color: var(--saa-text); }
+.saa-icon-btn.is-framed:hover:not(:disabled) { background: var(--saa-bg-hover); }
+.saa-icon-btn.is-framed.has-label { width: auto; gap: 6px; padding: 0 10px; font-size: 12px; }
+/* on (a pressed toggle, the linked chain): the accent; a framed one takes it on its edge too */
+.saa-icon-btn[aria-pressed="true"], .saa-icon-btn.is-active { color: var(--saa-accent); }
+.saa-icon-btn.is-framed[aria-pressed="true"], .saa-icon-btn.is-framed.is-active { border-color: var(--saa-accent); }
 
 /* ---- cards ---- */
 #full-body { background: var(--saa-bg-app); }
@@ -1941,10 +1977,6 @@ body {
 
 /* ---- header ---- */
 .edit-history-controls { display: inline-flex; align-items: center; gap: 2px; }
-.edit-history-button { width: 26px; height: 24px; padding: 0; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--saa-muted2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
-.edit-history-button:hover:not(:disabled) { background: var(--saa-bg-hover); color: var(--saa-text); }
-.edit-history-button:disabled { opacity: .32; cursor: default; }
-.edit-history-button:focus-visible { outline: 2px solid var(--saa-accent); outline-offset: 1px; }
 .edit-history-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .header-status { display: flex; align-items: center; gap: 6px; }
 .status-pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border: 1px solid var(--saa-border); border-radius: 11px; background: var(--saa-bg-control); color: var(--saa-muted2); font: inherit; font-size: 11px; white-space: nowrap; cursor: pointer; }
@@ -2163,9 +2195,6 @@ body {
 .run-param-seed .run-number .mySlider-generate-random-seed-value { min-width: 0 !important; width: 92px !important; }
 .run-param-steps .run-number [class^="mySlider-"][class*="-value"] { width: 40px; }
 .run-param-batch .run-number [class^="mySlider-"][class*="-value"] { width: 40px; }
-.run-icon-button { width: 24px; min-width: 24px; flex: none; height: 26px; border: none; border-radius: 5px; background: transparent; color: var(--saa-muted2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
-.run-icon-button:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
-.run-icon-button:focus-visible { outline: 2px solid var(--saa-accent); }
 .run-select { position: relative; margin: 0; }
 .run-select .mydropdown-container-1 { margin: 0; }
 .run-select .mydropdown-input, .run-select .mydropdown-select { height: 26px; box-sizing: border-box; font-size: 12px; min-width: 0; }

@@ -18,6 +18,7 @@ import { openFieldTagModal, openTagPicker } from './tagSelectionModal.js';
 import { attachPartsSampleJob, partsSampleQueued } from './generate.js';
 import { loraCatalog, loraEntry } from './loraClient.js';
 import { loraFitsModel, loraLabel } from '../shared/loraCatalog.js';
+import { element as el } from './dom.js';
 
 const CAT = '[PartsUI]';
 
@@ -30,13 +31,6 @@ function text(key, fallback, ...args) {
     let out = typeof value === 'string' && value ? value : fallback;
     args.forEach((arg, index) => { out = out.replaceAll(`{${index}}`, String(arg)); });
     return out;
-}
-
-function el(tag, className, content) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (content !== undefined) node.textContent = content;
-    return node;
 }
 
 function button(className, label, onClick, { title = '' } = {}) {
