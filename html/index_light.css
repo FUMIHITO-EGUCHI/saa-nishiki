@@ -1,5 +1,4 @@
-/* Light theme: the values of the --saa-* tokens and the few rules only this theme has.
-   The shared rules are in theme.css. */
+/* Light theme: the values of the --saa-* tokens. The rules are in theme.css, shared by both themes. */
 
 /* === tokens: generated from design/tokens.json by scripts/buildThemeTokens.mjs === */
 :root {
@@ -17,6 +16,8 @@
     --saa-muted2: #5f554a;
     --saa-placeholder: #9b9184;
     --saa-accent: #2f6fb3;
+    --saa-accent-soft: rgba(47,111,179,0.12);
+    --saa-backdrop: rgba(74,64,58,0.38);
     --saa-run: #ea580c;
     --saa-run-hover: #c2410c;
     --saa-ok: #2e9e5e;
@@ -44,105 +45,11 @@
     --saa-run-stop: #52525b;
     --saa-run-stop-hover: #3f3f46;
     --saa-run-stop-disabled: #afafb6;
-    --saa-classic-text: #4a403a;
-    --saa-classic-ink: #4a403a;
-    --saa-classic-text-strong: #4a403a;
-    --saa-classic-text-soft: #4a403a;
-    --saa-classic-meta-text: #4a403a;
-    --saa-classic-button-text: #4a403a;
-    --saa-classic-output: #3d3530;
-    --saa-classic-item: #6a5d4a;
-    --saa-classic-label: #6a5d4a;
-    --saa-classic-hint: #6a5d4a;
-    --saa-classic-note: #75695e;
-    --saa-classic-heat: #7a7a7a;
-    --saa-classic-more: #9a8b78;
-    --saa-classic-disabled: #8a7d6a;
-    --saa-classic-dim: #8a7d6a;
-    --saa-classic-sunken: #eee9da;
-    --saa-classic-input: #fffdf5;
-    --saa-classic-select: #e6e3d2;
-    --saa-classic-bar: #fffdf5;
-    --saa-classic-surface: #e6e3d2;
-    --saa-classic-surface-alt: #e6e3d3;
-    --saa-classic-track: #e6e3d2;
-    --saa-classic-chip: #fffdf7;
-    --saa-classic-nav-hover: #e4decd;
-    --saa-classic-nav-active: #fffdf5;
-    --saa-classic-hover: #e4decd;
-    --saa-classic-item-hover: #f0d4b8;
-    --saa-classic-primary: #d8b08c;
-    --saa-classic-line: #d2cbb8;
-    --saa-classic-frame: #d2cbb8;
-    --saa-classic-edge: #d2cbb8;
-    --saa-classic-field-line: #d2cbb8;
-    --saa-classic-frame-soft: #c5b9a7;
-    --saa-classic-chip-line: #d2cbb8;
-    --saa-classic-row-line: #e4decd;
-    --saa-classic-separator: #0e0e0e;
-    --saa-classic-focus: #b56b45;
-    --saa-classic-focus-soft: #c78d6b;
-    --saa-classic-number-focus: #e8b090;
-    --saa-classic-number-glow: rgba(0,0,0,0.3);
-    --saa-classic-textarea-focus: #e8b090;
-    --saa-classic-info: #2f6ea3;
-    --saa-classic-info-bg: #dce9f5;
-    --saa-classic-info-line: #2f6ea3;
-    --saa-classic-warn: #b8721a;
-    --saa-classic-up: #397c36;
-    --saa-classic-down: #b0651f;
-    --saa-classic-regional: #d28080;
-    --saa-classic-accent: #e8b090;
-    --saa-classic-accent-2: #e8c050;
-    --saa-classic-accent-2-hover: #f0d4b8;
-    --saa-classic-toggle-on: #e8b090;
-    --saa-classic-toggle-system: #1ce088;
-    --saa-classic-thumb: #d98c7c;
-    --saa-classic-overlay: rgba(245,242,230,0.8);
-    --saa-classic-overlay-deep: rgba(245,242,230,0.9);
-    --saa-classic-overlay-black: rgba(245,242,230,0.8);
-    --saa-classic-fullscreen: rgba(245,242,230,0.9);
-    --saa-classic-overlay-surface: rgba(245,242,230,0.8);
-    --saa-classic-upload: rgba(245,242,230,0.9);
-    --saa-classic-drop: rgba(240,212,184,0.3);
-    --saa-classic-drop-line: #d98c7c;
-    --saa-classic-handle: rgba(245,242,230,0.1);
-    --saa-classic-meta-bg: rgba(245,242,230,0.8);
-    --saa-classic-meta-line: rgba(245,242,230,0.3);
-    --saa-classic-action: #e8b090;
-    --saa-classic-action-hover: #f0d4b8;
-    --saa-classic-send: #e8c050;
-    --saa-classic-send-hover: #f0d4b8;
-    --saa-classic-tagger: rgba(245,242,230,0.8);
-    --saa-classic-tagger-line: rgba(24,24,23,0.5);
-    --saa-classic-error: #d98c7c;
-    --saa-classic-close: #d98c7c;
-    --saa-classic-close-hover: #e5c0b8;
-    --saa-classic-backdrop: rgba(74,64,58,0.38);
-    --saa-classic-backdrop-deep: rgba(74,64,58,0.42);
-    --saa-classic-blur: rgba(0,0,0,0.45);
-    --saa-classic-shadow: rgba(74,64,58,0.35);
-    --saa-classic-scroll: #e8b090;
-    --saa-classic-scroll-2: #e8c050;
-    --saa-classic-scroll-hover: #d98c7c;
-    --saa-classic-scroll-hover-2: #f0d4b8;
     --saa-slot-text: #8066b3;
     --saa-slot-text-2: #cc9900;
-    --saa-prompt-common: #a0522d;
-    --saa-prompt-positive: #2e8b57;
-    --saa-prompt-positive-right: #000080;
-    --saa-prompt-negative: #dc143c;
-    --saa-prompt-ai: #800080;
-    --saa-prompt-exclude: #b4aa64;
-    --saa-chip-bg: #fffdf5;
-    --saa-chip-border: #c5b9a7;
-    --saa-chip-text: #4a403a;
     --saa-chip-selected: #dfe6ff;
-    --saa-chip-toggle: #2f7fd6;
     --saa-chip-toggle-hover: #5a9ce0;
     --saa-chip-toggle-check: #fffdf5;
-    --saa-chip-weight-bg: rgba(47,127,214,0.12);
-    --saa-chip-weight-line: rgba(0,0,0,0.08);
     --saa-chip-weight-text: #2f6ea3;
     --saa-chip-off-text: #8a8073;
     --saa-chip-off-toggle: #b8b0a4;
@@ -160,22 +67,11 @@
     --saa-part-weight-bg: rgba(184,150,46,0.16);
     --saa-part-weight-text: #7a5c0e;
     --saa-part-missing: #8a7a4a;
-    --saa-artist-bg: #fbfbfd;
-    --saa-artist-line: #c9c9d2;
-    --saa-artist-text: #26262c;
-    --saa-artist-title: #8a6d2f;
-    --saa-artist-tag: #ffffff;
-    --saa-artist-tag-line: #c9c9d2;
-    --saa-artist-match: rgba(40,95,143,0.12);
-    --saa-artist-match-line: #285f8f;
-    --saa-artist-mark: #1d4e77;
-    --saa-artist-bar: #a9823f;
-    --saa-classic-chip-hover: #f0e8d6;
     --saa-lora-border: #8b5cf6;
-    --saa-lora-bg: #2e2440;
-    --saa-lora-text: #d8c4ff;
-    --saa-lora-mark: #c084fc;
-    --saa-lora-from: #5b4a80;
+    --saa-lora-bg: #efe7ff;
+    --saa-lora-text: #5b21b6;
+    --saa-lora-mark: #7c3aed;
+    --saa-lora-from: #a78bfa;
     --saa-legacy-blue: #007bff;
     --saa-legacy-blue-hover: #0056b3;
     --saa-legacy-gray: #6c757d;
@@ -207,10 +103,3 @@
     --saa-privacy-bg: #e8b090;
 }
 /* === /tokens === */
-
-/* Only in the light theme */
-.generate-landscape, .generate-hires-fix, .generate-refiner, .generate-controlnet, .generate-tag-assist, .queue-autostart-generate { margin-right: 20px; }
-/* a favourite star takes the hover colour too (in dark it keeps the favourite colour) */
-.tag-weight-popover-fav:hover { color: var(--saa-classic-text); }
-.artist-profile-bar { background: #e2e2e8; }
-.selection-modal-crosslink { border-color: #b8962e; color: #9a7413; }

@@ -2579,7 +2579,7 @@ html, body {
 .parts-footer .selection-modal-footer-note { margin-right: auto; }
 .parts-footer-note { font-size: 10.5px; color: var(--saa-muted); }
 .parts-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; flex: 1 1 auto; padding: 10px 12px; overflow: auto; }
-.parts-prefix { margin-right: 1px; color: #e0c080; font-size: 0.85em; font-weight: 400; }
+.parts-prefix { margin-right: 1px; color: var(--saa-part-gold); font-size: 0.85em; font-weight: 400; }
 .parts-title-sub { margin-left: 10px; font-size: 11px; font-weight: 400; color: var(--saa-muted); }
 .parts-hint { font-size: 10.5px; color: var(--saa-muted); }
 .parts-section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; color: var(--saa-muted); }
@@ -2663,10 +2663,10 @@ html, body {
 /* history */
 .parts-history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
 .parts-history-item { display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid var(--saa-border); border-radius: 6px; background: var(--saa-bg-control); }
-.parts-history-item.is-pinned { border: 2px solid #e0c080; padding: 5px; }
+.parts-history-item.is-pinned { border: 2px solid var(--saa-part-gold); padding: 5px; }
 .parts-history-item.is-foreign .parts-history-image img { opacity: 0.6; }
 .parts-history-label { font-size: 11px; font-weight: 600; color: var(--saa-muted2); }
-.parts-history-item.is-pinned .parts-history-label { color: #e0c080; }
+.parts-history-item.is-pinned .parts-history-label { color: var(--saa-part-gold); }
 .parts-history-meta { font-size: 10.5px; line-height: 1.4; color: var(--saa-muted2); white-space: pre-line; }
 .parts-history-actions { display: flex; gap: 4px; margin-top: auto; }
 
@@ -2719,15 +2719,15 @@ html, body {
 .parts-picker-actions { display: flex; gap: 6px; margin-top: auto; }
 .parts-tile-body { display: contents; }
 /* under the main tab's list: the same search on another tab */
-.selection-modal-crosslink { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; margin: -2px 12px 8px; padding: 2px 9px; border: 1px solid #8a7440; border-radius: 10px; background: transparent; color: #e0c080; font: inherit; font-size: 11px; cursor: pointer; }
-.selection-modal-crosslink:hover { background: rgba(224, 192, 128, 0.12); }
+.selection-modal-crosslink { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; margin: -2px 12px 8px; padding: 2px 9px; border: 1px solid var(--saa-part-border); border-radius: 10px; background: transparent; color: var(--saa-part-gold); font: inherit; font-size: 11px; cursor: pointer; }
+.selection-modal-crosslink:hover { background: var(--saa-part-weight-bg); }
 /* a tab's own buttons at the left of the footer */
 .selection-modal-footer-actions { display: flex; gap: 6px; margin-right: auto; }
 .selection-modal-action { min-height: 30px; padding: 4px 10px; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; font-size: 12.5px; cursor: pointer; }
 .selection-modal-action:hover:not(:disabled) { background: var(--saa-bg-hover); }
 .selection-modal-action:disabled { opacity: 0.5; cursor: default; }
 /* a part among the Selected chips */
-.selection-modal-chip-prefix { margin-right: 1px; color: #e0c080; font-size: 0.85em; }
+.selection-modal-chip-prefix { margin-right: 1px; color: var(--saa-part-gold); font-size: 0.85em; }
 
 /* ---- the viewer (customGallery.js) and its Info tab (viewerInfo.js) ---- */
 .viewer-tool-button { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 24px; padding: 0; border: 1px solid var(--saa-border-ctl); border-radius: 5px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; font-size: 12px; cursor: pointer; }

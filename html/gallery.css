@@ -6,7 +6,7 @@
     padding: 10px;
     background: var(--saa-bg-app);
     border-radius: 8px;
-    border: 2px solid var(--saa-classic-edge);
+    border: 2px solid var(--saa-border);
     height: 864px;
     overflow-y: hidden;
     overflow-x: hidden;
@@ -27,7 +27,7 @@
 .cg-gallery-item {
     overflow: hidden;
     border-radius: 5px;
-    background: var(--saa-classic-track);
+    background: var(--saa-bar-track);
     opacity: 0;
     transform: translateX(-20px);
     transition: opacity 0.3s ease, transform 0.3s ease;
@@ -111,7 +111,7 @@
     height: 100px;
     border-radius: 50%; /* Always circular */
     background-color: transparent; /* Ensure transparency for PNG */
-    color: var(--saa-classic-text-strong);
+    color: var(--saa-text);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -139,7 +139,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: var(--saa-classic-fullscreen);
+    background: var(--saa-backdrop);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -157,7 +157,7 @@
 
 /* Error Message */
 .cg-error-message {
-    color: var(--saa-classic-error);
+    color: var(--saa-danger);
     font-size: 16px;
     text-align: center;
     margin-top: 20px;
@@ -169,8 +169,8 @@
     top: 20%;
     left: 50%;
     transform: translate(-50%, -20%);
-    background: var(--saa-classic-overlay);
-    color: var(--saa-classic-text-strong);
+    background: var(--saa-bg-panel);
+    color: var(--saa-text);
     padding: 15px;
     border-radius: 8px;
     display: flex;
@@ -179,7 +179,7 @@
     gap: 10px;
     z-index: 10000;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    border: 2px solid var(--saa-classic-edge);
+    border: 2px solid var(--saa-border);
     max-width: 320px;
 }
 
@@ -193,8 +193,8 @@
 }
 
 .cg-overlay-error {
-    border: 2px solid var(--saa-classic-error);
-    background: var(--saa-classic-overlay-deep);
+    border: 2px solid var(--saa-danger);
+    background: var(--saa-bg-panel);
 }
 
 .cg-error-content {
@@ -226,7 +226,7 @@
     position: fixed;
     will-change: left, top;
     transition: none;
-    background: var(--saa-classic-overlay-black);
+    background: var(--saa-bg-panel);
     border-radius: 5px;
     box-sizing: border-box;
 }
@@ -240,7 +240,7 @@
 }
 
 .cg-minimize-button {
-    background-color: var(--saa-classic-accent);
+    background-color: var(--saa-accent);
     width: 12px;
     height: 12px;
     min-width: 12px;
@@ -261,7 +261,7 @@
     padding: 10px 15px;
     border-radius: 5px;
     border: none;
-    color: var(--saa-classic-text-strong);
+    color: var(--saa-text);
     cursor: pointer;
     transition: opacity 0.3s ease;
 }
@@ -270,9 +270,9 @@
 .info-main {
     box-sizing: border-box;
     padding: 10px;
-    background: var(--saa-classic-surface);
+    background: var(--saa-bg-panel);
     border-radius: 8px;
-    border: 2px solid var(--saa-classic-edge);
+    border: 2px solid var(--saa-border);
     position: relative;
     width: 100%;
     height: 302px; 
@@ -290,7 +290,7 @@
     overflow-x: hidden;
     box-sizing: border-box;
     padding: 10px;
-    background: var(--saa-classic-surface); 
+    background: var(--saa-bg-panel); 
 }
 
 [class^="myInfoBox-"][class*="-content"] pre {
@@ -308,7 +308,7 @@
     flex-direction: row;    
     width: 100%; 
     box-sizing: none;
-    background: var(--saa-classic-surface);
+    background: var(--saa-bg-panel);
     padding: 0;
     border: none;
     border-radius: none;
@@ -318,9 +318,9 @@
 [class^="mySlider-"][class*="-span"] {
     flex: 1;
     text-align: left; 
-    color: var(--saa-classic-item); 
+    color: var(--saa-muted2); 
     box-sizing: none;
-    background: var(--saa-classic-surface);
+    background: var(--saa-bg-panel);
     padding: 0;
     border: none;
     border-radius: none;
@@ -330,8 +330,8 @@
 [class^="mySlider-"][class*="-value"] {
     flex: 0;
     text-align: right;
-    background: var(--saa-classic-surface);
-    color: var(--saa-classic-text); 
+    background: var(--saa-bg-panel);
+    color: var(--saa-text); 
     border: none;
     border-radius: 4px;
     padding: 4px; 
@@ -353,7 +353,7 @@
     display: block;
     width: 100%; 
     height: 12px;
-    background: linear-gradient(90deg, var(--saa-classic-accent) 0%, var(--saa-classic-accent-2) 100%); 
+    background: linear-gradient(90deg, var(--saa-accent) 0%, var(--saa-accent) 100%); 
     border-radius: 4px; 
     outline: none; 
     appearance: none;
@@ -368,8 +368,8 @@
     appearance: none;
     width: 12px; 
     height: 12px;
-    background: var(--saa-classic-thumb);
-    border: 2px solid var(--saa-classic-edge); 
+    background: var(--saa-accent);
+    border: 2px solid var(--saa-border); 
     border-radius: 50%;
     cursor: pointer; 
 }
@@ -443,7 +443,7 @@
     left: 0;
     width: 100%;
     height: 30px;
-    background: var(--saa-classic-handle);
+    background: var(--saa-border);
     cursor: grab;
     z-index: 10001;
     pointer-events: auto;
@@ -459,9 +459,9 @@
     right: 8px; 
     width: 12px;
     height: 12px;
-    background: linear-gradient(45deg, var(--saa-classic-accent), var(--saa-classic-accent-2));
+    background: linear-gradient(45deg, var(--saa-accent), var(--saa-accent));
     border-radius: 50%;
-    border: 1px solid var(--saa-classic-edge);
+    border: 1px solid var(--saa-border);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     cursor: se-resize;
     z-index: 10002;
@@ -470,12 +470,12 @@
 
 .cg-resize-handle:hover {
     transform: scale(1.5);
-    background: linear-gradient(45deg, var(--saa-classic-thumb), var(--saa-classic-accent-2-hover)); 
+    background: linear-gradient(45deg, var(--saa-accent), var(--saa-accent)); 
 }
 
 .cg-custom-overlay {
-    background: var(--saa-classic-overlay-deep);
-    border: 2px solid var(--saa-classic-edge);
+    background: var(--saa-bg-panel);
+    border: 2px solid var(--saa-border);
     max-width: min(1600px, 90vw); 
     min-width: 200px;
     min-height: 150px;
@@ -516,7 +516,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: var(--saa-classic-overlay-surface);
+    background: var(--saa-bg-panel);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -535,14 +535,14 @@
 .cg-mode-switch-spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid var(--saa-classic-accent);
+    border: 4px solid var(--saa-accent);
     border-top: 4px solid transparent;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
 
 .cg-mode-switch-text {
-    color: var(--saa-classic-text);
+    color: var(--saa-text);
     font-size: 16px;
     margin-top: 10px;
 }
@@ -560,8 +560,8 @@
     z-index: 9999;
     display: flex;
     flex-direction: column;
-    background-color: var(--saa-classic-upload); 
-    border: 2px solid var(--saa-classic-edge);
+    background-color: var(--saa-bg-panel); 
+    border: 2px solid var(--saa-border);
     position: fixed;
     box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
     border-radius: 8px;
@@ -569,13 +569,13 @@
 }
 
 .im-image-upload-overlay.dragover {
-    background-color: var(--saa-classic-drop);
-    border: 2px dashed var(--saa-classic-accent);
-    border-color: var(--saa-classic-drop-line);
+    background-color: var(--saa-accent-soft);
+    border: 2px dashed var(--saa-accent);
+    border-color: var(--saa-accent);
 }
 
 .cg-close-button {
-    background-color: var(--saa-classic-close);
+    background-color: var(--saa-danger);
     width: 20px;
     height: 20px;
     border-radius: 50%;
@@ -593,7 +593,7 @@
 }
 
 .cg-close-button:hover {
-    background-color: var(--saa-classic-close-hover);
+    background-color: var(--saa-danger);
 }
 
 #upload-svg-icon {
@@ -635,10 +635,10 @@
     padding: 15px;
     white-space: pre-wrap;
     word-break: break-word;
-    background-color: var(--saa-classic-meta-bg);
-    color: var(--saa-classic-meta-text);
+    background-color: var(--saa-bg-panel);
+    color: var(--saa-text);
     line-height: 1.4;
-    border-top: 1px solid var(--saa-classic-meta-line);
+    border-top: 1px solid var(--saa-border);
     border-radius: 0 0 8px 8px;
 }
 
@@ -650,7 +650,7 @@
 .metadata-label {
     font-weight: bold;
     margin-bottom: 4px;
-    color: var(--saa-classic-accent);
+    color: var(--saa-accent);
 }
 
 .metadata-value {
@@ -701,30 +701,30 @@
 }
 
 .copy-all-metadata, .image-tagger-process, .mira-itu-tagger {
-    background-color: var(--saa-classic-action);
-    color: var(--saa-classic-button-text);
+    background-color: var(--saa-bg-control);
+    color: var(--saa-text);
     border: none;
 }
 
 .copy-all-metadata:hover, .image-tagger-process:hover, .mira-itu-tagger:hover {
-    background-color: var(--saa-classic-action-hover);
+    background-color: var(--saa-bg-hover);
 }
 
 .send-metadata, .controlnet-postprocess, .mira-itu  {
-    background-color: var(--saa-classic-send);
-    color: var(--saa-classic-button-text);
+    background-color: var(--saa-bg-control);
+    color: var(--saa-text);
     border: none;
 }
 
 .send-metadata:hover, .controlnet-postprocess:hover, .mira-itu:hover {
-    background-color: var(--saa-classic-send-hover);
+    background-color: var(--saa-bg-hover);
 }
 
 .controlnet-select, #mira-itu-textarea, #mira-itu-tagger-textarea {
     overflow-wrap: break-word;
-    background-color: var(--saa-classic-tagger);
-    color: var(--saa-classic-meta-text);
-    border: 1px solid var(--saa-classic-tagger-line);
+    background-color: var(--saa-bg-field);
+    color: var(--saa-text);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 8px;
     max-width: 576px;
     width: 100%;
@@ -739,25 +739,25 @@
 }
 
 .myTextbox-prompt-common-textarea {
-    color: var(--saa-prompt-common) !important;
+    color: var(--saa-text) !important;
 }
 
 .myTextbox-prompt-positive-textarea {
-    color: var(--saa-prompt-positive) !important;
+    color: var(--saa-text) !important;
 }
 
 .myTextbox-prompt-positive-right-textarea{
-    color: var(--saa-prompt-positive-right) !important;
+    color: var(--saa-text) !important;
 }
 
 .myTextbox-prompt-negative-textarea {
-    color: var(--saa-prompt-negative) !important;
+    color: var(--saa-text) !important;
 }
 
 .myTextbox-prompt-ai-textarea {
-    color: var(--saa-prompt-ai) !important;
+    color: var(--saa-text) !important;
 }
 
 .myTextbox-prompt-exclude-textarea {
-    color: var(--saa-prompt-exclude) !important;
+    color: var(--saa-text) !important;
 }
