@@ -12,6 +12,7 @@ import {
     writeStoredPreference,
     writeStoredSize,
 } from './selectionModalLogic.js';
+import { element as createElement } from '../dom.js';
 
 const NARROW_DIALOG = 1400;    // under this width the rail and the panel take their narrow widths
 
@@ -34,13 +35,6 @@ function optionKey(option) {
 function optionLabel(option) {
     const label = typeof option?.label === 'function' ? option.label() : option?.label;
     return String(label ?? option?.value ?? option?.key ?? '');
-}
-
-function createElement(tagName, className, text = '') {
-    const element = document.createElement(tagName);
-    if (className) element.className = className;
-    if (text) element.textContent = text;
-    return element;
 }
 
 function normalizeSelectOptions(options) {

@@ -15,6 +15,7 @@ import { openUseSettings } from './useSettingsDialog.js';
 import { summarizeImage } from '../shared/imageSummary.js';
 import { formatDuration } from '../shared/runTiming.js';
 import { iconMarkup } from '../shared/iconSet.js';
+import { element, iconButton } from './dom.js';
 
 const TILE_SIZES = Object.freeze({ S: 120, M: 160, L: 210 });
 const STORAGE_KEY = 'saa.library';
@@ -27,13 +28,6 @@ function lang() {
 function text(key, fallback) {
     const value = lang()[key];
     return typeof value === 'string' && value ? value : fallback;
-}
-
-function element(tag, className, content) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (content !== undefined && content !== null) node.textContent = String(content);
-    return node;
 }
 
 function readPrefs() {
@@ -457,13 +451,9 @@ function createLibrary() {
         if (summary.sampler) row(text('viewer_sampler', 'Sampler'), [summary.sampler, summary.scheduler, Number.isFinite(summary.steps) ? `${summary.steps}` : '', Number.isFinite(summary.cfg) ? `CFG ${number(summary.cfg)}` : ''].filter(Boolean).join(' · '));
         if (Number.isFinite(summary.seed)) {
             const seed = element('span', 'viewer-recipe-seed');
-            const put = element('button', 'viewer-seed-button');
-            put.type = 'button';
-            const label = text('viewer_seed_to_field', 'Put this seed in the Seed field');
-            put.setAttribute('aria-label', label);
-            put.title = label;
-            put.innerHTML = iconMarkup('put-in', 12);
-            put.addEventListener('click', () => globalThis.generate?.seed?.setValue?.(summary.seed));
+            const put = iconButton('put-in', text('viewer_seed_to_field', 'Put this seed in the Seed field'), {
+                className: 'viewer-seed-button', iconSize: 12, onClick: () => globalThis.generate?.seed?.setValue?.(summary.seed),
+            });
             seed.append(put, document.createTextNode(String(summary.seed)));
             row(text('viewer_seed', 'Seed'), seed);
         }

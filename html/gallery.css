@@ -410,31 +410,8 @@
     color: var(--saa-slot-text-2) !important;
 }
 
-/* add / remove / info of a slot row: an icon button, as everywhere else */
-.slot-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    justify-self: center;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    border: 1px solid transparent;
-    border-radius: 5px;
-    background: transparent;
-    color: var(--saa-muted2);
-    cursor: pointer;
-}
-
-.slot-action:hover {
-    background: var(--saa-bg-hover);
-    color: var(--saa-text);
-}
-
-.slot-action:focus-visible {
-    outline: 2px solid var(--saa-accent);
-    outline-offset: 1px;
-}
+/* add / remove / info of a slot row (a .saa-icon-btn) sit in the middle of their cell */
+.slot-action { justify-self: center; }
 
 /* lora information overlay */
 .cg-drag-handle {

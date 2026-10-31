@@ -11,13 +11,7 @@ import {
 import { createIcon } from './tagCapsuleChip.js';
 import { createDialogShell } from './dialogShell.js';
 import { tagText } from './tagUiText.js';
-
-function el(tag, className, text = '') {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text) node.textContent = text;
-    return node;
-}
+import { element as el } from '../dom.js';
 
 let singleton = null;
 

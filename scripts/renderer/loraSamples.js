@@ -12,6 +12,7 @@ import {
 import { attachPartsSampleJob, partsSampleQueued } from './generate.js';
 import { openTagPicker } from './tagSelectionModal.js';
 import { iconElement } from '../shared/iconSet.js';
+import { element, iconButton } from './dom.js';
 
 function lang() {
     const settings = globalThis.globalSettings ?? {};
@@ -21,13 +22,6 @@ function lang() {
 export function text(key, fallback) {
     const value = lang()[key];
     return typeof value === 'string' && value ? value : fallback;
-}
-
-export function element(tag, className, content) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (content !== undefined && content !== null) node.textContent = String(content);
-    return node;
 }
 
 export function button(className, label, onClick) {
@@ -400,10 +394,7 @@ export function openRetakeDialog(name) {
     negative.rows = 3;
     negative.setAttribute('aria-label', text('lora_negative', 'Negative'));
     const searchButton = onClick => {
-        const search = button('lora-retake-search', '', () => onClick(search));
-        search.append(icon('search', 14));
-        search.title = text('lora_search_tags', 'Search tags');
-        search.setAttribute('aria-label', search.title);
+        const search = iconButton('search', text('lora_search_tags', 'Search tags'), { className: 'lora-retake-search', onClick: event => { event.stopPropagation(); onClick(search); } });
         return search;
     };
     // the tag search of the prompt rows (Choose tags): the tags picked join the chips, by

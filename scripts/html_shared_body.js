@@ -31,8 +31,8 @@ export const sharedBodyHTML = `
           <div class="header-status" id="header-status"></div>
 
           <div class="edit-history-controls" role="group" aria-label="Edit history">
-            <button type="button" id="edit-history-undo" class="edit-history-button" disabled></button>
-            <button type="button" id="edit-history-redo" class="edit-history-button" disabled></button>
+            <button type="button" id="edit-history-undo" class="saa-icon-btn" disabled></button>
+            <button type="button" id="edit-history-redo" class="saa-icon-btn" disabled></button>
             <span id="edit-history-status" class="edit-history-status" role="status" aria-live="polite"></span>
           </div>
 
@@ -59,10 +59,10 @@ export const sharedBodyHTML = `
               <div class="ui-card-tools">
                 <div class="gallery-main-latest"></div>
                 <div class="gallery-main-keep"></div>
-                <button type="button" class="viewer-tool-button" id="viewer-grid-toggle" aria-pressed="false" aria-label="Grid view" title="Grid view">
+                <button type="button" class="saa-icon-btn is-framed" id="viewer-grid-toggle" aria-pressed="false" aria-label="Grid view" title="Grid view">
                   ${iconMarkup('grid', 14)}
                 </button>
-                <button type="button" class="viewer-tool-button has-label" id="viewer-library-open">
+                <button type="button" class="saa-icon-btn is-framed has-label" id="viewer-library-open">
                   ${iconMarkup('expand', 12)}
                   <span data-ui-text="viewer_library">Library</span>
                 </button>
@@ -327,8 +327,8 @@ export const sharedBodyHTML = `
                 <span class="run-param-label" data-ui-text="ui_run_seed">Seed</span>
                 <div class="run-param-controls">
                   <div class="generate-random-seed run-number"></div>
-                  <button type="button" class="run-icon-button" id="seed-random-button" title="Random seed (-1)"></button>
-                  <button type="button" class="run-icon-button" id="seed-reuse-button" title="Reuse last seed"></button>
+                  <button type="button" class="saa-icon-btn is-26" id="seed-random-button" title="Random seed (-1)"></button>
+                  <button type="button" class="saa-icon-btn is-26" id="seed-reuse-button" title="Reuse last seed"></button>
                 </div>
               </div>
               <div class="run-param run-param-size">
@@ -339,7 +339,7 @@ export const sharedBodyHTML = `
                     <button type="button" class="run-ratio-pick" id="run-ratio-pick" aria-haspopup="dialog" aria-expanded="false" aria-controls="run-ratio-popover"><span class="run-ratio-label"></span><span class="run-ratio-chevron"></span></button>
                   </div>
                   <div class="generate-width run-number"></div>
-                  <button type="button" class="run-ratio-chain" id="run-ratio-chain" aria-pressed="true"></button>
+                  <button type="button" class="saa-icon-btn is-26 run-ratio-chain" id="run-ratio-chain" aria-pressed="true"></button>
                   <div class="generate-height run-number"></div>
                 </div>
                 <div class="run-ratio-popover" id="run-ratio-popover" role="dialog" hidden></div>

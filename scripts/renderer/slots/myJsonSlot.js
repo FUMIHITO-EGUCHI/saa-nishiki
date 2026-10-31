@@ -239,7 +239,7 @@ class JsonSlotManager {
         const row = document.createElement('div');
         row.className = `slot-row add-row ${className}`;
         row.innerHTML = `
-            <button type="button" class="slot-action slot-action-add" data-action="add" data-slot="${className}" aria-label="Add">${iconMarkup('plus', 14)}</button>
+            <button type="button" class="saa-icon-btn slot-action slot-action-add" data-action="add" data-slot="${className}" aria-label="Add">${iconMarkup('plus', 14)}</button>
             <div class="controlnet-slot-image">
                 <img class="filter-controlnet-icon" id="global-file-upload-icon" src="scripts/svg/file-upload.svg" max-width="48px" height="48px">
                 <img class="filter-controlnet-icon" id="global-clipboard-paste-icon" src="scripts/svg/paste.svg" max-width="48px" height="48px">
@@ -265,12 +265,12 @@ class JsonSlotManager {
             candidateRow.classList.remove('add-row');
             candidateRow.classList.add('content-row');
             candidateRow.innerHTML = `
-                <button type="button" class="slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>
+                <button type="button" class="saa-icon-btn slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>
                 <div class="${slot.itemClasses.json_name}"></div>
                 <div class="${slot.itemClasses.json_strength}"></div>
                 <div class="${slot.itemClasses.json_regional}"></div>
                 <div class="${slot.itemClasses.json_position}"></div>
-                <button type="button" class="slot-action slot-action-info" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
+                <button type="button" class="saa-icon-btn slot-action slot-action-info" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
             `;
         }
 

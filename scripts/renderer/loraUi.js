@@ -22,9 +22,10 @@ import { getPart, partLoras } from './partsClient.js';
 import { showDialog } from './components/myDialog.js';
 import { createSelectionModal } from './components/selectionModal.js';
 import {
-    button, comfyInterface, currentModel, element, hasSamples, icon, insideSampleOverlay, modelType, number,
+    button, comfyInterface, currentModel, hasSamples, icon, insideSampleOverlay, modelType, number,
     openRetakeDialog, openSampleViewer, queueLoraSamples, text,
 } from './loraSamples.js';
+import { element, iconButton } from './dom.js';
 
 export { queueLoraSamples };
 
@@ -171,10 +172,7 @@ export function triggerEditor(name, where = 'panel') {
 function nameEditor(entry) {
     const title = element('h3', 'lora-panel-name');
     const label = element('span', 'lora-panel-title', entry.label);
-    const rename = button('lora-rename', '', () => edit());
-    rename.append(icon('pencil', 13));
-    rename.title = text('lora_rename', 'Rename');
-    rename.setAttribute('aria-label', rename.title);
+    const rename = iconButton('pencil', text('lora_rename', 'Rename'), { className: 'lora-rename', iconSize: 13, onClick: event => { event.stopPropagation(); edit(); } });
     label.addEventListener('dblclick', () => edit());
     title.append(label, rename);
     function edit() {

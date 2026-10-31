@@ -52,6 +52,54 @@ test('an input dialog without Cancel keeps OK alone in the row', async () => {
     });
 });
 
+// myDialog is the Dialog component too: its buttons are the footer buttons the tag and parts
+// dialogs use, Esc takes the way out, and closing gives the focus back
+const escape = document => document.dispatchEvent({ type: 'keydown', key: 'Escape', preventDefault() {}, stopPropagation() {} });
+
+test('a confirm draws its buttons as the Dialog footer buttons, with no colour of its own', async () => {
+    await withFakeDom(async (document) => {
+        const answer = showDialog('confirm', { message: 'Stop it?' });
+        const yes = document.querySelector('.dialog-button-container-yes button');
+        const no = document.querySelector('.dialog-button-container-no button');
+        assert.equal(yes.className, 'selection-modal-apply');
+        assert.equal(no.className, 'selection-modal-cancel');
+        assert.equal(yes.type, 'button');
+        assert.equal(yes.style.backgroundColor ?? '', '');
+        assert.equal(document.querySelector('.dialog-container').getAttribute('role'), 'dialog');
+        yes.click();
+        await answer;
+    });
+    const source = fs.readFileSync(path.join(root, 'scripts/renderer/components/myDialog.js'), 'utf8');
+    assert.doesNotMatch(source, /saa-legacy|setupButtons/);
+});
+
+test('Esc takes the way out: No for a confirm, Cancel for an input, OK for a notice', async () => {
+    await withFakeDom(async (document) => {
+        const confirm = showDialog('confirm', { message: 'Stop it?' });
+        escape(document);
+        assert.equal(await confirm, false);
+        const input = showDialog('input', { message: 'Name?' });
+        escape(document);
+        assert.equal(await input, null);
+        const info = showDialog('info', { message: 'Saved' });
+        escape(document);
+        assert.equal(await info, true);
+        assert.equal(document.querySelector('.dialog-container'), null);
+    });
+});
+
+test('the primary button takes the focus, and closing gives it back to where it was', async () => {
+    await withFakeDom(async (document) => {
+        const opener = document.body.appendChild(document.createElement('button'));
+        opener.focus();
+        const answer = showDialog('confirm', { message: 'Stop it?' });
+        assert.equal(document.activeElement, document.querySelector('.dialog-button-container-yes button'));
+        escape(document);
+        await answer;
+        assert.equal(document.activeElement, opener);
+    });
+});
+
 test('the list edit form and the AI Refine footers sit at the right', () => {
     for (const theme of ['index_dark.css', 'index_light.css']) {
         const rules = parseStylesheet(themeCss(theme));

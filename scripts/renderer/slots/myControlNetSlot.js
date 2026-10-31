@@ -511,7 +511,7 @@ class ControlNetSlotManager {
         const row = document.createElement('div');
         row.className = `slot-row add-row ${className}`;
         row.innerHTML = `            
-            <button type="button" class="slot-action slot-action-add" data-action="info" data-slot="${className}" aria-label="Add">${iconMarkup('plus', 14)}</button>
+            <button type="button" class="saa-icon-btn slot-action slot-action-add" data-action="info" data-slot="${className}" aria-label="Add">${iconMarkup('plus', 14)}</button>
             <div></div>
             <div></div>
             <div></div>
@@ -548,14 +548,14 @@ class ControlNetSlotManager {
             /*
             Hide info button
 
-            <button type="button" class="slot-action slot-action-info" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
+            <button type="button" class="saa-icon-btn slot-action slot-action-info" data-action="info" data-slot="${className}" aria-label="Info">${iconMarkup('info', 14)}</button>
             */
             candidateRow.innerHTML = `
-                <button type="button" class="slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>                
+                <button type="button" class="saa-icon-btn slot-action slot-action-del ${slot.itemClasses.delete}" data-action="delete" data-slot="${className}" aria-label="Remove">${iconMarkup('close', 14)}</button>                
                 <div class="${slot.itemClasses.pre_process_model}"></div>
                 <div class="${slot.itemClasses.pre_process_resolution}"></div>
                 <div class="${slot.itemClasses.control_type}" style="grid-column: span 2;"></div>
-                <button type="button" class="slot-action slot-action-info" data-action="add" data-slot="${className}" aria-label="Refresh">${iconMarkup('refresh', 14)}</button>                
+                <button type="button" class="saa-icon-btn slot-action slot-action-info" data-action="add" data-slot="${className}" aria-label="Refresh">${iconMarkup('refresh', 14)}</button>                
 
                 <div></div>
                 <div class="${slot.itemClasses.post_model}"></div>

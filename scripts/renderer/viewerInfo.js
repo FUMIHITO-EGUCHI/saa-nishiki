@@ -11,6 +11,7 @@ import { summarizeImage } from '../shared/imageSummary.js';
 import { parseRecipe } from '../shared/recipe.js';
 import { formatDuration } from '../shared/runTiming.js';
 import { iconMarkup } from '../shared/iconSet.js';
+import { element, iconButton } from './dom.js';
 
 // values: design/tokens.json
 export const SEGMENT_COLORS = Object.freeze({
@@ -51,13 +52,6 @@ function lang() {
 function text(key, fallback) {
     const value = lang()[key];
     return typeof value === 'string' && value ? value : fallback;
-}
-
-function element(tag, className, content) {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (content !== undefined && content !== null) node.textContent = String(content);
-    return node;
 }
 
 function number(value) {
@@ -147,13 +141,9 @@ function recipeSection(summary) {
     }
     if (Number.isFinite(summary.seed)) {
         const seed = element('span', 'viewer-recipe-seed');
-        const put = element('button', 'viewer-seed-button');
-        put.type = 'button';
-        const label = text('viewer_seed_to_field', 'Put this seed in the Seed field');
-        put.setAttribute('aria-label', label);
-        put.title = label;
-        put.innerHTML = iconMarkup('put-in', 12);
-        put.addEventListener('click', () => globalThis.generate?.seed?.setValue?.(summary.seed));
+        const put = iconButton('put-in', text('viewer_seed_to_field', 'Put this seed in the Seed field'), {
+            className: 'viewer-seed-button', iconSize: 12, onClick: () => globalThis.generate?.seed?.setValue?.(summary.seed),
+        });
         seed.append(put, document.createTextNode(String(summary.seed)));
         row(list, text('viewer_seed', 'Seed'), seed);
     }

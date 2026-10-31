@@ -1,6 +1,8 @@
 // Shared modal skeleton (backdrop, focus trap, Esc, lastTrigger restore) reused by
 // batchWeightDialog.js. Mirrors selectionModal.js so both dialogs look and behave alike.
 
+import { element as createElement } from '../dom.js';
+
 const FOCUSABLE_SELECTOR = [
     'button:not([disabled])',
     'input:not([disabled])',
@@ -10,13 +12,6 @@ const FOCUSABLE_SELECTOR = [
 ].join(',');
 
 let shellSequence = 0;
-
-function createElement(tagName, className, text = '') {
-    const element = document.createElement(tagName);
-    if (className) element.className = className;
-    if (text) element.textContent = text;
-    return element;
-}
 
 export function createDialogShell({ className = '', onClose = null } = {}) {
     const id = `dialog-shell-${++shellSequence}`;
