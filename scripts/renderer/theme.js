@@ -30,7 +30,7 @@ export function applyTheme(theme) {
     const baseTheme = 'html/index.css'; 
     loadCSS(baseTheme, 'base-theme');   
     
-    // only the token values and the few theme-only rules switch: theme.css and gallery.css serve both
+    // only the token values switch: theme.css and gallery.css serve both themes
     const lightTheme = 'html/index_light.css';
     const darkTheme = 'html/index_dark.css';
 

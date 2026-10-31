@@ -1,6 +1,7 @@
 // The colours of both themes come from one file: design/tokens.json holds each --saa-* token's
 // dark and light value, scripts/buildThemeTokens.mjs writes them into index_dark.css and
-// index_light.css, and the rules themselves live once, in theme.css and gallery.css.
+// index_light.css, and the rules themselves live once, in theme.css and gallery.css: the two
+// themes differ only in the values.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -31,7 +32,14 @@ test('both themes define the same tokens, each with a value', () => {
     const dark = themeProperties(tokens, 'dark');
     const light = themeProperties(tokens, 'light');
     assert.deepEqual([...light.keys()], [...dark.keys()]);
-    assert.ok(dark.size > 150);
+    assert.ok(dark.size > 80);
+});
+
+test('one palette: the old palette and the per-part copies of the core colours are gone', () => {
+    const names = [...themeProperties(tokens, 'dark').keys()];
+    assert.deepEqual(names.filter(name => /^saa-(classic|prompt|artist)-/.test(name)), []);
+    for (const name of ['saa-chip-bg', 'saa-chip-border', 'saa-chip-text', 'saa-chip-toggle']) assert.ok(!names.includes(name), name);
+    for (const name of ['saa-accent-soft', 'saa-backdrop']) assert.ok(names.includes(name), name);
 });
 
 test('every --saa-* a stylesheet or a script reads is a token or set where it is used', () => {
@@ -49,11 +57,11 @@ test('every --saa-* a stylesheet or a script reads is a token or set where it is
     assert.deepEqual([...new Set(missing)], []);
 });
 
-test('a rule both themes have lives in theme.css, not in each theme file', () => {
-    const selectors = file => new Set(parseStylesheet(read(file)).filter(rule => !rule.selectors.includes(':root')).map(rule => rule.selectors.join(', ')));
-    const dark = selectors('html/index_dark.css');
-    const light = selectors('html/index_light.css');
-    assert.deepEqual([...dark].filter(selector => light.has(selector)), []);
+test('the themes differ only in token values: the theme files hold no rules of their own', () => {
+    for (const [theme, file] of Object.entries(THEME_FILES)) {
+        const rules = parseStylesheet(fs.readFileSync(file, 'utf8')).filter(rule => !rule.selectors.includes(':root'));
+        assert.deepEqual(rules.map(rule => rule.selectors.join(', ')), [], theme);
+    }
 });
 
 test('the shared rules and the gallery set no token values of their own', () => {
@@ -62,4 +70,8 @@ test('the shared rules and the gallery set no token values of their own', () => 
         const values = roots.flatMap(rule => [...rule.declarations.keys()].filter(name => name.startsWith('--saa-')));
         assert.deepEqual(values, [], file);
     }
+});
+
+test('the parts gold comes from the saa-part-* tokens, so it reads in the light theme too', () => {
+    assert.doesNotMatch(read('html/index.css'), /#e0c080|#8a7440|rgba\(224, ?192, ?128/i);
 });

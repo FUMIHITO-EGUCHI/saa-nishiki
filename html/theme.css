@@ -3,7 +3,7 @@
    index_light.css (loaded right after this file). A rule only one theme has goes there. */
 
 *{
-    color: var(--saa-classic-ink);
+    color: var(--saa-text);
 }
 
 body {
@@ -13,13 +13,13 @@ body {
 
 #right-settings-panel {
     background: var(--saa-bg-app);
-    border-color: var(--saa-classic-frame);
-    color: var(--saa-classic-text);
+    border-color: var(--saa-border-strong);
+    color: var(--saa-text);
 }
 
 .right-settings-header {
-    background: var(--saa-classic-bar);
-    border-bottom: 1px solid var(--saa-classic-line);
+    background: var(--saa-bg-panel);
+    border-bottom: 1px solid var(--saa-border-ctl);
 }
 
 .right-settings-content {
@@ -27,18 +27,18 @@ body {
 }
 
 .settings-modal-backdrop {
-    background: var(--saa-classic-backdrop);
+    background: var(--saa-backdrop);
 }
 
 #settings-modal-dialog {
     background: var(--saa-bg-app);
-    border-color: var(--saa-classic-frame);
-    color: var(--saa-classic-text);
+    border-color: var(--saa-border-strong);
+    color: var(--saa-text);
 }
 
 .settings-modal-header {
-    background: var(--saa-classic-bar);
-    border-bottom: 1px solid var(--saa-classic-line);
+    background: var(--saa-bg-panel);
+    border-bottom: 1px solid var(--saa-border-ctl);
 }
 
 .settings-modal-content {
@@ -46,37 +46,37 @@ body {
 }
 
 #settings-modal-close {
-    color: var(--saa-classic-text);
+    color: var(--saa-text);
 }
 
 .settings-modal-nav {
-    background: var(--saa-classic-sunken);
-    border-right-color: var(--saa-classic-line);
+    background: var(--saa-bg-app);
+    border-right-color: var(--saa-border-ctl);
 }
 
 .settings-modal-nav-item {
-    color: var(--saa-classic-item);
+    color: var(--saa-muted2);
 }
 
 .settings-modal-nav-item:hover {
-    background: var(--saa-classic-nav-hover);
-    color: var(--saa-classic-text-strong);
+    background: var(--saa-bg-hover);
+    color: var(--saa-text);
 }
 
 .settings-modal-nav-item.is-active {
-    background: var(--saa-classic-nav-active);
-    border-color: var(--saa-classic-frame);
-    color: var(--saa-classic-text-strong);
+    background: var(--saa-bg-hover);
+    border-color: var(--saa-border-strong);
+    color: var(--saa-text);
 }
 
 .settings-modal-page > h2 {
-    color: var(--saa-classic-text);
-    border-bottom-color: var(--saa-classic-line);
+    color: var(--saa-text);
+    border-bottom-color: var(--saa-border-ctl);
 }
 
 .settings-modal-prompt-options {
-    background: var(--saa-classic-sunken);
-    border-color: var(--saa-classic-line);
+    background: var(--saa-bg-app);
+    border-color: var(--saa-border-ctl);
 }
 
 #full-body {
@@ -118,9 +118,9 @@ body {
 /* Suggestion Box */
 .suggestion-box, .right-click-menu {
     position: absolute;
-    border: 2px solid var(--saa-classic-edge);
-    background-color: var(--saa-classic-overlay);
-    color: var(--saa-classic-text);
+    border: 2px solid var(--saa-border);
+    background-color: var(--saa-bg-panel);
+    color: var(--saa-text);
     z-index: 10002;
     max-height: 300px;
     overflow-y: auto;
@@ -135,29 +135,29 @@ body {
 }
 
 .tag-filter-control {
-    color: var(--saa-classic-hint);
+    color: var(--saa-muted);
 }
 
 .tag-filter-select {
-    background-color: var(--saa-classic-input);
-    border: 1px solid var(--saa-classic-line);
-    color: var(--saa-classic-text-soft);
+    background-color: var(--saa-bg-control);
+    border: 1px solid var(--saa-border-ctl);
+    color: var(--saa-text);
 }
 
 .selection-modal-backdrop {
-    background: var(--saa-classic-backdrop-deep);
+    background: var(--saa-backdrop);
 }
 
 .selection-modal-dialog {
     background: var(--saa-bg-app);
-    border-color: var(--saa-classic-frame);
-    color: var(--saa-classic-text);
+    border-color: var(--saa-border-strong);
+    color: var(--saa-text);
 }
 
 .selection-modal-header,
 .selection-modal-footer {
-    background: var(--saa-classic-bar);
-    border-color: var(--saa-classic-line);
+    background: var(--saa-bg-panel);
+    border-color: var(--saa-border-ctl);
 }
 
 .selection-modal-search,
@@ -169,40 +169,40 @@ body {
 .selection-modal-cancel,
 .selection-modal-apply,
 .parts-picker-add {
-    background: var(--saa-classic-input);
-    border-color: var(--saa-classic-line);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-control);
+    border-color: var(--saa-border-ctl);
+    color: var(--saa-text);
 }
 
 .selection-modal-search:focus,
 .selection-modal-filter:focus,
 .character-selection-weight:focus,
 .character-selection-alias:focus {
-    border-color: var(--saa-classic-focus-soft);
+    border-color: var(--saa-accent);
 }
 
 .selection-modal-list {
-    border-color: var(--saa-classic-line);
-    background: var(--saa-classic-sunken);
+    border-color: var(--saa-border-ctl);
+    background: var(--saa-bg-app);
 }
 
 .selection-modal-option:hover,
 .selection-modal-option[aria-selected="true"] {
-    background: var(--saa-classic-hover);
+    background: var(--saa-bg-hover);
 }
 
 .selection-modal-option-category {
-    color: var(--saa-classic-hint);
+    color: var(--saa-muted);
 }
 
 .selection-modal-chip {
-    background: var(--saa-chip-bg);
-    border-color: var(--saa-classic-frame);
+    background: var(--saa-bg-control);
+    border-color: var(--saa-border-strong);
 }
 
 .selection-modal-apply,
 .parts-picker-add {
-    background: var(--saa-classic-primary);
+    background: var(--saa-bg-selected);
 }
 
 .selection-modal-cancel:hover,
@@ -210,7 +210,7 @@ body {
 .parts-picker-add:hover,
 .character-selection-trigger:hover,
 .tag-selection-trigger:hover {
-    background: var(--saa-classic-hover);
+    background: var(--saa-bg-hover);
 }
 
 .suggestion-item {
@@ -219,14 +219,14 @@ body {
     white-space: normal;
     word-wrap: break-word;
     pointer-events: auto;
-    color: var(--saa-classic-item);
+    color: var(--saa-muted2);
     transition: background-color 0.3s ease;
 }
 
 .suggestion-item:hover,
 .suggestion-item.selected {
-    background-color: var(--saa-classic-item-hover);
-    color: var(--saa-classic-text);
+    background-color: var(--saa-bg-hover);
+    color: var(--saa-text);
 }
 
 /* "50 / 1,234 results · scroll for more" under the paged suggestion rows */
@@ -234,21 +234,21 @@ body {
     padding: 4px 12px;
     font-size: 0.85em;
     text-align: center;
-    color: var(--saa-classic-more);
+    color: var(--saa-muted);
     pointer-events: none;
 }
 
 .menu-separator{
     height: 1px;
-    background: var(--saa-classic-separator);
+    background: var(--saa-border);
     margin: 4px 0;
 }
 
 /* dropdown */
 .dropdown-character, .dropdown-character-regional, #generate-settings-static-left, #generate-settings-static-right {
     box-sizing: border-box;
-    background: var(--saa-classic-surface);    
-    border: var(--saa-classic-frame) 2px solid;
+    background: var(--saa-bg-panel);    
+    border: var(--saa-border-strong) 2px solid;
     border-radius: 8px;
     position: relative;
     padding-left: 3px;
@@ -265,11 +265,11 @@ body {
 }
 
 .dropdown-character-regional {
-    border: var(--saa-classic-regional) 2px solid !important;
+    border: var(--saa-danger) 2px solid !important;
 }
 
 .mydropdown-select{
-    background: var(--saa-classic-surface);
+    background: var(--saa-bg-panel);
     position: relative;
     min-width: 128px;
     max-width: 256px;
@@ -281,7 +281,7 @@ body {
     box-sizing: border-box;
     background: var(--saa-bg-app);
     padding: 6px;
-    border: var(--saa-classic-frame) 2px solid;
+    border: var(--saa-border-strong) 2px solid;
     border-radius: 8px;
     overflow-y: auto;
     overflow-x: hidden;
@@ -329,7 +329,7 @@ body {
 .cg-thumb-item {
     overflow: hidden;
     border-radius: 5px;
-    background: var(--saa-classic-track);
+    background: var(--saa-bar-track);
 }
 
 .cg-thumb-image {
@@ -359,7 +359,7 @@ body {
     top: 10px;
     z-index: 1000;
     padding: 5px 10px;
-    color: var(--saa-classic-text);
+    color: var(--saa-text);
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -377,8 +377,8 @@ body {
     top: 10px;    
     left: 10px;
     opacity: 0.4; 
-    background: var(--saa-classic-accent);    
-    border: 2px solid var(--saa-classic-accent);
+    background: var(--saa-accent);    
+    border: 2px solid var(--saa-accent);
     border-radius: 8px;
     z-index: 1000;     
     transition: opacity 0.3s ease;
@@ -445,7 +445,7 @@ body {
 #gallery-thumb-span, #highres-fix-span, #refiner-span, #controlnet-span, 
 #regional-condition-span, #model-settings-span, #add-lora-span, #system-settings-span, #jsonlist-span, #adetailer-span, #queue-span {
     order: 1; 
-    color: var(--saa-classic-text);
+    color: var(--saa-text);
     padding-right: 2px;
 }
 
@@ -459,8 +459,8 @@ body {
     order: 2;
     position: static; 
     opacity: 0.4; 
-    background: var(--saa-classic-toggle-on);
-    border: 2px solid var(--saa-classic-toggle-on);
+    background: var(--saa-accent);
+    border: 2px solid var(--saa-accent);
     border-radius: 8px;
     z-index: 1000;
     transition: opacity 0.3s ease;
@@ -473,8 +473,8 @@ body {
     order: 2;
     position: static; 
     opacity: 0.4; 
-    background: var(--saa-classic-toggle-system);
-    border: 2px solid var(--saa-classic-toggle-system);
+    background: var(--saa-accent);
+    border: 2px solid var(--saa-accent);
     border-radius: 8px;
     z-index: 1000;
     transition: opacity 0.3s ease;
@@ -544,7 +544,7 @@ body {
 
 .mydropdown-label {
     display: block;
-    color: var(--saa-classic-text);
+    color: var(--saa-text);
     margin-bottom: 5px;
 }
 
@@ -555,10 +555,10 @@ body {
 .mydropdown-input {
     width: 100%;
     padding: 4px;
-    border: 1px solid var(--saa-classic-edge);
+    border: 1px solid var(--saa-border);
     border-radius: 5px;
-    background: var(--saa-classic-select);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     box-sizing: border-box;
 }
 
@@ -573,9 +573,9 @@ body {
 
 .mydropdown-options {
     position: absolute;
-    border: 2px solid var(--saa-classic-edge);
-    background-color: var(--saa-classic-overlay);
-    color: var(--saa-classic-text);
+    border: 2px solid var(--saa-border);
+    background-color: var(--saa-bg-panel);
+    color: var(--saa-text);
     z-index: 10002;
     max-height: 300px;
     overflow-y: auto;
@@ -588,7 +588,7 @@ body {
 
 .mydropdown-item {
     padding: 6px;
-    color: var(--saa-classic-item);
+    color: var(--saa-muted2);
     cursor: pointer;
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -596,8 +596,8 @@ body {
 }
 
 .mydropdown-item:hover {
-    background-color: var(--saa-classic-item-hover);
-    color: var(--saa-classic-text);
+    background-color: var(--saa-bg-hover);
+    color: var(--saa-text);
     transition: background-color 0.2s ease;
 }
 
@@ -606,7 +606,7 @@ body {
     min-width: 24px;
     min-height: 20px;
     height: auto;
-    border: 2px solid var(--saa-classic-edge);
+    border: 2px solid var(--saa-border);
     border-radius: 4px;
     margin-left: 2px;
     background-color: transparent;
@@ -615,8 +615,8 @@ body {
 
 .mydropdown-number-input:focus {
     outline: none;
-    border-color: var(--saa-classic-number-focus);
-    box-shadow: 0 0 5px var(--saa-classic-number-glow);
+    border-color: var(--saa-accent);
+    box-shadow: 0 0 5px var(--saa-accent-soft);
 }
 
 .mydropdown-number-wrapper {
@@ -632,11 +632,11 @@ body {
 .system-settings-main, .jsonlist-main, .adetailer-main, .queue-main {
     padding: 1px;
     box-sizing: border-box;
-    background: var(--saa-classic-surface);
-    border: var(--saa-classic-frame) 2px solid;
+    background: var(--saa-bg-panel);
+    border: var(--saa-border-strong) 2px solid;
     border-radius: 8px;
     position: relative;    
-    color: var(--saa-classic-text); 
+    color: var(--saa-text); 
     gap: 0; 
 }
 
@@ -655,8 +655,8 @@ body {
 }
 
 #generate-settings-static > div, #generate-settings-slider > div {
-    background: var(--saa-classic-surface);
-    color: var(--saa-classic-text); 
+    background: var(--saa-bg-panel);
+    color: var(--saa-text); 
     border: none; 
     border-radius: none; 
     padding: 0; 
@@ -727,7 +727,7 @@ body {
     border-radius: 12px;
     cursor: pointer;
     text-align: center; 
-    color: var(--saa-classic-text); 
+    color: var(--saa-text); 
     border: none; 
     transition: background-color 0.3s ease;
 }
@@ -756,11 +756,11 @@ body {
 #prompt-text-container {
     padding: 1px;
     box-sizing: border-box;
-    background: var(--saa-classic-surface);
-    border: var(--saa-classic-frame) 2px solid;
+    background: var(--saa-bg-panel);
+    border: var(--saa-border-strong) 2px solid;
     border-radius: 8px;
     position: relative;    
-    color: var(--saa-classic-text); 
+    color: var(--saa-text); 
     gap: 0; 
 
     display: flex;
@@ -768,8 +768,8 @@ body {
 }
 
 #prompt-text-container > div {
-    background: var(--saa-classic-surface); 
-    color: var(--saa-classic-text); 
+    background: var(--saa-bg-panel); 
+    color: var(--saa-text); 
     padding: 0; 
     text-align: left;
 }
@@ -782,7 +782,7 @@ body {
     margin-right: 10px;
     margin-top: 2px;
     margin-bottom: 2px;
-    background-color: var(--saa-classic-surface-alt);
+    background-color: var(--saa-bg-panel);
 }
 
 [class^="myTextbox-"][class*="-header"]{
@@ -794,7 +794,7 @@ body {
     box-sizing: border-box;
     resize: none; 
     width: 99%;     
-    background: var(--saa-classic-surface);
+    background: var(--saa-bg-panel);
     border-radius: 8px;
     padding: 0;
     padding-left: 8px;
@@ -804,12 +804,12 @@ body {
     line-height: 1.5;
 
     overflow-y: auto;
-    border: 1px solid var(--saa-classic-field-line);        
+    border: 1px solid var(--saa-border-ctl);        
     transition: border-color 0.3s ease, background-color 0.3s ease;
 }
 
 [class^="myTextbox-"][class*="-textarea"]:focus {
-    border-color: var(--saa-classic-textarea-focus); 
+    border-color: var(--saa-accent); 
     outline: none; 
 }
 
@@ -885,7 +885,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: 12px;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
 }
 
 .tag-field-tools {
@@ -917,9 +917,9 @@ body {
 .tag-view-toggle {
     display: inline-flex;
     overflow: hidden;
-    border: 1px solid var(--saa-classic-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
-    background: var(--saa-classic-input);
+    background: var(--saa-bg-control);
 }
 
 .tag-view-button {
@@ -930,9 +930,9 @@ body {
     min-height: 22px;
     padding: 0 6px;
     border: none;
-    border-right: 1px solid var(--saa-classic-line);
+    border-right: 1px solid var(--saa-border-ctl);
     background: transparent;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
     cursor: pointer;
 }
 
@@ -941,12 +941,12 @@ body {
 }
 
 .tag-view-button.is-on {
-    background: var(--saa-classic-primary);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-selected);
+    color: var(--saa-text);
 }
 
 .tag-view-button:hover:not(.is-on) {
-    background: var(--saa-classic-hover);
+    background: var(--saa-bg-hover);
 }
 
 .tag-view-button:focus-visible,
@@ -964,15 +964,15 @@ body {
 .tag-batch-row:focus-visible,
 .final-prompt-toggle:focus-visible,
 .final-prompt-pager-button:focus-visible {
-    outline: 2px solid var(--saa-classic-focus);
+    outline: 2px solid var(--saa-accent);
     outline-offset: 2px;
 }
 
 .tag-weight-number:focus-visible,
 .tag-capsule-add-input:focus-visible {
-    outline: 2px solid var(--saa-classic-focus);
+    outline: 2px solid var(--saa-accent);
     outline-offset: 1px;
-    border-color: var(--saa-classic-focus);
+    border-color: var(--saa-accent);
 }
 
 .tag-ui-icon {
@@ -987,8 +987,8 @@ body {
     z-index: 3;
     padding: 1px 7px;
     border-radius: 9px;
-    background: var(--saa-classic-info-bg);
-    color: var(--saa-classic-info);
+    background: var(--saa-accent-soft);
+    color: var(--saa-accent);
     font-size: 10px;
     line-height: 16px;
     pointer-events: none;
@@ -1001,10 +1001,10 @@ body {
     gap: 6px;
     margin: 2px;
     padding: 6px 8px 5px;
-    border: 1px solid var(--saa-classic-field-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 8px;
-    background: var(--saa-classic-bar);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-panel);
+    color: var(--saa-text);
 }
 
 .tag-capsule-chips {
@@ -1021,10 +1021,10 @@ body {
     max-width: 260px;
     height: 24px;
     padding: 0 6px 0 0; /* the toggle block supplies the left inset */
-    border: 1px solid var(--saa-chip-border);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 12px;
-    background: var(--saa-chip-bg);
-    color: var(--saa-chip-text);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     font: inherit;
     font-size: 12px;
     line-height: 1;
@@ -1033,7 +1033,7 @@ body {
 }
 
 .tag-capsule-chip:hover {
-    background: var(--saa-classic-hover);
+    background: var(--saa-bg-hover);
 }
 
 .tag-capsule-chip.is-dragging {
@@ -1056,9 +1056,9 @@ body {
     gap: 2px;
     margin: 0 -6px 0 2px; /* out to the chip's edge over its right padding */
     padding: 0 8px;
-    border-left: 1px solid var(--saa-chip-weight-line);
+    border-left: 1px solid var(--saa-border);
     border-radius: 0 12px 12px 0;
-    background: var(--saa-chip-weight-bg);
+    background: var(--saa-accent-soft);
     color: var(--saa-chip-weight-text);
     font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
     font-size: 11px;
@@ -1067,10 +1067,10 @@ body {
 .tag-capsule-chip-weight[hidden] { display: none; }
 
 /* the direction of a weight tints the segment's text only; the chip frame stays the same */
-.tag-capsule-chip.is-up .tag-capsule-chip-weight { color: var(--saa-classic-up); }
-.tag-capsule-chip.is-down .tag-capsule-chip-weight { color: var(--saa-classic-down); }
-.tag-capsule-chip.is-plan .tag-capsule-chip-weight { color: var(--saa-classic-info); }
-.tag-capsule-chip.is-warn .tag-capsule-chip-weight { color: var(--saa-classic-warn); }
+.tag-capsule-chip.is-up .tag-capsule-chip-weight { color: var(--saa-ok); }
+.tag-capsule-chip.is-down .tag-capsule-chip-weight { color: var(--saa-warn); }
+.tag-capsule-chip.is-plan .tag-capsule-chip-weight { color: var(--saa-accent); }
+.tag-capsule-chip.is-warn .tag-capsule-chip-weight { color: var(--saa-warn); }
 .tag-capsule-chip.is-excluded { border-color: #b04a4a; }
 .tag-capsule-chip.is-excluded .tag-capsule-chip-name { color: var(--saa-chip-excluded); }
 /* not in the tag dictionary: SDXL mostly ignores it */
@@ -1082,12 +1082,12 @@ body {
    (under 100 posts), a fainter one for a thin tag (under 1,000); a common tag is unmarked */
 .tag-capsule-chip.is-heat-weak .tag-capsule-chip-name { text-decoration: underline dotted var(--saa-chip-mark-weak); text-underline-offset: 3px; }
 .tag-capsule-chip.is-heat-thin .tag-capsule-chip-name { text-decoration: underline dotted var(--saa-chip-mark-thin); text-underline-offset: 3px; }
-.tag-weight-popover-title-heat { display: block; font-size: 0.8em; color: var(--saa-classic-heat); }
+.tag-weight-popover-title-heat { display: block; font-size: 0.8em; color: var(--saa-muted); }
 /* a part ("parts:<name>", scripts/shared/parts.js): gold frame, the prefix small and gold,
    the right segment counts its tags; a name no part answers to is struck through */
 .tag-capsule-chip.is-part { border-color: var(--saa-part-border); background: var(--saa-part-bg); }
 .tag-capsule-chip.is-part .tag-capsule-chip-prefix { margin-right: 1px; color: var(--saa-part-gold); font-size: 0.85em; }
-.tag-capsule-chip.is-part .tag-capsule-chip-weight { background: var(--saa-part-weight-bg); color: var(--saa-part-weight-text); border-left-color: var(--saa-chip-weight-line); }
+.tag-capsule-chip.is-part .tag-capsule-chip-weight { background: var(--saa-part-weight-bg); color: var(--saa-part-weight-text); border-left-color: var(--saa-border); }
 .tag-capsule-chip.is-part-missing { border-style: dotted; }
 .tag-capsule-chip.is-part-missing .tag-capsule-chip-name { text-decoration: line-through; color: var(--saa-part-missing); }
 
@@ -1102,7 +1102,7 @@ body {
     align-self: stretch; /* a percentage height inside a button does not resolve: the dot sat off-centre */
     margin-right: 1px;
     border-radius: 12px 0 0 12px;
-    background: var(--saa-chip-toggle); /* the segment is filled solid: its colour IS the state (blue on, grey off, amber favorite, red excluded) */
+    background: var(--saa-accent); /* the segment is filled solid: its colour IS the state (blue on, grey off, amber favorite, red excluded) */
     cursor: pointer;
 }
 /* the icon inside is the state (tagCapsuleChip.js): ✓ on, − off, ★ favorite, × excluded */
@@ -1119,7 +1119,7 @@ body {
 .tag-capsule-chip.is-disabled .tag-capsule-chip-toggle { background: var(--saa-chip-off-toggle); }
 .tag-capsule-chip.is-disabled .tag-capsule-chip-toggle:hover { background: var(--saa-chip-off-toggle-hover); }
 /* insertion point while a chip is dragged over the row */
-.tag-capsule-drop-marker { display: inline-block; flex: 0 0 auto; width: 2px; height: 22px; margin: 0 -1px; border-radius: 1px; background: var(--saa-chip-toggle); }
+.tag-capsule-drop-marker { display: inline-block; flex: 0 0 auto; width: 2px; height: 22px; margin: 0 -1px; border-radius: 1px; background: var(--saa-accent); }
 
 .tag-capsule-add-slot {
     display: inline-flex;
@@ -1132,18 +1132,18 @@ body {
     gap: 4px;
     height: 24px;
     padding: 0 8px 0 7px;
-    border: 1px dashed var(--saa-classic-frame-soft);
+    border: 1px dashed var(--saa-border-strong);
     border-radius: 12px;
     background: transparent;
-    color: var(--saa-classic-note);
+    color: var(--saa-muted);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
 }
 
 .tag-capsule-add:hover {
-    background: var(--saa-classic-hover);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-hover);
+    color: var(--saa-text);
 }
 
 .tag-capsule-add-input {
@@ -1151,10 +1151,10 @@ body {
     min-width: 140px;
     height: 24px;
     padding: 0 8px;
-    border: 1px solid var(--saa-classic-focus);
+    border: 1px solid var(--saa-accent);
     border-radius: 12px;
-    background: var(--saa-classic-input);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     font: inherit;
     font-size: 12px;
 }
@@ -1173,7 +1173,7 @@ body {
     align-items: center;
     gap: 10px;
     font-size: 11px;
-    color: var(--saa-classic-note);
+    color: var(--saa-muted);
 }
 
 .tag-capsule-stat {
@@ -1191,11 +1191,11 @@ body {
     border-radius: 50%;
 }
 
-.tag-capsule-stat-weighted::before { background: var(--saa-classic-up); }
-.tag-capsule-stat-variable::before { background: var(--saa-classic-info); }
+.tag-capsule-stat-weighted::before { background: var(--saa-ok); }
+.tag-capsule-stat-variable::before { background: var(--saa-accent); }
 
 .tag-capsule-notice {
-    color: var(--saa-classic-warn);
+    color: var(--saa-warn);
 }
 
 .tag-capsule-batch {
@@ -1207,7 +1207,7 @@ body {
     border: 1px solid transparent;
     border-radius: 5px;
     background: transparent;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
     font: inherit;
     font-size: 12px;
     white-space: nowrap;
@@ -1215,9 +1215,9 @@ body {
 }
 
 .tag-capsule-batch:hover {
-    background: var(--saa-classic-hover);
-    border-color: var(--saa-classic-line);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-hover);
+    border-color: var(--saa-border-ctl);
+    color: var(--saa-text);
 }
 
 /* ---- weight popover (L2) ---- */
@@ -1226,11 +1226,11 @@ body {
     z-index: 11000;
     width: 336px;
     overflow: hidden;
-    border: 1px solid var(--saa-classic-frame-soft);
+    border: 1px solid var(--saa-border-strong);
     border-radius: 9px;
     background: var(--saa-bg-app);
-    color: var(--saa-classic-text);
-    box-shadow: 0 12px 40px var(--saa-classic-shadow);
+    color: var(--saa-text);
+    box-shadow: 0 12px 40px var(--saa-shadow);
     font-size: 12px;
 }
 
@@ -1245,11 +1245,11 @@ body {
     justify-content: space-between;
     gap: 8px;
     padding: 7px 10px;
-    background: var(--saa-classic-bar);
+    background: var(--saa-bg-panel);
 }
 
-.tag-weight-popover-head { border-bottom: 1px solid var(--saa-classic-line); }
-.tag-weight-popover-foot { border-top: 1px solid var(--saa-classic-line); }
+.tag-weight-popover-head { border-bottom: 1px solid var(--saa-border-ctl); }
+.tag-weight-popover-foot { border-top: 1px solid var(--saa-border-ctl); }
 
 /* two lines: the tag, then its translation (tagAliasClient.js) */
 .tag-weight-popover-title {
@@ -1271,7 +1271,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: 11px;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
 }
 .tag-weight-popover-title-alias[hidden] { display: none; }
 
@@ -1285,14 +1285,14 @@ body {
     border: none;
     border-radius: 5px;
     background: transparent;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
     cursor: pointer;
 }
 
 .tag-weight-popover-close:hover,
 .tag-weight-popover-fav:hover {
-    background: var(--saa-classic-hover);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-hover);
+    color: var(--saa-text);
 }
 
 /* ★ = in the field's favorites */
@@ -1304,25 +1304,25 @@ body {
     display: flex;
     margin: 8px 10px 0;
     overflow: hidden;
-    border: 1px solid var(--saa-classic-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
-    background: var(--saa-classic-input);
+    background: var(--saa-bg-control);
 }
 
 .tag-weight-popover-tab {
     flex: 1;
     min-height: 22px;
     border: none;
-    border-right: 1px solid var(--saa-classic-line);
+    border-right: 1px solid var(--saa-border-ctl);
     background: transparent;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
 }
 
 .tag-weight-popover-tab:last-child { border-right: none; }
-.tag-weight-popover-tab[aria-selected="true"] { background: var(--saa-classic-primary); color: var(--saa-classic-text); }
+.tag-weight-popover-tab[aria-selected="true"] { background: var(--saa-bg-selected); color: var(--saa-text); }
 
 .tag-weight-popover-body {
     display: flex;
@@ -1350,12 +1350,12 @@ body {
 
 .tag-weight-label {
     font-size: 11px;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
 }
 
 .tag-weight-note {
     font-size: 11px;
-    color: var(--saa-classic-note);
+    color: var(--saa-muted);
 }
 
 .tag-weight-stepper {
@@ -1370,14 +1370,14 @@ body {
     justify-content: center;
     width: 26px;
     height: 26px;
-    border: 1px solid var(--saa-classic-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
-    background: var(--saa-classic-input);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     cursor: pointer;
 }
 
-.tag-weight-stepbtn:hover:not(:disabled) { background: var(--saa-classic-hover); }
+.tag-weight-stepbtn:hover:not(:disabled) { background: var(--saa-bg-hover); }
 .tag-weight-stepbtn:disabled { opacity: 0.4; cursor: default; }
 
 .tag-weight-number {
@@ -1385,10 +1385,10 @@ body {
     width: 64px;
     height: 26px;
     padding: 0 6px;
-    border: 1px solid var(--saa-classic-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
-    background: var(--saa-classic-input);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
     font-size: 12px;
     text-align: center;
@@ -1397,8 +1397,8 @@ body {
 .tag-weight-number-main { font-size: 14px; }
 .tag-weight-number-step { width: 52px; }
 .tag-weight-number-seed { width: 96px; }
-.tag-weight-number.is-warn { border-color: var(--saa-classic-warn); color: var(--saa-classic-warn); }
-.tag-weight-number:disabled { color: var(--saa-classic-note); }
+.tag-weight-number.is-warn { border-color: var(--saa-warn); color: var(--saa-warn); }
+.tag-weight-number:disabled { color: var(--saa-muted); }
 
 .tag-weight-presets {
     display: flex;
@@ -1409,34 +1409,34 @@ body {
 .tag-weight-preset {
     height: 22px;
     padding: 0 7px;
-    border: 1px solid var(--saa-classic-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 11px;
-    background: var(--saa-classic-input);
-    color: var(--saa-classic-label);
+    background: var(--saa-bg-control);
+    color: var(--saa-muted2);
     font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
     font-size: 11px;
     cursor: pointer;
 }
 
-.tag-weight-preset:hover { background: var(--saa-classic-hover); }
-.tag-weight-preset.is-on { background: var(--saa-classic-primary); border-color: var(--saa-classic-focus); color: var(--saa-classic-text); }
+.tag-weight-preset:hover { background: var(--saa-bg-hover); }
+.tag-weight-preset.is-on { background: var(--saa-bg-selected); border-color: var(--saa-accent); color: var(--saa-text); }
 
 .tag-weight-output,
 .final-prompt-output {
     display: block;
     padding: 5px 8px;
-    border: 1px solid var(--saa-classic-field-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
-    background: var(--saa-classic-sunken);
-    color: var(--saa-classic-output);
+    background: var(--saa-bg-app);
+    color: var(--saa-text);
     font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
     font-size: 12px;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
 
-.tag-weight-output-up, .final-prompt-up { color: var(--saa-classic-up); font-weight: 600; }
-.tag-weight-output-down, .final-prompt-down { color: var(--saa-classic-down); }
+.tag-weight-output-up, .final-prompt-up { color: var(--saa-ok); font-weight: 600; }
+.tag-weight-output-down, .final-prompt-down { color: var(--saa-warn); }
 
 .tag-weight-modes {
     display: grid;
@@ -1449,17 +1449,17 @@ body {
     align-items: center;
     gap: 5px;
     padding: 6px 8px;
-    border: 1px solid var(--saa-classic-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 6px;
-    background: var(--saa-classic-input);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
 }
 
-.tag-weight-mode:hover { background: var(--saa-classic-hover); }
-.tag-weight-mode.is-on { border-color: var(--saa-classic-focus); background: var(--saa-classic-info-bg); }
+.tag-weight-mode:hover { background: var(--saa-bg-hover); }
+.tag-weight-mode.is-on { border-color: var(--saa-accent); background: var(--saa-accent-soft); }
 
 .tag-weight-toggle {
     display: inline-flex;
@@ -1477,7 +1477,7 @@ body {
     margin: 0;
     border: none;
     border-radius: 8px;
-    background: var(--saa-classic-line);
+    background: var(--saa-border-ctl);
     cursor: pointer;
 }
 
@@ -1489,23 +1489,23 @@ body {
     width: 12px;
     height: 12px;
     border-radius: 6px;
-    background: var(--saa-classic-text);
+    background: var(--saa-text);
     transition: left 0.15s ease;
 }
 
-.tag-weight-switch:checked { background: var(--saa-classic-primary); }
+.tag-weight-switch:checked { background: var(--saa-bg-selected); }
 .tag-weight-switch:checked::after { left: 16px; }
 
 .tag-weight-seed-value {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    color: var(--saa-classic-note);
+    color: var(--saa-muted);
 }
 
 .tag-weight-hint {
     font-size: 11px;
-    color: var(--saa-classic-note);
+    color: var(--saa-muted);
 }
 
 .tag-weight-actions {
@@ -1516,17 +1516,17 @@ body {
 .tag-weight-button {
     min-height: 24px;
     padding: 2px 10px;
-    border: 1px solid var(--saa-classic-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
-    background: var(--saa-classic-input);
-    color: var(--saa-classic-text);
+    background: var(--saa-bg-control);
+    color: var(--saa-text);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
 }
 
-.tag-weight-button:hover { background: var(--saa-classic-hover); }
-.tag-weight-button-primary { background: var(--saa-classic-primary); border-color: var(--saa-classic-primary); }
+.tag-weight-button:hover { background: var(--saa-bg-hover); }
+.tag-weight-button-primary { background: var(--saa-bg-selected); border-color: var(--saa-bg-selected); }
 
 /* ---- batch dialog (L3) ---- */
 .tag-batch-dialog .selection-modal-dialog {
@@ -1555,14 +1555,14 @@ body {
     gap: 12px;
     padding: 12px;
     overflow-y: auto;
-    border-right: 1px solid var(--saa-classic-line);
-    background: var(--saa-classic-sunken);
+    border-right: 1px solid var(--saa-border-ctl);
+    background: var(--saa-bg-app);
     font-size: 12px;
 }
 
 .tag-batch-enable { font-size: 13px; }
 .tag-batch-seed { width: 110px; }
-.tag-batch-seed.is-random { color: var(--saa-classic-note); font-family: inherit; }
+.tag-batch-seed.is-random { color: var(--saa-muted); font-family: inherit; }
 
 .tag-batch-variable-list {
     display: flex;
@@ -1576,9 +1576,9 @@ body {
     justify-content: space-between;
     gap: 8px;
     padding: 5px 7px;
-    border: 1px solid var(--saa-classic-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
-    background: var(--saa-classic-input);
+    background: var(--saa-bg-control);
 }
 
 .tag-batch-variable-name {
@@ -1598,18 +1598,18 @@ body {
     flex: 0 0 auto;
     font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
     font-size: 11px;
-    color: var(--saa-classic-note);
+    color: var(--saa-muted);
 }
 
-.tag-ui-mode-increment, .tag-ui-mode-decrement { color: var(--saa-classic-up); }
-.tag-ui-mode-random { color: var(--saa-classic-info); }
+.tag-ui-mode-increment, .tag-ui-mode-decrement { color: var(--saa-ok); }
+.tag-ui-mode-random { color: var(--saa-accent); }
 
 .tag-batch-note {
     padding: 6px 8px;
     border-radius: 5px;
-    background: var(--saa-classic-bar);
+    background: var(--saa-bg-panel);
     font-size: 11px;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
 }
 
 .tag-batch-preview {
@@ -1623,7 +1623,7 @@ body {
 
 .tag-batch-end {
     font-size: 11px;
-    color: var(--saa-classic-warn);
+    color: var(--saa-warn);
 }
 
 .tag-batch-badge {
@@ -1633,8 +1633,8 @@ body {
     height: 18px;
     padding: 0 6px;
     border-radius: 9px;
-    background: var(--saa-classic-info-bg);
-    color: var(--saa-classic-info);
+    background: var(--saa-accent-soft);
+    color: var(--saa-accent);
     font-size: 10px;
 }
 
@@ -1642,7 +1642,7 @@ body {
     flex: 1 1 auto;
     min-height: 0;
     overflow: auto;
-    border: 1px solid var(--saa-classic-line);
+    border: 1px solid var(--saa-border-ctl);
     border-radius: 5px;
 }
 
@@ -1656,9 +1656,9 @@ body {
     position: sticky;
     top: 0;
     padding: 5px 8px;
-    border-bottom: 1px solid var(--saa-classic-line);
-    background: var(--saa-classic-bar);
-    color: var(--saa-classic-label);
+    border-bottom: 1px solid var(--saa-border-ctl);
+    background: var(--saa-bg-panel);
+    color: var(--saa-muted2);
     font-weight: 600;
     text-align: left;
     white-space: nowrap;
@@ -1668,22 +1668,22 @@ body {
 
 .tag-batch-table td {
     padding: 5px 8px;
-    border-bottom: 1px solid var(--saa-classic-row-line);
+    border-bottom: 1px solid var(--saa-border);
     vertical-align: top;
     font-variant-numeric: tabular-nums;
 }
 
-.tag-batch-row:focus-visible { outline-offset: -2px; background: var(--saa-classic-hover); }
-.tag-batch-col-index { width: 34px; color: var(--saa-classic-note); font-family: Consolas, "Cascadia Mono", "Courier New", monospace; }
+.tag-batch-row:focus-visible { outline-offset: -2px; background: var(--saa-bg-hover); }
+.tag-batch-col-index { width: 34px; color: var(--saa-muted); font-family: Consolas, "Cascadia Mono", "Courier New", monospace; }
 .tag-batch-col-weight { width: 92px; font-family: Consolas, "Cascadia Mono", "Courier New", monospace; white-space: nowrap; }
-.tag-batch-col-weight.is-up { color: var(--saa-classic-up); }
-.tag-batch-col-weight.is-plan { color: var(--saa-classic-info); }
-.tag-batch-col-weight.is-neutral { color: var(--saa-classic-note); }
-.tag-batch-col-weight.is-end { color: var(--saa-classic-warn); }
+.tag-batch-col-weight.is-up { color: var(--saa-ok); }
+.tag-batch-col-weight.is-plan { color: var(--saa-accent); }
+.tag-batch-col-weight.is-neutral { color: var(--saa-muted); }
+.tag-batch-col-weight.is-end { color: var(--saa-warn); }
 .tag-batch-col-prompt {
     font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
     font-size: 11px;
-    color: var(--saa-classic-output);
+    color: var(--saa-text);
     overflow-wrap: anywhere;
 }
 
@@ -1703,7 +1703,7 @@ body {
     gap: 6px;
     min-height: 22px;
     font-size: 12px;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
 }
 
 .final-prompt-toggle {
@@ -1714,13 +1714,13 @@ body {
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
 }
 
-.final-prompt-toggle:hover { background: var(--saa-classic-hover); color: var(--saa-classic-text); }
+.final-prompt-toggle:hover { background: var(--saa-bg-hover); color: var(--saa-text); }
 
 .final-prompt-pager {
     display: inline-flex;
@@ -1734,13 +1734,13 @@ body {
 .final-prompt-pager-text {
     font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
     font-size: 11px;
-    color: var(--saa-classic-text);
+    color: var(--saa-text);
 }
 
 .final-prompt-note {
     margin-left: auto;
     font-size: 11px;
-    color: var(--saa-classic-note);
+    color: var(--saa-muted);
 }
 
 .final-prompt-panel {
@@ -1759,13 +1759,13 @@ body {
 
 .final-prompt-block-label {
     font-size: 11px;
-    color: var(--saa-classic-label);
+    color: var(--saa-muted2);
 }
 
 .selection-modal-footer-note {
     flex: 1;
     font-size: 11px;
-    color: var(--saa-classic-note);
+    color: var(--saa-muted);
 }
 
 .image-infobox-main,
@@ -1819,7 +1819,7 @@ body {
 /* check box */
 [class^="myCheckbox-"][class*="-span"] {
     flex: 1; 
-    color: var(--saa-classic-item);
+    color: var(--saa-muted2);
     text-align: right;
 }
 
@@ -1843,7 +1843,7 @@ body {
     width: 100%;
     height: 100%;
     z-index: 50000; 
-    background: var(--saa-classic-blur); /* solid dim instead of backdrop blur (blur repaints the whole page) */
+    background: var(--saa-backdrop); /* solid dim instead of backdrop blur (blur repaints the whole page) */
 }
 
 .dialog-backdrop {
@@ -1859,13 +1859,13 @@ body {
 .dialog-container {
     position: relative;
     background: var(--saa-bg-app);
-    border: 2px solid var(--saa-classic-edge);
+    border: 2px solid var(--saa-border);
     border-radius: 8px;
     padding: 20px;
     max-width: 500px;
     margin: 15% auto;
     z-index: 100001; 
-    color: var(--saa-classic-text);
+    color: var(--saa-text);
 }
 
 /* Global scroll bar style */
@@ -1874,17 +1874,17 @@ body {
 }
 
 *::-webkit-scrollbar-track {
-    background: var(--saa-classic-track);
+    background: var(--saa-bar-track);
     border-radius: 5px;
 }
 
 *::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, var(--saa-classic-scroll), var(--saa-classic-scroll-2));
+    background: linear-gradient(45deg, var(--saa-border-strong), var(--saa-border-strong));
     border-radius: 5px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(45deg, var(--saa-classic-scroll-hover), var(--saa-classic-scroll-hover-2));
+    background: linear-gradient(45deg, var(--saa-muted), var(--saa-muted));
 }
 
 #global-settings-theme-icon {
@@ -2346,41 +2346,41 @@ body {
    field shows "✓" and is dimmed. */
 .tag-weight-related { max-height: 220px; overflow: auto; gap: 8px; }
 .tag-weight-related-group { display: flex; flex-direction: column; gap: 4px; }
-.tag-weight-related-label { font-size: 11px; color: var(--saa-classic-info); white-space: nowrap; }
+.tag-weight-related-label { font-size: 11px; color: var(--saa-accent); white-space: nowrap; }
 .tag-weight-related-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .tag-weight-related-chip {
     display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px 0 6px;
-    border: 1px solid var(--saa-classic-chip-line); border-radius: 11px; background: var(--saa-classic-chip); color: var(--saa-classic-text-soft);
+    border: 1px solid var(--saa-border-ctl); border-radius: 11px; background: var(--saa-bg-control); color: var(--saa-text);
     font: inherit; font-size: 11px; line-height: 1; white-space: nowrap; cursor: pointer;
 }
-.tag-weight-related-chip:hover:not(:disabled) { background: var(--saa-classic-chip-hover); border-color: var(--saa-classic-info); }
+.tag-weight-related-chip:hover:not(:disabled) { background: var(--saa-bg-hover); border-color: var(--saa-accent); }
 .tag-weight-related-chip.is-present { opacity: 0.45; border-style: dashed; cursor: default; }
-.tag-weight-related-mark { color: var(--saa-classic-info); }
+.tag-weight-related-mark { color: var(--saa-accent); }
 .tag-weight-related-alias { max-width: 110px; overflow: hidden; text-overflow: ellipsis; font-size: 10px; opacity: 0.65; }
 .tag-weight-related-alias[hidden] { display: none; }
-.tag-weight-related-empty { font-size: 11px; color: var(--saa-classic-disabled); }
+.tag-weight-related-empty { font-size: 11px; color: var(--saa-muted); }
 .tag-capsule-footer-tools { display: flex; align-items: center; gap: 6px; }
 .tag-capsule-suggest-toggle {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 22px; height: 22px; padding: 0; border: 1px solid var(--saa-classic-line); border-radius: 6px;
-    background: var(--saa-classic-chip); color: var(--saa-classic-dim); cursor: pointer;
+    width: 22px; height: 22px; padding: 0; border: 1px solid var(--saa-border-ctl); border-radius: 6px;
+    background: var(--saa-bg-control); color: var(--saa-muted); cursor: pointer;
 }
-.tag-capsule-suggest-toggle:hover { color: var(--saa-classic-text); }
-.tag-capsule-suggest-toggle.is-on { color: var(--saa-classic-info); border-color: var(--saa-classic-info-line); }
+.tag-capsule-suggest-toggle:hover { color: var(--saa-text); }
+.tag-capsule-suggest-toggle.is-on { color: var(--saa-accent); border-color: var(--saa-accent); }
 
 /* Chip row receiving a capsule dragged from another field */
 .tag-capsule-chips.is-drop-target {
-    outline: 1px dashed var(--saa-classic-info);
+    outline: 1px dashed var(--saa-accent);
     outline-offset: 3px;
     border-radius: 6px;
 }
 
 /* Context menu: accordion submenu ("Move to ▸ field") */
-.right-click-menu .menu-item.has-submenu::after { content: ' ▸'; color: var(--saa-classic-dim); }
+.right-click-menu .menu-item.has-submenu::after { content: ' ▸'; color: var(--saa-muted); }
 .right-click-menu .menu-item.has-submenu.is-open::after { content: ' ▾'; }
-.right-click-menu .menu-submenu { border-left: 2px solid var(--saa-classic-field-line); margin: 0 0 2px 10px; }
+.right-click-menu .menu-submenu { border-left: 2px solid var(--saa-border-ctl); margin: 0 0 2px 10px; }
 .right-click-menu .menu-subitem { padding-left: 16px !important; font-size: 13px !important; }
-.right-click-menu .menu-item.is-disabled { color: var(--saa-classic-disabled); }
+.right-click-menu .menu-item.is-disabled { color: var(--saa-muted); }
 .settings-button-row.pod-control-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; }
 .settings-button-row.pod-control-row > div { display: inline-block; }
 .settings-button-row.pod-control-row button { padding: 0 10px; }
@@ -2405,11 +2405,11 @@ body {
 @media (prefers-reduced-motion: reduce) { .run-number [class^="mySlider-"][class*="-value"].is-clamped { animation-duration: 0.01s; } }
 
 /* Artist card: the "@" and the profile panel follow the gold the View stripe uses */
-.artist-profile-panel { background: var(--saa-artist-bg); border-color: var(--saa-artist-line); color: var(--saa-artist-text); }
-.artist-profile-title { color: var(--saa-artist-title); }
-.artist-profile-tag { background: var(--saa-artist-tag); border-color: var(--saa-artist-tag-line); }
-.artist-profile-tag.is-match { background: var(--saa-artist-match); border-color: var(--saa-artist-match-line); }
-.artist-profile-tag mark { color: var(--saa-artist-mark); }
-.artist-profile-bar i { background: var(--saa-artist-bar); }
+.artist-profile-panel { background: var(--saa-bg-panel); border-color: var(--saa-border-strong); color: var(--saa-text); }
+.artist-profile-title { color: var(--saa-stripe-view); }
+.artist-profile-tag { background: var(--saa-bg-control); border-color: var(--saa-border-ctl); }
+.artist-profile-tag.is-match { background: var(--saa-accent-soft); border-color: var(--saa-accent); }
+.artist-profile-tag mark { color: var(--saa-accent); }
+.artist-profile-bar i { background: var(--saa-stripe-view); }
 .selection-modal-chip.is-part { border-color: var(--saa-part-border); background: var(--saa-part-bg); }
 .selection-modal-chip.is-part .selection-modal-chip-prefix { color: var(--saa-part-gold); }
