@@ -11,19 +11,20 @@ import { summarizeImage } from '../shared/imageSummary.js';
 import { parseRecipe } from '../shared/recipe.js';
 import { formatDuration } from '../shared/runTiming.js';
 
+// values: design/tokens.json
 export const SEGMENT_COLORS = Object.freeze({
-    ai: '#c084fc',
-    prose: '#d66aa8',
-    prepare: '#8b93a1',
-    queue: '#6b7280',
-    load: '#a3a3ad',
-    base: '#4da3ff',
-    refiner: '#38bdf8',
-    hires: '#35c47a',
-    detailer: '#ffb454',
-    finish: '#7c8594',
-    backend: '#4da3ff',
-    transfer: '#5a6069',
+    ai: 'var(--saa-cat-violet)',
+    prose: 'var(--saa-seg-prose)',
+    prepare: 'var(--saa-seg-prepare)',
+    queue: 'var(--saa-cat-gray)',
+    load: 'var(--saa-seg-load)',
+    base: 'var(--saa-seg-base)',
+    refiner: 'var(--saa-cat-sky)',
+    hires: 'var(--saa-seg-hires)',
+    detailer: 'var(--saa-seg-detailer)',
+    finish: 'var(--saa-seg-finish)',
+    backend: 'var(--saa-seg-base)',
+    transfer: 'var(--saa-seg-transfer)',
 });
 
 const SEGMENT_TEXT = Object.freeze({
@@ -83,7 +84,7 @@ function timeSection(summary, writer) {
         bar.setAttribute('aria-hidden', 'true');
         const legend = element('div', 'viewer-time-legend');
         for (const segment of segments) {
-            const color = SEGMENT_COLORS[segment.id] ?? '#7c8594';
+            const color = SEGMENT_COLORS[segment.id] ?? SEGMENT_COLORS.finish;
             const piece = element('span', 'viewer-time-piece');
             piece.style.width = `${(segment.ms / total) * 100}%`;
             piece.style.background = color;

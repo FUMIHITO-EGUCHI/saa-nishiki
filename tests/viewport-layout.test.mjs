@@ -7,7 +7,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { declarationsFor, parseStylesheet } from './helpers/cssRules.mjs';
+import { declarationsFor, parseStylesheet, themeCss } from './helpers/cssRules.mjs';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.join(testDirectory, '..');
@@ -41,7 +41,7 @@ test('the split is a row of the window column, and both panes may shrink inside 
 
 test('both themes make the window body a column that fills the viewport', () => {
   for (const theme of THEMES) {
-    const body = declarationsFor(rulesOf(theme), '#full-body');
+    const body = declarationsFor(parseStylesheet(themeCss(theme)), '#full-body');
     assert.equal(body.get('position'), 'absolute', theme);
     assert.equal(body.get('inset'), '0', `${theme} fills the window`);
     assert.equal(body.get('display'), 'flex', theme);

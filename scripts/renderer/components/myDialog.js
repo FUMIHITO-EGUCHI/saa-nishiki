@@ -93,8 +93,8 @@ function showDialog(type, options = {}) {
                     `dialog-button-container-ok`,
                     buttonText,
                     {
-                        defaultColor: '#007bff',
-                        hoverColor: '#0056b3',
+                        defaultColor: 'var(--saa-legacy-blue)',
+                        hoverColor: 'var(--saa-legacy-blue-hover)',
                         width: '80px',
                         height: '36px'
                     },
@@ -129,8 +129,8 @@ function showDialog(type, options = {}) {
                     `dialog-button-container-ok`,
                     buttonText,
                     {
-                        defaultColor: '#007bff',
-                        hoverColor: '#0056b3',
+                        defaultColor: 'var(--saa-legacy-blue)',
+                        hoverColor: 'var(--saa-legacy-blue-hover)',
                         width: '80px',
                         height: '36px'
                     },
@@ -144,8 +144,8 @@ function showDialog(type, options = {}) {
                         `dialog-button-container-cancel`,
                         cancelText,
                         {
-                            defaultColor: '#6c757d',
-                            hoverColor: '#5a6268',
+                            defaultColor: 'var(--saa-legacy-gray)',
+                            hoverColor: 'var(--saa-legacy-gray-hover)',
                             width: '80px',
                             height: '36px'
                         },
@@ -196,8 +196,8 @@ function showDialog(type, options = {}) {
                     `dialog-button-container-ok`,
                     buttonText,
                     {
-                        defaultColor: '#007bff',
-                        hoverColor: '#0056b3',
+                        defaultColor: 'var(--saa-legacy-blue)',
+                        hoverColor: 'var(--saa-legacy-blue-hover)',
                         width: '80px',
                         height: '36px'
                     },
@@ -219,8 +219,8 @@ function showDialog(type, options = {}) {
                     `dialog-button-container-yes`,
                     yesText,
                     {
-                        defaultColor: '#007bff',
-                        hoverColor: '#0056b3',
+                        defaultColor: 'var(--saa-legacy-blue)',
+                        hoverColor: 'var(--saa-legacy-blue-hover)',
                         width: '80px',
                         height: '36px'
                     },
@@ -234,8 +234,8 @@ function showDialog(type, options = {}) {
                     `dialog-button-container-no`,
                     noText,
                     {
-                        defaultColor: '#6c757d',
-                        hoverColor: '#5a6268',
+                        defaultColor: 'var(--saa-legacy-gray)',
+                        hoverColor: 'var(--saa-legacy-gray-hover)',
                         width: '80px',
                         height: '36px'
                     },

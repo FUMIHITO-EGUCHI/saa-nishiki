@@ -643,9 +643,10 @@ function lackingSamples() {
 }
 
 // The rail's colour per category (the modal's category rail, selectionModal.js)
+// values: design/tokens.json
 const CATEGORY_COLORS = Object.freeze({
-    outfit: '#e0a72f', hair: '#d97757', body: '#c084fc', background: '#4ade80', camera: '#7fb0ff',
-    composition: '#38bdf8', tone: '#f472b6', pose: '#facc15', expression: '#fb923c', other: '#9aa0a6',
+    outfit: 'var(--saa-cat-amber)', hair: 'var(--saa-cat-clay)', body: 'var(--saa-cat-violet)', background: 'var(--saa-cat-green)', camera: 'var(--saa-cat-blue)',
+    composition: 'var(--saa-cat-sky)', tone: 'var(--saa-cat-pink)', pose: 'var(--saa-cat-yellow)', expression: 'var(--saa-cat-orange)', other: 'var(--saa-cat-stone)',
 });
 
 // The sample of the model in use, or null: a sample of the other model is not shown

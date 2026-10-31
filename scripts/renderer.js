@@ -244,9 +244,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         scheduler: mySimpleList('generate-scheduler', LANG.api_model_scheduler, ['Auto'], (index, values) =>{ globalThis.globalSettings.api_model_scheduler = values[index]; }, 20, false, false),
 
         generate_single: setupButtons('generate-button-single', LANG.run_button, {
-                defaultColor: 'rgb(234,88,12)',
-                hoverColor: 'rgb(194,65,12)',
-                disabledColor: 'rgb(136, 121, 115)',
+                defaultColor: 'var(--saa-run)',
+                hoverColor: 'var(--saa-run-hover)',
+                disabledColor: 'var(--saa-run-disabled)',
                 width: '100%',
                 height: '32px',
                 hidden: false,
@@ -255,9 +255,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 await callback_generate_start('normal', {loops:1, runSame:false});
             }),
         generate_batch: setupButtons('generate-button-batch', LANG.run_random_button, {
-                defaultColor: 'rgb(185,28,28)',
-                hoverColor: 'rgb(153,27,27)',
-                disabledColor: 'rgb(134, 103, 103)',
+                defaultColor: 'var(--saa-run-batch)',
+                hoverColor: 'var(--saa-run-batch-hover)',
+                disabledColor: 'var(--saa-run-batch-disabled)',
                 width: '100%',
                 height: '32px',
                 hidden: false,
@@ -267,9 +267,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 await callback_generate_start('normal', {loops:globalThis.generate.batch.getValue(), runSame:false});
             }),
         generate_same: setupButtons('generate-button-same', LANG.run_same_button, {
-                defaultColor: 'rgb(20,28,46)',
-                hoverColor: 'rgb(40,48,66)',
-                disabledColor: 'rgb(112, 123, 148)',
+                defaultColor: 'var(--saa-run-same)',
+                hoverColor: 'var(--saa-run-same-hover)',
+                disabledColor: 'var(--saa-run-same-disabled)',
                 width: '100%',
                 height: '32px',
                 hidden: false,
@@ -279,9 +279,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 await callback_generate_start('normal', {loops:globalThis.generate.batch.getValue(), runSame:true});
             }),
         generate_skip: setupButtons('generate-button-skip', LANG.run_skip_button, {
-                defaultColor: 'rgb(82,82,91)',
-                hoverColor: 'rgb(63,63,70)',
-                disabledColor: 'rgb(175, 175, 182)',
+                defaultColor: 'var(--saa-run-stop)',
+                hoverColor: 'var(--saa-run-stop-hover)',
+                disabledColor: 'var(--saa-run-stop-disabled)',
                 width: '100%',
                 height: '26px',
                 hidden: false,
@@ -290,9 +290,9 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 callback_generate_skip();
             }),
         generate_cancel: setupButtons('generate-button-cancel', LANG.run_cancel_button, {
-                defaultColor: 'rgb(82,82,91)',
-                hoverColor: 'rgb(63,63,70)',
-                disabledColor: 'rgb(175, 175, 182)',
+                defaultColor: 'var(--saa-run-stop)',
+                hoverColor: 'var(--saa-run-stop-hover)',
+                disabledColor: 'var(--saa-run-stop-disabled)',
                 width: '100%',
                 height: '26px',
                 hidden: false,
