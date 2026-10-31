@@ -3,10 +3,12 @@
 // (createADetailer) makes of them. adetailer-comfyui.test.mjs covers that mapping from
 // stubbed rows; this drives the real row into it.
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 
 import { createADetailer } from '../scripts/renderer/generate.js';
 import { withFakeDom } from './helpers/fakeDom.mjs';
+import { parseStylesheet } from './helpers/cssRules.mjs';
 
 // the textbox measures itself on a timer that outlives the fake document
 globalThis.getComputedStyle = () => ({ lineHeight: '20px' });
@@ -151,5 +153,35 @@ test('flush rebuilds the rows the settings hold, in the order they were saved', 
         assert.deepEqual(manager.getValues(), globalThis.globalSettings.ad_slot);
         assert.deepEqual(createADetailer('ComfyUI').map(sent => [sent.model, sent.mask_filter_method]),
             [['bbox/face_yolov8m.pt', 'sam_vit_l_0b3195.pth']], 'the off row stays out');
+    });
+});
+
+test('add and remove are icon buttons with a name, drawn from the icon set', async () => {
+    await withADetailerSlot(async ({ container, manager }) => {
+        const row = await addRow(container, manager);
+        const del = container.querySelector(`.${manager.slotIndex.get(row.className).itemClasses.delete}`);
+        for (const [control, label] of [[container.querySelector('.slot-action-add'), 'Add'], [del, 'Remove']]) {
+            assert.equal(control.tagName, 'BUTTON');
+            assert.equal(control.type, 'button');
+            assert.equal(control.getAttribute('aria-label'), label);
+            assert.equal(control.querySelector('img'), null, 'no coloured image box');
+            assert.ok(control.querySelector('svg'), 'an icon set svg');
+        }
+    });
+});
+
+test('the numbers of a slot row are plain text; only the queue colours its job ids, run by run', () => {
+    const rules = parseStylesheet(fs.readFileSync(new URL('../html/gallery.css', import.meta.url), 'utf8'));
+    const coloured = rules.flatMap(rule => rule.selectors).filter(selector => selector.includes('myTextbox-slot-row-text'));
+    assert.ok(coloured.length > 0);
+    for (const selector of coloured) assert.match(selector, /^\.queue-row /);
+});
+
+test('the fields of a row carry no colour of their own, so they read in the theme\'s text colour', async () => {
+    await withADetailerSlot(async ({ container, manager }) => {
+        await addRow(container, manager);
+        const fields = [...container.querySelectorAll('textarea, input')];
+        assert.ok(fields.length >= 5);
+        for (const field of fields) assert.equal(field.style.color || '', '', field.className);
     });
 });

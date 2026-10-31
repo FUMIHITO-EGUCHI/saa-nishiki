@@ -2118,7 +2118,7 @@ body {
 .pipeline-card .pipe-note:empty { display: none; }
 .pipeline-card .add-row .controlnet-slot-image { display: none; }
 .pipeline-card .slot-row.add-row { grid-template-columns: 26px 1fr; min-height: 26px; }
-.pipeline-card .slot-action-add { justify-content: flex-start; }
+.pipeline-card .slot-action-add { justify-self: start; }
 .pipeline-card .slot-row.add-row::after { content: attr(data-add-label); font-size: 12px; color: var(--saa-muted); }
 
 /* ---- run bar ---- */
