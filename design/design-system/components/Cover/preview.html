@@ -1,0 +1,50 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Cover</title></head>
+<body style="margin:0">
+<div class="cover">
+  <style>
+    .cover { position: relative; width: 960px; height: 288px; overflow: hidden; background: var(--saa-bg-app); font-family: var(--font-sans); }
+    .cover svg { position: absolute; left: 480px; top: 0; width: 480px; height: 288px; }
+    .cover .run { fill: var(--saa-run); }
+    .cover .accent { fill: var(--saa-accent); }
+    .cover .bar { fill: var(--saa-border-ctl); }
+    .cover .positive { fill: var(--saa-stripe-positive); }
+    .cover .negative { fill: var(--saa-stripe-negative); }
+    .cover .ai { fill: var(--saa-stripe-ai); }
+    .cover .quiet { fill: var(--saa-border-strong); }
+    .cover .r6 { rx: var(--saa-radius-6); }
+    .cover .r8 { rx: var(--saa-radius-8); }
+    .cover .pill { rx: 12px; }
+    .cover-name { position: absolute; left: 40px; bottom: 64px; max-width: 440px; margin: 0; color: var(--saa-text); font-size: 64px; font-weight: 700; line-height: 0.95; letter-spacing: -0.01em; }
+    .cover-tagline { position: absolute; left: 40px; bottom: 36px; max-width: 440px; margin: 0; color: var(--saa-muted); font-size: 13px; }
+  </style>
+  <!--
+    blocks: saa-run 144×168 slab bleeding off the top right; saa-accent 96×112 at saa-radius-8; four prompt-row bars in saa-border-ctl, saa-h-28 tall, saa-radius-6
+    arrangement: one tall slab with a satellite, a stack of rows beneath and to the left, like the run bar under the prompt rows
+    pattern: the prompt row stripe (literal motif) - each bar opens with a stripe in saa-stripe-positive, -negative, -ai, or saa-border-strong; three chips at saa-h-24 above them. Chosen because the coloured row stripe is how SAA tells a row's role
+    scales: gaps saa-space-8 (row pitch 36 = 28 + 8), stripe width 8, chip width 56 and 72 at gap 8; radii 6, 8 and half of 24
+  -->
+  <svg viewBox="0 0 480 288" aria-hidden="true">
+    <rect class="run" x="336" y="-8" width="152" height="176"/>
+    <rect class="accent r8" x="232" y="112" width="96" height="112"/>
+    <rect class="quiet pill" x="32" y="56" width="56" height="24"/>
+    <rect class="quiet pill" x="96" y="56" width="72" height="24"/>
+    <rect class="quiet pill" x="176" y="56" width="56" height="24"/>
+    <defs>
+      <clipPath id="row1"><rect class="r6" x="32" y="112" width="184" height="28"/></clipPath>
+      <clipPath id="row2"><rect class="r6" x="32" y="148" width="152" height="28"/></clipPath>
+      <clipPath id="row3"><rect class="r6" x="32" y="184" width="184" height="28"/></clipPath>
+      <clipPath id="row4"><rect class="r6" x="32" y="220" width="120" height="28"/></clipPath>
+    </defs>
+    <g clip-path="url(#row1)"><rect class="bar" x="32" y="112" width="184" height="28"/><rect class="positive" x="32" y="112" width="8" height="28"/></g>
+    <g clip-path="url(#row2)"><rect class="bar" x="32" y="148" width="152" height="28"/><rect class="negative" x="32" y="148" width="8" height="28"/></g>
+    <g clip-path="url(#row3)"><rect class="bar" x="32" y="184" width="184" height="28"/><rect class="ai" x="32" y="184" width="8" height="28"/></g>
+    <g clip-path="url(#row4)"><rect class="bar" x="32" y="220" width="120" height="28"/><rect class="quiet" x="32" y="220" width="8" height="28"/></g>
+  </svg>
+  <h1 class="cover-name">SAA-Nishiki<br>UI</h1>
+  <p class="cover-tagline">ComfyUI で画像を作る作業台の、色と部品。</p>
+</div>
+</body>
+</html>
