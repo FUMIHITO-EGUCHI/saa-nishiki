@@ -7,7 +7,7 @@
 #   bash /workspace/saa/bootstrap.sh --pull MODEL   # also pull an Ollama model (repeatable, or a,b,c)
 #   bash /workspace/saa/bootstrap.sh --no-comfy     # leave ComfyUI as it is
 #
-# LLM on a 12 GB pod (translation batches, Refine / Expand), see README_POD.md:
+# LLM on a 12 GB pod (translation batches, Refine / Expand), see docs/README_POD.md:
 #   --pull hf.co/HauhauCS/Gemma4-12B-QAT-Uncensored-HauhauCS-Balanced:Q4_K_M   # ~8 GB, strong Japanese
 #   --pull huihui_ai/qwen3-abliterated:8b                                      # ~5 GB, fast fallback
 # Ollama is started with flash attention, a q8_0 KV cache and one loaded model
