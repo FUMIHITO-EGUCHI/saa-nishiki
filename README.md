@@ -1,6 +1,6 @@
 # SAA-Nishiki（二式）
 
-**English** | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
+**English** | [日本語](docs/README.ja.md) | [简体中文](docs/README.zh-CN.md)
 
 A fork of [Character Select SAA](https://github.com/mirabarukaso/character_select_stand_alone_app) — a stand-alone app with AI prompt, semi-auto tag complete and ComfyUI / Forge Neo (WebUI) API support.
 Nishiki adds Japanese tag translation, a capsule-based prompt editor with custom fields and presets, an editable list manager, undo/redo, an AI prompt refiner, a fast generation mode and a Runpod pod target.
@@ -72,7 +72,7 @@ The Diffusion (Anima) model type has its own set: the Anima Turbo LoRA v0.2 at 0
 
 ## Runpod pod target
 Register a Runpod pod (SSH target and key) in Settings and switch image generation between **GPU: Local** and **GPU: Pod** with the status pill in the toolbar. Generated images stream back over SSH and are saved locally only; nothing is written to the pod's disks. The pod can also serve the LLM features (AI prompt / refine). `https` / `wss` backends with authentication are supported for pod endpoints.
-The AI prompt / Refine requests go to an Ollama on the pod through the same SSH relay. Setup, the restore script for pod restarts and troubleshooting: [README_POD.md](README_POD.md).
+The AI prompt / Refine requests go to an Ollama on the pod through the same SSH relay. Setup, the restore script for pod restarts and troubleshooting: [README_POD.md](docs/README_POD.md).
 
 ## Gallery and Info panel
 - The Info panel follows the image selected in the gallery, including the embedded PNG parameters.
@@ -124,7 +124,7 @@ Fork versions follow `<upstream-version>-nishiki.<generation>` (for example `2.8
 >
 > *Online Character Select* [Hugging Face Space](https://huggingface.co/spaces/flagrantia/character_select_saa)
 >
-> For the browser-based SAAC, see [README_SAAC.md](README_SAAC.md).
+> For the browser-based SAAC, see [README_SAAC.md](docs/README_SAAC.md).
 > For the Python CLI tool for OpenClaw, see [SAA Agent](scripts/python/saa-agent/README_HUMAN.md) and [ClawHub](https://clawhub.ai/mirabarukaso/saa-agent).
 
 ## thumbList manual download guide
@@ -830,7 +830,7 @@ Upscale Model list is `None` (ComfyUI)
 3. Check [#58](https://github.com/mirabarukaso/character_select_stand_alone_app/issues/58)
 
 ComfyUI/WebUI is busy, cannot run a new generation, please try again later.
-Refer to 5 and 6 in [README_SAAC.md](README_SAAC.md).
+Refer to 5 and 6 in [README_SAAC.md](docs/README_SAAC.md).
 
 Where are my settings and presets?
 1. `settings/app.json`, `settings/state.json`, `settings/presets/`, `settings/user_lists.json`. See [Settings store](#settings-store).

@@ -1,13 +1,13 @@
 # SAA-Nishiki（二式）
 
-[English](README.md) | [日本語](README.ja.md) | **简体中文**
+[English](../README.md) | [日本語](README.ja.md) | **简体中文**
 
 [Character Select SAA](https://github.com/mirabarukaso/character_select_stand_alone_app) 的分支版本。一个独立运行的应用，支持 AI 提示词、半自动标签补全以及 ComfyUI / Forge Neo (WebUI) API。
 Nishiki 新增了日语标签翻译、带自定义字段与预设的胶囊式提示词编辑器、可编辑的列表管理器、撤销 / 重做、AI 提示词重写器、快速生成模式以及 Runpod Pod 目标。
 
 当前版本：**v2.8.9-nishiki.1** —— 基于上游 SAA v2.8.9。下载与发布说明请见 [Releases](https://github.com/FUMIHITO-EGUCHI/saa-nishiki/releases)。
 
-<img src="examples/nishiki_overall.png" width=75%>
+<img src="../examples/nishiki_overall.png" width=75%>
 
 ## 目录
 - [Nishiki 新增功能](#nishiki-新增功能)
@@ -27,12 +27,12 @@ Nishiki 新增了日语标签翻译、带自定义字段与预设的胶囊式提
 - 角色名与作品名的日语本地化，以及标签分类显示。
 - 在设置中将界面语言选为 `ja-JP` 后，标签、名称和分类以日语显示；没有日语条目的界面文字回退为英语。
 
-<img src="examples/nishiki_jp_tag_search.png" width=75%>
+<img src="../examples/nishiki_jp_tag_search.png" width=75%>
 
 ## 提示词编辑器
 原来的纯文本框被替换为字段列表加一个大的聚焦编辑器。每个字段都可以按 **胶囊**（每个标签一个芯片）或 **纯文本** 显示，显示模式在所有字段间共享。
 
-<img src="examples/nishiki_tag_capsules.png" width=75%>
+<img src="../examples/nishiki_tag_capsules.png" width=75%>
 
 - **自定义提示词字段。** 在正向和负向两组中都可以添加、重命名、排序和删除自己的字段（例如 `Face`、`Body`、`Background`、`Style`）。最终提示词按你排列的顺序由各字段拼接而成。
 - **单标签权重。** 点击胶囊打开权重弹窗，或在文本模式下使用 `Ctrl + 上 / 下`。批量对话框可一次修改多个标签的权重。
@@ -51,7 +51,7 @@ Nishiki 新增了日语标签翻译、带自定义字段与预设的胶囊式提
 - 角色槽位数量不再固定为三个，可按需添加。
 - **列表管理器**（设置 → Lists）：为角色 / 原创角色 / 角度 / 镜头列表新增、覆盖或隐藏条目。上游数据保持只读；你的编辑以差分形式保存在 `settings/user_lists.json`，可导出 / 导入。列表条目可携带多标签提示词，条目编辑器内可打开标签词典选择器。
 
-<img src="examples/nishiki_character_select.png" width=45%>
+<img src="../examples/nishiki_character_select.png" width=45%>
 
 ## 撤销 / 重做
 每次提示词编辑、预设应用和 AI 重写结果都是全局编辑历史中的一个原子步骤。使用 `Ctrl + Z` / `Ctrl + Shift + Z`（或 `Ctrl + Y`）或工具栏按钮。
@@ -97,7 +97,7 @@ AI 提示词 / 重写请求同样通过这条 SSH 中继发送到 Pod 上的 Oll
 > 如果发现列表中没有、但可以正确生成的角色，请提交 issue 告知。
 >
 > 默认 thumbList 基于 `waiIllustriousSDXL_v160`。另有两个可选 thumbList：`waiANIMA_v10Base10` 和 `waiNSFWIllustrious_v120`，选择后会自动从 `HuggingFace` 下载。
-> 可用 [SAA Thumb Generator](scripts/python/thumb-generator/README.md) 制作自己的 thumbList。
+> 可用 [SAA Thumb Generator](../scripts/python/thumb-generator/README.md) 制作自己的 thumbList。
 
 | 已验证 | [ComfyUI](https://github.com/comfyanonymous/ComfyUI)  | [Forge Neo](https://github.com/Haoming02/sd-webui-forge-classic/tree/neo) |
 | --- | --- | --- |
@@ -122,7 +122,7 @@ AI 提示词 / 重写请求同样通过这条 SSH 中继发送到 Pod 上的 Oll
 > *在线版 Character Select* [Hugging Face Space](https://huggingface.co/spaces/flagrantia/character_select_saa)
 >
 > 浏览器版 SAAC 请见 [README_SAAC.md](README_SAAC.md)。
-> 面向 OpenClaw 的 Python CLI 工具请见 [SAA Agent](scripts/python/saa-agent/README_HUMAN.md) 与 [ClawHub](https://clawhub.ai/mirabarukaso/saa-agent)。
+> 面向 OpenClaw 的 Python CLI 工具请见 [SAA Agent](../scripts/python/saa-agent/README_HUMAN.md) 与 [ClawHub](https://clawhub.ai/mirabarukaso/saa-agent)。
 
 ## thumbList 手动下载指南
 <details>
@@ -209,7 +209,7 @@ npm install
 > 已测试验证：Anima / Qwen Image / Z Image / Flux / Krea2
 > 支持 ComfyUI 与 Forge Neo，不支持原版 A1111。
 
-<img src="examples/diffusion_models.png" width=25%>
+<img src="../examples/diffusion_models.png" width=25%>
 
 > [!NOTE]
 > 上图为旧版（上游）界面的截图。
@@ -244,7 +244,7 @@ Forge 同样支持 `GGUF 模型`，但 `Diffusion 模型` 与 `Checkpoint` 使�
 
 | Before | 6x After (SDXL) | Before | 3x After (Flux.2) |
 | --- | --- | --- | --- |
-| <img src="examples/2025-12-29-031208_1898628601.png" width=256>   |  <img src="examples/2026-01-01-223655_3487267443.png" width=256> | <img src="examples/MiraITU_FLUX2_sample.png" width=256>   |  <img src="examples/MiraITU_FLUX2_sample_upscaled.png" width=256> |
+| <img src="../examples/2025-12-29-031208_1898628601.png" width=256>   |  <img src="../examples/2026-01-01-223655_3487267443.png" width=256> | <img src="../examples/MiraITU_FLUX2_sample.png" width=256>   |  <img src="../examples/MiraITU_FLUX2_sample_upscaled.png" width=256> |
 
 <details>
 <summary>MiraITU 详情</summary>
@@ -258,7 +258,7 @@ Forge 同样支持 `GGUF 模型`，但 `Diffusion 模型` 与 `Checkpoint` 使�
 
 | Settings | Drag and Drop | Flux.2 |
 | --- | --- | --- |
-| <img src="examples/nishiki_miraitu_settings.png" width=256> | <img src="examples/nishiki_miraitu_drop.png" width=256>   | <img src="examples/nishiki_miraitu_flux2.png" width=256>   |
+| <img src="../examples/nishiki_miraitu_settings.png" width=256> | <img src="../examples/nishiki_miraitu_drop.png" width=256>   | <img src="../examples/nishiki_miraitu_flux2.png" width=256>   |
 
 生成结果因模型而异。`SDXL` 模型需要 `tagger` 提供更精确的内容描述，并建议使用 `upscale 模型`。像 `Flux2` 这类可以连接 `reference latent` 的模型可以跳过 upscale 模型，直接拉伸原图，然后用 `Positive Prompt` 统一配置所有分块。
 
@@ -278,7 +278,7 @@ Forge 同样支持 `GGUF 模型`，但 `Diffusion 模型` 与 `Checkpoint` 使�
 ## Image Tagger
 支持 ONNX 格式的 [WD@SmilingWolf](https://huggingface.co/SmilingWolf)、[CL@cella110n](https://huggingface.co/cella110n/cl_tagger) 和 [Camie@Camais03](https://huggingface.co/spaces/Camais03/camie-tagger-v2-app) 模型。
 
-<img src="examples/nishiki_image_tagger.png" width=35%>
+<img src="../examples/nishiki_image_tagger.png" width=35%>
 
 <details>
 <summary>Image Tagger 详情</summary>
@@ -319,7 +319,7 @@ Image Tagger 运行在 Node.js 的 `onnxruntime-node` 上。*不需要任何后�
 </details>
 
 ## ControlNet / IP Adapter
-<img src="examples/nishiki_controlnet.png" width=35%>
+<img src="../examples/nishiki_controlnet.png" width=35%>
 
 <details>
 <summary>ControlNet / IP Adapter 详情</summary>
@@ -366,7 +366,7 @@ ComfyUI 支持更详细的 LoRA 配置，详见 [LoRA from Text](https://github.
 
 **在 ComfyUI API 中使用 LoRA 需要把 ComfyUI_Mira 更新到 0.5.6.0 或以上。**
 
-<img src="examples/nishiki_lora_slot.png" width=45%>
+<img src="../examples/nishiki_lora_slot.png" width=45%>
 
 ## ADetailer
 > [!TIP]
@@ -387,7 +387,7 @@ ComfyUI 支持更详细的 LoRA 配置，详见 [LoRA from Text](https://github.
 默认 ADetailer 模型列表会在首次生成后更新，照常生成一张图即可。
 `ADetailer` 模型放在 `sd-webui-forge-neo\\models\\adetailer` 或 `stable-diffusion-webui\\models\\adetailer`
 
-<img src="examples/nishiki_adetailer.png" width=35%>
+<img src="../examples/nishiki_adetailer.png" width=35%>
 
 ## 队列管理器
 可以提交多个各自带有不同参数的生成任务。队列会自动开始处理并移除已完成的任务。
@@ -395,7 +395,7 @@ ComfyUI 支持更详细的 LoRA 配置，详见 [LoRA from Text](https://github.
 可以 `删除` 或 `查看详情` 队列中的任务。删除第一个任务会取消当前生成。
 *建议队列长度不要超过 10,000。*
 
-<img src="examples/nishiki_queue.png" width=35%>
+<img src="../examples/nishiki_queue.png" width=35%>
 
 ## JSON/CSV 列表
 **JSON/CSV 列表不会保存到设置文件中。**
@@ -403,7 +403,7 @@ ComfyUI 支持更详细的 LoRA 配置，详见 [LoRA from Text](https://github.
 `__Random__` 不受种子约束地从列表中随机选一项，在 `Single` 与 `Batch (Random)` 模式下有效。
 `__Enumerate__` 逐一枚举所有条目，仅在 `Batch (Random)` 模式下有效，在 `Single` 模式下退化为 `__Random__`。
 
-<img src="examples/nishiki_json_csv.png" width=35%>
+<img src="../examples/nishiki_json_csv.png" width=35%>
 
 ## 通配符
 支持 `*.txt` 通配符文件，复制到 `data/wildcards`（打包版为 `resources\app\data\wildcards`）。
@@ -421,7 +421,7 @@ __YourWildCardName__
 { red | green | blue | blonde } { {long | short} hair | eyes}
 ```
 
-<img src="examples/nishiki_wildcards.png" width=35%>
+<img src="../examples/nishiki_wildcards.png" width=35%>
 
 ## Regional Condition / Couple
 > [!TIP]
@@ -437,12 +437,12 @@ __YourWildCardName__
 
 **左右两侧（Nishiki）。** 开启 Regional 后，Prompts 卡片把字段分为 **BOTH SIDES**（Common、Background、Style、共享 Negative 以及标记为 *Both* 的自定义字段）、**LEFT** / **RIGHT**（各侧的角色、Positive、各自的 Negative 和仅属于该侧的自定义字段）和 **ALL**（Exclude）。自定义字段的侧别在 Fields 编辑器中设置。**Swap** 一键交换左右（提示词、Negative、权重计划、角色、强度），可撤销；它取代了原来的“Swap Character”开关。点击角色行可打开角色选择器，每一侧都可从标题折叠。ComfyUI 上左右 Negative 与 Positive 使用同样的区域蒙版；Forge Neo 则合并为一个 Negative。
 
-<img src="examples/nishiki_regional.png" width=35%>
+<img src="../examples/nishiki_regional.png" width=35%>
 
 ## 半自动标签补全
 标签数据来源：[DraconicDragon/dbr-e621-lists-archive/danbooru_e621_merged_2026-04-01_pt20-ia-dd-ed-spc.csv](https://github.com/DraconicDragon/dbr-e621-lists-archive/blob/main/tag-lists/danbooru_e621_merged/README.MD)
 
-<img src="examples/nishiki_jp_tag_search.png" width=45%>
+<img src="../examples/nishiki_jp_tag_search.png" width=45%>
 
 <details>
 <summary>半自动标签补全详情</summary>
@@ -482,7 +482,7 @@ __YourWildCardName__
 `Send` 按钮会覆盖 `Common Prompt`、`Negative Prompt`、`Width & Height`、`CFG`、`Step` 和 `Seed`。
 如果你有相同的 LoRA，`Common Prompt` 中的 LoRA 也会生效。不想在提示词中使用 LoRA 的话可以试试 `Send LoRA to Slot`。
 
-<img src="examples/nishiki_image_info.png" width=45%>
+<img src="../examples/nishiki_image_info.png" width=45%>
 </details>
 
 ## 角色列表
@@ -492,7 +492,7 @@ __YourWildCardName__
 ### 预览与搜索
 角色列表支持英文、中文和日文关键字搜索。
 
-<img src="examples/nishiki_character_select.png" width=45%>
+<img src="../examples/nishiki_character_select.png" width=45%>
 
 ## 顶部按钮与右键菜单
 顶部按钮从左到右：保存设置、重新加载模型列表、刷新页面、从右到左、主题切换、撤销、重做、GPU 目标（Local / Pod）。
@@ -504,22 +504,22 @@ __YourWildCardName__
 
 **拼写检查（英语）**
 右击带拼写错误（波浪下划线）的单词可查看建议。
-<img src="examples/nishiki_spell_check.png" width=45%>
+<img src="../examples/nishiki_spell_check.png" width=45%>
 
 **AI 提示词生成测试**
 右击 `AI prompt` 字段可在不生成图像的情况下获取 AI 提示词。结果显示在 Info 面板的 AI 标签页中；把 AI 规则切换为 `Last` 可在后续生成中沿用该结果。
-<img src="examples/nishiki_ai_prompt_test.png" width=45%>
+<img src="../examples/nishiki_ai_prompt_test.png" width=45%>
 
 **复制图像 / 元数据**
 右击 `Gallery` 可把当前图像或其元数据复制到剪贴板。
 使用 Image Saver 节点的 ComfyUI 会输出类 a1111 格式的元数据。
 复制图像基于把 base64 转回 PNG，但元数据会被 Chromium 内核裁掉；如需原图，请到 ComfyUI/WebUI 的输出文件夹查找。
 SAAC：把图像从浏览器拖到本地文件夹，或使用浏览器右键的 `另存为`。
-<img src="examples/nishiki_copy_image.png" width=35%>
+<img src="../examples/nishiki_copy_image.png" width=35%>
 
 **发送 LoRA 到槽位**
 右击 `Common` 或 `Positive` 可把文本形式的 LoRA 发送到 LoRA 槽位。
-<img src="examples/nishiki_send_lora.png" width=35%>
+<img src="../examples/nishiki_send_lora.png" width=35%>
 </details>
 
 ------

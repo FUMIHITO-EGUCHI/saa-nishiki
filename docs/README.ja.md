@@ -1,13 +1,13 @@
 # SAA-Nishiki（二式）
 
-[English](README.md) | **日本語** | [简体中文](README.zh-CN.md)
+[English](../README.md) | **日本語** | [简体中文](README.zh-CN.md)
 
 [Character Select SAA](https://github.com/mirabarukaso/character_select_stand_alone_app) のフォークです。AI プロンプト、セミオートのタグ補完、ComfyUI / Forge Neo (WebUI) API に対応したスタンドアロンアプリです。
 Nishiki では、日本語タグ翻訳、カスタム欄とプリセットを持つカプセル型プロンプトエディタ、編集可能なリスト管理、Undo / Redo、AI プロンプトリファイナー、高速生成モード、Runpod Pod ターゲットを追加しています。
 
 現在のリリース: **v2.8.9-nishiki.1** — 上流 SAA v2.8.9 ベース。ダウンロードとリリースノートは [Releases](https://github.com/FUMIHITO-EGUCHI/saa-nishiki/releases) を参照してください。
 
-<img src="examples/nishiki_overall.png" width=75%>
+<img src="../examples/nishiki_overall.png" width=75%>
 
 ## 目次
 - [Nishiki の追加機能](#nishiki-の追加機能)
@@ -27,12 +27,12 @@ Nishiki では、日本語タグ翻訳、カスタム欄とプリセットを持
 - キャラクター名・作品名の日本語ローカライズと、タグカテゴリ表示。
 - 設定で UI 言語に `ja-JP` を選択すると、タグ・名前・カテゴリが日本語で表示されます。日本語訳のない UI 文言は英語にフォールバックします。
 
-<img src="examples/nishiki_jp_tag_search.png" width=75%>
+<img src="../examples/nishiki_jp_tag_search.png" width=75%>
 
 ## プロンプトエディタ
 従来のテキストボックスを、欄の一覧と 1 つの大きなフォーカスエディタに置き換えました。各欄は **カプセル**（タグ 1 つにつき 1 チップ）または **テキスト** で表示でき、表示モードは全欄で共通です。
 
-<img src="examples/nishiki_tag_capsules.png" width=75%>
+<img src="../examples/nishiki_tag_capsules.png" width=75%>
 
 - **カスタム欄。** Positive 系・Negative 系の両方で、独自の欄（例: `Face`、`Body`、`Background`、`Style`）を追加・名前変更・並べ替え・削除できます。最終的なプロンプトは、並べた順に各欄を連結して組み立てられます。
 - **タグ単位のウェイト。** カプセルをクリックするとウェイトのポップオーバーが開きます。テキストモードでは `Ctrl + ↑ / ↓` で調整できます。一括ダイアログで複数タグのウェイトをまとめて変更できます。
@@ -54,7 +54,7 @@ Nishiki では、日本語タグ翻訳、カスタム欄とプリセットを持
 - キャラクタースロット数は 3 固定ではなくなり、必要な数だけ追加できます。
 - **リスト管理**（設定 → Lists）: キャラクター / OC / アングル / カメラ各リストのエントリを追加・上書き・非表示にできます。上流データは読み取り専用のままで、編集内容は差分として `settings/user_lists.json` に保存され、エクスポート / インポートできます。エントリには複数タグのプロンプトを持たせられ、エントリ編集画面からタグ辞書ピッカーを開けます。
 
-<img src="examples/nishiki_character_select.png" width=45%>
+<img src="../examples/nishiki_character_select.png" width=45%>
 
 ## Undo / Redo
 プロンプト編集、プリセット適用、AI リファインの結果は、すべてグローバルな編集履歴の 1 ステップとして記録されます。`Ctrl + Z` / `Ctrl + Shift + Z`（または `Ctrl + Y`）かツールバーのボタンで操作します。
@@ -100,7 +100,7 @@ AI プロンプト / Refine のリクエストも同じ SSH リレー経由で P
 > リストに表示されないものの正しく生成できるキャラクターを見つけたら、issue で知らせてください。
 >
 > 既定の thumbList は `waiIllustriousSDXL_v160` ベースです。代替の thumbList `waiANIMA_v10Base10` と `waiNSFWIllustrious_v120` は、選択すると `HuggingFace` から自動ダウンロードされます。
-> 独自の thumbList は [SAA Thumb Generator](scripts/python/thumb-generator/README.md) で作成できます。
+> 独自の thumbList は [SAA Thumb Generator](../scripts/python/thumb-generator/README.md) で作成できます。
 
 | 検証済み | [ComfyUI](https://github.com/comfyanonymous/ComfyUI)  | [Forge Neo](https://github.com/Haoming02/sd-webui-forge-classic/tree/neo) |
 | --- | --- | --- |
@@ -125,7 +125,7 @@ AI プロンプト / Refine のリクエストも同じ SSH リレー経由で P
 > *オンライン版 Character Select* [Hugging Face Space](https://huggingface.co/spaces/flagrantia/character_select_saa)
 >
 > ブラウザ版 SAAC は [README_SAAC.md](README_SAAC.md) を参照。
-> OpenClaw 向け Python CLI ツールは [SAA Agent](scripts/python/saa-agent/README_HUMAN.md) と [ClawHub](https://clawhub.ai/mirabarukaso/saa-agent) を参照。
+> OpenClaw 向け Python CLI ツールは [SAA Agent](../scripts/python/saa-agent/README_HUMAN.md) と [ClawHub](https://clawhub.ai/mirabarukaso/saa-agent) を参照。
 
 ## thumbList 手動ダウンロード
 <details>
@@ -212,7 +212,7 @@ npm install
 > テスト・検証済み: Anima / Qwen Image / Z Image / Flux / Krea2
 > ComfyUI と Forge Neo に対応。オリジナルの A1111 は非対応。
 
-<img src="examples/diffusion_models.png" width=25%>
+<img src="../examples/diffusion_models.png" width=25%>
 
 > [!NOTE]
 > 上のスクリーンショットは旧（上流）UI のものです。
@@ -247,7 +247,7 @@ Forge も `GGUF モデル` に対応しますが、`Diffusion モデル` は `Ch
 
 | Before | 6x After (SDXL) | Before | 3x After (Flux.2) |
 | --- | --- | --- | --- |
-| <img src="examples/2025-12-29-031208_1898628601.png" width=256>   |  <img src="examples/2026-01-01-223655_3487267443.png" width=256> | <img src="examples/MiraITU_FLUX2_sample.png" width=256>   |  <img src="examples/MiraITU_FLUX2_sample_upscaled.png" width=256> |
+| <img src="../examples/2025-12-29-031208_1898628601.png" width=256>   |  <img src="../examples/2026-01-01-223655_3487267443.png" width=256> | <img src="../examples/MiraITU_FLUX2_sample.png" width=256>   |  <img src="../examples/MiraITU_FLUX2_sample_upscaled.png" width=256> |
 
 <details>
 <summary>MiraITU の詳細</summary>
@@ -261,7 +261,7 @@ Forge も `GGUF モデル` に対応しますが、`Diffusion モデル` は `Ch
 
 | Settings | Drag and Drop | Flux.2 |
 | --- | --- | --- |
-| <img src="examples/nishiki_miraitu_settings.png" width=256> | <img src="examples/nishiki_miraitu_drop.png" width=256>   | <img src="examples/nishiki_miraitu_flux2.png" width=256>   |
+| <img src="../examples/nishiki_miraitu_settings.png" width=256> | <img src="../examples/nishiki_miraitu_drop.png" width=256>   | <img src="../examples/nishiki_miraitu_flux2.png" width=256>   |
 
 生成結果はモデルによって変わります。`SDXL` モデルでは正確な内容記述のために `tagger` が必要で、`upscale モデル` の使用を推奨します。`reference latent` を接続できる `Flux2` などのモデルでは upscale モデルを省略して元画像を直接引き伸ばせます。その場合は `Positive Prompt` で全タイルを統一的に設定してください。
 
@@ -281,7 +281,7 @@ Forge も `GGUF モデル` に対応しますが、`Diffusion モデル` は `Ch
 ## Image Tagger
 ONNX 形式の [WD@SmilingWolf](https://huggingface.co/SmilingWolf)、[CL@cella110n](https://huggingface.co/cella110n/cl_tagger)、[Camie@Camais03](https://huggingface.co/spaces/Camais03/camie-tagger-v2-app) モデルに対応。
 
-<img src="examples/nishiki_image_tagger.png" width=35%>
+<img src="../examples/nishiki_image_tagger.png" width=35%>
 
 <details>
 <summary>Image Tagger の詳細</summary>
@@ -322,7 +322,7 @@ Image Tagger は Node.js 上の `onnxruntime-node` で動作します。*バッ�
 </details>
 
 ## ControlNet / IP Adapter
-<img src="examples/nishiki_controlnet.png" width=35%>
+<img src="../examples/nishiki_controlnet.png" width=35%>
 
 <details>
 <summary>ControlNet / IP Adapter の詳細</summary>
@@ -370,7 +370,7 @@ LoRA スロットの `i` ボタンで LoRA 情報を確認できます。LoRA �
 
 **ComfyUI API で LoRA を使うには ComfyUI_Mira を 0.5.6.0 以上に更新してください。**
 
-<img src="examples/nishiki_lora_slot.png" width=45%>
+<img src="../examples/nishiki_lora_slot.png" width=45%>
 
 ## ADetailer
 > [!TIP]
@@ -391,7 +391,7 @@ LoRA スロットの `i` ボタンで LoRA 情報を確認できます。LoRA �
 既定の ADetailer モデル一覧は初回生成後に更新されます。通常どおり画像を生成してください。
 `ADetailer` モデルは `sd-webui-forge-neo\\models\\adetailer` または `stable-diffusion-webui\\models\\adetailer` に配置
 
-<img src="examples/nishiki_adetailer.png" width=35%>
+<img src="../examples/nishiki_adetailer.png" width=35%>
 
 ## キューマネージャ
 それぞれ異なるパラメータを持つ複数の生成タスクを投入できます。キューは自動的に処理を開始し、完了したタスクを取り除きます。
@@ -399,7 +399,7 @@ LoRA スロットの `i` ボタンで LoRA 情報を確認できます。LoRA �
 キュー内のタスクは `削除` や `詳細表示` ができます。先頭タスクを削除すると現在の生成がキャンセルされます。
 *キューの長さは 10,000 を超えないことを推奨します。*
 
-<img src="examples/nishiki_queue.png" width=35%>
+<img src="../examples/nishiki_queue.png" width=35%>
 
 ## JSON/CSV リスト
 **JSON/CSV リストは設定ファイルには保存されません。**
@@ -407,7 +407,7 @@ LoRA スロットの `i` ボタンで LoRA 情報を確認できます。LoRA �
 `__Random__` は Seed に縛られずリストからランダムに 1 項目を選びます。`Single` と `Batch (Random)` モードで動作します。
 `__Enumerate__` は全項目を順に列挙します。`Batch (Random)` モードでのみ動作し、`Single` では `__Random__` に格下げされます。
 
-<img src="examples/nishiki_json_csv.png" width=35%>
+<img src="../examples/nishiki_json_csv.png" width=35%>
 
 ## ワイルドカード
 `*.txt` ワイルドカードファイルに対応。`data/wildcards`（パッケージ版は `resources\app\data\wildcards`）にコピーしてください。
@@ -425,7 +425,7 @@ __YourWildCardName__
 { red | green | blue | blonde } { {long | short} hair | eyes}
 ```
 
-<img src="examples/nishiki_wildcards.png" width=35%>
+<img src="../examples/nishiki_wildcards.png" width=35%>
 
 ## Regional Condition / Couple
 > [!TIP]
@@ -445,12 +445,12 @@ __YourWildCardName__
 
 **誰が誰に何をするか。** 領域分けは 2 人の外見を混ざらないようにするものであって、相互の動作は決めません。動作はタグの後ろに短い英文 1 文で書きます。動作する側を主語にし、各キャラクターはタグにある外見（髪色が最も確実）で呼び分けます（例: `the black haired girl is patting the blonde girl's head`）。位置（`the girl on the left` など）で呼ぶ書き方は検証していません。`Fields エディタ → + Action sentence` で、そのための Both 側の欄がチェーンの末尾に追加されます。WAI Illustrious では、タグの後ろに文を置いた場合に 15 枚中 9 枚で向きが正しくなりました。文だけの場合は 15 枚中 3 枚でした。外見の語は文に入れないでください。形容詞が髪や服に漏れることがあります。
 
-<img src="examples/nishiki_regional.png" width=35%>
+<img src="../examples/nishiki_regional.png" width=35%>
 
 ## セミオートタグ補完
 タグデータ: [DraconicDragon/dbr-e621-lists-archive/danbooru_e621_merged_2026-04-01_pt20-ia-dd-ed-spc.csv](https://github.com/DraconicDragon/dbr-e621-lists-archive/blob/main/tag-lists/danbooru_e621_merged/README.MD)
 
-<img src="examples/nishiki_jp_tag_search.png" width=45%>
+<img src="../examples/nishiki_jp_tag_search.png" width=45%>
 
 <details>
 <summary>セミオートタグ補完の詳細</summary>
@@ -491,7 +491,7 @@ WebUI（Forge Neo と A1111）と ComfyUI（ComfyUI_Mira の画像保存ノー�
 
 生成済み画像も同じように開けます。ギャラリーの `Info` ボタンは表示中の画像を `Image Info` で開き、画像の右クリックメニュー（分割・グリッド・全画面表示）には `Open in Image Info` があります。そこから `Send tags`、`Add ControlNet`、`Run Tagger`、`Tiled-Upscale` がその画像に対して使えます。
 
-<img src="examples/nishiki_image_info.png" width=45%>
+<img src="../examples/nishiki_image_info.png" width=45%>
 </details>
 
 ## キャラクターリスト
@@ -501,7 +501,7 @@ WebUI（Forge Neo と A1111）と ComfyUI（ComfyUI_Mira の画像保存ノー�
 ### プレビューと検索
 キャラクターリストは英語・中国語・日本語のキーワード検索に加え、所属作品でも検索できます。`艦これ`、`kantai collection`、`FGO`、`ボカロ`、`崩壊` などでその作品のキャラクターに絞り込め、`kantai 加賀` のように作品と名前を組み合わせられます。作品名はキャラクター名の後ろに表示されます（`data/character_works.json`、生成手順は英語 README のメンテナ向けセクション参照）。
 
-<img src="examples/nishiki_character_select.png" width=45%>
+<img src="../examples/nishiki_character_select.png" width=45%>
 
 ## 上部ボタンと右クリックメニュー
 上部ボタンは左から: 設定保存、モデル一覧再読込、ページ更新、右から左、テーマ切替、Undo、Redo、GPU ターゲット（Local / Pod）。
@@ -513,22 +513,22 @@ WebUI（Forge Neo と A1111）と ComfyUI（ComfyUI_Mira の画像保存ノー�
 
 **スペルチェック（英語）**
 スペルチェックエラー（波線）のある単語を右クリックすると候補が表示されます。
-<img src="examples/nishiki_spell_check.png" width=45%>
+<img src="../examples/nishiki_spell_check.png" width=45%>
 
 **AI プロンプト生成テスト**
 `AI prompt` 欄を右クリックすると、生成せずに AI プロンプトを取得します。結果は Info パネルの AI タブに表示されます。AI ルールを `Last` にすると以降の生成でその結果を再利用します。
-<img src="examples/nishiki_ai_prompt_test.png" width=45%>
+<img src="../examples/nishiki_ai_prompt_test.png" width=45%>
 
 **画像 / メタデータのコピー**
 `Gallery` を右クリックすると現在の画像またはメタデータをクリップボードにコピーします。
 Image Saver ノードを使う ComfyUI では a1111 形式に近いメタデータが出力されます。
 画像コピーは base64 を PNG に戻しますが、Chromium コアによりメタデータは除去されます。元画像が必要なら ComfyUI/WebUI の出力フォルダを確認してください。
 SAAC の場合: ブラウザからローカルフォルダへ画像をドラッグするか、ブラウザメニューの `名前を付けて保存` を使ってください。
-<img src="examples/nishiki_copy_image.png" width=35%>
+<img src="../examples/nishiki_copy_image.png" width=35%>
 
 **LoRA をスロットへ送る**
 `Common` または `Positive` を右クリックすると、テキスト形式の LoRA を LoRA スロットへ送ります。
-<img src="examples/nishiki_send_lora.png" width=35%>
+<img src="../examples/nishiki_send_lora.png" width=35%>
 </details>
 
 ------
