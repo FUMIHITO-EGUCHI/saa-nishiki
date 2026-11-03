@@ -297,6 +297,16 @@ export function removeAiPromptMarker(prompt, marker) {
         .trim();
 }
 
+/**
+ * Expand's marker swapped for the AI's tags. The prompt carries it as "marker, ", so with
+ * no tags (AI off, an empty answer) the separator after it goes too and no ", ," is left.
+ */
+function fillAiPromptMarker(text, marker, content) {
+    if (content !== '') return text.replaceAll(marker, content);
+    const escaped = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(`${escaped}\\s*,?\\s*`, 'g'), '');
+}
+
 function replaceInfoSection(info, startLabel, endLabel, value) {
     const startToken = `${startLabel}\n`;
     const startIndex = info.indexOf(startToken);
@@ -325,7 +335,7 @@ export function renderAiPromptInfo({
     if (safeMarker === '') throw new Error('marker must not be empty');
 
     if (normalizePromptMode(mode) === PROMPT_MODE_EXPAND) {
-        return safeInfo.replaceAll(safeMarker, requireString(preview, 'preview'));
+        return fillAiPromptMarker(safeInfo, safeMarker, requireString(preview, 'preview'));
     }
 
     let rendered = safeInfo;
@@ -560,8 +570,8 @@ export function applyAiPromptResult({
 
     return {
         ok: safeContent !== '',
-        positive: requireString(positive, 'positive').replaceAll(safeMarker, safeContent),
-        positiveRight: requireString(positiveRight, 'positiveRight').replaceAll(safeMarker, safeContent),
+        positive: fillAiPromptMarker(requireString(positive, 'positive'), safeMarker, safeContent),
+        positiveRight: fillAiPromptMarker(requireString(positiveRight, 'positiveRight'), safeMarker, safeContent),
         negative: original.negative,
         changes: '',
         preview: safeContent,

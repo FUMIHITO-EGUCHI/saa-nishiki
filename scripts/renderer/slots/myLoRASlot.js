@@ -93,16 +93,33 @@ function missing(name) {
     return name !== '' && list.length > 0 && !list.includes(name);
 }
 
+// a LoRA file's name without its folder and extension, as an A1111 tag writes it
+const tagName = file => file.split(/[\\/]/).pop().replace(/\.(safetensors|ckpt|pt|pth|bin)$/i, '').toLowerCase();
+
+/**
+ * The list's file a tag names: the name itself when listed, else the one file whose name,
+ * folder and extension aside, is the tag's ("<lora:detail:0.6>" → "style\\detail.safetensors").
+ * Two such files are not guessed between.
+ */
+function resolveLoraName(name) {
+    const list = lorasListed();
+    if (name === '' || list.length === 0 || list.includes(name)) return name;
+    const hits = list.filter(file => tagName(file) === tagName(name));
+    return hits.length === 1 ? hits[0] : name;
+}
+
 /** "<lora:a:0.6:0.4:0:0>…" (a prompt's LoRA tags) as slot rows, one mode per pair. */
 export function rowsFromLoraTags(loraString) {
     const rows = [];
     for (const match of String(loraString ?? '').matchAll(/<lora:([^>]+)>/g)) {
         const parts = match[1].split(':');
-        const name = parts[0];
+        const name = resolveLoraName(parts[0]);
         const values = parts.slice(1).map(v => Number.parseFloat(v) || 0);
+        // one weight (A1111) is the model's and the CLIP's
+        if (values.length === 1) values.push(values[0]);
         // a list not read yet (empty) says nothing about the file: the row is kept as written
         if (missing(name)) {
-            rows.push([name, '0', '0', 'OFF']);
+            rows.push([name, String(values[0] ?? 0), String(values[1] ?? 0), 'OFF']);
             continue;
         }
         if (values.length <= 2) {

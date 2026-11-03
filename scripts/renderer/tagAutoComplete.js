@@ -264,6 +264,9 @@ export function setupSuggestionSystem() {
                 renderMoreLine();
                 suggestionBox.style.width = `${Math.min(maxRowWidth + 20, 300)}px`;
                 suggestionBox.style.display = 'block';
+                // placed again now that its size is known: the first box was measured empty
+                // and ran past the window's right edge
+                updateSuggestionBoxPosition();
                 suggestionBox.scrollTop = 0;
                 selectedIndex = -1;
 
@@ -567,6 +570,9 @@ export function setupSuggestionSystem() {
             const cursorOffset = wrapWidth > 0 ? measureCaretOffset(wrapWidth) : 0;
 
             suggestionBox.style.display = 'block';
+            // the box is as wide as its rows (width: auto) but no wider than the room right
+            // of where it stands: measured at the left edge, it shows its own width
+            suggestionBox.style.left = '0px';
             const suggestionWidth = suggestionBox.offsetWidth || 200;
             const suggestionHeight = suggestionBox.offsetHeight || 100;
             if (!suggestionBox.innerHTML) suggestionBox.style.display = 'none';
