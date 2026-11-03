@@ -3,9 +3,9 @@
 [English](../README.md) | [日本語](README.ja.md) | **简体中文**
 
 [Character Select SAA](https://github.com/mirabarukaso/character_select_stand_alone_app) 的分支版本。一个独立运行的应用，支持 AI 提示词、半自动标签补全以及 ComfyUI / Forge Neo (WebUI) API。
-Nishiki 新增了日语标签翻译、带自定义字段与预设的胶囊式提示词编辑器、可编辑的列表管理器、撤销 / 重做、AI 提示词重写器、快速生成模式以及 Runpod Pod 目标。
+Nishiki 新增了日语标签翻译、以标签块（chip）编辑的行式提示词编辑器、Parts、作为独立模型类型并带有 Cast 与 Prose 的 Diffusion（Anima）、记录生成配方的图像、Library、以样图网格展示的 LoRA 目录、AI 提示词重写器、快速生成模式以及 Runpod Pod 目标。
 
-当前版本：**v2.8.9-nishiki.1** —— 基于上游 SAA v2.8.9。下载与发布说明请见 [Releases](https://github.com/FUMIHITO-EGUCHI/saa-nishiki/releases)。
+当前版本：**v4.1.0** —— 基于上游 SAA 2.8.9。下载与发布说明请见 [Releases](https://github.com/FUMIHITO-EGUCHI/saa-nishiki/releases)。
 
 <img src="../examples/nishiki_overall.png" width=75%>
 
@@ -23,73 +23,113 @@ Nishiki 新增了日语标签翻译、带自定义字段与预设的胶囊式提
 # Nishiki 新增功能
 
 ## 日语标签翻译与本地化
-- 通过覆盖 danbooru / e621 合并标签列表的日语词典（约 10 万条，`data/danbooru_e621_merged_ja.csv`），可以用日语搜索和显示标签。
-- 角色名与作品名的日语本地化，以及标签分类显示。
+- 通过覆盖 danbooru / e621 合并标签列表的日语词典（约 10 万条，`data/danbooru_e621_merged_ja.csv`）以日语搜索和显示标签。除画师与 e621 角色外的所有分组都已审校到 heat 10（10 个投稿）。
+- 标签搜索对整个词典排序（前缀匹配优先，同一档内投稿多的标签优先），滚动时加载下一批 50 条，最后一行显示匹配总数。每行显示译名以及命中的别名；输入中的空格也匹配标签里的 `_`（`white d` 可找到 `white_dress`）。
+- 角色名与作品名的日语本地化，以及标签分类显示。标签搜索与角色选择显示相同的名称。
 - 在设置中将界面语言选为 `ja-JP` 后，标签、名称和分类以日语显示；没有日语条目的界面文字回退为英语。
 
 <img src="../examples/nishiki_jp_tag_search.png" width=75%>
 
 ## 提示词编辑器
-原来的纯文本框被替换为字段列表加一个大的聚焦编辑器。每个字段都可以按 **胶囊**（每个标签一个芯片）或 **纯文本** 显示，显示模式在所有字段间共享。
+Prompts 卡片是一列行：Common、View、Background、Style、Positive、Negative、Exclude 以及你自己添加的行。每行以**标签块**显示标签；拖动把手移动行，● 开关静音该行，双击名称重命名，其余操作在 ⋯ 菜单中（Show as text / Show as chips、Insert part…、Weights per image…、Presets…、Make negative / Make positive、Rename、Delete field）。`+ Add field` 添加自定义行。最终提示词按行的顺序拼接。
 
-<img src="../examples/nishiki_tag_capsules.png" width=75%>
+<img src="../examples/nishiki_tag_capsules.png" width=45%>
 
-- **自定义提示词字段。** 在正向和负向两组中都可以添加、重命名、排序和删除自己的字段（例如 `Face`、`Body`、`Background`、`Style`）。最终提示词按你排列的顺序由各字段拼接而成。
-- **单标签权重。** 点击胶囊打开权重弹窗，或在文本模式下使用 `Ctrl + 上 / 下`。批量对话框可一次修改多个标签的权重。
-- **一键启用 / 禁用标签。** 禁用标签而不删除它；被禁用的标签保留在字段中，但不参与生成。
-- **在字段之间移动标签。** 把胶囊拖到另一个字段（按住 `Ctrl` 或 `Alt` 为复制），或使用右键菜单中的 `Move to…` / `Copy to…`。权重和禁用状态随标签一起移动。文本模式下同样的命令作用于选中的文本。
-- **预设。** 每个字段有自己的预设列表。提示词预设保存整个字段布局（字段、名称、顺序和内容）；应用时会精确还原该布局。
-- **相关标签建议（离线）。** 聚焦一个胶囊后，字段下方会显示经常一起出现的标签（来自内置共现词典 `data/tag_related.txt`）以及同一词族的标签。点击即插入；用字段底部的 ✦ 按钮开关此功能。
-- **搜索。** 自动补全默认同时匹配标签名的开头、中间和结尾。
-- 文本编辑器随内容自动增高，长提示词不会被截断。
+- **标签块。** 左侧显示状态（✓ 启用、− 禁用、★ 收藏、× 排除），右侧显示权重或权重计划。点击 ✓ 可在不删除的情况下禁用标签。`+ Tag` 打开带有 Tags、Parts、LoRA 三个标签页的标签选择器。
+- **权重弹窗。** 点击标签块可设置权重（文本视图中用 `Ctrl + ↑ / ↓`）、批量用的权重计划、相关标签（共现与同词族，离线来自 `data/tag_related.txt`）、译名，以及收藏用的 ★。`(a, b:1.2)` 这样的分组权重是一个标签块。
+- **在行之间移动标签。** 在行内或向其他行拖动标签块（按住 `Ctrl` 或 `Alt` 为复制），也可使用右键菜单中的 `Move to…` / `Copy to…`。权重与禁用状态随标签一起移动；一次拖放为一步撤销。
+- **多选标签。** `Ctrl + 点击` 切换选择，`Shift + 点击` 扩展选择，`Ctrl + A` 选中行内全部标签块，`Esc` 取消。选中的标签可一起拖动、删除和切换，右键菜单也作用于整个选择（`Disable tag (3)`、`Move to (3)` 等）。
+- **View 行。** 角度、镜头和构图都是放在 View 行中的普通标签与 Parts，权重和搜索与其他行相同。
+- **预设。** 每行都有自己的预设（⋯ → Presets…）；卡片预设保存整个布局（行、名称、顺序和内容），应用时原样恢复。
+- **词典标记。** 不在标签词典中的标签块带波浪下划线，因为 SDXL 模型基本会忽略这类词：测试中 `long staff` 与 `ancient staff` 毫无变化，而真实标签 `wooden staff` 每次都改变了法杖。读起来像句子的标签块（四个词以上且不是已知标签）以虚线和斜体显示，并按原文发送。LoRA 标记、通配符与随机组从不标记。
+- **投稿数提示。** 投稿数少于 100 的标签带黄色点线，少于 1,000 的带灰色点线，弹窗中显示投稿数。这只是 Danbooru / e621 的投稿数参考，Diffusion 下不显示。
+
+## Parts
+常用的标签组合可以保存为一个 `parts:<名称>` 标签块。它的权重作用于其中的标签，静音、最终提示词、AI Refine、Prose 和批量展开都使用同样的标签。标签选择器的 Parts 标签页按分类并附样图列出它们；可以从当前标签新建、编辑、展开回标签或替换为其他 Part，Part 还可以带有自己的 LoRA。应用附带 295 个入门 Part（outfit、hair、body、background、camera、composition、tone、pose、expression 等）。Parts 保存在 `settings/parts.json`，样图在 `settings/parts/`。
+
+<img src="../examples/nishiki_parts.png" width=45%>
 
 ## 权重批量
-为标签设置 **权重计划**（起始、步长、结束）并运行批量：SAA 固定种子，逐张只改变权重。`÷ batch count` 选项根据批量数量自动推算步长。以非随机种子启动批量时会弹出提示。
+在弹窗中给标签设置**权重计划**（起始、步长、结束），或使用行的 ⋯ → Weights per image…，然后运行批量：SAA 固定种子逐张执行计划，只改变权重。`÷ batch count` 选项会根据批量数自动计算步长。以非随机种子开始批量时会出现警告。
 
-## 选择弹窗、收藏与列表管理器
-- 角色、原创角色、角度、镜头和标签都在一个可搜索的选择弹窗中选取，带翻译和 **收藏** 分组。收藏的标签在胶囊上也会高亮。
-- 角色槽位数量不再固定为三个，可按需添加。
-- **列表管理器**（设置 → Lists）：为角色 / 原创角色 / 角度 / 镜头列表新增、覆盖或隐藏条目。上游数据保持只读；你的编辑以差分形式保存在 `settings/user_lists.json`，可导出 / 导入。列表条目可携带多标签提示词，条目编辑器内可打开标签词典选择器。
+## 角色、收藏与列表管理器
+- Characters 卡片可放置任意数量的角色槽位（`+` / `−`），每个槽位有自己的权重；开启 Regional 时还带有所在的一侧。
+- 角色与原创角色在带译名和**收藏**分组的可搜索选择窗口中选择。可用英语、中文或日语按名称搜索，也可按所属作品筛选（`艦これ`、`kantai collection`、`FGO`）。
+- **列表管理器**（Settings → Lists）：可对角色 / OC / 角度 / 镜头列表添加、覆盖或隐藏条目。上游数据保持只读，你的修改以差异形式保存在 `settings/user_lists.json`，可导出和导入。列表条目可包含多标签提示词，条目编辑器中也能使用标签选择器。
 
 <img src="../examples/nishiki_character_select.png" width=45%>
+
+## Diffusion（Anima）
+Diffusion 是与 Checkpoint 并列的独立模型类型，sampler、scheduler、steps、CFG、尺寸、Hires、Regional 和提示词都按类型分别保存，切换类型不会把一种类型的设置带到另一种。
+- **Cast。** 每个角色槽位都有别名和自己的提示词行，Action 行用 `@别名` 写出谁做什么。
+- **Prose。** Anima 读的是英语而不是 Danbooru 标签，因此在发送图像请求之前，会把拼好的标签改写成一段英文。段落由与图像相同的已解析标签（相同的通配符、相同的权重）写成，可以编辑、还原或重新生成。写作者可以是 AI 卡片的 LLM（本地或 Pod 上的 Ollama），也可以是 **Student**——一个从 35B 模型蒸馏的 Qwen3.5-2B LoRA，由 SAA 自己启动的 llama-server 运行（在 设置 > AI 中指定可执行文件、GGUF 和端口；两者都不随应用附带）。在 12 GB 显卡上与 ComfyUI 并行时约每段 1 秒。
+- **Artist。** 收录 17,716 位 Danbooru 画师所画内容的词典，可按名称或题材搜索（`cat ears` 会找到画猫耳的画师），每张图最多指定三位画师。
+- **Regional 与 Panels** 也适用于 Diffusion（参见 [Regional Condition / Couple](#regional-condition--couple)）。
+
+## 图像记录生成配方
+- SAA 生成的每张图都带有生成它的内容（按下 Generate 时的编辑器、种子、Random 槽位选中的角色、发送的提示词、AI 的回答、Prose 段落、Fast 模式发送的值）以及各步骤的耗时，保存在 PNG 的 `saa_recipe` 与 `saa_time` 文本块中。耗时只在 ComfyUI 运行于同一台机器时写入。
+- **查看器。** Info 标签页显示当前图像的耗时（条形图与图例）、文件、模型、sampler、steps、CFG、种子（带一键填入 Seed 栏的按钮）、尺寸与处理阶段，以及实际生效的 LoRA。其他应用生成的图像也会从 PNG 文本块读取。运行时的文本在 Prompt 标签页中；★ 用于保留图像，箭头用于前后切换。
+- **Use settings…** 把图像的配方与当前编辑器并排打开，每个部分（每行的标签、Prose、LoRA、模型与 sampler、尺寸与阶段、Regional、种子）都有复选框，不同的部分默认勾选；全部勾选即可再次生成同一张图。只有 A1111 parameters 的图像也能读取。读取为一步撤销。
+- **Library。** Library 按钮按文件夹和日期打开 ComfyUI 输出文件夹与 Pod 保存文件夹中的所有图像，提供本次会话、★、带配方的视图，以及按提示词、角色、LoRA、模型、种子、文件名的搜索与筛选。侧面板提供 Use settings…、★、在文件夹中显示和移到回收站。索引与缩略图保存在 `settings/library/`，可随时从图像重建。
+
+<img src="../examples/nishiki_use_settings.png" width=45%> <img src="../examples/nishiki_library.png" width=45%>
+
+## LoRA 目录与 LoRA 卡片
+- **LoRA 标签页。** 标签选择器的 LoRA 标签页以样图网格显示每个 LoRA：关闭 LoRA 时，以及范围内的五个权重，使用当前模型和同一种子生成，不看说明也能看出效果。侧面板设置默认权重、样图范围（Take samples / Retake，样图提示词可按 LoRA 设置，也可用全局默认）、触发词、推荐用于哪些标签以及你自己的名称。推测只读取 `.safetensors` 文件头；只有按下按钮时才用文件的 sha256 查询 Civitai。目录保存在 `settings/loras.json`，样图在 `settings/loras/`。
+- **LoRA 卡片。** 每个 LoRA 一行：开关、名称、触发词（点击可从提示词中移除或加入）、在样图权重处带刻度的滑块和数值（滚轮步进 0.05，按住 Shift 为 0.25）。展开后有阶段（All、Base、Hires）、CLIP、范围和触发词。关闭某行时，它的触发词也会从提示词中移除。`+ LoRA` 单独打开 LoRA 标签页。
+- **标签、Parts 与 LoRA。** 某个 LoRA 推荐的标签上会显示 `LoRA N` 徽标，可从其弹窗中添加该 LoRA；不点击就不会添加任何东西。
+
+<img src="../examples/nishiki_lora_catalog.png" width=45%> <img src="../examples/nishiki_lora_slot.png" width=45%>
+
+## 尺寸与比例
+运行栏的 Size 为 `[横竖 | 比例 ▾] [W] [链接] [H]`。按钮左半部分交换宽高，右半部分打开 1:1、4:5、3:4、A4（1:√2）、2:3、黄金比（1:φ）、9:16 和 Free 的图块，每个图块显示对应的尺寸。选择比例会在 8 px 网格上保持像素数；链接时，输入一个框，另一个框按比例跟随。尺寸框遵循模型类型的范围（Checkpoint 512–1536，Diffusion 512–2048，上限可在设置中调整）。
+
+<img src="../examples/nishiki_size_ratio.png" width=45%>
 
 ## 撤销 / 重做
 每次提示词编辑、预设应用和 AI 重写结果都是全局编辑历史中的一个原子步骤。使用 `Ctrl + Z` / `Ctrl + Shift + Z`（或 `Ctrl + Y`）或工具栏按钮。
 
 ## AI 提示词重写器
-在上游的远程 / 本地 `llama.cpp` AI 提示词之外，Nishiki 新增了基于 [Ollama](https://ollama.com/) 的 **重写（Refine）** 模式。重写会在每个批量的第一张图之前，用一次结构化请求改写整段提示词，并逐字段应用到编辑器。重写产生的编辑会记录到编辑历史中，可以撤销。
-启用 `Regional Condition` 时，重写会同时改写左右两侧：Common、Positive、Positive (right)、Negative 以及左右各自的 Negative (left / right)。角色、Views、JSON 槽位、Wildcards、槽位 LoRA 等生成时追加的内容保持不变，并在改写后的字段周围重新组合。
-AI 结果显示在 **Info 面板的 AI 标签页** 中，不再每次生成后弹窗。
+在上游的远程 / 本地 `llama.cpp` AI 提示词之外，Nishiki 增加了基于 [Ollama](https://ollama.com/) 的 **Refine** 模式。Refine 在每批的第一张图之前，用一次结构化请求重写整个提示词，并按行把结果应用到编辑器。Refine 的修改记录在编辑历史中，可以撤销。标签中的一句普通英文动作句（见 Regional Condition 中的“谁对谁做什么”）会作为句子保留，不会被拆成标签。
+开启 `Regional` 时，Refine 会重写两侧，包括各侧的 Negative。生成时添加的内容（角色、JSON 槽位、通配符、槽位 LoRA）保持原位，并放回到重写后的行周围。
+AI 的结果显示在 **Info 面板的 AI 标签页**中，而不是每次生成后弹窗。
 
 ## 快速生成模式
-设置 → Backend → **快速生成** 应用步数蒸馏 LoRA（DMD2 / Hyper-SD / Lightning / LCM），并覆盖基础、高清修复和 ADetailer 各阶段的步数、CFG、采样器与调度器。本地 ComfyUI 与 Pod 均适用。
-在 RTX 4070 SUPER 上实测（600×1024，Hires 1.5x，ADetailer）：30 步 ≈ 29 秒 → DMD2 8 步 ≈ 16 秒。
+设置 → Backend → **Fast generation** 会应用步数蒸馏 LoRA（DMD2 / Hyper-SD / Lightning / LCM），并覆盖基础、Hires fix 与 ADetailer 各阶段的 steps、CFG、sampler 和 scheduler。本地 ComfyUI 与 Pod 均可使用。
+RTX 4070 SUPER 实测（600×1024，Hires 1.5x，ADetailer）：30 steps ≈ 29 秒 → DMD2 8 steps ≈ 16 秒。
 
-Diffusion（Anima）模型类型有自己的一组设置：Anima Turbo LoRA v0.2（强度 0.8）、8 步、CFG 1.5、euler / simple，并加上 ComfyUI 启动参数 `--use-sage-attention --fast`。启动参数作用于整个进程，因此当生成需要不同的参数时，SAA 会在生成前通过 设置 → Backend → ComfyUI process 的启动命令重启本地 ComfyUI（启动命令须把额外参数传给 `main.py`）。SAA 只会去掉它自己启动时加上的参数。在 RTX 4070 上实测（832×1216，waiANIMA）：25 步 ≈ 17–19 秒 → Turbo 8 步 + 两个参数 ≈ 4.8 秒。`--fast` 会让颜色和细节略有变化。LoRA 在 Pod 上同样适用；启动参数仅适用于本地 ComfyUI。
+Diffusion（Anima）模型类型有自己的一套：Anima Turbo LoRA v0.2 强度 0.8、8 steps、CFG 1.5、euler / simple，并加上 ComfyUI 启动参数 `--use-sage-attention --fast`。这些参数作用于整个进程，因此在需要其他参数的运行之前，SAA 会通过 设置 → Backend → ComfyUI process → 启动命令（需能把额外参数传给 `main.py`）重启本地 ComfyUI。SAA 只会去掉它自己启动 ComfyUI 时加上的参数。RTX 4070 实测（832×1216，waiANIMA）：25 steps ≈ 17–19 秒 → 带两个参数的 Turbo 8 steps ≈ 4.8 秒。`--fast` 会让颜色和细节略有变化。LoRA 在 Pod 上也可用，启动参数仅适用于本地 ComfyUI。
+
+提示词中的 LoRA 也会作用于 Hires 与 ADetailer 阶段，工作流在一张图内始终使用同一个加载了 LoRA 的模型，因此一次运行中 ComfyUI 不会重新读取模型文件。
+
+## 在 SAA 中控制本地 ComfyUI
+设置 → Backend 可以启动、重启和停止本地 ComfyUI，也可以随 SAA 一起启动。停止只会结束 SAA 正在连接的 ComfyUI；占用该端口的其他程序会显示 pid 与程序名，只有在你同意时才会结束。启动命令需要先在原生对话框中允许一次才会执行。
 
 ## Runpod Pod 目标
-在设置中注册一个 Runpod Pod（SSH 目标与密钥），然后通过工具栏中的状态胶囊在 **GPU: Local** 与 **GPU: Pod** 之间切换图像生成目标。生成的图像通过 SSH 流式传回并仅保存在本地；不会写入 Pod 的磁盘。Pod 也可以承载 LLM 功能（AI 提示词 / 重写）。Pod 端点支持带认证的 `https` / `wss` 后端。
-AI 提示词 / 重写请求同样通过这条 SSH 中继发送到 Pod 上的 Ollama。安装、Pod 重启后的恢复脚本和故障排查见 [README_POD.md](README_POD.md)。
-
-## 画廊与 Info 面板
-- Info 面板跟随画廊中选中的图像，包括其内嵌的 PNG 参数。
-- 右键菜单根据右击的对象而变化：胶囊、提示词字段、画廊图像、AI 字段。
+在设置中登记 Runpod Pod（SSH 目标与密钥），即可通过工具栏的状态标签在 **GPU: Local** 与 **GPU: Pod** 之间切换图像生成。生成的图像通过 SSH 传回，只保存在本地；不会写入 Pod 的磁盘。Pod 也可以提供 LLM 功能（AI 提示词 / 重写 / Prose）。Pod 端点支持带认证的 `https` / `wss` 后端。
+AI 提示词 / Refine 请求同样通过这条 SSH 中继发送到 Pod 上的 Ollama。安装、Pod 重启后的恢复脚本和故障排查见 [README_POD.md](README_POD.md)。
 
 ## UI 外壳
-新的视口布局、状态胶囊、生成进度指示、对话框外壳组件，以及重新设计的深色 / 浅色主题。
+- 新的视口布局、状态标签、运行进度指示以及深色 / 浅色主题。
+- 两套主题的颜色都来自同一个令牌文件 `design/tokens.json`，由 `scripts/buildThemeTokens.mjs` 写入主题文件；图标来自同一套 `scripts/shared/iconSet.js`。
+- 所有对话框的按钮顺序一致：Cancel / No 在左，主按钮在右。Esc 先关闭最前面的对话框。
+- 右键菜单因右击对象而异：标签块、提示词行、画廊图像、AI 字段。
 
 ## 设置存储
-设置按分区拆分并带有架构版本：
+设置按区块拆分并带有 schema 版本：
 - `settings/app.json` —— 应用设置（后端、路径、AI、快速模式、Pod）
-- `settings/state.json` —— 提示词 / 生成 / LoRA / ADetailer / ControlNet 的工作状态
+- `settings/state.json` —— 提示词 / 生成 / LoRA / ADetailer / ControlNet 的工作状态（按模型类型保存）
 - `settings/presets/<section>/<name>.json` —— 预设
-- `settings/user_lists.json` —— 列表管理器差分
+- `settings/user_lists.json` —— 列表管理器的差异
+- `settings/parts.json`、`settings/parts/` —— Parts 及其样图
+- `settings/loras.json`、`settings/loras/` —— LoRA 目录及其样图
+- `settings/library.json`、`settings/library/` —— ★、ComfyUI 输出文件夹、Library 索引与缩略图
 - `settings/legacy/` —— 拆分前的 `settings/*.json`，首次启动时移到这里，之后不再读取
 
-全部自动保存并采用原子写入。除内置的 MiraITU 工作流文件外，`settings/` 不受 git 管理。
+所有内容自动保存并原子写入。`settings/` 除附带的 MiraITU 工作流文件外不纳入 git。
 
 ## 版本号
-分支版本遵循 `<upstream-version>-nishiki.<generation>`（例如 `2.8.9-nishiki.1`）。基础部分跟随已合并的上游版本，每次合并上游时把 generation 重置为 `.1`；分支自身的发布则递增 generation。
+Nishiki 从 3.0.0 起使用自己的语义化版本：minor 表示新功能，patch 表示修复。上游基础版本记录在 `package.json` 的 `upstreamBase`（2.8.9）和发布说明中，合并新的上游时提升 minor。每次发布都有 `v<version>` 标签和 GitHub Release，Release 正文即更新记录（`docs/CHANGELOGS.md` 为上游的记录）。
 
 ------
 
@@ -362,15 +402,13 @@ Forge 系 ControlNet 不支持 `none(null)`，它接受 `None(String)`。
 ## LoRA 槽位
 Forge Neo（WebUI）支持其默认的 LoRA 提示词格式 `<lora:xxxxx:1.0>`。
 ComfyUI 支持更详细的 LoRA 配置，详见 [LoRA from Text](https://github.com/mirabarukaso/ComfyUI_Mira#lora)。
-点击 LoRA 槽位中的 `i` 按钮可查看 LoRA 信息；若存在与 LoRA 同名的 PNG，会显示在信息页中。
+在 Nishiki 中，LoRA 槽位就是 LoRA 卡片的各行，每个 LoRA 的效果可在标签选择器的 LoRA 标签页中查看，参见 [LoRA 目录与 LoRA 卡片](#lora-目录与-lora-卡片)。
 
 **在 ComfyUI API 中使用 LoRA 需要把 ComfyUI_Mira 更新到 0.5.6.0 或以上。**
 
-<img src="../examples/nishiki_lora_slot.png" width=45%>
-
 ## ADetailer
 > [!TIP]
-> 如果设置太复杂，只需记住调整右下角的金色参数（Denoise）。
+> 如果设置太复杂，只需记住调整槽位的最后一个数值（Denoise）。把鼠标移到字段上可看到它的名称。
 
 *ComfyUI*
 > [!CAUTION]
@@ -391,7 +429,7 @@ ComfyUI 支持更详细的 LoRA 配置，详见 [LoRA from Text](https://github.
 
 ## 队列管理器
 可以提交多个各自带有不同参数的生成任务。队列会自动开始处理并移除已完成的任务。
-若出现错误，或你取消勾选 `Enable Generation`，队列会在当前任务结束后暂停并保留。
+若出现错误，或你关闭 `Auto-start`，队列会在当前任务结束后暂停并保留。
 可以 `删除` 或 `查看详情` 队列中的任务。删除第一个任务会取消当前生成。
 *建议队列长度不要超过 10,000。*
 
@@ -428,14 +466,16 @@ __YourWildCardName__
 > 现已支持 Anima 模型。
 
 三步体验 Regional Condition：
-1. 勾选 `Regional Condition`。
+1. 在 Prompts 卡片中打开 `Regional`。
 2. 选择列表中的角色或你的 OC。
 3. 用 `duo, masterpiece, best quality, amazing quality` 开头写 `common prompt`（别忘了质量词）。
 
 *Forge Neo*
 `Regional Condition` 需要 [SD Forge Attention Couple](https://github.com/Haoming02/sd-forge-couple) [latest](https://github.com/Haoming02/sd-forge-couple/commits/main/)
 
-**左右两侧（Nishiki）。** 开启 Regional 后，Prompts 卡片把字段分为 **BOTH SIDES**（Common、Background、Style、共享 Negative 以及标记为 *Both* 的自定义字段）、**LEFT** / **RIGHT**（各侧的角色、Positive、各自的 Negative 和仅属于该侧的自定义字段）和 **ALL**（Exclude）。自定义字段的侧别在 Fields 编辑器中设置。**Swap** 一键交换左右（提示词、Negative、权重计划、角色、强度），可撤销；它取代了原来的“Swap Character”开关。点击角色行可打开角色选择器，每一侧都可从标题折叠。ComfyUI 上左右 Negative 与 Positive 使用同样的区域蒙版；Forge Neo 则合并为一个 Negative。
+**左右两侧（Nishiki）。** 开启 Regional 后，Prompts 卡片保留共享的行（Common、View、Background、Style、Negative、Exclude），并在其间显示 **LEFT** 与 **RIGHT** 两个区块，每个区块有自己的 Positive、Negative 以及仅属于该区块的行（区块内的 `+ Add field`）。角色所在的一侧在 Characters 卡片的各槽位上设置（L / R / ·），区块会标出它对应的槽位。**Swap** 一步交换左右（提示词、Negative、权重计划、角色、强度），可撤销。`Split Ratio` 移动分界，`Overlap` 加宽共享带。ComfyUI 中左右 Negative 与 Positive 一样按区域遮罩；Forge Neo 会把它们合并为一个 Negative。Regional 也适用于 Diffusion（Anima）。
+
+**Panels。** 打开 `Panels` 开关后，会把分割线标签与各区域遮罩组合成两格分镜构图。默认关闭。
 
 <img src="../examples/nishiki_regional.png" width=35%>
 
@@ -495,19 +535,19 @@ __YourWildCardName__
 <img src="../examples/nishiki_character_select.png" width=45%>
 
 ## 顶部按钮与右键菜单
-顶部按钮从左到右：保存设置、重新加载模型列表、刷新页面、从右到左、主题切换、撤销、重做、GPU 目标（Local / Pod）。
+顶部栏从左到右：模型、重新加载模型列表、Fast 模式、后端状态（GPU 目标 Local / Pod）、撤销、重做、从右到左、设置。主题切换在 设置 → General，刷新页面在 设置 → Advanced；设置会自动保存。
 
 <details>
 <summary>右键菜单</summary>
 
-菜单内容取决于右击的对象：胶囊（编辑权重、启用 / 禁用、相关标签、复制、删除、移动 / 复制到其他字段）、提示词字段（复制 / 清空字段、启用 / 禁用全部标签、发送 LoRA 到槽位、移动 / 复制选中内容）、画廊图像（复制图像 / 元数据、移除当前图像、清空画廊）、AI 字段（测试 AI 生成）。
+菜单内容取决于右击的对象：标签块（编辑权重、启用 / 禁用、相关标签、复制、删除、移动 / 复制到其他字段）、提示词字段（复制 / 清空字段、启用 / 禁用全部标签、发送 LoRA 到槽位、移动 / 复制选中内容）、画廊图像（复制图像 / 元数据、移除当前图像、清空画廊）、AI 字段（测试 AI 生成）。
 
 **拼写检查（英语）**
 右击带拼写错误（波浪下划线）的单词可查看建议。
 <img src="../examples/nishiki_spell_check.png" width=45%>
 
 **AI 提示词生成测试**
-右击 `AI prompt` 字段可在不生成图像的情况下获取 AI 提示词。结果显示在 Info 面板的 AI 标签页中；把 AI 规则切换为 `Last` 可在后续生成中沿用该结果。
+右击 `AI prompt` 字段可在不生成图像的情况下获取 AI 提示词。结果以弹窗显示；把 AI 规则切换为 `Last` 可在后续生成中沿用该结果。
 <img src="../examples/nishiki_ai_prompt_test.png" width=45%>
 
 **复制图像 / 元数据**
@@ -672,5 +712,5 @@ ComfyUI/WebUI is busy, cannot run new generation, please try again later.
 参见 [README_SAAC.md](README_SAAC.md) 中的第 5、6 条。
 
 我的设置和预设在哪里？
-1. `settings/app.json`、`settings/state.json`、`settings/presets/`、`settings/user_lists.json`。参见[设置存储](#设置存储)。
+1. `settings/app.json`、`settings/state.json`、`settings/presets/`、`settings/user_lists.json`，以及旁边的 Parts、LoRA 目录和 Library 文件。参见[设置存储](#设置存储)。
 2. Nishiki 之前的 `settings/*.json` 会在首次启动时移到 `settings/legacy/`。

@@ -3,9 +3,9 @@
 **English** | [日本語](docs/README.ja.md) | [简体中文](docs/README.zh-CN.md)
 
 A fork of [Character Select SAA](https://github.com/mirabarukaso/character_select_stand_alone_app) — a stand-alone app with AI prompt, semi-auto tag complete and ComfyUI / Forge Neo (WebUI) API support.
-Nishiki adds Japanese tag translation, a capsule-based prompt editor with custom fields and presets, an editable list manager, undo/redo, an AI prompt refiner, a fast generation mode and a Runpod pod target.
+Nishiki adds Japanese tag translation, a row-based prompt editor with tag chips, Parts, Diffusion (Anima) as a model type of its own with Cast and Prose, images that keep the recipe they were made with, a Library, a LoRA catalog with sample grids, an AI prompt refiner, a fast generation mode and a Runpod pod target.
 
-Current release: **v2.8.9-nishiki.1** — based on upstream SAA v2.8.9. See [Releases](https://github.com/FUMIHITO-EGUCHI/saa-nishiki/releases) for downloads and release notes.
+Current release: **v4.1.0** — on upstream SAA 2.8.9. See [Releases](https://github.com/FUMIHITO-EGUCHI/saa-nishiki/releases) for downloads and release notes.
 
 <img src="examples/nishiki_overall.png" width=75%>
 
@@ -23,45 +23,75 @@ Current release: **v2.8.9-nishiki.1** — based on upstream SAA v2.8.9. See [Rel
 # What Nishiki adds
 
 ## Japanese tag translation and localization
-- Search and display tags in Japanese through a dictionary of about 100k entries covering the merged danbooru / e621 tag list (`data/danbooru_e621_merged_ja.csv`).
-- Localized character and official-work names, plus tag category labels.
+- Search and display tags in Japanese through a dictionary of about 100k entries covering the merged danbooru / e621 tag list (`data/danbooru_e621_merged_ja.csv`). Every group but the artists and e621 Character is reviewed down to heat 10 (ten posts).
+- The tag search ranks the whole dictionary, prefix matches first and the popular tag first within a band, and loads the next 50 rows as you scroll; the last line counts the matches. A row shows the translation and the alias it matched by, and a space in the typed word matches the `_` of a tag (`white d` finds `white_dress`).
+- Localized character and official-work names, plus tag category labels. The tag search and the character picker show the same names.
 - Select `ja-JP` as the UI language in Settings. Tags, names and categories are shown in Japanese; UI strings that have no Japanese entry fall back to English.
 
 <img src="examples/nishiki_jp_tag_search.png" width=75%>
 
 ## Prompt editor
-The plain textboxes are replaced by a field list with one large focus editor. Every field can be viewed as **capsules** (one chip per tag) or as **plain text**; the view mode is shared across all fields.
+The Prompts card is one list of rows: Common, View, Background, Style, Positive, Negative, Exclude and the rows you add. Each row shows its tags as **chips**; the grip moves the row, the ● switch mutes it, a double-click on the name renames it, and the ⋯ menu holds the rest (Show as text / Show as chips, Insert part…, Weights per image…, Presets…, Make negative / Make positive, Rename, Delete field). `+ Add field` adds a row of your own. The final prompt is assembled from the rows in their order.
 
-<img src="examples/nishiki_tag_capsules.png" width=75%>
+<img src="examples/nishiki_tag_capsules.png" width=45%>
 
-- **Custom prompt fields.** Add, rename, reorder and remove your own fields (for example `Face`, `Body`, `Background`, `Style`) in both the positive and the negative group. The final prompt is assembled from the fields in the order you arrange them.
-- **Per-tag weight.** Click a capsule to open the weight popover, or use `Ctrl + Up / Down` in text mode. A batch dialog changes the weight of several tags at once.
-- **One-touch tag toggle.** Disable a tag without deleting it; disabled tags are kept in the field but excluded from generation.
-- **Move tags between fields.** Drag a capsule onto a row of the field list on the left (the LEFT / RIGHT rows in Regional mode included) or onto another field's chip row (hold `Ctrl` or `Alt` to copy), or use `Move to…` / `Copy to…` in the right-click menu. Weight and disabled state travel with the tag. In text mode the same commands work on the selected text.
-- **Select several tags.** `Ctrl + click` toggles a capsule, `Shift + click` extends the selection, `Ctrl + A` selects every capsule in the field, `Esc` clears. A selected capsule drags the whole selection (reorder inside the field or drop onto another field), `Delete` removes it, the enable dot flips it, and the right-click menu acts on it (`Disable tag (3)`, `Move to (3)`, …).
-- **Fields editor with sides.** While Regional is on, `Fields ⇅` shows each chain as the same **BOTH SIDES / LEFT / RIGHT** blocks as the Prompts card. Drag a row to reorder it, or drop a custom field into another block to change its side; the arrow and side buttons remain.
-- **Presets.** Each field has its own preset list. A prompt preset stores the whole field layout (fields, names, order and content); applying one restores that layout exactly.
-- **Related-tag suggestions (offline).** Focus a capsule and a strip below the field shows tags that often appear together (from a bundled co-occurrence dictionary, `data/tag_related.txt`) and tags from the same word family. Click to insert; toggle the feature with the ✦ button in the field footer.
-- **Dictionary marks.** A capsule whose tag is not in the tag dictionary gets a wavy underline, because SDXL models mostly ignore such words: in tests `long staff` and `ancient staff` changed nothing, while the real tag `wooden staff` changed the staff every time. A capsule that reads like a sentence (four or more words and not a known tag) is drawn dashed and italic, and is sent as written. LoRA tokens, wildcards and random groups are never marked.
-- **Search.** The autocomplete matches the beginning, the middle and the end of tag names by default.
-- The text editor grows with its content, so long prompts never get clipped.
+- **Chips.** A chip shows its state at the left (✓ on, − off, ★ favourite, × excluded) and its weight or weight plan at the right. A click on the ✓ switches the tag off without deleting it. `+ Tag` opens the tag picker with its Tags, Parts and LoRA tabs.
+- **Weight popover.** A click on a chip opens its weight (`Ctrl + Up / Down` in text view), a weight plan for batches, the related tags (co-occurrence and the same word family, offline from `data/tag_related.txt`), its translation and ★ for the favourites. Grouped weights such as `(a, b:1.2)` are one chip.
+- **Move tags between rows.** Drag a chip within its row or onto another row (hold `Ctrl` or `Alt` to copy), or use `Move to…` / `Copy to…` in the right-click menu. The weight and the off state travel with the tag; one drop is one undo step.
+- **Select several tags.** `Ctrl + click` toggles a chip, `Shift + click` extends the selection, `Ctrl + A` selects every chip in the row, `Esc` clears. A selection drags, deletes and switches together, and the right-click menu acts on it (`Disable tag (3)`, `Move to (3)`, …).
+- **The View row.** Angle, camera and composition are ordinary tags and parts in the View row, with the weights and the search of any other row.
+- **Presets.** Each row has its own presets (⋯ → Presets…); the card's preset stores the whole layout (rows, names, order and content) and restores it exactly.
+- **Dictionary marks.** A chip whose tag is not in the dictionary gets a wavy underline, because SDXL models mostly ignore such words: in tests `long staff` and `ancient staff` changed nothing, while the real tag `wooden staff` changed the staff every time. A chip that reads like a sentence (four or more words and not a known tag) is drawn dashed and italic and sent as written. LoRA tokens, wildcards and random groups are never marked.
+- **Post counts.** A tag under 100 posts gets a yellow dotted mark and one under 1,000 a grey one; the popover shows the count. It is the Danbooru / e621 count, a hint only, and is not shown for Diffusion.
+
+## Parts
+A favourite bundle of tags can be saved as one `parts:<name>` chip. Its weight carries to the tags inside, and mute, the final prompt, AI Refine, Prose and the batch expansion all see the same tags. The Parts tab of the tag picker lists them by category with a sample grid; a part can be created from the current tags, edited, expanded back into tags or swapped for another, and can carry LoRAs of its own. A starter set of 295 parts (outfit, hair, body, background, camera, composition, tone, pose, expression, …) ships with the app. Parts are stored in `settings/parts.json`, their samples in `settings/parts/`.
+
+<img src="examples/nishiki_parts.png" width=45%>
 
 ## Weight batches
-Give a tag a **weight plan** (start, step, end) and run a batch: SAA walks the plan one image at a time, keeping the seed fixed so only the weight changes. The `÷ batch count` option derives the step from the batch size automatically. A warning appears when you start a batch with a non-random seed.
+Give a tag a **weight plan** (start, step, end) in its popover, or use ⋯ → Weights per image… on a row, and run a batch: SAA walks the plan one image at a time, keeping the seed fixed so only the weight changes. The `÷ batch count` option derives the step from the batch size. A warning appears when you start a batch with a non-random seed.
 
-## Selection modal, favorites and list manager
-- Characters, original characters, angles, cameras and tags are chosen in a searchable selection modal with translations and a **favorites** group. Favorite tags are highlighted on capsules as well.
-- The number of character slots is no longer fixed to three; add as many as you need.
-- **List manager** (Settings → Lists): add, override or hide entries of the character / OC / angle / camera lists. Upstream data stays read-only; your edits are saved as a diff in `settings/user_lists.json` and can be exported and imported. List entries can carry multi-tag prompts, and the tag dictionary picker is available inside the entry editor.
+## Characters, favorites and list manager
+- The Characters card holds as many character slots as you need (`+` / `−`), each with its weight. While Regional is on, each slot carries its side.
+- Characters and original characters are chosen in a searchable picker with translations and a **favorites** group. Search finds a character by name in English, Chinese or Japanese and by the work it belongs to (`艦これ`, `kantai collection`, `FGO`).
+- **List manager** (Settings → Lists): add, override or hide entries of the character / OC / angle / camera lists. Upstream data stays read-only; your edits are saved as a diff in `settings/user_lists.json` and can be exported and imported. List entries can carry multi-tag prompts, and the tag picker is available inside the entry editor.
 
 <img src="examples/nishiki_character_select.png" width=45%>
+
+## Diffusion (Anima)
+Diffusion is a model type of its own beside Checkpoint, with its own sampler, scheduler, steps, CFG, size, Hires, Regional and prompts, so switching types never carries one type's settings into the other.
+- **Cast.** Every character slot gets an alias and a prompt row of its own, and the Action row says who does what with `@alias`.
+- **Prose.** Anima reads English, not Danbooru tags, so before the image request goes out the assembled tags are rewritten as one English paragraph, written from the same resolved tags the image uses (the same wildcards and the same weights). The paragraph can be edited, reverted or asked for again. The writer is the LLM of the AI card (Ollama, local or on the pod) or the **Student**, a Qwen3.5-2B LoRA distilled from a 35B model, which SAA runs on its own llama-server (Settings → AI names the executable, the GGUF and the port; neither ships with the app). About a second a paragraph on a 12 GB card next to ComfyUI.
+- **Artist.** A dictionary of what 17,716 Danbooru artists draw, searchable by name or subject (`cat ears` finds the artists who draw them), with up to three artists per image.
+- **Regional and Panels** work for Diffusion too (see [Regional Condition / Couple](#regional-condition--couple)).
+
+## Images keep their recipe
+- Every image SAA makes carries what made it (the editor as Generate found it, the seed, the character a Random slot picked, the prompts sent, the AI answer, the Prose paragraph, what Fast mode sent) and how long each step took, as the `saa_recipe` and `saa_time` text chunks of the PNG. The time is written for a ComfyUI on the same machine.
+- **Viewer.** The Info tab shows the image on show: the time as a bar and a legend, the file, model, sampler, steps, CFG, the seed (with a button that puts it in the Seed field), the size and passes, and the LoRAs that ran. Images made elsewhere are read from their PNG chunks. The Prompt tab holds the run's text; the star keeps an image, and the arrows step through them.
+- **Use settings…** opens an image's recipe beside the editor, one checkbox per section (tags per row, Prose, LoRA, model and sampler, size and passes, Regional, seed). The rows that differ start checked; checking them all makes the picture again. An image with only A1111 parameters loads too. Loading is one undo step.
+- **Library.** The Library button opens every image in ComfyUI's output folder and the pod's save folder, by folder and day, with views for this session, the starred images and those with a recipe, a search over prompt, characters, LoRA, model, seed and file name, and filters. The side panel offers Use settings…, the star, Show in folder and Move to trash. The index and thumbnails are kept in `settings/library/` and can be rebuilt from the images.
+
+<img src="examples/nishiki_use_settings.png" width=45%> <img src="examples/nishiki_library.png" width=45%>
+
+## LoRA catalog and LoRA card
+- **LoRA tab.** The tag picker's LoRA tab shows every LoRA as its sample grid: the LoRA off, then five weights over its range, on the current model with one seed, so the effect shows without a description. A side panel sets the default weight, the range of the samples (Take samples / Retake, with a sample prompt per LoRA or a default for all), the trigger words, the tags it is suggested for and a name of your own. The guesses come from the `.safetensors` header only; Civitai is asked only from its button, by the file's sha256. The catalog lives in `settings/loras.json`, the samples in `settings/loras/`.
+- **LoRA card.** Each LoRA is one row: an on/off switch, the name, its trigger words (a click takes one out of the prompt or puts it in), a slider with ticks at the sample weights and the number (the wheel steps 0.05, 0.25 with Shift). The fold holds the stage (All, Base, Hires), CLIP, the range and the trigger words. Switching a row off also takes its trigger words out of the prompt. `+ LoRA` opens the LoRA tab alone.
+- **Tags and parts meet the LoRAs.** A chip that a LoRA is suggested for carries a `LoRA N` badge whose popover adds the LoRA; nothing is added without that click.
+
+<img src="examples/nishiki_lora_catalog.png" width=45%> <img src="examples/nishiki_lora_slot.png" width=45%>
+
+## Size and aspect ratio
+The run bar's Size is `[turn | ratio ▾] [W] [chain] [H]`. The left half of the chip swaps width and height; the right half opens tiles for 1:1, 4:5, 3:4, A4 (1:√2), 2:3, Golden (1:φ), 9:16 and Free, each with the size it would give. A ratio keeps the pixel count on the 8 px grid; with the chain linked, typing one box moves the other along the ratio. The size boxes follow the model type's range (Checkpoint 512–1536, Diffusion 512–2048, the upper bound adjustable in Settings).
+
+<img src="examples/nishiki_size_ratio.png" width=45%>
 
 ## Undo / redo
 Every prompt edit, preset application and AI refine result is an atomic step in a global edit history. Use `Ctrl + Z` / `Ctrl + Shift + Z` (or `Ctrl + Y`) or the toolbar buttons.
 
 ## AI prompt refiner
-In addition to upstream's remote / local `llama.cpp` AI prompt, Nishiki adds a **Refine** mode backed by [Ollama](https://ollama.com/). Refine rewrites the whole prompt with one structured request per batch before the first image, and applies the result field by field to the editor. Refine edits are recorded in the edit history and can be undone. A plain English action sentence among the tags (see *Who does what to whom* under Regional Condition) is kept as a sentence, not broken into tags.
-While `Regional Condition` is on, Refine rewrites both sides: Common, Positive, Positive (right), Negative and the per-side Negative (left / right). Everything generation adds - characters, Views, JSON slots, Wildcards, slot LoRA - is left where it was and put back around the rewritten fields.
+In addition to upstream's remote / local `llama.cpp` AI prompt, Nishiki adds a **Refine** mode backed by [Ollama](https://ollama.com/). Refine rewrites the whole prompt with one structured request per batch before the first image, and applies the result row by row to the editor. Refine edits are recorded in the edit history and can be undone. A plain English action sentence among the tags (see *Who does what to whom* under Regional Condition) is kept as a sentence, not broken into tags.
+While `Regional` is on, Refine rewrites both sides, the per-side negatives included. Everything generation adds - characters, JSON slots, Wildcards, slot LoRA - is left where it was and put back around the rewritten rows.
 The AI result is shown in the **AI tab of the Info panel** instead of a pop-up after every generation.
 
 ## Fast generation mode
@@ -70,29 +100,36 @@ Measured on a RTX 4070 SUPER (600×1024, Hires 1.5x, ADetailer): 30 steps ≈ 29
 
 The Diffusion (Anima) model type has its own set: the Anima Turbo LoRA v0.2 at 0.8, 8 steps, CFG 1.5, euler / simple, plus the ComfyUI flags `--use-sage-attention --fast`. Those flags are process-wide, so before a run that needs other flags SAA restarts the local ComfyUI through Settings → Backend → ComfyUI process → launch command (which has to pass extra arguments on to `main.py`). SAA only takes away flags it launched ComfyUI with itself. Measured on a RTX 4070 (832×1216, waiANIMA): 25 steps ≈ 17–19 s → Turbo 8 steps with both flags ≈ 4.8 s. `--fast` shifts colours and small details a little. The LoRA works on the pod too; the flags only on the local ComfyUI.
 
+The prompt's LoRAs reach the Hires and ADetailer passes as well, and the workflows keep one LoRA'd model through an image, so ComfyUI does not read the model file again within a run.
+
+## The local ComfyUI, from inside SAA
+Settings → Backend can start, restart and stop the local ComfyUI, and can bring it up together with SAA. Stop ends only the ComfyUI SAA talks to; anything else holding the port is named with its pid and program and ended only if you say so. A launch command runs only after you allow it once in a native dialog.
+
 ## Runpod pod target
-Register a Runpod pod (SSH target and key) in Settings and switch image generation between **GPU: Local** and **GPU: Pod** with the status pill in the toolbar. Generated images stream back over SSH and are saved locally only; nothing is written to the pod's disks. The pod can also serve the LLM features (AI prompt / refine). `https` / `wss` backends with authentication are supported for pod endpoints.
+Register a Runpod pod (SSH target and key) in Settings and switch image generation between **GPU: Local** and **GPU: Pod** with the status pill in the toolbar. Generated images stream back over SSH and are saved locally only; nothing is written to the pod's disks. The pod can also serve the LLM features (AI prompt / refine / Prose). `https` / `wss` backends with authentication are supported for pod endpoints.
 The AI prompt / Refine requests go to an Ollama on the pod through the same SSH relay. Setup, the restore script for pod restarts and troubleshooting: [README_POD.md](docs/README_POD.md).
 
-## Gallery and Info panel
-- The Info panel follows the image selected in the gallery, including the embedded PNG parameters.
-- Context menus are specific to what you right-click: a capsule, a prompt field, a gallery image, the AI field.
-
 ## UI shell
-New viewport layout, status pills, run progress indicators, dialog shell components and refreshed dark / light themes.
+- New viewport layout, status pills, run progress indicators and dark / light themes.
+- The colours of both themes come from one token file, `design/tokens.json`, which `scripts/buildThemeTokens.mjs` writes into the theme files; the icons come from one set, `scripts/shared/iconSet.js`.
+- Every dialog has the same footer order: Cancel / No on the left, the primary button on the right. Esc takes the way out of the front dialog first.
+- Context menus are specific to what you right-click: a chip, a prompt row, a gallery image, the AI field.
 
 ## Settings store
 Settings are split into sections with a schema version:
 - `settings/app.json` — application settings (backend, paths, AI, fast mode, pod)
-- `settings/state.json` — prompt / generation / LoRA / ADetailer / ControlNet working state
+- `settings/state.json` — prompt / generation / LoRA / ADetailer / ControlNet working state, kept per model type
 - `settings/presets/<section>/<name>.json` — presets
 - `settings/user_lists.json` — list manager diff
+- `settings/parts.json`, `settings/parts/` — parts and their samples
+- `settings/loras.json`, `settings/loras/` — the LoRA catalog and its samples
+- `settings/library.json`, `settings/library/` — stars, ComfyUI's output folder, the Library index and thumbnails
 - `settings/legacy/` — pre-split `settings/*.json` files, moved here on first start and never read again
 
 Everything is autosaved with atomic writes. `settings/` is ignored by git except the bundled MiraITU workflow files.
 
 ## Versioning
-Fork versions follow `<upstream-version>-nishiki.<generation>` (for example `2.8.9-nishiki.1`). The base tracks the merged upstream version and is reset to `.1` on every upstream merge; the generation counts fork-side releases.
+Nishiki has its own semantic version since 3.0.0: minor for new features, patch for fixes. The upstream base is recorded as `upstreamBase` in `package.json` (2.8.9) and in the release notes; merging a newer upstream raises the minor version. Each release is a `v<version>` tag with a GitHub Release whose notes are the change log (`docs/CHANGELOGS.md` is upstream's).
 
 ------
 
@@ -192,7 +229,7 @@ The DevTools endpoint is available at `http://127.0.0.1:9222/json/list` while SA
 
 ### Tests: unit and end-to-end (maintainers)
 
-`npm test` runs the unit suite (`tests/*.test.mjs`, about 1,170 tests) on an in-memory DOM in a few seconds. It pins how the components and the main-process modules behave; it does not model layout, scrolling or a real backend.
+`npm test` runs the unit suite (`tests/*.test.mjs`, about 1,400 tests) on an in-memory DOM in a few seconds. It pins how the components and the main-process modules behave; it does not model layout, scrolling or a real backend.
 
 `npm run test:e2e` runs the end-to-end stories in `tests/e2e/*.e2e.mjs`: the real app (Electron, with a settings folder of its own) against the real local ComfyUI, driven the way a person drives it and judged by what ComfyUI was asked to run (`/history`) and by what the gallery received. It needs, on this machine:
 
@@ -382,15 +419,13 @@ All `Post-processor` models (the `Apply ControlNet Model`) must be downloaded by
 ## LoRA Slot
 Forge Neo (WebUI) supports its default LoRA prompt style `<lora:xxxxx:1.0>`.
 ComfyUI supports more detailed LoRA configuration; see [LoRA from Text](https://github.com/mirabarukaso/ComfyUI_Mira#lora).
-Click the `i` button in a LoRA slot to view LoRA info. If a PNG with the same name as the LoRA exists, it is shown on the info page.
+In Nishiki the LoRA slots are the rows of the LoRA card, and the LoRA tab of the tag picker shows what each LoRA does; see [LoRA catalog and LoRA card](#lora-catalog-and-lora-card).
 
 **To use LoRA with the ComfyUI API, update ComfyUI_Mira to 0.5.6.0 or above.**
 
-<img src="examples/nishiki_lora_slot.png" width=45%>
-
 ## ADetailer
 > [!TIP]
-> If the settings are confusing, just remember to adjust the gold parameter in the bottom-right corner (Denoise).
+> If the settings are confusing, just remember to adjust the last number of a slot (Denoise). Hover over a field to see its name.
 
 *For ComfyUI*
 > [!CAUTION]
@@ -411,7 +446,7 @@ Put your `ADetailer` models in `sd-webui-forge-neo\\models\\adetailer` or `stabl
 
 ## Queue Manager
 Submit multiple generation tasks, each with its own parameters. The queue processes them automatically and removes completed tasks.
-If an error occurs, or if you uncheck `Enable Generation`, the queue pauses after the current task and is preserved.
+If an error occurs, or if you switch off `Auto-start`, the queue pauses after the current task and is preserved.
 You can `delete` or `view details` of queued tasks. Deleting the first task cancels the current generation.
 *The queue length should not exceed 10,000.*
 
@@ -448,18 +483,20 @@ Inline alternatives also work:
 > Now supports the Anima model.
 
 Try Regional Condition in 3 steps:
-1. Check the `Regional Condition` checkbox.
+1. Switch on `Regional` in the Prompts card.
 2. Choose a listed character or your OC.
 3. Start the `common prompt` with `duo, masterpiece, best quality, amazing quality` (don't forget quality words), have fun!
 
 *For Forge Neo*
 `Regional Condition` requires [SD Forge Attention Couple](https://github.com/Haoming02/sd-forge-couple) [latest](https://github.com/Haoming02/sd-forge-couple/commits/main/)
 
-**Sides (Nishiki).** With Regional on, the Prompts card groups the fields into **BOTH SIDES** (Common, Background, Style, the shared Negative and custom fields marked *Both*), **LEFT** and **RIGHT** (each side's character, its Positive, its own Negative and its side-only custom fields) and **ALL** (Exclude). Every custom field gets a side in the Fields editor. **Swap** exchanges left and right in one step (prompts, negatives, weight plans, characters, strengths) and can be undone; it replaces the old *Swap Character* switch. The character rows open the character picker, and each side collapses from its header. On ComfyUI the left and right negatives are masked like the positives; Forge Neo folds them into one negative.
+**Sides (Nishiki).** With Regional on, the Prompts card keeps the shared rows (Common, View, Background, Style, Negative, Exclude) and shows a **LEFT** and a **RIGHT** block between them, each with its own Positive, Negative and rows of its own (`+ Add field` in the block). The side of each character is set on its slot in the Characters card (L / R / ·), and the blocks name the slots they take. **Swap** exchanges left and right in one step (prompts, negatives, weight plans, characters, strengths) and can be undone. `Split Ratio` moves the border and `Overlap` widens the shared band. On ComfyUI the left and right negatives are masked like the positives; Forge Neo folds them into one negative. Regional works for Diffusion (Anima) too.
+
+**Panels.** The `Panels` switch combines a split-line tag with the region masks into a two-panel layout. Off by default.
 
 **Split and emphasis.** `Split` cuts the image **Left / Right** or **Top / Bottom**. With Top / Bottom the LEFT / RIGHT blocks read **TOP** / **BOTTOM**: the left prompt goes to the top region and the right prompt to the bottom one (ComfyUI and Forge Neo). Top / Bottom suits a scene where one character's head really is in the lower part (lying down, sitting on the floor): with two standing characters both heads fall in the top region, and in the regional bench all 6 results drew the top prompt's character twice. `Emphasis` (formerly *Strength*) only works as a difference between the two sides. The same value on both sides changes nothing, because the combined conditioning is normalized; a gap makes one side more prominent without changing what the characters do.
 
-**Who does what to whom.** Regions keep two characters' looks apart, but they do not decide an interaction. Write the action as one short English sentence after the tags, actor first, and name each character by a look that is already in the tags (hair colour works best), e.g. `the black haired girl is patting the blonde girl's head`. Naming them by position (`the girl on the left`) was not tested. `Fields editor → + Action sentence` adds a Both-sides field for it at the end of the chain. On WAI Illustrious, a sentence after the tags got the direction right in 9 of 15 test images, against 3 of 15 for the sentence alone. Keep looks out of the sentence: its adjectives can spill onto hair or clothes.
+**Who does what to whom.** Regions keep two characters' looks apart, but they do not decide an interaction. Write the action as one short English sentence after the tags, actor first, and name each character by a look that is already in the tags (hair colour works best), e.g. `the black haired girl is patting the blonde girl's head`. Naming them by position (`the girl on the left`) was not tested. Give it a row of its own named `Action` (`+ Add field`): a row of that name stays text when the card shows chips. On WAI Illustrious, a sentence after the tags got the direction right in 9 of 15 test images, against 3 of 15 for the sentence alone. Keep looks out of the sentence: its adjectives can spill onto hair or clothes.
 
 <img src="examples/nishiki_regional.png" width=35%>
 
@@ -641,7 +678,7 @@ Double-click the image to close.
 The `Send` button overrides `Common Prompt`, `Negative Prompt`, `Width & Height`, `CFG`, `Step` and `Seed`.
 LoRA in `Common Prompt` also works if you have the same one. If you don't like LoRA in prompts, try `Send LoRA to Slot`.
 
-A generated image can be opened the same way: the gallery's `Info` button opens the shown image in `Image Info`, and the image context menus (split, grid and full-screen view) have `Open in Image Info`. From there `Send tags`, `Add ControlNet`, `Run Tagger` and `Tiled-Upscale` work on that image.
+A generated image can be opened the same way: the image context menus (split, grid and full-screen view) have `Open in Image Info`. From there `Send tags`, `Add ControlNet`, `Run Tagger` and `Tiled-Upscale` work on that image.
 
 <img src="examples/nishiki_image_info.png" width=45%>
 </details>
@@ -656,19 +693,19 @@ The Character List supports keyword search in English, Chinese and Japanese, and
 <img src="examples/nishiki_character_select.png" width=45%>
 
 ## Top buttons and Right Click Menu
-Top buttons from left to right: Save Settings, Reload Model List, Refresh page, Right to Left, Theme Switch, Undo, Redo, GPU target (Local / Pod).
+Top bar from left to right: the model, Reload Model List, Fast mode, the backend status (GPU target Local / Pod), Undo, Redo, Right to Left and Settings. The theme switch is in Settings → General and Refresh page in Settings → Advanced; settings are saved automatically.
 
 <details>
 <summary>Right-click menus</summary>
 
-Menus depend on what you right-click: a capsule (edit weight, enable / disable, related tags, copy, remove, move / copy to another field), a prompt field (copy / clear field, enable / disable all tags, send LoRA to slot, move / copy the selection), a gallery image (copy image / metadata, remove current image, clear gallery), the AI field (test AI generate).
+Menus depend on what you right-click: a chip (edit weight, enable / disable, related tags, copy, remove, move / copy to another field), a prompt field (copy / clear field, enable / disable all tags, send LoRA to slot, move / copy the selection), a gallery image (copy image / metadata, remove current image, clear gallery), the AI field (test AI generate).
 
 **Spell Check (English)**
 Right-click a word with a spell check error (wavy underline) to see suggestions.
 <img src="examples/nishiki_spell_check.png" width=45%>
 
 **AI prompt generate test**
-Right-click the `AI prompt` field to get an AI prompt without generating. The result is shown in the AI tab of the Info panel; switch the AI rule to `Last` to reuse it in later generations.
+Right-click the `AI prompt` field to get an AI prompt without generating. The result opens in a pop-up; switch the AI rule to `Last` to reuse it in later generations.
 <img src="examples/nishiki_ai_prompt_test.png" width=45%>
 
 **Copy Image/Metadata**
@@ -833,5 +870,5 @@ ComfyUI/WebUI is busy, cannot run a new generation, please try again later.
 Refer to 5 and 6 in [README_SAAC.md](docs/README_SAAC.md).
 
 Where are my settings and presets?
-1. `settings/app.json`, `settings/state.json`, `settings/presets/`, `settings/user_lists.json`. See [Settings store](#settings-store).
+1. `settings/app.json`, `settings/state.json`, `settings/presets/`, `settings/user_lists.json`, and the parts, LoRA catalog and Library files beside them. See [Settings store](#settings-store).
 2. Pre-Nishiki `settings/*.json` files are moved to `settings/legacy/` on first start.
