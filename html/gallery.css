@@ -388,12 +388,18 @@
     align-items: center;
 }
 
+/* the number cells are wide enough for "0.35" and "1024"; the page's CSP drops style=""
+   attributes, so a cell that spans two columns says so with .slot-span-2 */
 .slot-row.add-row, .slot-row.content-row {
-    grid-template-columns: 0.5fr 7fr 1fr 1fr 1fr 0.5fr; 
+    grid-template-columns: 26px minmax(0, 1fr) 56px 64px 64px 76px;
 }
 
 .slot-row.adetailer-row {
-    grid-template-columns: 0.5fr 7fr 0.75fr 0.75fr 2fr;
+    grid-template-columns: 26px minmax(0, 1fr) 56px 56px 136px;
+}
+
+.slot-row .slot-span-2 {
+    grid-column: span 2;
 }
 
 .slot-row.queue-row {

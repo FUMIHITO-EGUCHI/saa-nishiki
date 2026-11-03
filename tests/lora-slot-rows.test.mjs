@@ -170,6 +170,16 @@ test('a prompt\'s LoRA tags are parsed back into rows, one mode per pair', () =>
     delete globalThis.cachedFiles;
 });
 
+test('an A1111 LoRA tag finds its file without the folder and the extension, and its one weight is both', () => {
+    globalThis.cachedFiles = { loraList: [...LORA_LIST, 'pose/stand.safetensors', 'stand.safetensors'] };
+    assert.deepEqual(rowsFromLoraTags('<lora:detail:0.6>'), [['detail.safetensors', '0.6', '0.6', 'ALL']]);
+    assert.deepEqual(rowsFromLoraTags('<lora:anime:0.8:0.5>'), [['style/anime.safetensors', '0.8', '0.5', 'ALL']], 'the folder is not part of the tag');
+    assert.deepEqual(rowsFromLoraTags('<lora:Detail:1>'), [['detail.safetensors', '1', '1', 'ALL']], 'file names on Windows ignore case');
+    assert.deepEqual(rowsFromLoraTags('<lora:stand:0.7>'), [['stand', '0.7', '0.7', 'OFF']], 'two files answer to the name: no guess, the row stays off with its weight');
+    assert.deepEqual(rowsFromLoraTags('<lora:gone:0.7>'), [['gone', '0.7', '0.7', 'OFF']], 'a file the installation lacks keeps its weight, off');
+    delete globalThis.cachedFiles;
+});
+
 test('a LoRA the installation does not have keeps its name, switched off, never another file', async () => {
     const warnings = [];
     const realWarn = console.warn;
@@ -188,7 +198,7 @@ test('a LoRA the installation does not have keeps its name, switched off, never 
             assert.ok(warnings.some(line => line.includes('moved-away.safetensors') && line.includes('switched off')), 'and it is reported');
 
             manager.flushSlot('<lora:gone.safetensors:0.8:0.8><lora:detail.safetensors:0.5:0.5>');
-            assert.deepEqual(manager.getValues()[0], ['gone.safetensors', '0', '0', 'OFF'], 'from a prompt too');
+            assert.deepEqual(manager.getValues()[0], ['gone.safetensors', '0.8', '0.8', 'OFF'], 'from a prompt too, its strengths kept');
         });
     } finally {
         console.warn = realWarn;

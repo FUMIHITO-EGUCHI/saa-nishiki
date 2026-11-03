@@ -407,6 +407,29 @@ test('Expand mode keeps the existing behavior and inserts generated tags at the 
     assert.equal(result.negative, 'worst quality');
 });
 
+test('Expand with no AI words takes the marker out with its separator, not leaving ", ,"', () => {
+    const result = applyAiPromptResult({
+        mode: 'Expand',
+        content: '',
+        marker: '_|AI|_',
+        positive: 'masterpiece, outdoors, _|AI|_, 1girl, smile, ',
+        positiveRight: 'outdoors, _|AI|_, 1boy, ',
+        negative: 'worst quality',
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.positive, 'masterpiece, outdoors, 1girl, smile, ', 'the rest of the prompt is left as it was');
+    assert.equal(result.positiveRight, 'outdoors, 1boy, ');
+
+    const info = renderAiPromptInfo({
+        info: 'Positive:\n[color=Sienna]outdoors, [/color][color=Purple]_|AI|_, [/color][color=Green]1girl, [/color]\nNegative:\nworst quality\n\nLayout:',
+        mode: 'Expand',
+        marker: '_|AI|_',
+        preview: '',
+    });
+    assert.equal(info.includes('[color=Sienna]outdoors, [/color][color=Purple][/color][color=Green]1girl, [/color]'), true, 'the info shows no stray separator either');
+});
+
 test('Refine mode replaces both prompts with the validated Gemma result', () => {
     const result = applyAiPromptResult({
         mode: 'Refine',
