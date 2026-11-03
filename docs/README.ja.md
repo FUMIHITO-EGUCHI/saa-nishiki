@@ -3,9 +3,9 @@
 [English](../README.md) | **日本語** | [简体中文](README.zh-CN.md)
 
 [Character Select SAA](https://github.com/mirabarukaso/character_select_stand_alone_app) のフォークです。AI プロンプト、セミオートのタグ補完、ComfyUI / Forge Neo (WebUI) API に対応したスタンドアロンアプリです。
-Nishiki では、日本語タグ翻訳、カスタム欄とプリセットを持つカプセル型プロンプトエディタ、編集可能なリスト管理、Undo / Redo、AI プロンプトリファイナー、高速生成モード、Runpod Pod ターゲットを追加しています。
+Nishiki では、日本語タグ翻訳、タグをチップで扱う行形式のプロンプトエディタ、Parts、Cast と Prose を備えた独立したモデル種別としての Diffusion（Anima）、作った内容（レシピ）を持つ画像、Library、サンプルのグリッドで見る LoRA カタログ、AI プロンプトリファイナー、高速生成モード、Runpod Pod ターゲットを追加しています。
 
-現在のリリース: **v2.8.9-nishiki.1** — 上流 SAA v2.8.9 ベース。ダウンロードとリリースノートは [Releases](https://github.com/FUMIHITO-EGUCHI/saa-nishiki/releases) を参照してください。
+現在のリリース: **v4.1.0** — 上流 SAA 2.8.9 ベース。ダウンロードとリリースノートは [Releases](https://github.com/FUMIHITO-EGUCHI/saa-nishiki/releases) を参照してください。
 
 <img src="../examples/nishiki_overall.png" width=75%>
 
@@ -23,76 +23,113 @@ Nishiki では、日本語タグ翻訳、カスタム欄とプリセットを持
 # Nishiki の追加機能
 
 ## 日本語タグ翻訳・ローカライズ
-- danbooru / e621 統合タグリストの日本語辞書（約 10 万エントリ、`data/danbooru_e621_merged_ja.csv`）により、日本語でタグを検索・表示できます。
-- キャラクター名・作品名の日本語ローカライズと、タグカテゴリ表示。
+- danbooru / e621 統合タグリストの日本語辞書（約 10 万エントリ、`data/danbooru_e621_merged_ja.csv`）により、日本語でタグを検索・表示できます。作者と e621 のキャラクターを除くすべてのグループを、heat 10（投稿数 10 件）まで見直しています。
+- タグ検索は辞書全体を順位付けして返します（前方一致が先、同じ帯の中では投稿数の多いタグが先）。スクロールすると次の 50 件を読み込み、最後の行に一致件数を表示します。各行には訳語と、一致した別名だけを表示します。入力中のスペースはタグの `_` にも一致します（`white d` で `white_dress` が見つかります）。
+- キャラクター名・作品名の日本語ローカライズと、タグカテゴリ表示。タグ検索とキャラクター選択で同じ名前を表示します。
 - 設定で UI 言語に `ja-JP` を選択すると、タグ・名前・カテゴリが日本語で表示されます。日本語訳のない UI 文言は英語にフォールバックします。
 
 <img src="../examples/nishiki_jp_tag_search.png" width=75%>
 
 ## プロンプトエディタ
-従来のテキストボックスを、欄の一覧と 1 つの大きなフォーカスエディタに置き換えました。各欄は **カプセル**（タグ 1 つにつき 1 チップ）または **テキスト** で表示でき、表示モードは全欄で共通です。
+Prompts カードは 1 本の行リストです。Common、View、Background、Style、Positive、Negative、Exclude と、自分で足した行が並びます。各行はタグを**チップ**で表示します。つまみで行を移動、● スイッチでミュート、名前のダブルクリックで名前の変更、それ以外は ⋯ メニュー（Show as text / Show as chips、Insert part…、Weights per image…、Presets…、Make negative / Make positive、Rename、Delete field）から行います。`+ Add field` で自分用の行を追加できます。最終的なプロンプトは、行の並び順で組み立てられます。
 
-<img src="../examples/nishiki_tag_capsules.png" width=75%>
+<img src="../examples/nishiki_tag_capsules.png" width=45%>
 
-- **カスタム欄。** Positive 系・Negative 系の両方で、独自の欄（例: `Face`、`Body`、`Background`、`Style`）を追加・名前変更・並べ替え・削除できます。最終的なプロンプトは、並べた順に各欄を連結して組み立てられます。
-- **タグ単位のウェイト。** カプセルをクリックするとウェイトのポップオーバーが開きます。テキストモードでは `Ctrl + ↑ / ↓` で調整できます。一括ダイアログで複数タグのウェイトをまとめて変更できます。
-- **ワンタッチ有効 / 無効。** タグを削除せずに無効化できます。無効タグは欄に残りますが、生成には使われません。
-- **欄間のタグ移動。** カプセルを左の欄リストの行（Regional の LEFT / RIGHT の行も可）や他の欄のチップ行へドラッグ（`Ctrl` または `Alt` でコピー）するか、右クリックの `Move to…` / `Copy to…` を使います。ウェイトと無効状態も一緒に移動します。テキストモードでは選択範囲に対して同じ操作ができます。
-- **複数タグの選択。** `Ctrl + クリック` でカプセルを選択に追加/除外、`Shift + クリック` で範囲選択、`Ctrl + A` で欄内の全カプセル、`Esc` で解除。選択中のカプセルをドラッグすると選択全体がまとめて動きます（欄内の並べ替え・他の欄へのドロップ）。`Delete` で一括削除、有効/無効の点で一括切替、右クリックメニューも選択全体に効きます（`Disable tag (3)`、`Move to (3)` など）。
-- **左右付きの欄エディタ。** Regional が ON のとき `Fields ⇅` は各チェーンを Prompts カードと同じ **BOTH SIDES / LEFT / RIGHT** ブロックで表示します。行をドラッグして並べ替え、カスタム欄を別ブロックへドロップすると側が変わります。矢印ボタンと側ボタンもそのまま使えます。
-- **プリセット。** 欄ごとにプリセットの一覧を持ちます。プロンプトプリセットは欄の構成（欄・名前・順序・内容）をまるごと保存し、適用するとその構成をそのまま復元します。
-- **関連タグ候補（オフライン）。** カプセルにフォーカスすると、欄の下に「よく一緒に使われるタグ」（同梱の共起辞書 `data/tag_related.txt` 由来）と同じ語族のタグが表示されます。クリックで挿入。欄フッターの ✦ ボタンで ON / OFF を切り替えます。
-- **辞書にないタグの表示。** タグ辞書にないカプセルには波線の下線が付きます。SDXL モデルはこうした語をほぼ無視するためです。検証では `long staff` と `ancient staff` は何も変えず、実在タグの `wooden staff` は毎回杖を変えました。文のように読めるカプセル（4 語以上で既知のタグではないもの）は破線・斜体で表示され、そのまま送られます。LoRA トークン、ワイルドカード、ランダム構文には印を付けません。
-- **検索。** オートコンプリートは既定でタグ名の前方・中間・後方一致すべてに対応します。
-- テキストエディタは内容に応じて自動で伸びるため、長いプロンプトが見切れません。
+- **チップ。** 左端に状態（✓ 有効、− 無効、★ お気に入り、× 除外）、右端に重みかウェイトプランを表示します。✓ をクリックすると、タグを削除せずに無効にできます。`+ Tag` で、Tags・Parts・LoRA のタブを持つタグ選択が開きます。
+- **ウェイトのポップオーバー。** チップをクリックすると、重み（テキスト表示では `Ctrl + 上下`）、バッチ用のウェイトプラン、関連タグ（共起と同じ語族。`data/tag_related.txt` からオフラインで提示）、訳語、お気に入りの ★ を扱えます。`(a, b:1.2)` のようなグループの重みは 1 つのチップです。
+- **行の間でタグを移動。** チップを行の中や別の行へドラッグします（`Ctrl` か `Alt` を押しながらでコピー）。右クリックメニューの `Move to…` / `Copy to…` でも移動できます。重みと無効状態もタグと一緒に移ります。1 回のドロップは 1 回の Undo で戻せます。
+- **複数のタグを選択。** `Ctrl + クリック` で個別に選択、`Shift + クリック` で範囲を拡張、`Ctrl + A` で行の全チップを選択、`Esc` で解除。選択中のタグはまとめてドラッグ・削除・切り替えでき、右クリックメニューも選択全体に効きます（`Disable tag (3)`、`Move to (3)` など）。
+- **View 行。** アングル、カメラ、構図は、View 行に置く通常のタグと Parts です。重みや検索も他の行と同じように使えます。
+- **プリセット。** 行ごとにプリセットを持てます（⋯ → Presets…）。カードのプリセットは行の構成全体（行、名前、順序、内容）を保存し、適用するとその構成をそのまま復元します。
+- **辞書にないタグの表示。** タグ辞書にないチップには波線の下線が付きます。SDXL モデルはこうした語をほぼ無視するためです。検証では `long staff` と `ancient staff` は何も変えず、実在タグの `wooden staff` は毎回杖を変えました。文のように読めるチップ（4 語以上で既知のタグではないもの）は破線・斜体で表示され、そのまま送られます。LoRA トークン、ワイルドカード、ランダム構文には印を付けません。
+- **投稿数の目安。** 投稿数 100 件未満のタグに黄色の点線、1,000 件未満のタグに灰色の点線が付き、ポップオーバーに投稿数が出ます。Danbooru / e621 の投稿数を見るための参考表示で、Diffusion では表示しません。
+
+## Parts
+よく使うタグの組み合わせを、`parts:<名前>` という 1 つのチップとして保存できます。チップの重みは中のタグに反映され、ミュート、最終プロンプト、AI Refine、Prose、バッチ展開でも同じタグを使います。タグ選択の Parts タブにカテゴリ別・サンプル付きで並び、今のタグからの作成、編集、タグへの展開、他の Part への差し替えができ、Part 自体に LoRA を持たせることもできます。outfit、hair、body、background、camera、composition、tone、pose、expression などの 295 件のスターターセットを同梱しています。Parts は `settings/parts.json` に、サンプルは `settings/parts/` に保存します。
+
+<img src="../examples/nishiki_parts.png" width=45%>
 
 ## ウェイトバッチ
-タグに **ウェイトプラン**（開始・刻み・終了）を設定してバッチを実行すると、SAA は Seed を固定したまま 1 枚ずつウェイトだけを変えて生成します。`÷ batch count` を選ぶと刻み幅をバッチ回数から自動算出します。Seed がランダムでない状態でバッチを始めると確認が表示されます。
+ポップオーバーでタグに**ウェイトプラン**（開始、ステップ、終了）を設定するか、行の ⋯ → Weights per image… を使ってバッチを実行すると、SAA は seed を固定したまま 1 枚ずつプランを進め、重みだけを変えます。`÷ batch count` オプションを使うと、ステップをバッチ数から自動計算します。seed がランダムでない状態でバッチを始めると警告が出ます。
 
-## 選択モーダル・お気に入り・リスト管理
-- キャラクター、オリジナルキャラクター、アングル、カメラ、タグは、翻訳と **お気に入り** グループを備えた検索可能な選択モーダルから選びます。お気に入りタグはカプセル上でも強調表示されます。
-- キャラクタースロット数は 3 固定ではなくなり、必要な数だけ追加できます。
-- **リスト管理**（設定 → Lists）: キャラクター / OC / アングル / カメラ各リストのエントリを追加・上書き・非表示にできます。上流データは読み取り専用のままで、編集内容は差分として `settings/user_lists.json` に保存され、エクスポート / インポートできます。エントリには複数タグのプロンプトを持たせられ、エントリ編集画面からタグ辞書ピッカーを開けます。
+## キャラクター・お気に入り・リスト管理
+- Characters カードには、必要な数だけキャラクタースロットを置けます（`+` / `−`）。スロットごとに重みを持ち、Regional が ON のときは左右の側も持ちます。
+- キャラクターとオリジナルキャラクターは、訳語と**お気に入り**グループ付きの検索可能な選択画面で選びます。名前は英語・中国語・日本語のどれでも検索でき、作品名でも絞り込めます（`艦これ`、`kantai collection`、`FGO`）。
+- **リスト管理**（Settings → Lists）: キャラクター / OC / アングル / カメラのリストに項目を追加・上書き・非表示にできます。上流のデータは読み取り専用のまま、編集内容は差分として `settings/user_lists.json` に保存され、エクスポート・インポートできます。リスト項目には複数タグのプロンプトを持たせられ、項目エディタ内でもタグ選択を使えます。
 
 <img src="../examples/nishiki_character_select.png" width=45%>
 
+## Diffusion（Anima）
+Diffusion は Checkpoint と並ぶ独立したモデル種別で、sampler、scheduler、steps、CFG、サイズ、Hires、Regional、プロンプトを種別ごとに持ちます。種別を切り替えても、一方の設定がもう一方に持ち込まれることはありません。
+- **Cast。** キャラクタースロットごとに別名と専用のプロンプト行が付き、Action 行で `@別名` を使って誰が何をするかを書けます。
+- **Prose。** Anima は Danbooru タグではなく英語を読むため、画像のリクエストを送る前に、組み立てたタグを 1 つの英文の段落に書き直します。段落は画像と同じ解決済みのタグ（同じワイルドカード、同じ重み）から書かれ、編集、元に戻す、書き直しができます。書き手は、AI カードの LLM（ローカルか Pod の Ollama）か **Student**（35B モデルから蒸留した Qwen3.5-2B の LoRA）です。Student は SAA が自分で起動する llama-server で動きます（設定 > AI で実行ファイル、GGUF、ポートを指定。どちらも同梱していません）。12GB の GPU で ComfyUI と並べて、1 段落あたり約 1 秒です。
+- **Artist。** Danbooru の作者 17,716 人が何を描くかの辞書を持ち、名前でも題材でも検索できます（`cat ears` で猫耳を描く作者が見つかります）。1 枚に最大 3 人まで指定できます。
+- **Regional と Panels** も Diffusion で使えます（[Regional Condition / Couple](#regional-condition--couple) を参照）。
+
+## 画像が作った内容を持つ
+- SAA で作った画像は、作ったときの内容（Generate を押した時点のエディタ、seed、Random の枠が選んだキャラクター、送ったプロンプト、AI の回答、Prose の段落、Fast モードが送った値）と、各段階にかかった時間を、PNG の `saa_recipe` と `saa_time` のテキストチャンクとして持ちます。時間は、同じ PC で動く ComfyUI の場合に書き込みます。
+- **ビューワー。** Info タブに、表示中の画像の生成時間（バーと内訳）、ファイル、モデル、sampler、steps、CFG、seed（Seed 欄へ入れるボタン付き）、サイズと段、実際に効いた LoRA を表示します。他のアプリで作った画像も、PNG のチャンクから読みます。実行時のテキストは Prompt タブにあります。★ で画像を残し、矢印で前後の画像へ移動します。
+- **Use settings…** は、画像のレシピと今のエディタを並べて開きます。項目（行ごとのタグ、Prose、LoRA、モデルと sampler、サイズと段、Regional、seed）ごとにチェックがあり、違う項目は最初からチェックされています。全部チェックすると、同じ画像をもう一度作れる状態になります。A1111 の parameters しかない画像も読み込めます。読み込みは 1 回の Undo で戻せます。
+- **Library。** Library ボタンで、ComfyUI の出力フォルダと Pod の保存フォルダにあるすべての画像を、フォルダと日付ごとに開きます。このセッション、★、レシピありのビュー、プロンプト・キャラクター・LoRA・モデル・seed・ファイル名での検索と絞り込みがあります。横のパネルから Use settings…、★、フォルダで表示、ゴミ箱へ移動ができます。インデックスとサムネイルは `settings/library/` に保存し、画像から作り直せます。
+
+<img src="../examples/nishiki_use_settings.png" width=45%> <img src="../examples/nishiki_library.png" width=45%>
+
+## LoRA カタログと LoRA 欄
+- **LoRA タブ。** タグ選択の LoRA タブは、各 LoRA をサンプルのグリッドで表示します。OFF と、範囲内の 5 段階の重みを、今のモデルと同じ seed で並べるので、説明を読まなくても効き方が分かります。横のパネルで、既定の重み、サンプルの範囲（Take samples / Retake。サンプルのプロンプトは LoRA ごと、または全体の既定）、トリガー語、推奨するタグ、自分用の名前を設定します。推定は `.safetensors` のヘッダーだけから行い、Civitai にはボタンを押したときだけ、ファイルの sha256 で問い合わせます。カタログは `settings/loras.json` に、サンプルは `settings/loras/` に保存します。
+- **LoRA 欄。** 各 LoRA は 1 行で、ON/OFF のスイッチ、名前、トリガー語（クリックでプロンプトから外す・入れる）、サンプルの重みに目盛りのあるスライダーと数値が並びます（ホイールで 0.05、Shift を押しながらで 0.25 ずつ）。折りたたみの中に、段（All、Base、Hires）、CLIP、範囲、トリガー語があります。行を OFF にすると、そのトリガー語もプロンプトから外します。`+ LoRA` は LoRA タブだけのタグ選択を開きます。
+- **タグ・Parts と LoRA。** ある LoRA の推奨するタグに当たるチップには `LoRA N` のバッジが付き、ポップオーバーから LoRA を追加できます。クリックしない限り、何も追加しません。
+
+<img src="../examples/nishiki_lora_catalog.png" width=45%> <img src="../examples/nishiki_lora_slot.png" width=45%>
+
+## サイズと比率
+Run bar の Size は `[縦横 | 比率 ▾] [W] [チェーン] [H]` です。チップの左半分で幅と高さを入れ替え、右半分で 1:1、4:5、3:4、A4（1:√2）、2:3、黄金比（1:φ）、9:16、Free のタイルを開きます。タイルにはそれぞれのサイズが出ます。比率を選ぶと画素数を保ったまま 8 px 単位でサイズを決め、チェーンでつなぐと片方の入力にもう片方が比率で追従します。サイズの欄はモデル種別の範囲に従います（Checkpoint 512〜1536、Diffusion 512〜2048。上限は設定で変更可）。
+
+<img src="../examples/nishiki_size_ratio.png" width=45%>
+
 ## Undo / Redo
-プロンプト編集、プリセット適用、AI リファインの結果は、すべてグローバルな編集履歴の 1 ステップとして記録されます。`Ctrl + Z` / `Ctrl + Shift + Z`（または `Ctrl + Y`）かツールバーのボタンで操作します。
+プロンプト編集、プリセット適用、AI Refine の結果は、すべてグローバルな編集履歴の 1 ステップとして記録されます。`Ctrl + Z` / `Ctrl + Shift + Z`（または `Ctrl + Y`）かツールバーのボタンで操作します。
 
 ## AI プロンプトリファイナー
-上流のリモート / ローカル `llama.cpp` AI プロンプトに加えて、[Ollama](https://ollama.com/) を使う **Refine** モードを追加しました。Refine は各バッチの 1 枚目を生成する前に、構造化リクエスト 1 回でプロンプト全体を書き直し、結果を欄ごとにエディタへ適用します。Refine の編集は履歴に記録され、Undo できます。タグの中にある英文の動作文（Regional Condition の「誰が誰に何をするか」を参照）は、タグに分解されず文のまま保たれます。
-`Regional Condition` が有効なときは左右両方を書き直します。対象は Common、Positive、Positive (right)、Negative、および左右別の Negative (left / right) です。キャラクター、Views、JSON スロット、Wildcards、スロット LoRA など生成時に付与される内容はそのまま維持され、書き直された欄の周りに再度組み込まれます。
-AI の結果は生成のたびにポップアップするのではなく、**Info パネルの AI タブ** に表示されます。
+上流のリモート / ローカル `llama.cpp` による AI プロンプトに加え、[Ollama](https://ollama.com/) を使う **Refine** モードを追加しています。Refine はバッチごとに最初の 1 枚の前で、構造化した 1 回のリクエストでプロンプト全体を書き直し、その結果を行ごとにエディタへ反映します。Refine による編集は編集履歴に記録され、Undo できます。タグの中にある平易な英文の動作文（Regional Condition の「誰が誰に何をするか」を参照）は、タグに分解せず文のまま残します。
+`Regional` が ON のときは、側別の Negative も含めて両側を書き直します。生成時に追加されるもの（キャラクター、JSON スロット、ワイルドカード、スロットの LoRA）は元の位置に残し、書き直した行の前後に戻します。
+AI の結果は、毎回のポップアップではなく **Info パネルの AI タブ**に表示されます。
 
 ## 高速生成モード
-設定 → Backend → **Fast generation** で、ステップ蒸留 LoRA（DMD2 / Hyper-SD / Lightning / LCM）を適用し、ベース・Hires fix・ADetailer 各パスの steps / CFG / sampler / scheduler を上書きします。ローカル ComfyUI と Pod の両方で動作します。
-RTX 4070 SUPER での実測（600×1024、Hires 1.5x、ADetailer あり）: 30 steps ≈ 29 秒 → DMD2 8 steps ≈ 16 秒。
+設定 → Backend → **Fast generation** は、ステップ蒸留 LoRA（DMD2 / Hyper-SD / Lightning / LCM）を適用し、ベース・Hires fix・ADetailer の各パスの steps、CFG、sampler、scheduler を上書きします。ローカル ComfyUI と Pod の両方で動作します。
+RTX 4070 SUPER での実測（600×1024、Hires 1.5x、ADetailer）: 30 steps ≈ 29 秒 → DMD2 8 steps ≈ 16 秒。
 
-モデル種別 Diffusion（Anima）には専用の設定があります。Anima Turbo LoRA v0.2（強度 0.8）、8 steps、CFG 1.5、euler / simple に加えて、ComfyUI の起動フラグ `--use-sage-attention --fast` を使います。起動フラグはプロセス全体に効くため、違うフラグが必要な生成の前に、SAA が 設定 → Backend → ComfyUI process の起動コマンドでローカル ComfyUI を再起動します（起動コマンドは追加の引数を `main.py` に渡す必要があります）。SAA が外すのは、自分で付けて起動したフラグだけです。RTX 4070 での実測（832×1216、waiANIMA）: 25 steps ≈ 17〜19 秒 → Turbo 8 steps + 両フラグ ≈ 4.8 秒。`--fast` で色味と細部が少し変わります。LoRA は Pod でも効きますが、起動フラグはローカル ComfyUI だけです。
+Diffusion（Anima）モデル種別には専用のセットがあります。Anima Turbo LoRA v0.2 を 0.8、8 steps、CFG 1.5、euler / simple に加え、ComfyUI の起動フラグ `--use-sage-attention --fast` を使います。これらのフラグはプロセス全体に効くため、別のフラグが必要な実行の前に、SAA は 設定 → Backend → ComfyUI process → 起動コマンド（追加引数を `main.py` に渡せるもの）でローカル ComfyUI を再起動します。SAA が外すのは、自分で ComfyUI を起動したときに付けたフラグだけです。RTX 4070 での実測（832×1216、waiANIMA）: 25 steps ≈ 17〜19 秒 → 両フラグ付きの Turbo 8 steps ≈ 4.8 秒。`--fast` は色と細部をわずかに変えます。LoRA は Pod でも使えますが、フラグはローカル ComfyUI のみです。
+
+プロンプトの LoRA は Hires と ADetailer のパスにも効きます。ワークフローは 1 枚の間、LoRA を掛けた同じモデルを使い続けるので、1 回の実行の中で ComfyUI がモデルファイルを読み直すことはありません。
+
+## ローカルの ComfyUI を SAA から操作
+設定 → Backend から、ローカルの ComfyUI の起動・再起動・停止ができ、SAA と一緒に起動することもできます。停止するのは SAA が通信している ComfyUI だけで、ポートを使っている別のプログラムは pid とプログラム名を示し、指示した場合だけ終了します。起動コマンドは、ネイティブのダイアログで一度許可してから実行します。
 
 ## Runpod Pod ターゲット
-設定で Runpod の Pod（SSH 接続先と鍵）を登録すると、ツールバーのステータスピルで画像生成先を **GPU: Local** と **GPU: Pod** の間で切り替えられます。生成画像は SSH 経由でストリーミングされてローカルにのみ保存され、Pod のディスクには何も書き込まれません。Pod は LLM 機能（AI プロンプト / Refine）のホストにもなれます。Pod のエンドポイントでは認証付きの `https` / `wss` バックエンドに対応しています。
+設定で Runpod の Pod（SSH の接続先と鍵）を登録し、ツールバーのステータスピルで画像生成を **GPU: Local** と **GPU: Pod** に切り替えられます。生成画像は SSH 経由で送り返され、ローカルにのみ保存されます。Pod のディスクには何も書き込みません。Pod は LLM 機能（AI プロンプト / Refine / Prose）にも使えます。Pod のエンドポイントには、認証付きの `https` / `wss` バックエンドも使えます。
 AI プロンプト / Refine のリクエストも同じ SSH リレー経由で Pod 上の Ollama に送られます。セットアップ、Pod 再起動時の復元スクリプト、トラブルシューティングは [README_POD.md](README_POD.md) を参照してください。
 
-## ギャラリーと Info パネル
-- Info パネルはギャラリーで選択中の画像に追従し、埋め込まれた PNG パラメータも表示します。
-- 右クリックメニューは対象（カプセル、プロンプト欄、ギャラリー画像、AI 欄）ごとに内容が変わります。
-
 ## UI シェル
-ビューポートレイアウト、ステータスピル、生成進捗表示、ダイアログシェルの新設計と、ダーク / ライトテーマの CSS 刷新。
+- 新しいビューポートレイアウト、ステータスピル、実行の進捗表示、ダーク / ライトテーマ。
+- 両テーマの色は 1 つのトークンファイル `design/tokens.json` から作られ、`scripts/buildThemeTokens.mjs` がテーマのファイルに書き出します。アイコンも 1 つのセット `scripts/shared/iconSet.js` から描きます。
+- すべてのダイアログでボタンの並びは同じです（Cancel / No が左、主のボタンが右）。Esc では手前のダイアログから閉じます。
+- 右クリックメニューは、対象（チップ、プロンプト行、ギャラリー画像、AI 欄）ごとに内容が変わります。
 
 ## 設定の保存先
 設定はセクションに分割され、スキーマバージョン付きで保存されます。
 - `settings/app.json` — アプリ設定（バックエンド、パス、AI、高速モード、Pod）
-- `settings/state.json` — プロンプト / 生成 / LoRA / ADetailer / ControlNet の作業状態
+- `settings/state.json` — プロンプト / 生成 / LoRA / ADetailer / ControlNet の作業状態（モデル種別ごと）
 - `settings/presets/<section>/<name>.json` — プリセット
 - `settings/user_lists.json` — リスト管理の差分
+- `settings/parts.json`、`settings/parts/` — Parts とそのサンプル
+- `settings/loras.json`、`settings/loras/` — LoRA カタログとそのサンプル
+- `settings/library.json`、`settings/library/` — ★、ComfyUI の出力フォルダ、Library のインデックスとサムネイル
 - `settings/legacy/` — 分割前の `settings/*.json`。初回起動時にここへ移動され、以降は読み込まれません
 
 すべて自動保存・アトミック書き込みです。`settings/` は同梱の MiraITU ワークフローファイルを除いて git 管理外です。
 
 ## バージョニング
-バージョンは `<upstream-version>-nishiki.<generation>` 形式（例: `2.8.9-nishiki.1`）です。ベース部分はマージした上流のバージョンで、上流をマージするたびに generation を `.1` にリセットし、フォーク独自のリリースで generation を加算します。
+Nishiki は 3.0.0 から独自のセマンティックバージョンを使います。minor が機能追加、patch がバグ修正です。上流のベースは `package.json` の `upstreamBase`（2.8.9）とリリースノートに記録し、新しい上流を取り込むときは minor を上げます。リリースごとに `v<version>` のタグと GitHub Release を作り、Release の本文が変更履歴です（`docs/CHANGELOGS.md` は上流のものです）。
 
 ------
 
@@ -366,15 +403,13 @@ Forge 系 ControlNet は `none(null)` を受け付けず、`None(String)` を受
 ## LoRA スロット
 Forge Neo（WebUI）は既定の LoRA プロンプト形式 `<lora:xxxxx:1.0>` に対応。
 ComfyUI はより詳細な LoRA 設定に対応します。[LoRA from Text](https://github.com/mirabarukaso/ComfyUI_Mira#lora) を参照してください。
-LoRA スロットの `i` ボタンで LoRA 情報を確認できます。LoRA と同名の PNG があれば情報ページに表示されます。
+Nishiki では、LoRA スロットは LoRA 欄の行です。各 LoRA の効き方はタグ選択の LoRA タブで確認できます。[LoRA カタログと LoRA 欄](#lora-カタログと-lora-欄) を参照してください。
 
 **ComfyUI API で LoRA を使うには ComfyUI_Mira を 0.5.6.0 以上に更新してください。**
 
-<img src="../examples/nishiki_lora_slot.png" width=45%>
-
 ## ADetailer
 > [!TIP]
-> 設定が分かりにくければ、右下の金色のパラメータ（Denoise）だけ調整すれば OK です。
+> 設定が分かりにくければ、スロットの最後の数値（Denoise）だけ調整すれば OK です。欄にマウスを乗せると名前が表示されます。
 
 *ComfyUI の場合*
 > [!CAUTION]
@@ -395,7 +430,7 @@ LoRA スロットの `i` ボタンで LoRA 情報を確認できます。LoRA �
 
 ## キューマネージャ
 それぞれ異なるパラメータを持つ複数の生成タスクを投入できます。キューは自動的に処理を開始し、完了したタスクを取り除きます。
-エラーが発生した場合や `Enable Generation` のチェックを外した場合、現在のタスク終了後にキューは一時停止し、内容は保持されます。
+エラーが発生した場合や `Auto-start` をオフにした場合、現在のタスク終了後にキューは一時停止し、内容は保持されます。
 キュー内のタスクは `削除` や `詳細表示` ができます。先頭タスクを削除すると現在の生成がキャンセルされます。
 *キューの長さは 10,000 を超えないことを推奨します。*
 
@@ -432,18 +467,20 @@ __YourWildCardName__
 > Anima モデルに対応しました。
 
 3 ステップで試せます。
-1. `Regional Condition` チェックボックスをオンにする。
+1. Prompts カードの `Regional` をオンにする。
 2. リストのキャラクターか自分の OC を選ぶ。
 3. `common prompt` を `duo, masterpiece, best quality, amazing quality` で始める（品質ワードを忘れずに）。
 
 *Forge Neo の場合*
 `Regional Condition` には [SD Forge Attention Couple](https://github.com/Haoming02/sd-forge-couple) [latest](https://github.com/Haoming02/sd-forge-couple/commits/main/) が必要
 
-**左右のサイド（Nishiki）。** Regional を ON にすると、Prompts カードの欄は **BOTH SIDES**（Common、Background、Style、共通 Negative、*Both* に設定したカスタム欄）、**LEFT** / **RIGHT**（各側のキャラクター、Positive、側別 Negative、側限定のカスタム欄）、**ALL**（Exclude）に分かれます。カスタム欄のサイドは Fields エディタで指定します。**Swap** は左右をまとめて入れ替え（プロンプト、Negative、ウェイトプラン、キャラクター、Strength）、Undo できます。旧「Swap Character」スイッチはこれに置き換わりました。キャラクター行をクリックするとキャラクター選択が開き、各側は見出しから折りたためます。ComfyUI では左右の Negative も Positive と同じマスクで領域に適用され、Forge Neo では 1 つの Negative にまとめられます。
+**左右のサイド（Nishiki）。** Regional を ON にすると、Prompts カードは共通の行（Common、View、Background、Style、Negative、Exclude）を残し、その間に **LEFT** と **RIGHT** のブロックを表示します。各ブロックは専用の Positive、Negative と、そのブロックだけの行（ブロック内の `+ Add field`）を持ちます。キャラクターの側は Characters カードの各スロットで指定し（L / R / ·）、ブロックには受け持つスロットが表示されます。**Swap** は左右をまとめて入れ替え（プロンプト、Negative、ウェイトプラン、キャラクター、強さ）、Undo できます。`Split Ratio` で境界を動かし、`Overlap` で共有する帯を広げます。ComfyUI では左右の Negative も Positive と同じマスクで領域に適用され、Forge Neo では 1 つの Negative にまとめられます。Regional は Diffusion（Anima）でも使えます。
+
+**Panels。** `Panels` スイッチを ON にすると、分割線用のタグと各領域のマスクを組み合わせて 2 コマの分割構図を作ります。既定ではオフです。
 
 **分割方向と Emphasis。** `Split` で画像を **Left / Right**（左右）か **Top / Bottom**（上下）に分けます。Top / Bottom では LEFT / RIGHT の見出しが **TOP** / **BOTTOM** になり、左側のプロンプトが上の領域、右側のプロンプトが下の領域に入ります（ComfyUI と Forge Neo）。Top / Bottom は、片方の頭が実際に画面の下側に来る構図（寝そべる、床に座るなど）向けです。2 人とも立っていると両方の頭が上の領域に入り、検証では 6 枚すべてで上のプロンプトのキャラクターが 2 人描かれました。`Emphasis`（旧 *Strength*）は左右の差としてだけ効きます。左右を同じ値にしても、合成された条件付けが正規化されるため何も変わりません。差をつけると片側が目立つようになりますが、キャラクターの動作は変わりません。
 
-**誰が誰に何をするか。** 領域分けは 2 人の外見を混ざらないようにするものであって、相互の動作は決めません。動作はタグの後ろに短い英文 1 文で書きます。動作する側を主語にし、各キャラクターはタグにある外見（髪色が最も確実）で呼び分けます（例: `the black haired girl is patting the blonde girl's head`）。位置（`the girl on the left` など）で呼ぶ書き方は検証していません。`Fields エディタ → + Action sentence` で、そのための Both 側の欄がチェーンの末尾に追加されます。WAI Illustrious では、タグの後ろに文を置いた場合に 15 枚中 9 枚で向きが正しくなりました。文だけの場合は 15 枚中 3 枚でした。外見の語は文に入れないでください。形容詞が髪や服に漏れることがあります。
+**誰が誰に何をするか。** 領域分けは 2 人の外見を混ざらないようにするものであって、相互の動作は決めません。動作はタグの後ろに短い英文 1 文で書きます。動作する側を主語にし、各キャラクターはタグにある外見（髪色が最も確実）で呼び分けます（例: `the black haired girl is patting the blonde girl's head`）。位置（`the girl on the left` など）で呼ぶ書き方は検証していません。そのための行を `Action` という名前で追加してください（`+ Add field`）。この名前の行は、カードがチップ表示でもテキストのまま残ります。WAI Illustrious では、タグの後ろに文を置いた場合に 15 枚中 9 枚で向きが正しくなりました。文だけの場合は 15 枚中 3 枚でした。外見の語は文に入れないでください。形容詞が髪や服に漏れることがあります。
 
 <img src="../examples/nishiki_regional.png" width=35%>
 
@@ -489,7 +526,7 @@ WebUI（Forge Neo と A1111）と ComfyUI（ComfyUI_Mira の画像保存ノー�
 `Send` ボタンは `Common Prompt`、`Negative Prompt`、`Width & Height`、`CFG`、`Step`、`Seed` を上書きします。
 同じ LoRA を持っていれば `Common Prompt` 内の LoRA も機能します。プロンプト内の LoRA が不要なら `Send LoRA to Slot` を試してください。
 
-生成済み画像も同じように開けます。ギャラリーの `Info` ボタンは表示中の画像を `Image Info` で開き、画像の右クリックメニュー（分割・グリッド・全画面表示）には `Open in Image Info` があります。そこから `Send tags`、`Add ControlNet`、`Run Tagger`、`Tiled-Upscale` がその画像に対して使えます。
+生成済み画像も同じように開けます。画像の右クリックメニュー（分割・グリッド・全画面表示）に `Open in Image Info` があります。そこから `Send tags`、`Add ControlNet`、`Run Tagger`、`Tiled-Upscale` がその画像に対して使えます。
 
 <img src="../examples/nishiki_image_info.png" width=45%>
 </details>
@@ -504,19 +541,19 @@ WebUI（Forge Neo と A1111）と ComfyUI（ComfyUI_Mira の画像保存ノー�
 <img src="../examples/nishiki_character_select.png" width=45%>
 
 ## 上部ボタンと右クリックメニュー
-上部ボタンは左から: 設定保存、モデル一覧再読込、ページ更新、右から左、テーマ切替、Undo、Redo、GPU ターゲット（Local / Pod）。
+上部バーは左から: モデル、モデル一覧再読込、Fast モード、バックエンドの状態（GPU ターゲット Local / Pod）、Undo、Redo、右から左、設定。テーマの切り替えは 設定 → General に、ページ更新は 設定 → Advanced にあります。設定は自動で保存されます。
 
 <details>
 <summary>右クリックメニュー</summary>
 
-メニューは右クリックした対象で変わります。カプセル（ウェイト編集、有効 / 無効、関連タグ、コピー、削除、他の欄へ移動 / コピー）、プロンプト欄（欄のコピー / クリア、全タグ有効 / 無効、LoRA をスロットへ送る、選択範囲の移動 / コピー）、ギャラリー画像（画像 / メタデータのコピー、現在の画像を削除、ギャラリーをクリア）、AI 欄（AI 生成テスト）。
+メニューは右クリックした対象で変わります。チップ（ウェイト編集、有効 / 無効、関連タグ、コピー、削除、他の欄へ移動 / コピー）、プロンプト欄（欄のコピー / クリア、全タグ有効 / 無効、LoRA をスロットへ送る、選択範囲の移動 / コピー）、ギャラリー画像（画像 / メタデータのコピー、現在の画像を削除、ギャラリーをクリア）、AI 欄（AI 生成テスト）。
 
 **スペルチェック（英語）**
 スペルチェックエラー（波線）のある単語を右クリックすると候補が表示されます。
 <img src="../examples/nishiki_spell_check.png" width=45%>
 
 **AI プロンプト生成テスト**
-`AI prompt` 欄を右クリックすると、生成せずに AI プロンプトを取得します。結果は Info パネルの AI タブに表示されます。AI ルールを `Last` にすると以降の生成でその結果を再利用します。
+`AI prompt` 欄を右クリックすると、生成せずに AI プロンプトを取得します。結果はポップアップで表示されます。AI ルールを `Last` にすると以降の生成でその結果を再利用します。
 <img src="../examples/nishiki_ai_prompt_test.png" width=45%>
 
 **画像 / メタデータのコピー**
@@ -681,5 +718,5 @@ ComfyUI/WebUI is busy, cannot run new generation, please try again later.
 [README_SAAC.md](README_SAAC.md) の 5 と 6 を参照してください。
 
 設定やプリセットはどこにある?
-1. `settings/app.json`、`settings/state.json`、`settings/presets/`、`settings/user_lists.json` です。[設定の保存先](#設定の保存先) を参照してください。
+1. `settings/app.json`、`settings/state.json`、`settings/presets/`、`settings/user_lists.json` と、その隣の Parts、LoRA カタログ、Library のファイルです。[設定の保存先](#設定の保存先) を参照してください。
 2. Nishiki 以前の `settings/*.json` は初回起動時に `settings/legacy/` へ移動されます。
