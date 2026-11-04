@@ -26,6 +26,11 @@ class FakeTextArea extends FakeElement {
         this.selectionStart = 0;
         this.selectionEnd = 0;
     }
+
+    setSelectionRange(start, end) {
+        this.selectionStart = start;
+        this.selectionEnd = end;
+    }
 }
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
@@ -598,6 +603,8 @@ test('the word under the caret is what the spellcheck suggestions are offered fo
         assert.equal(typeof world.spellCheck, 'function', 'the main process can answer with suggestions');
 
         await press(document, built.textarea);
+        // Chromium names a misspelling only when it is the selection: the caret word is selected for it
+        assert.deepEqual([built.textarea.selectionStart, built.textarea.selectionEnd], [0, 5]);
         world.spellCheck(['smile', 'smiled'], 'smiel');    // the answer for a different word is ignored
         world.spellCheck(['nope'], 'girl');
         const indexes = itemsOf(document).map(node => node.dataset.index);
@@ -615,6 +622,24 @@ test('the word under the caret is what the spellcheck suggestions are offered fo
         assert.ok(!itemsOf(document).some(node => node.dataset.index?.startsWith('spellcheck')), 'an answer for other text is dropped');
         world.spellCheck(['smile'], 'smiel');
         assert.equal(itemsOf(document)[0]?.textContent, 'smile');
+    }, globalsFor(world));
+});
+
+test('a word spelled right gives the caret back once the answer has no misspelling', async () => {
+    const world = makeWorld();
+    await withFakeDom(async document => {
+        world.addField('positive', '1girl, smile', { capsules: [] });
+        const built = buildField(document, 'positive', { textarea: true });
+        built.textarea.value = '1girl, smile';
+        built.textarea.selectionStart = 9;
+        built.textarea.selectionEnd = 9;                   // inside "smile"
+        setupRightClickMenu();
+
+        await press(document, built.textarea);
+        assert.deepEqual([built.textarea.selectionStart, built.textarea.selectionEnd], [7, 12], 'selected while Chromium looks');
+        world.spellCheck([], '');
+        assert.deepEqual([built.textarea.selectionStart, built.textarea.selectionEnd], [9, 9]);
+        assert.ok(!itemsOf(document).some(node => node.dataset.index?.startsWith('spellcheck')));
     }, globalsFor(world));
 });
 

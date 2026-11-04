@@ -16,7 +16,7 @@ import zlib from 'node:zlib';
 
 const HERE = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const m = a.match(/^--([^=]+)=(.*)$/); return m ? [m[1], m[2]] : [a.replace(/^--/, ''), 'true']; }));
-const ROOT = args.root || 'C:\\Users\\kurah\\Documents\\Codex\\2026-08-15\\huggingface-llm-uncensored\\wai-stack\\output';
+const ROOT = args.root || 'C:\\Users\\kurah\\Documents\\Git\\huggingface-llm-uncensored\\wai-stack\\output';
 const OUT = path.resolve(HERE, args.out || 'history.jsonl');
 
 // PNG text chunks: tEXt (latin1), iTXt (utf8, maybe compressed), zTXt (compressed latin1)

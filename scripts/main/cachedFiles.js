@@ -304,17 +304,40 @@ function getCharacterThumb(md5Chara) {
     return cachedCharacterThumb[md5Chara];
 }
 
+// setupDownloadFiles always fetches this pack; the others come on demand
+const DEFAULT_THUMB_PACK = 'waiIllustriousSDXL_v160';
+
+const thumbPackFiles = thumbSelect => [`${thumbSelect}_thumbs.json`, `${thumbSelect}_characters.csv`, `${thumbSelect}_tag_assist.json`];
+const hasThumbPack = thumbSelect => thumbPackFiles(thumbSelect).every(name => fs.existsSync(path.join(appPath, 'data', name)));
+
+async function downloadThumbPack(thumbSelect) {
+    try {
+        if (thumbSelect === `waiNSFWIllustrious_v120`) {
+            console.log(`${CAT}: Requesting download of waiNSFWIllustrious_v120 thumbs...`);
+            await requestDownloadOldThumbs();
+        } else if (thumbSelect === `waiANIMA_v10Base10`) {
+            console.log(`${CAT}: Requesting download of waiANIMA_v10Base10 thumbs...`);
+            await requestDownloadAnimaThumbs();
+        }
+    } catch (error) {
+        console.error(`${CAT}: ${thumbSelect} download failed: ${error.message}`);
+    }
+}
+
+// The pack the app can start with: the chosen one, downloaded first when it is not on disk, or the
+// default pack when it cannot be had (offline, unknown name), instead of an error box before any window.
+async function startupThumbPack(thumbSelect) {
+    if (!hasThumbPack(thumbSelect)) await downloadThumbPack(thumbSelect);
+    if (hasThumbPack(thumbSelect)) return thumbSelect;
+    console.warn(`${CAT}: ${thumbSelect} is not available, starting with ${DEFAULT_THUMB_PACK}`);
+    return DEFAULT_THUMB_PACK;
+}
+
 async function updateCharacterThumb(thumbSelect) {
     console.log(`${CAT}: Updating cached files for thumbnail selection: ${thumbSelect}`);
 
-    if (thumbSelect === `waiNSFWIllustrious_v120`) {
-        console.log(`${CAT}: Requesting download of waiNSFWIllustrious_v120 thumbs...`);
-        await requestDownloadOldThumbs();
-    } else if (thumbSelect === `waiANIMA_v10Base10`) {
-        console.log(`${CAT}: Requesting download of waiANIMA_v10Base10 thumbs...`);
-        await requestDownloadAnimaThumbs();
-    }
-    
+    await downloadThumbPack(thumbSelect);
+
     const temp_cachedCharacterThumb = {};
     const temp_cachedCharacter = {};
     const temp_cachedTagAssist = {};
@@ -342,6 +365,7 @@ async function updateCharacterThumb(thumbSelect) {
 }
 
 export {
+    startupThumbPack,
     setupCachedFiles,
     getCachedFiles,
     getCachedFilesWithoutThumb,

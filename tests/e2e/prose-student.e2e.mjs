@@ -9,7 +9,7 @@ import test from 'node:test';
 
 import { launchApp, workflow } from './harness.mjs';
 
-const STACK = 'C:\\Users\\kurah\\Documents\\Codex\\2026-08-15\\huggingface-llm-uncensored\\wai-stack';
+const STACK = 'C:\\Users\\kurah\\Documents\\Git\\huggingface-llm-uncensored\\wai-stack';
 const SERVER = process.env.SAA_STUDENT_SERVER || `${STACK}\\runtime\\llama.cpp-b11173\\llama-server.exe`;
 const MODEL = process.env.SAA_STUDENT_MODEL || `${STACK}\\models\\llm\\student-v1-q8_0.gguf`;
 const PORT = 8093;   // not the 8090 a hand-started student server may hold

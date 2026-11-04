@@ -554,7 +554,8 @@ body {
 
 .mydropdown-input {
     width: 100%;
-    padding: 4px;
+    /* the right side is the arrow's (.mydropdown-arrow, right: 8px); a long name stops before it */
+    padding: 4px 24px 4px 4px;
     border: 1px solid var(--saa-border);
     border-radius: 5px;
     background: var(--saa-bg-control);
