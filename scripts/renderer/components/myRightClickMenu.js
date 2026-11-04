@@ -18,6 +18,7 @@ function debounce(func, wait) {
 
 let menuBox = null;
 let currentSelectedText = '';
+let caretBeforeMenu = null;   // { element, at }: a caret the right-click turned into a word selection
 let currentMenuX = 0;
 let currentMenuY = 0;
 
@@ -51,6 +52,10 @@ function closeMenu() {
 }
 
 export function addSpellCheckSuggestions(suggestions, word) {
+    // no misspelling under the right-click: the word selected for Chromium gives the caret back
+    if (!word && caretBeforeMenu) caretBeforeMenu.element.setSelectionRange(caretBeforeMenu.at, caretBeforeMenu.at);
+    caretBeforeMenu = null;
+
     if (menuBox?.style.display === 'none') {
         // Menu is closed, ignoring spellcheck suggestions
         return;
@@ -303,6 +308,7 @@ export function setupRightClickMenu() {
 
         // update currentSelectedText (the main process answers with spellcheck suggestions)
         currentSelectedText = '';
+        caretBeforeMenu = null;
         if (isTextInput) {
             if (targetElement.selectionStart === targetElement.selectionEnd) {
                 // cursor word
@@ -314,6 +320,11 @@ export function setupRightClickMenu() {
                 while ((match = wordRegex.exec(text)) !== null) {
                     if (match.index <= cursorPos && cursorPos <= match.index + match[0].length) {
                         word = match[0];
+                        // Chromium names a misspelling only when it is the selection, and a right-click
+                        // on the caret itself does not select it; the word is selected here, and the
+                        // caret comes back when the answer has no misspelling
+                        targetElement.setSelectionRange(match.index, match.index + word.length);
+                        caretBeforeMenu = { element: targetElement, at: cursorPos };
                         break;
                     }
                 }
@@ -550,7 +561,8 @@ function countLabel(base, count) {
 
 function textareaSelection(scope) {
     if (!(scope instanceof HTMLTextAreaElement)) return [];
-    if (scope.selectionStart === scope.selectionEnd) return [];
+    // the word selected only for the spellchecker is still a caret to the menu
+    if (scope.selectionStart === scope.selectionEnd || caretBeforeMenu?.element === scope) return [];
     return splitPromptTokens(scope.value.slice(scope.selectionStart, scope.selectionEnd));
 }
 

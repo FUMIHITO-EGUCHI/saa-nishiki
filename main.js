@@ -30,7 +30,7 @@ import { setupGenerateBackendComfyUI, sendToRenderer } from './scripts/main/gene
 import { stopPodSshSession } from './scripts/main/podSshTransport.js';
 import { registerProseStudent, stopProseStudent } from './scripts/main/proseStudent.js';
 import { setupGenerateBackendWebUI } from './scripts/main/generate_backend_webui.js';
-import { getCachedFiles, setupCachedFiles } from './scripts/main/cachedFiles.js';
+import { getCachedFiles, setupCachedFiles, startupThumbPack } from './scripts/main/cachedFiles.js';
 import { setupWildcardsHandlers } from './scripts/main/wildCards.js';
 import { setupTagger } from './scripts/main/imageTagger.js';
 
@@ -104,6 +104,7 @@ async function initializeApp() {
   
   setupModelList(SETTINGS);
   const downloadSuccess = await setupDownloadFiles();
+  SETTINGS.thumb_select = await startupThumbPack(SETTINGS.thumb_select);
   const cacheSuccess = setupCachedFiles(SETTINGS.thumb_select);
 
   // Ensure wildcards list are set up before tag auto-complete

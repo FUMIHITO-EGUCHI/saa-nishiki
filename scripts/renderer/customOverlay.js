@@ -774,6 +774,15 @@ function createLoadingOverlay(loadingMessage, elapsedTimePrefix, elapsedTimeSuff
     return overlay;
 }
 
+// [COPY_URL] and [COPY_CUSTOM=color] become [url=] and [color=], which parseTaggedContent turns into
+// classes: the page's CSP drops inline style attributes
+export function overlayMarkup(message) {
+    return parseTaggedContent(message
+        .replaceAll(/\[COPY_URL\](https?:\/\/\S+?)\[\/COPY_URL\]/g, '[url=$1]$1[/url]')
+        .replaceAll(/\[COPY_CUSTOM(?:=(#[0-9A-Fa-f]{6}|[a-zA-Z]+))?\](.+?)\[\/COPY_CUSTOM\]/g,
+            (match, color, text) => `[color=${color || '#ffffff'}]${text}[/color]`));
+}
+
 // eslint-disable-next-line sonarjs/cognitive-complexity
 function createCustomOverlay(
     image, 
@@ -797,19 +806,7 @@ function createCustomOverlay(
     
     const hasImages = images.length > 0;
 
-    const processedMessage = parseTaggedContent(displayMessage)
-        .replaceAll('\n', '<br>')
-        .replaceAll(
-            /\[COPY_URL\](https?:\/\/[^\s]+)\[\/COPY_URL\]/g,
-            '<a href="$1" target="_blank" style="color: #1e90ff; text-decoration: underline;">$1</a>'
-        )
-        .replaceAll(
-            /\[COPY_CUSTOM(?:=(#[0-9A-Fa-f]{6}|[a-zA-Z]+))?\](.+?)\[\/COPY_CUSTOM\]/g,
-            (match, color, text) => {
-                const colorStyle = color || '#ffffff';
-                return `<span style="color: ${colorStyle}">${text}</span>`;
-            }
-        );
+    const processedMessage = overlayMarkup(displayMessage);
 
     const uniqueId = `cg-custom-overlay-${++customOverlayCounter}`;
     const sizeStorageKey = `customOverlaySize-${group}`;
@@ -1030,18 +1027,7 @@ function createCustomOverlay(
                 else overlay.remove();
             },
             setText: (message) => {
-                textDiv.innerHTML = parseTaggedContent(message).replaceAll('\n', '<br>')
-                .replaceAll(
-                    /\[COPY_URL\](https?:\/\/[^\s]+)\[\/COPY_URL\]/g,
-                    '<a href="$1" target="_blank" style="color: #1e90ff; text-decoration: underline;">$1</a>'
-                )
-                .replaceAll(
-                    /\[COPY_CUSTOM(?:=(#[0-9A-Fa-f]{6}|[a-zA-Z]+))?\](.+?)\[\/COPY_CUSTOM\]/g,
-                    (match, color, text) => {
-                        const colorStyle = color || '#ffffff';
-                        return `<span style="color: ${colorStyle}">${text}</span>`;
-                    }
-                );
+                textDiv.innerHTML = overlayMarkup(message);
             }
         };
     }
