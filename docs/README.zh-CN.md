@@ -222,7 +222,7 @@ npm start
 打包后的可执行文件使用等价选项：
 
 ```powershell
-.\saa.exe --saa-cdp-port=9222
+.\saa-nishiki.exe --saa-cdp-port=9222
 ```
 
 SAA 运行期间，DevTools 端点位于 `http://127.0.0.1:9222/json/list`。若 `9222` 被占用请换用其他端口。不要在不受信任或可从外部访问的机器上开启此选项，因为 CDP 可以检查并控制渲染进程。
@@ -682,10 +682,10 @@ funnygeeker [#87](https://github.com/mirabarukaso/character_select_stand_alone_a
 
 ------
 # FAQ
-双击 `saa.exe` 没有反应？
+双击 `saa-nishiki.exe` 没有反应？
 1. 可能是文件下载失败或文件缺失。
 2. 在控制台中运行：在资源管理器地址栏输入 `cmd` 打开控制台。
-3. 输入 `saa` 回车，查看后端日志。
+3. 输入 `saa-nishiki` 回车，查看后端日志。
 
 设置向导搞砸了……
 1. 关闭应用。

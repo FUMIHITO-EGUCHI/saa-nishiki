@@ -222,7 +222,7 @@ npm start
 For a packaged executable, the equivalent option is:
 
 ```powershell
-.\saa.exe --saa-cdp-port=9222
+.\saa-nishiki.exe --saa-cdp-port=9222
 ```
 
 The DevTools endpoint is available at `http://127.0.0.1:9222/json/list` while SAA is running. Use a different port if `9222` is already occupied. Do not enable this option on an untrusted or publicly reachable machine because CDP can inspect and control the renderer.
@@ -840,10 +840,10 @@ funnygeeker [#87](https://github.com/mirabarukaso/character_select_stand_alone_a
 
 ------
 # FAQ
-Double-clicked `saa.exe` but nothing happens?
+Double-clicked `saa-nishiki.exe` but nothing happens?
 1. Probably a download issue or missing files.
 2. Run it from a console: type `cmd` in the Explorer address bar to open one.
-3. Type `saa` and press Enter, then check the backend logs.
+3. Type `saa-nishiki` and press Enter, then check the backend logs.
 
 I messed up the setup wizard...
 1. Close the app.
