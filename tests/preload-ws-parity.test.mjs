@@ -155,6 +155,8 @@ const BROWSER_UNSUPPORTED = new Map([
     ['importUserLists', 'reads from a folder the user picked on the host'],
     ['downloadURL', 'writes the downloaded file to a path on the host'],
     ['libraryFavorites', "the stars name image files on the host's disks"],
+    ['sequencesGet', 'the sequence batch dialog and its edit mode exist in the desktop window only'],
+    ['sequencesSave', 'the sequence batch dialog and its edit mode exist in the desktop window only'],
     ['librarySetFavorite', "the stars name image files on the host's disks"],
     ['libraryShowInFolder', "opens a window in the host's file manager"],
     ['libraryRoots', "the Library's folders are on the host's disks"],
@@ -242,7 +244,7 @@ test('the browser client can reach every bridged method that is not host-only', 
         assert.ok(bridged.has(name), `${name} is still a bridged method`);
         assert.ok(!wsHandlers.has(name), `${name} is on the exception list but wsService now handles it - take it off`);
     }
-    assert.equal(missing.length, 47, '33 existing host-only methods plus 14 desktop workflow/edit methods');
+    assert.equal(missing.length, 49, '33 existing host-only methods plus 14 desktop workflow/edit methods and 2 for the sequence batch');
 });
 
 test('every websocket handler answers a method some client asks for', opts, () => {

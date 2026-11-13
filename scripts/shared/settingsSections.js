@@ -266,6 +266,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
     controlnet_slot: [],
 
     fav_characters: [],
+    // the sequence batch dialog (sequenceBatchUi.js): Random's count and the candidates per
+    // character x scene; a run of this many images or more asks first (0 = never asks)
+    sequence_run: { count: 3, candidates: 1 },
+    sequence_confirm_threshold: 100,
     fav_artists: [],
     // the artists picked most recently, newest first (the picker's opening list)
     artist_recent: [],
@@ -303,6 +307,7 @@ export const SECTION_KEYS = Object.freeze({
         'tag_assist', 'tag_chip_alias', 'wildcard_random',
         'keep_gallery', 'scroll_to_last', 'gallery_max_images', 'generate_auto_start',
         'fav_characters',
+        'sequence_run', 'sequence_confirm_threshold',
         'fav_artists',
         'artist_recent',
         'fav_tags',

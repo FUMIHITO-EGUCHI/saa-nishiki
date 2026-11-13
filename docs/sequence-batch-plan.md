@@ -87,13 +87,13 @@
 - D12 Regional ON: 開始不可(ボタン無効)。MVP 対象外。編集モード中は Regional の行を隠す(D25)
 - D13 バックエンド: ComfyUI のみ。WebUI 選択時 開始不可
 - D14 結果識別: レシピ(`saa_recipe`)に sequence 情報追加+保存先を実行ごとのフォルダに分ける。新ギャラリー作らない
-- D15 合計がしきい値以上 → 開始時に確認ダイアログ(`myDialog`)。しきい値は Settings › Generation で変更可(`sequence_confirm_threshold`、既定 100、0 = 確認しない)。上限は設けない
+- D15 合計がしきい値以上 → 開始時に確認ダイアログ(`myDialog`)。しきい値は Settings › General で変更可(`sequence_confirm_threshold`、既定 100、0 = 確認しない)。上限は設けない
 - D16 保存単位:
   - 設定セクションは新設しない(Phase 1 で変更、10 章)。Parts と同じ形の専用ストア `settings/sequences.json`(`makeEnvelope('sequences', …)`、main 側 `sequencesStore.js`)に `{ sequences: { <名前>: { field, scenes } }, current: { name, field, scenes }, editBackup }` を持つ
   - `current` = ダイアログで開いているシーケンス(未保存の変更込み)。名前付き保存 = `sequences[<名前>]` に写す
   - 保存は明示操作のみ(ダイアログの保存ボタン)。既存 Prompts の Preset 行と同じ見た目・確認(上書き確認・削除確認は `myDialog`)
   - 保存するのはシーンの流れ(シーン欄・シーン列)だけ。対象キャラはシーケンスにも設定にも保存しない(アプリ起動中だけメモリに保持、起動直後は空)
-  - Random の人数・候補数は app の `sequence_batch { count, candidates }` に保持し次回復元
+  - Random の人数・候補数は app の `sequence_run { count, candidates }` に保持し次回復元
 - D17 シーンの作り方: ダイアログの「New scene」(空)のみ。欄プリセットからは写さない(試し生成 → Save to scene で足りる)
 - D18 編集モード:
   - 入口: ダイアログのシーン行 ✎ → ダイアログを閉じ、シーン欄にそのシーンの `text` を読み込む
@@ -219,7 +219,7 @@
   - ページの行き来はフッターの `Next` / `← Scenes` だけ(タブは置かない)
 - 編集モード(モック `Editing.dc.html`): 4.3
 - 確認(モック `Confirm.dc.html`): 合計 ≥ しきい値のとき `Queue N images?`
-- 設定(モック `Settings.dc.html`): Settings › Generation に `sequence_confirm_threshold`
+- 設定(モック `Settings.dc.html`): Settings › General に `sequence_confirm_threshold`
 - 開始不可条件(ボタン無効): 対象キャラ 0、シーン 0、空のシーン有り、シーン欄が欄構成に無い、シーン欄 mute、Regional ON、ControlNet・IP-Adapter が効く(D24)、WebUI、model type Diffusion、生成ボタン非活性中
 - 進捗・停止: 既存キュー・Cancel・Skip
 
@@ -274,7 +274,7 @@
 ### Phase 3: 設定・生成経路
 
 - `scripts/main/sequencesStore.js` + IPC(`partsStore.js` / `parts_backend.js` と同じ形): 読込・保存・削除・`current` 書込
-- `scripts/shared/settingsSections.js`: app に `sequence_batch { count, candidates }`・`sequence_confirm_threshold` だけ足す
+- `scripts/shared/settingsSections.js`: app に `sequence_run { count, candidates }`・`sequence_confirm_threshold` だけ足す
 - `scripts/renderer/tools/promptBatchExpansion.js`: override に `characters`(スロット番号 → キー)を追加。シーケンス行用の開始関数(fields = baseFields + シーン欄のキー(views / background / style / `cf_…`)、seed = 行シード)
 - `scripts/renderer/generate.js`:
   - `createCharacters`: override の `characters[index]` があればそれを `getKey()[index]` と Info 用の `getValue()[index]` の代わりに使う。スロット 1 以外は `None`
@@ -392,9 +392,12 @@ E2E(`tests/e2e/sequence-batch.e2e.mjs`、実 Electron+実 ComfyUI、既存 `harn
 - 編集モード中のアプリ終了: シーン欄にシーンの文が入ったまま state.json に保存される → 入るときの退避値を `sequences.json` の `editBackup { fieldKey, text }` にも書き、起動時に残っていたら欄へ戻して消す
 - サムネの大きさ: 128px 高の JPEG(品質 0.8)で data URL 4〜7KB の見込み → 実装時に実測。10KB を超えたら品質を下げる
 
-### 未確認(実装中に実測)
+### 実測(2026-11-14、実装後)
 
-- シーンごとに LoRA タグが違うときの切替コスト(ComfyUI v0.40 の pinned memory 下)。GPU と ComfyUI を動かす必要があるので E2E の作成時に測る。遅ければ D7 をシーン単位に変える
+- シーンごとに LoRA タグが違うときの切替コスト(ComfyUI 0.40、512×512・4 steps、キャラ単位の順 = 毎枚切り替わる)
+  - LoRA 無しのシーンだけ: 1 枚 約 1.0 秒
+  - LoRA 付きのシーン: 初回 8.2 秒(LoRA ファイルの初読込)、以後 2.6〜3.1 秒。直後の LoRA 無しのシーン: 約 1.4 秒
+  - 切替 1 回の上乗せ = 約 2 秒。普段の 28 steps・Hires 付き(1 枚 20〜30 秒)なら 1 割未満 → D7(キャラ単位)のまま
 
 ## 11. 実装者(Claude)への指示
 

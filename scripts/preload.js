@@ -167,6 +167,9 @@ contextBridge.exposeInMainWorld('api', {
   partsApply: async (change) => ipcRenderer.invoke('parts-apply', change),
   partsAddSample: async (id, meta, dataUrl) => ipcRenderer.invoke('parts-add-sample', id, meta, dataUrl),
   partsSampleImage: async (id, sampleId) => ipcRenderer.invoke('parts-sample-image', id, sampleId),
+  // Sequence batch: the saved sequences, the open one and the edit-mode backup (settings/sequences.json)
+  sequencesGet: async () => ipcRenderer.invoke('sequences-get'),
+  sequencesSave: async (doc) => ipcRenderer.invoke('sequences-save', doc),
   libraryFavorites: async () => ipcRenderer.invoke('library-favorites'),
   librarySetFavorite: async (file, on) => ipcRenderer.invoke('library-set-favorite', file, on),
   libraryShowInFolder: async (file) => ipcRenderer.invoke('library-show-in-folder', file),

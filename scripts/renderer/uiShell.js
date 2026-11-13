@@ -24,6 +24,7 @@ const ICONS = {
     lock: iconMarkup('lock', 14),
     chevD: iconMarkup('chevron-down', 12),
     layers: iconMarkup('layers', 13),
+    grid: iconMarkup('grid', 13),
 };
 
 const PIPE_TABS = { 'highres-fix': 'hires', refiner: 'refiner', adetailer: 'aDetailer', controlnet: 'controlnet', 'add-lora': 'lora', jsonlist: 'jsonlist' };
@@ -444,6 +445,7 @@ function setupRunBar() {
     const menuButton = document.getElementById('generate-batch-menu-button');
     const menuList = document.getElementById('generate-batch-menu-list');
     const expandItem = document.getElementById('generate-batch-expand');
+    const sequenceItem = document.getElementById('generate-batch-sequence');
     const closeMenu = () => { if (menuList) menuList.hidden = true; menuButton?.setAttribute('aria-expanded', 'false'); };
     if (menuButton && menuList) {
         menuButton.addEventListener('click', event => {
@@ -458,6 +460,9 @@ function setupRunBar() {
         document.addEventListener('click', event => { if (!event.target.closest('#generate-batch-menu')) closeMenu(); });
         document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenu(); });
     }
+    // the sequence batch (sequenceBatchUi.js); a desktop-window feature
+    if (sequenceItem && globalThis.inBrowser) sequenceItem.hidden = true;
+    sequenceItem?.addEventListener('click', () => globalThis.sequenceBatch?.open?.({ trigger: menuButton }));
     expandItem?.addEventListener('click', () => {
         const field = globalThis.prompt?.tagCapsuleFields?.get?.('positive');
         if (!field) return;
@@ -497,6 +502,7 @@ function setupRunBar() {
         const SETTINGS = globalThis.globalSettings ?? {};
         if (menuButton) setMarkup(menuButton, `${escapeHtml(uiText('ui_run_batch_menu', 'Batch'))}<span>${ICONS.chevD}</span>`);
         if (expandItem) setMarkup(expandItem, `<span>${ICONS.layers}</span>${escapeHtml(uiText('ui_run_expand_weights', 'Expand weights per image…'))}`);
+        if (sequenceItem) setMarkup(sequenceItem, `<span>${ICONS.grid}</span>${escapeHtml(uiText('ui_run_sequence', 'Sequence…'))}`);
         if (queueStatus) {
             const count = globalThis.queueManager?.getSlotsCount?.() ?? 0;
             const auto = SETTINGS.generate_auto_start ? uiText('ui_run_autostart_on', 'auto-start on') : uiText('ui_run_autostart_off', 'auto-start off');

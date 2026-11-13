@@ -44,6 +44,8 @@ import { setupViewerInfo } from './renderer/viewerInfo.js';
 import { setupUseSettings } from './renderer/useSettingsDialog.js';
 import { setupLibrary } from './renderer/libraryWindow.js';
 import { setupLoraUi } from './renderer/loraUi.js';
+import { setupSequenceBatch } from './renderer/sequenceBatchUi.js';
+import { setupSequenceEdit } from './renderer/sequenceEdit.js';
 import { filterPrompts } from './renderer/tools/promptFilter.js';
 import { setupRightClickMenu, addSpellCheckSuggestions } from './renderer/components/myRightClickMenu.js';
 import { extractHostPort } from './renderer/generate.js';
@@ -879,6 +881,9 @@ async function init(){
         // Autosave (app.json / state.json), per-section preset controls, flush on unload.
         setupSettingsPersistence({ updateSettings, flushSlots, getTextboxHeights: get_prompt_textBox_Heights });
         setupEditHistoryUi();
+        // the sequence batch: its store, and a scene field an unfinished edit mode left behind
+        setupSequenceEdit();
+        await setupSequenceBatch();
         if (ranWizard) {
             // first run: persist the wizard result right away
             globalThis.settingsAutosave.markDirty('app');

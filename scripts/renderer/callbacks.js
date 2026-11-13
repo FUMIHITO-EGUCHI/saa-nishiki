@@ -432,7 +432,8 @@ export async function callback_generate_start(runType='normal', dataPack=null){
 
     try {
         if (runType === 'normal') {
-            if(globalThis.globalSettings.regional_condition) {
+            // a trial run in sequence edit mode is always one character, never Regional
+            if(globalThis.globalSettings.regional_condition && !globalThis.sequenceEdit?.isActive?.()) {
                 await generateRegionalImage(dataPack);
             } else {
                 await generateImage(dataPack);

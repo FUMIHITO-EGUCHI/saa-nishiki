@@ -1200,7 +1200,7 @@ class ComfyUI {
   createWorkflow(generateData) {
     const {addr, auth, uuid, model, vpred, positive, negative, 
       width, height, cfg, step, seed, sampler, scheduler, refresh, 
-      hifix, refiner, controlnet, adetailer, vae, img_prefix} = generateData;
+      hifix, refiner, controlnet, adetailer, vae, img_prefix, img_filename} = generateData;
 
     this.addr = addr;
     this.refresh = refresh;
@@ -1288,6 +1288,7 @@ class ComfyUI {
     workflow["29"].inputs.steps = step;
     workflow["29"].inputs.cfg = cfg;
     workflow["29"].inputs.path = img_prefix;
+    if (img_filename) workflow["29"].inputs.filename = img_filename;
 
     // Set Ksampler seed and steps
     workflow["36"].inputs.noise_seed = seed;
@@ -1396,7 +1397,7 @@ class ComfyUI {
   createWorkflowUNet(generateData) {
     const {addr, auth, uuid, refresh, positive, negative, 
       width, height, cfg, step, seed, sampler, scheduler,  
-      unet, hifix, adetailer, img_prefix} = generateData;
+      unet, hifix, adetailer, img_prefix, img_filename} = generateData;
 
     this.addr = addr;
     this.refresh = refresh;
@@ -1461,6 +1462,7 @@ class ComfyUI {
     workflow["29"].inputs.steps = step;
     workflow["29"].inputs.cfg = cfg;
     workflow["29"].inputs.path = img_prefix;
+    if (img_filename) workflow["29"].inputs.filename = img_filename;
 
     // Set Ksampler Sampler and Scheduler
     workflow["36"].inputs.sampler_name = sampler;    
@@ -1541,7 +1543,7 @@ class ComfyUI {
   createWorkflowRegional(generateData) {
     const {addr, auth, uuid, model, vpred, positive_left, positive_right, negative, 
       width, height, cfg, step, seed, sampler, scheduler, refresh, 
-      hifix, refiner, regional, controlnet, adetailer, vae, img_prefix} = generateData;
+      hifix, refiner, regional, controlnet, adetailer, vae, img_prefix, img_filename} = generateData;
     // per-side negatives (Nishiki); older callers send one `negative` for both sides
     const negative_left = generateData.negative_left ?? negative;
     const negative_right = generateData.negative_right ?? negative;
@@ -1629,6 +1631,7 @@ class ComfyUI {
     workflow["29"].inputs.steps = step;
     workflow["29"].inputs.cfg = cfg;
     workflow["29"].inputs.path = img_prefix;
+    if (img_filename) workflow["29"].inputs.filename = img_filename;
 
     // Set Ksampler seed and steps
     workflow["36"].inputs.noise_seed = seed;
@@ -1758,7 +1761,7 @@ class ComfyUI {
   createWorkflowRegionalUnet(generateData) {
     const {addr, auth, uuid, positive_left, positive_right, negative, 
       width, height, cfg, step, seed, sampler, scheduler, refresh, 
-      hifix, regional, adetailer, img_prefix, unet} = generateData;
+      hifix, regional, adetailer, img_prefix, unet, img_filename} = generateData;
     const negative_left = generateData.negative_left ?? negative;
     const negative_right = generateData.negative_right ?? negative;
 
@@ -1824,6 +1827,7 @@ class ComfyUI {
     workflow["29"].inputs.steps = step;
     workflow["29"].inputs.cfg = cfg;
     workflow["29"].inputs.path = img_prefix;
+    if (img_filename) workflow["29"].inputs.filename = img_filename;
     // Combine prompt
     workflow["29"].inputs.positive = `${positive_left}\n\n${positive_right}`;
     workflow["29"].inputs.negative = `${negative_left}\n\n${negative_right}`;

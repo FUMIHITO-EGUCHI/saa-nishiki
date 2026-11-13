@@ -71,6 +71,18 @@ regional: run.regional === true,
         prose,
         ai,
         sent,
+        ...(isObject(run.sequence) ? { sequence: {
+            runId: text(run.sequence.runId),
+            sequenceName: text(run.sequence.sequenceName),
+            field: text(run.sequence.field),
+            characterKey: text(run.sequence.characterKey),
+            characterIndex: finite(run.sequence.characterIndex),
+            sceneIndex: finite(run.sequence.sceneIndex),
+            sceneName: text(run.sequence.sceneName),
+            candidate: finite(run.sequence.candidate),
+            candidates: finite(run.sequence.candidates),
+            total: finite(run.sequence.total),
+        } } : {}),
     };
 }
 

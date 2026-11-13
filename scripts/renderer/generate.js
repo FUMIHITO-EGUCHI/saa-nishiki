@@ -12,7 +12,8 @@ import { convertToMultipleOfNFloor, checkNumberInRange } from './tools/numbers.j
 import { normalizeControlType } from '../shared/controlNetUnion.js';
 import { setQueueAutoStart } from './callbacks.js';
 import { filterPrompts } from './tools/promptFilter.js';
-import { beginImageOverride, createPlanWeigher, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
+import { beginImageOverride, beginSequenceOverride, createPlanWeigher, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
+import { patchRecipePrompt, sequenceQueueLabel, sequenceSaveTarget } from '../shared/sequenceBatch.js';
 import { isOriginalKey, originalCharacterName, originalKey } from '../shared/characterKeys.js';
 import { isStructuredRefineFormat, removeAiPromptMarker, renderAiPromptInfo } from '../aiPromptRefiner.js';
 import { composeNegativeChain } from '../shared/negativeComposition.js';
@@ -227,7 +228,12 @@ export function getCustomFieldTexts(polarity) {
 
 async function createCharacters(index, seeds) {
     const FILES = globalThis.cachedFiles;
-    const character = globalThis.characterList.getKey()[index];
+    // a sequence-batch row names its character for slot 1; every other slot is empty then
+    const override = getActiveOverride();
+    const fromOverride = Array.isArray(override?.characters);
+    // a trial run in sequence edit mode is one character too: the first slot (sequenceEdit.js)
+    const editTrial = !fromOverride && index > 0 && globalThis.sequenceEdit?.isActive?.();
+    const character = fromOverride ? (override.characters[index] ?? 'None') : (editTrial ? 'None' : globalThis.characterList.getKey()[index]);
     const isValueOnly = globalThis.characterList.isValueOnly();
     const seed = seeds[index];
 
@@ -239,7 +245,7 @@ async function createCharacters(index, seeds) {
     const isOriginalCharacter = isOriginalKey(character);
     const { tag, thumb, info, weight, name, key } = isOriginalCharacter
         ? handleOriginalCharacter(originalCharacterName(character), seed, isValueOnly, index, FILES)
-        : await handleStandardCharacter(character, seed, isValueOnly, index, FILES);
+        : await handleStandardCharacter(character, seed, isValueOnly, index, FILES, fromOverride);
 
     const { tag: parsedTag, neg_tags } = splitTagNegativePrompt(tag);
 
@@ -260,7 +266,7 @@ async function createCharacters(index, seeds) {
     };
 }
 
-async function handleStandardCharacter(character, seed, isValueOnly, index, FILES) {
+async function handleStandardCharacter(character, seed, isValueOnly, index, FILES, fromOverride = false) {
     let tag, thumb, info, name;
     let key = character;
     if (character.toLowerCase() === 'random') {
@@ -291,7 +297,8 @@ async function handleStandardCharacter(character, seed, isValueOnly, index, FILE
         });
         info = formatCharacterInfo(index, isValueOnly, {
         key: displayName,
-        value: globalThis.characterList.getValue()[index]
+        // the slot's own value is not this character's while a sequence row overrides it
+        value: fromOverride ? tag : globalThis.characterList.getValue()[index]
         });
         name = displayName;
     }
@@ -1187,6 +1194,11 @@ function partsSampleHandler(generateData) {
     return id ? partsSampleHandlers.get(id) ?? null : null;
 }
 
+// the name a sequence row's files and queue entry carry: the character's display name
+function sequenceCharacterName(createPromptResult, row) {
+    return String(createPromptResult?.charactersName ?? '').split('\n')[0] || row.characterKey;
+}
+
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export async function generateImage(dataPack){
     const {runSame} = dataPack;
@@ -1202,8 +1214,12 @@ export async function generateImage(dataPack){
     const negativeColor = (globalThis.globalSettings.css_style==='dark')?'red':'Crimson';
     const brownColor = (globalThis.globalSettings.css_style==='dark')?'BurlyWood':'Brown';    
     
+    // a sequence batch (sequenceBatchUi.js): one queue row per character x scene x candidate
+    const sequence = dataPack.sequence ?? null;
     const aiPromptInterface = globalThis.ai.interface.getValue();
-    const aiPromptCurrentRole = globalThis.ai.ai_select.getValue();
+    // no AI Refine while a sequence runs: one LLM call per image, and a "Once" answer would
+    // carry image #1's scene into every other scene (docs/sequence-batch-plan.md D8)
+    const aiPromptCurrentRole = sequence ? 'None' : globalThis.ai.ai_select.getValue();
     const aiEndpoint = currentLocalLlmEndpoint();
     const aiRunSettings = {
         interface: aiPromptInterface,
@@ -1225,7 +1241,8 @@ export async function generateImage(dataPack){
         generateRandomSeed,
         baseFields: snapshotFieldsForPromptOverride(refineSnapshot),
     });
-    const loops = expansion.loops;
+    // a sequence's rows are planned by the dialog; weight plans do not expand then (D10)
+    const loops = sequence ? sequence.rows.length : expansion.loops;
     const refineRun = createRefineRunController({
         role: aiPromptCurrentRole,
         runSame,
@@ -1263,10 +1280,13 @@ export async function generateImage(dataPack){
         if(!globalThis.inGenerating)
             globalThis.generate.loadingMessage = LANG.generate_warmup.replace('{0}', `${loop+1}`).replace('{1}', loops);
 
-        const imageOverride = beginImageOverride(expansion, loop);
+        const sequenceRow = sequence ? sequence.rows[loop] : null;
+        const imageOverride = sequenceRow
+            ? beginSequenceOverride({ baseFields: expansion.baseFields, fieldKey: sequence.field, row: sequenceRow, imageIndex: loop })
+            : beginImageOverride(expansion, loop);
         let createPromptResult;
         try {
-            createPromptResult = await createPrompt(runSame, aiPromot, apiInterface, (loops > 1)?loop:-1);
+            createPromptResult = await createPrompt(runSame, aiPromot, apiInterface, (loops > 1 && !sequence)?loop:-1);
         } finally {
             endImageOverride();
         }
@@ -1401,7 +1421,29 @@ export async function generateImage(dataPack){
 
             img_prefix: getImageSavePrefix(apiInterface, createPromptResult.img_prefix)
         };
-        generateData.recipe = queuedRecipe(recipeSections, {
+        // a sequence row goes to the run's folder under its own name
+        if (sequenceRow) {
+            const target = sequenceSaveTarget({ runId: sequence.runId, characterName: sequenceCharacterName(createPromptResult, sequenceRow), sceneIndex: sequenceRow.sceneIndex, sceneName: sequenceRow.sceneName, candidate: sequenceRow.candidate });
+            generateData.img_prefix = target.path;
+            generateData.img_filename = target.filename;
+        }
+        // a sequence row's recipe holds what the row ran: its character and its scene's text
+        const rowSections = sequenceRow && recipeSections
+            ? { ...recipeSections, prompt: patchRecipePrompt(recipeSections.prompt, { characterKey: sequenceRow.characterKey, sceneText: sequenceRow.sceneText, fieldKey: sequence.field }) }
+            : recipeSections;
+        generateData.recipe = queuedRecipe(rowSections, {
+            ...(sequenceRow ? { sequence: {
+                runId: sequence.runId,
+                sequenceName: sequence.name,
+                field: sequence.field,
+                characterKey: sequenceRow.characterKey,
+                characterIndex: sequenceRow.characterIndex,
+                sceneIndex: sequenceRow.sceneIndex,
+                sceneName: sequenceRow.sceneName,
+                candidate: sequenceRow.candidate,
+                candidates: sequence.candidates,
+                total: sequence.rows.length,
+            } } : {}),
             seed: createPromptResult.randomSeed,
             width,
             height,
@@ -1438,13 +1480,11 @@ export async function generateImage(dataPack){
             break;
         
         const nameList = generateData.queueManager.id.replaceAll('\n', ' | ');
-        globalThis.queueManager.attach(
-            [   (nameList === '') ? LANG.generate_normal.replace('{0}', `${createPromptResult.randomSeed} | ${createPromptResult.positivePrompt}`) : 
-                LANG.generate_normal.replace('{0}', `${createPromptResult.randomSeed} | ${nameList}`), 
-                createPromptResult.positivePrompt
-            ], 
-            generateData
-        );
+        const queueLabel = sequenceRow
+            ? sequenceQueueLabel({ characterName: sequenceCharacterName(createPromptResult, sequenceRow), sceneName: sequenceRow.sceneName, candidate: sequenceRow.candidate })
+            : (nameList === '') ? LANG.generate_normal.replace('{0}', `${createPromptResult.randomSeed} | ${createPromptResult.positivePrompt}`) :
+                LANG.generate_normal.replace('{0}', `${createPromptResult.randomSeed} | ${nameList}`);
+        globalThis.queueManager.attach([queueLabel, createPromptResult.positivePrompt], generateData);
       } catch (error) {
         console.error('[Generate] Failed to prepare image', loop + 1, error);
         prepareError = error;

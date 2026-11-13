@@ -379,6 +379,7 @@ export const sharedBodyHTML = `
                       <div class="generate-button-batch" role="menuitem"></div>
                       <div class="generate-button-same" role="menuitem"></div>
                       <button type="button" class="generate-batch-menu-item" id="generate-batch-expand" role="menuitem"></button>
+                      <button type="button" class="generate-batch-menu-item" id="generate-batch-sequence" role="menuitem"></button>
                     </div>
                   </div>
                 </div>
