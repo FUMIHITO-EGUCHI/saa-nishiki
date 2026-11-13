@@ -74,7 +74,7 @@
 - D1 母集団: お気に入り全体。グループ機能は作らない
 - D2 選出: 対象キャラ = 右のリスト(順序あり・重複なし)。左のお気に入り一覧から 1 人ずつクリックで足す、`Add all` で全員を足す、`Random` [N] で右のリストを N 人のランダムに置き換える(1 ≤ N ≤ 母集団数)。右のリストはドラッグで並べ替え、× で外す、`Clear` で空にする
 - D3 抽選: Random ボタンでダイアログ上で実施、押すたびに引き直し。抽選後も手で足す・外す・並べ替えできる。開始時は右のリストをその順のまま使う。RNG = `crypto.getRandomValues` + Fisher–Yates。シード非依存
-- D4 キャラ注入先: キャラスロット 1 のみ上書き(キー固定)。スロット 1 の重みは現状維持。スロット 2・3 は D21
+- D4 キャラ注入先: キャラスロット 1 のみ上書き(キー固定)。スロット 1 の重みは現状維持。スロット 2・3 は D21。`createCharacters` はキー(`getKey()[i]`)と Info 表示用の値(`getValue()[i]`)の両方を override から読む
 - D5 シーン: シーケンス内の `text` をそのまま使う(名前参照しない)。シーン欄テキストは置換(追記ではない)
 - D6 候補シード: 基準シード B、候補 c(0 始まり)のシード = `(B + c) mod 2^32`。全キャラ・全シーン共通 → 「候補 2 同士」比較可
   - シード欄 −1 → B を `generateRandomSeed()` で 1 回生成
@@ -89,8 +89,9 @@
 - D14 結果識別: レシピ(`saa_recipe`)に sequence 情報追加+保存先を実行ごとのフォルダに分ける。新ギャラリー作らない
 - D15 合計がしきい値以上 → 開始時に確認ダイアログ(`myDialog`)。しきい値は Settings › Generation で変更可(`sequence_confirm_threshold`、既定 100、0 = 確認しない)。上限は設けない
 - D16 保存単位:
-  - 設定セクション `sequence` を新設。キー = `sequence_field`、`sequence_scenes`。現在値は state.json、名前付き保存は `settings/presets/sequence/<名前>.json`(既存 `settingsStore` の `savePreset` / `loadPreset` / `deletePreset`)
-  - 保存は明示操作のみ(ダイアログの保存ボタン)。既存 Prompts の Preset 行と同じ挙動
+  - 設定セクションは新設しない(Phase 1 で変更、10 章)。Parts と同じ形の専用ストア `settings/sequences.json`(`makeEnvelope('sequences', …)`、main 側 `sequencesStore.js`)に `{ sequences: { <名前>: { field, scenes } }, current: { name, field, scenes }, editBackup }` を持つ
+  - `current` = ダイアログで開いているシーケンス(未保存の変更込み)。名前付き保存 = `sequences[<名前>]` に写す
+  - 保存は明示操作のみ(ダイアログの保存ボタン)。既存 Prompts の Preset 行と同じ見た目・確認(上書き確認・削除確認は `myDialog`)
   - 保存するのはシーンの流れ(シーン欄・シーン列)だけ。対象キャラはシーケンスにも設定にも保存しない(アプリ起動中だけメモリに保持、起動直後は空)
   - Random の人数・候補数は app の `sequence_batch { count, candidates }` に保持し次回復元
 - D17 シーンの作り方: ダイアログの「New scene」(空)のみ。欄プリセットからは写さない(試し生成 → Save to scene で足りる)
@@ -272,19 +273,22 @@
 
 ### Phase 3: 設定・生成経路
 
-- `scripts/shared/settingsSections.js`: セクション `sequence`(`sequence_field`、`sequence_scenes`)と既定値、app に `sequence_batch`・`sequence_confirm_threshold`
-- `scripts/renderer/tools/promptBatchExpansion.js`: override に `characters`(スロット番号 → キー)を追加。シーケンス行用の開始関数(fields = baseFields + シーン欄、seed = 行シード)
+- `scripts/main/sequencesStore.js` + IPC(`partsStore.js` / `parts_backend.js` と同じ形): 読込・保存・削除・`current` 書込
+- `scripts/shared/settingsSections.js`: app に `sequence_batch { count, candidates }`・`sequence_confirm_threshold` だけ足す
+- `scripts/renderer/tools/promptBatchExpansion.js`: override に `characters`(スロット番号 → キー)を追加。シーケンス行用の開始関数(fields = baseFields + シーン欄のキー(views / background / style / `cf_…`)、seed = 行シード)
 - `scripts/renderer/generate.js`:
-  - `createCharacters`: override の `characters[index]` があればそれを `globalThis.characterList.getKey()[index]` の代わりに使う
+  - `createCharacters`: override の `characters[index]` があればそれを `getKey()[index]` と Info 用の `getValue()[index]` の代わりに使う。スロット 1 以外は `None`
   - `generateImage`: `dataPack.sequence` 時は `planBatchExpansion` を使わず行列でループ、AI role None 扱い、prefix・recipe・キュー表示名を sequence 用に
   - `getImageSavePrefix`: sequence prefix 分岐
+- `scripts/renderer/loraUi.js` `partLorasForPrompt`: override 中は画面の欄ではなく override の文から `parts:` の LoRA を拾う
+- `scripts/renderer/callbacks.js:435`: 編集モード中は Regional ON でも `generateImage` に回す
 - `scripts/shared/recipe.js`: `cleanRun` に `sequence`
 - 通常生成経路(`dataPack.sequence` 無し)の挙動は不変
 
 ### Phase 4: UI
 
 - ダイアログ 1 ファイル(`scripts/renderer/` 配下)、Batch ▾ メニューに項目、言語ファイルに文言
-- シーケンス保存・読込・削除: 既存プリセット IPC(`preload.js` の sectioned settings)を `sequence` セクションで使う
+- シーケンス保存・読込・削除: `sequencesStore` の IPC
 - 編集モード 1 ファイル: 編集中バー、シーン欄の退避・読込・即反映・復元、対象欄の印(`promptFieldManager.js` の欄行にクラスとピル)、+ LoRA ボタン(既存 LoRA ピッカー再利用)、ビューワーの Save to scene ボタン
 - サムネ縮小: renderer の canvas で縮小 → `toDataURL('image/jpeg')`
 
@@ -335,29 +339,62 @@ E2E(`tests/e2e/sequence-batch.e2e.mjs`、実 Electron+実 ComfyUI、既存 `harn
 - ダイアログ内でのシーン文の直接編集、Library からの Save to scene
 - 専用ギャラリー、中断再開
 - Regional・WebUI 対応
+- Pod 経路での実行ごとのフォルダ分け
 - Anima(Diffusion)対応(12 章、初期版の後)
 
 先行実装・過剰抽象化 禁止。
 
-## 10. 要確認(Phase 1)
+## 10. Phase 1 の確認結果(2026-11-14、00b7d37 時点のコード)
 
-- お気に入りに OC(`oc:` キー)が入るか、`fav_characters` の値はキーか表示名か(`characterSelectionModal.js:108` 付近)
-- 欄プリセットのキー: カスタム欄は `cf_xxx` id か、Background / Style は何か。シーン欄候補の列挙方法
-- `createCharacters` 上書きでサムネ・表示名・`characterKeys` が追従するか
-- `baseFields` スナップショットにシーン欄を差し込んだとき mute・無効タグ `~tag`・`parts:` 展開が既存どおり効くか
-- Library が `seq-<runId>/` を 1 フォルダとして出すか(`scripts/main/libraryIndex.js` `folders`)
-- Pod 経路(`podSshTransport.js`、flat フォルダ)で prefix のサブフォルダが効くか。効かなければファイル名のみで識別
-- `image_save_embed_character_name` / `image_save_path_comfyui` 設定との合成規則(sequence 時は上書きでよいか)
-- 生成時間の推定に既存 `runTiming` が使えるか(使えなければ表示しない)
-- セクション新設の影響: `SECTION_KEYS` に `sequence` を足すと state.json・`preset_current`・Undo トランザクション(`runEditTransaction`)・設定ウィザード・設定ディレクトリ移行に何が起きるか。プリセット UI がセクション一覧を総なめしていないか
-- シーン欄へのテキスト読込方法: チップ欄の値を丸ごと差し替える既存 API(欄プリセット適用と同じ経路)があるか。差し替えが Undo 履歴に積まれるか(積まれるなら編集モードの出入りを 1 トランザクションにまとめる)
-- 編集モード中にアプリ終了したとき: シーン欄にシーンの文が入ったまま state.json に保存される。起動時に退避値へ戻すか、そのまま残すか
-- シーン LoRA(D23): カスタム欄・Background に書いた `<lora:…>` が結合後の positive にそのまま残り LoRAfromText に届くか。チップ表示(2026-11-13 実機: カプセル表示では `<lora:…>` が生の文字のまま 1 チップで出る)・`tagLint`・ADetailer 側プロンプトでの扱い。レシピ取込(`recipe.js` の `<lora:…>` を LoRA 行にする処理)と二重にならないか
-- シーンごとに LoRA タグが違うときの切替コスト(ComfyUI v0.40 pinned memory 下で実測)。キャラ単位の生成順(D7)だと毎枚切り替わる → 遅ければ D7 をシーン単位に変える
-- 編集モード中の Regional: 入る前に ON のとき、試し生成を OFF 扱いにする経路(override か一時的な設定差し替えか)。Undo・state.json に残さない方法
-- スロット 2・3 を None 扱いにする経路: override の `characters` で 2・3 を `None` にすれば足りるか
-- ビューワーの表示中の絵からレシピを取る経路(`imageInfo.js` / `openImage` 周辺)と、絵の縮小に使える画像 URL
-- サムネ data URL のサイズ: シーン数 × 数 KB でプリセットファイル・state.json が肥大しないか(目安 1 シーン 10KB 以下)
+### キャラ
+
+- お気に入り: `fav_characters` = キャラ選択モーダルの option の `key` をそのまま保存(`characterSelectionModal.js:118`)。OC は `oc:<名前>` キーで入る。Random / None は入らない
+  - 古い値は大小文字・`_` が違うことがある → 突き合わせは `normalizeSelectionKey`(`selectionModalLogic.js:22`)。どの option にも当たらない値(リストから消えたキャラ)は一覧から外す
+  - 並び順は `localeCompare` のアルファベット順(`favoriteCharacters.js:5`)。左の一覧はこの順
+- `createCharacters`(`generate.js:228`): キーは `characterList.getKey()[index]`、Info 表示の値は `getValue()[index]`、重みは `getTextValue(index)`。サムネ(`decodeThumb(key)`)・タグ・表示名・`characterKey`(レシピ)はキーに付いてくる
+  - → override に `characters`(スロット番号 → キー)を足し、キーと Info 値の 2 か所で読む。重みは UI のスロット 1 のまま(D4)
+- スロット 2・3: override で `None` を渡せば `createCharacters` 冒頭で空になる(`generate.js:234`)。スロットは 3 個とは限らない(`getSlotCount()`、+/− で増減)→ 1 以外は全部 `None`
+
+### 欄
+
+- シーン欄の候補: `PRESETABLE_BUILTINS`(`promptFieldManager.js:64`)の views / background / style と、カスタム欄(`prompt_custom_fields[].id`、`cf_…`)。ただし Checkpoint ではキャスト欄と `cf_action`(Diffusion 専用、`castMembers.js:47`)を除く
+  - レシピ上の場所: views → `view_tags`、background → `prompt_background`、style → `prompt_style`、カスタム欄 → `prompt_custom_fields[id].text`
+  - 名前が "Action" の欄は文章扱い(カプセル表示にならない、`isActionNamed`)。シーン欄に使える
+- 文字の読み出し: `readPromptValue(key)`(`promptBatchExpansion.js:19`)が mute → override → `stripDisabledTags`(`~tag`)→ `expandParts`(`parts:`)の順に処理。override の `fields[key]` にシーン文を入れれば、mute・`~tag`・`parts:` は既存どおり効く
+  - カスタム欄は `readCustomFieldValue`(`generate.js:208`)経由。欄の UI が無いとき(非表示の Diffusion 欄)は override を見ない → シーン欄の候補から外すので問題なし
+  - 注意: `baseFields`(`snapshotFieldsForPromptOverride`)は common / positive / negative 系しか持たない。シーン欄は baseFields に足すのではなく、行ごとの override に別キーで入れる
+- 欄の文字の差し替え: 欄プリセットの適用と同じく `globalThis.prompt[id].setValue(text)` + 設定への書込(カスタム欄 = `setFieldText`、組込み欄 = `SETTINGS[prompt_background 等]`)。`setValue` は入力コールバックを呼ばない
+- Undo: prompt セクションへの書込は全部 Undo 履歴に積まれる(`settingsPersistence.js:56`、キー単位でまとめる)。→ 編集モードの入る・出る・シーン切替・Save to scene は `runEditTransaction({ source: 'sequence-edit', sections: ['prompt'] })` で 1 手にまとめる。編集中の手入力は普段どおり Undo できる
+  - Undo で編集モード中のシーン欄が戻ると、欄 = シーンの関係が崩れる → 欄の変更を監視してシーンに書き戻す(D18 の即反映と同じ経路)ので、Undo も即反映される
+
+### LoRA・Regional・レシピ
+
+- シーン LoRA: バックエンドは positive 全体から `<lora:…>` を拾う(`generate_backend_comfyui.js:1302` の `splitLoraText(positive)`)。カスタム欄・Background の文に入ったタグも LoRAfromText に届く
+  - スロット由来のタグは `<lora:<ファイル名(.safetensors 付き)>:m:c>`(`generate.js:612`)。+ LoRA で挿すタグも同じ形にする(ファイル名・値 2 つ)
+  - `tagLint` は `<…>` を飛ばす(`tagLint.js:44`)。ADetailer は LoRAfromText の出力から描くので LoRA は効く(`loraStageModels.js`)
+  - レシピ取込で `<lora:…>` を LoRA 行にするのは外部(A1111)の文字列を読むときだけ(`recipe.js:214`)。SAA のレシピは sections を持つので二重にならない
+  - 見つかった問題: `parts:` が持つ LoRA(`partLorasForPrompt`、`loraUi.js:525`)は override ではなく画面の欄を読む。シーン文に `parts:` を書くと、その Parts の LoRA が付かない(画面の欄の Parts の LoRA が付く)→ override を読むよう直す(Phase 3 に追加)
+- Regional: 生成経路の切替は `callbacks.js:435`(`regional_condition` なら `generateRegionalImage`)。編集モード中はここで通常の `generateImage` に回す。設定値は触らないので Undo・state.json に残らない
+- ビューワーのレシピ: `globalThis.mainGallery.currentEntry()`(`customGallery.js:279`)→ `{ image, record: { recipe, timing, path } }`。`record.recipe.sections.prompt` にクリック時の欄の文が入っている → Save to scene はここから読む。`image` は data URL → canvas で縮小できる
+  - WebUI の絵は record が無い(`generate_backend.js:9`)→ Save to scene は無効
+
+### 保存先・Library・Pod・時間
+
+- 保存先: ComfyUI の `filename_prefix` に `getImageSavePrefix`(`generate.js:1079`)の値が入る。既定 `%date`。サブフォルダ付き prefix は Parts サンプル(`parts-samples/%date`)で実績あり → `seq-<runId>/<…>` は使える
+  - sequence 時は `image_save_embed_character_name` / `image_save_path_comfyui` を使わず上書き(キャラ名はファイル名に入る)
+- Library: ComfyUI 出力の直下のフォルダが 1 件ずつ出る(`libraryIndex.js:154`)→ `seq-<runId>` は 1 フォルダとして出る
+- Pod 経路: 絵は `pod_image_save_dir` に `SAA_<日時>_<seed>.png` で平置き(`generate_backend_comfyui.js:2616`)、prefix は使われない → Pod では実行ごとのフォルダ分けは無し。識別はレシピの `run.sequence` だけ(初期版はこのまま、9 章に追加)
+- 生成時間の見積もり: `runTiming` は 1 枚ごとの記録だけで見積もり機能は無い → 表示しない(Generate の総枚数だけ)
+
+### 設定・保存
+
+- 設定セクション新設の影響: `SECTION_KEYS` に足すと PRESET / STATE / 編集可能セクションに自動で入り、state.json に載る・Undo 履歴に積まれる・プリセット行の置き場(`data-preset-host`)が無いと警告が出る(`settingsPersistence.js:191`)→ 新設しない。Parts と同じ専用ストアにする(D16 を変更)
+- 編集モード中のアプリ終了: シーン欄にシーンの文が入ったまま state.json に保存される → 入るときの退避値を `sequences.json` の `editBackup { fieldKey, text }` にも書き、起動時に残っていたら欄へ戻して消す
+- サムネの大きさ: 128px 高の JPEG(品質 0.8)で data URL 4〜7KB の見込み → 実装時に実測。10KB を超えたら品質を下げる
+
+### 未確認(実装中に実測)
+
+- シーンごとに LoRA タグが違うときの切替コスト(ComfyUI v0.40 の pinned memory 下)。GPU と ComfyUI を動かす必要があるので E2E の作成時に測る。遅ければ D7 をシーン単位に変える
 
 ## 11. 実装者(Claude)への指示
 
