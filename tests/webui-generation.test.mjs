@@ -49,12 +49,6 @@ const STUBS = {
         }`,
     main_common: `
         export async function getMutexBackendBusy() { return globalThis.__webuiStub.busy; }
-        export async function tryAcquireBackendBusy() {
-            if(globalThis.__webuiStub.busy)return false;
-            globalThis.__webuiStub.busy=true;
-            globalThis.__webuiStub.mutex.push(true);
-            return true;
-        }
         export async function setMutexBackendBusy(value) {
             globalThis.__webuiStub.busy = value;
             globalThis.__webuiStub.mutex.push(value);

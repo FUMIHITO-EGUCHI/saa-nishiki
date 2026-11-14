@@ -39,16 +39,15 @@ async function generate(app, name) {
     const result = await app.generate();
     assert.equal(result.error, '');
     const gallery = await app.page.evaluate('mainGallery.currentEntry().record');
-    const list = await app.page.evaluate('api.workflowListRuns()');
-    const record = await app.page.evaluate(`api.workflowReadRun(${JSON.stringify(list[0].id)})`);
-    const history = (await (await fetch(`${app.comfy.base}/history/${record.promptId}`)).json())[record.promptId];
-    assert.equal(history.status.status_str, 'success');
+    // the one ComfyUI run this click made, as ComfyUI keeps it
+    assert.equal(result.history.length, 1, 'one ComfyUI run');
+    const [run] = result.history;
+    assert.equal(run.status.status_str, 'success');
     const recipe = JSON.parse(readTextChunks(fs.readFileSync(gallery.path), { inflate: zlib.inflateSync }).records.saa_recipe);
     const image = path.join(output, `${name}.png`);
     fs.copyFileSync(gallery.path, image);
-    fs.writeFileSync(path.join(output, `${name}-record.json`), JSON.stringify(record, null, 2));
     fs.writeFileSync(path.join(output, `${name}-recipe.json`), JSON.stringify(recipe, null, 2));
-    return { image, recipe, record, graph: history.prompt[2] };
+    return { image, recipe, promptId: run.id, graph: run.workflow };
 }
 
 function checkGraph(run, { mode, mainSeed, adSeed, sampler, scheduler }) {
@@ -86,7 +85,6 @@ test('saved settings and PNG restore reproduce identical pixels after restart, i
         assert.equal(queue.queue_running.length + queue.queue_pending.length, 0, 'ComfyUI must be idle');
         await app.pickDropdown('generate-sampler', 'euler_cfg_pp');
         await app.pickDropdown('generate-scheduler', 'karras');
-        await app.page.evaluate('api.workflowPreferences({captureStages:true})');
         const expected = { sampler: 'euler_cfg_pp', scheduler: 'karras', storedSampler: 'euler_cfg_pp', storedScheduler: 'karras', mode: 'inherit', adSeed: -1, seed };
         assert.deepEqual(await state(app), expected);
         console.log('Generating original with inherited prompts and seed');
@@ -125,7 +123,6 @@ test('saved settings and PNG restore reproduce identical pixels after restart, i
         console.log('Regenerating after full restart');
         const repeated = await generate(app, 'repeated');
         checkGraph(repeated, { mode: 'inherit', mainSeed: seed, adSeed: seed, sampler: 'euler_cfg_pp', scheduler: 'karras' });
-        assert.match(repeated.record.provenance.nodes['36'].state, /execution-observed|observed-completed/, 'the base sampler actually executed');
         const pixels = await Promise.all([original.image, repeated.image, control.image].map(file => sharp(file).ensureAlpha().raw().toBuffer()));
         let changedPixels = 0;
         for (let index = 0; index < pixels[0].length; index += 4) {
@@ -136,8 +133,8 @@ test('saved settings and PNG restore reproduce identical pixels after restart, i
         await app.page.evaluate('collapsedTabs.aDetailer.setCollapsed(false); document.getElementById("adetailer-settings").scrollIntoView()');
         const screenshot = await app.page.send('Page.captureScreenshot', { format: 'png' });
         fs.writeFileSync(path.join(output, 'ui.png'), Buffer.from(screenshot.result.data, 'base64'));
-        const evidence = { verifiedAt: new Date().toISOString(), settingsDir, expected, changedPixels, dimensions: [1024, 1024], samplerExecuted: repeated.record.provenance.nodes['36'].state,
-            runs: [original, control, repeated].map(run => ({ id: run.record.id, promptId: run.record.promptId, image: run.image, sent: run.recipe.run.sent })) };
+        const evidence = { verifiedAt: new Date().toISOString(), settingsDir, expected, changedPixels, dimensions: [1024, 1024],
+            runs: [original, control, repeated].map(run => ({ promptId: run.promptId, image: run.image, sent: run.recipe.run.sent })) };
         fs.writeFileSync(path.join(output, 'evidence.json'), JSON.stringify(evidence, null, 2));
         console.log(JSON.stringify(evidence));
     } finally {

@@ -4,7 +4,7 @@ import { WebSocket } from 'ws';
 import fs from 'node:fs';
 import path from 'node:path';
 import * as wsService from '../webserver/back/wsService.js';
-import { tryAcquireBackendBusy, setMutexBackendBusy } from '../../main-common.js';
+import { getMutexBackendBusy, setMutexBackendBusy } from '../../main-common.js';
 import { WORKFLOW, WORKFLOW_REGIONAL, WORKFLOW_CONTROLNET,
   WORKFLOW_MIRA_ITU, WORKFLOW_UNET, WORKFLOW_REIONAL_UNET,
   WORKFLOW_MIRA_ITU_UNET, WORKFLOW_MIRA_ITU_UNET_PREBAKE, VAE_LOADER,
@@ -23,9 +23,6 @@ import { RECIPE_CHUNK, TIME_CHUNK } from '../shared/recipe.js';
 import { createRunTimeline, summarizeRunTiming } from '../shared/runTiming.js';
 import { asciiJson, insertTextChunks } from '../shared/pngText.js';
 import { comfyOutputDir, savedImagePath, stampImageTime } from './imageRecord.js';
-import { requestedSettings } from '../shared/workflowRecord.js';
-import { executeRecordedWorkflow, getWorkflowStore } from './workflowRuntime.js';
-import { createPodWorkflowRecord } from './podWorkflowRecord.js';
 
 const CAT = '[ComfyUI]';
 const TIMEOUT = 5000; // 5 seconds timeout for backend response
@@ -801,12 +798,6 @@ class ComfyUI {
   }
 
   cancelGenerate() {
-    if (this.preparingWorkflow) return;
-    if (this.trackedCancellation) {
-      this.trackedCancellation.cancelled = true;
-      return this.trackedRun?.cancel();
-    }
-    if (this.trackedRun) return this.trackedRun.cancel();
     const apiUrl = httpApiUrl(this.addr, 'interrupt');
     let request = net.request({
       method: 'POST',
@@ -832,30 +823,15 @@ class ComfyUI {
 
   // ComfyUI's "executing" messages for this prompt: a node starting, or (node null) the
   // prompt done. They time the run; anything else is left to the handler below.
-  recordMessage(message, promptId = this.prompt_id) {
+  recordMessage(message) {
     if (!this.timeline || message?.type !== 'executing') return;
     const data = message.data ?? {};
-    if (data.prompt_id !== undefined && data.prompt_id !== promptId) return;
+    if (data.prompt_id !== undefined && data.prompt_id !== this.prompt_id) return;
     if (data.node === null) this.timeline.end();
     else this.timeline.node(data.node);
   }
 
   async openWS(prompt_id, skipFirst = true, index='29'){
-    if (this.trackedRun?.promptId === prompt_id) {
-      try {
-        const { image, record } = await this.trackedRun.result;
-        this.savedImage = record.output;
-        this.timeline?.end();
-        this.finishRecord();
-        return `data:image/png;base64,${image.toString('base64')}`;
-      } catch (error) {
-        return `Error: ${error.message}`;
-      } finally {
-        this.trackedRun = null;
-        this.trackedCancellation = null;
-        setMutexBackendBusy(false);
-      }
-    }
     if (this.podRun || String(prompt_id ?? '').startsWith('pod-')) return this.awaitPod();
     return new Promise((resolve) => {
       this.prompt_id = prompt_id;
@@ -2545,13 +2521,10 @@ class ComfyUI {
     this.podParameters = buildParametersText(workflow);
     this.podSeed = Object.values(workflow).find(node => node?.class_type === 'ImageSaverMira')?.inputs?.seed_value ?? 0;
     let previewCount = 0;
-    this.podRecord = createPodWorkflowRecord(getWorkflowStore(),wsWorkflow,this.requested??{},
-      [...this.transforms??[],{reason:'Pod WebSocket output',saveNodes}],saveNodes);
     this.podRun = runPodWorkflow({
       settings: getGlobalSettings(),
       workflow: wsWorkflow,
       saveNodes,
-      onEvent: frame => { try { this.podRecord.event(frame); } catch(error) { console.error(CAT,'Run event could not be stored:',error.message); } },
       onProgress: (value, max) => {
         if (value && max) sendToRenderer(this.uuid, `updateProgress`, value, max);
       },
@@ -2560,7 +2533,7 @@ class ComfyUI {
         sendToRenderer(this.uuid, `updatePreview`, `data:image/png;base64,${buffer.toString('base64')}`);
       },
     });
-    return JSON.stringify({ prompt_id: `pod-${crypto.randomUUID()}`, saa_run_id:this.podRecord.id });
+    return JSON.stringify({ prompt_id: `pod-${crypto.randomUUID()}` });
   }
 
   async awaitPod() {
@@ -2573,15 +2546,13 @@ class ComfyUI {
     }
     try {
       const result = await run;
-      if (result.error) { this.podRecord.finish(result,null,cancelMark); return cancelMark ? 'Error: Cancelled' : result.error; }
+      if (result.error) return cancelMark ? 'Error: Cancelled' : result.error;
       let image = embedPngParameters(result.images[0], this.podParameters);
       image = this.embedPodRecord(image);
-      this.podRecord.finish(result,image);
       this.savePodImage(image);
       console.log(CAT, `Pod image received over SSH (${result.images.length} image(s))`);
       return `data:image/png;base64,${image.toString('base64')}`;
     } catch (error) {
-      try { this.podRecord?.finish({error:error.message},null,cancelMark); } catch { /* original error remains visible */ }
       console.error(CAT, 'Pod run failed:', error);
       return `Error: pod run failed: ${error?.message ?? error}`;
     } finally {
@@ -2631,7 +2602,6 @@ class ComfyUI {
   // goes in with the prompt (the saver writes extra_pnginfo out as PNG text chunks) and
   // the run is timed. Other runs (MiraITU, a ControlNet preview, Python) carry none.
   run(workflow, pythonRun=false, record=null) {
-    this.preparingWorkflow = false;
     this.pythonRun = pythonRun;
     this.record = record ? { ...record, workflow } : null;
     this.timeline = record ? createRunTimeline() : null;
@@ -2639,23 +2609,6 @@ class ComfyUI {
     this.lastResult = null;
     const promptTimeout = Math.max(this.timeout, PROMPT_TIMEOUT);
     if (this.podEnabled()) return this.runPod(workflow);
-    if (!pythonRun && (!this.uuid || this.uuid === 'none')) {
-      this.trackedCancellation = { cancelled: false };
-      return executeRecordedWorkflow({ addr: this.addr, auth: this.auth, workflow,
-        cancellation: this.trackedCancellation,
-        requested: this.requested ?? {},
-        transforms: this.transforms ?? [],
-        outputNode: this.outputNode ?? '29',
-        extraData: record?.recipe ? { extra_pnginfo: { [RECIPE_CHUNK]: record.recipe } } : undefined,
-        onEvent: (message, promptId) => this.recordMessage(message, promptId),
-        onProgress: (value, max) => sendToRenderer(this.uuid, 'updateProgress', value, max),
-        onPreview: buffer => { if (this.refresh) sendToRenderer(this.uuid, 'updatePreview', `data:image/png;base64,${buffer.toString('base64')}`); },
-      }).then(run => {
-        this.prompt_id = run.promptId;
-        this.trackedRun = run;
-        return JSON.stringify({ prompt_id: run.promptId, saa_run_id: run.runId });
-      }).catch(error => { this.trackedCancellation = null; setMutexBackendBusy(false); return `Error: ${error.message}`; });
-    }
     return new Promise((resolve, reject) => {
       const requestBody = {
         prompt: workflow,
@@ -2827,22 +2780,17 @@ function runRecord(generateData) {
 }
 
 async function runComfyUI_unguarded(generateData, remote = false) {
-  const acquired = await tryAcquireBackendBusy();
-  if (!acquired) {
+  const isBusy = await getMutexBackendBusy();
+  if (isBusy) {
     console.warn(CAT, 'ComfyUI is busy, cannot run new generation, please try again later.');
     return 'Error: ComfyUI is busy, cannot run new generation, please try again later.';
   }
+  setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
-  backendComfyUI.requested = requestedSettings(generateData);
-  backendComfyUI.preparingWorkflow = true;
-  backendComfyUI.transforms = [];
-  backendComfyUI.outputNode = '29';
 
   const prepareError = await prepareFastModeRun(generateData, getGlobalSettings(), remote);
   if (prepareError) return prepareError;
   generateData = applyFastMode(generateData, getGlobalSettings());
-  if (cancelMark) { setMutexBackendBusy(false); return 'Error: Cancelled'; }
-  if (generateData.fastMode) backendComfyUI.transforms.push({ reason: 'Fast mode', settings: generateData.fastMode, after: requestedSettings(generateData) });
   let workflow;
   if (generateData.unet?.enable){
     workflow = backendComfyUI.createWorkflowUNet(generateData);
@@ -2870,22 +2818,17 @@ async function runComfyUI_Regional(generateData, { remote = false } = {}) {
 }
 
 async function runComfyUI_Regional_unguarded(generateData, remote = false) {
-  const acquired = await tryAcquireBackendBusy();
-  if (!acquired) {
+  const isBusy = await getMutexBackendBusy();
+  if (isBusy) {
     console.warn(CAT, 'ComfyUI API is busy, cannot run new generation, please try again later.');
     return 'Error: ComfyUI API is busy, cannot run new generation, please try again later.';
   }
+  setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
-  backendComfyUI.requested = requestedSettings(generateData);
-  backendComfyUI.preparingWorkflow = true;
-  backendComfyUI.transforms = [];
-  backendComfyUI.outputNode = '29';
 
   const prepareError = await prepareFastModeRun(generateData, getGlobalSettings(), remote);
   if (prepareError) return prepareError;
   generateData = applyFastMode(generateData, getGlobalSettings());
-  if (cancelMark) { setMutexBackendBusy(false); return 'Error: Cancelled'; }
-  if (generateData.fastMode) backendComfyUI.transforms.push({ reason: 'Fast mode', settings: generateData.fastMode, after: requestedSettings(generateData) });
   let workflow;
   if (generateData.unet?.enable) {
     workflow = backendComfyUI.createWorkflowRegionalUnet(generateData);
@@ -2912,15 +2855,13 @@ async function runComfyUI_MiraITU(generateData) {
 }
 
 async function runComfyUI_MiraITU_unguarded(generateData) {
-  const acquired = await tryAcquireBackendBusy();
-  if (!acquired) {
+  const isBusy = await getMutexBackendBusy();
+  if (isBusy) {
     console.warn(CAT, 'ComfyUI API is busy, cannot run new generation, please try again later.');
     return 'Error: ComfyUI API is busy, cannot run new generation, please try again later.';
   }
+  setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
-  backendComfyUI.requested = requestedSettings(generateData);
-  backendComfyUI.transforms = [];
-  backendComfyUI.outputNode = '29';
 
   let workflow;
   if (generateData.taggerOptions.method === 'Checkpoint') {
@@ -2950,15 +2891,13 @@ async function runComfyUI_ControlNet(generateData) {
 }
 
 async function runComfyUI_ControlNet_unguarded(generateData) {
-  const acquired = await tryAcquireBackendBusy();
-  if (!acquired) {
+  const isBusy = await getMutexBackendBusy();
+  if (isBusy) {
     console.warn(CAT, 'ComfyUI API is busy, cannot run new generation, please try again later.');
     return 'Error: ComfyUI API is busy, cannot run new generation, please try again later.';
   }
+  setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
-  backendComfyUI.requested = requestedSettings(generateData);
-  backendComfyUI.transforms = [];
-  backendComfyUI.outputNode = '3';
 
   const workflow = backendComfyUI.createWorkflowControlnet(generateData)
   backendComfyUI.timeout = TIMEOUT; // Reset timeout to TIMEOUT(5s) for normal workflow
@@ -2993,11 +2932,12 @@ async function python_runComfyUI(generateData, isRegional=false, skeletonKey=fal
     sendToRenderer(backendComfyUI.uuid, `updateProgress`, 'warn', CAT,  'The Skeleton Key triggerd, Mutex Lock set to false');
   }
 
-  const acquired = await tryAcquireBackendBusy();
-  if (!acquired) {
+  const isBusy = await getMutexBackendBusy();
+  if (isBusy) {
     console.warn(CAT, 'ComfyUI is busy, cannot run new generation, please try again later.');
     return 'Error: ComfyUI is busy, cannot run new generation, please try again later.';
   }
+  setMutexBackendBusy(true); // Acquire the mutex lock
   cancelMark = false;
 
   const infoMsg = `Running ComfyUI ${isRegional ? 'Regional ' : ''}from Python with uuid: ${backendComfyUI.uuid}`;

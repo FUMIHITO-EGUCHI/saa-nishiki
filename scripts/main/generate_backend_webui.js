@@ -1,7 +1,7 @@
 import { ipcMain, net } from 'electron';
 import path from 'node:path';
 import { sendToRenderer } from './generate_backend_comfyui.js';
-import { tryAcquireBackendBusy, setMutexBackendBusy } from '../../main-common.js';
+import { getMutexBackendBusy, setMutexBackendBusy } from '../../main-common.js';
 import { backendAuthHeaders, httpApiUrl } from '../shared/backendAddress.js';
 import { forgeCoupleMapping, forgeCouplePrompt } from '../shared/regionalGeneration.js';
 
@@ -993,11 +993,12 @@ async function refreshModelLists(generateData) {
 }
 
 async function runWebUI(generateData){
-    const acquired = await tryAcquireBackendBusy();
-    if (!acquired) {
+    const isBusy = await getMutexBackendBusy();
+    if (isBusy) {
         console.warn(CAT, '[runWebUI] WebUI is busy, cannot run new generation, please try again later.');
         return 'Error: WebUI is busy, cannot run new generation, please try again later.';
     }
+    setMutexBackendBusy(true); // Acquire the mutex lock
     cancelMark = false;
 
     await refreshModelLists(generateData);
@@ -1054,11 +1055,12 @@ async function runWebUI(generateData){
 } 
 
 async function runWebUI_Regional(generateData){
-    const acquired = await tryAcquireBackendBusy();
-    if (!acquired) {
+    const isBusy = await getMutexBackendBusy();
+    if (isBusy) {
         console.warn(CAT, '[runWebUI] WebUI is busy, cannot run new generation, please try again later.');
         return 'Error: WebUI is busy, cannot run new generation, please try again later.';
     }
+    setMutexBackendBusy(true); // Acquire the mutex lock
     cancelMark = false;
 
     await refreshModelLists(generateData);
@@ -1113,11 +1115,12 @@ async function runWebUI_Regional(generateData){
 }
 
 async function runWebUI_ControlNet(generateData) {
-    const acquired = await tryAcquireBackendBusy();
-    if (!acquired) {
+    const isBusy = await getMutexBackendBusy();
+    if (isBusy) {
         console.warn(CAT, '[runWebUI_ControlNet] WebUI is busy, cannot run new generation, please try again later.');
         return 'Error: WebUI is busy, cannot run new generation, please try again later.';
     }
+    setMutexBackendBusy(true); // Acquire lock for the entire operation
     cancelMark = false;
 
     try {
