@@ -490,6 +490,9 @@ const MENU_TITLES = Object.freeze({
     tag_move_to: 'right_menu_move_to',
     tag_copy_to: 'right_menu_copy_to',
     tag_copy_text: 'right_menu_copy_tag',
+    tag_cut: 'right_menu_cut_tag',
+    tag_paste: 'right_menu_paste_tags',
+    field_paste: 'right_menu_paste_tags',
     tag_remove: 'right_menu_remove_tag',
     field_enable_all: 'right_menu_enable_all',
     field_disable_all: 'right_menu_disable_all',
@@ -645,12 +648,32 @@ function registerDefaultMenuItems() {
         },
     });
     rc.append('separator_tag_2', null, { selector: '.tag-capsule-chip' });
+    // copy / cut / paste go through the clipboard with their weights (tagCapsuleField.js):
+    // the same as Ctrl+C / Ctrl+X / Ctrl+V on a chip
+    rc.append('tag_cut', LANG.right_menu_cut_tag ?? 'Cut', {
+        selector: '.tag-capsule-chip',
+        visible: chip => Boolean(chipContext(chip).field?.cutIds),
+        label: chip => countLabel(lang().right_menu_cut_tag ?? 'Cut', chipContext(chip).ids.length),
+        func: (chip) => {
+            const { field, ids } = chipContext(chip);
+            if (field?.cutIds && ids.length) field.cutIds(ids);
+        },
+    });
     rc.append('tag_copy_text', LANG.right_menu_copy_tag, {
         selector: '.tag-capsule-chip',
         label: chip => countLabel(lang().right_menu_copy_tag, chipContext(chip).ids.length),
         func: (chip) => {
-            const { capsules } = chipContext(chip);
-            copyText(capsules.length ? capsules.map(capsule => capsule.value).join(', ') : chip.querySelector('.tag-capsule-chip-name')?.textContent ?? '');
+            const { field, capsules, ids } = chipContext(chip);
+            if (field?.copyIds && ids.length) field.copyIds(ids);
+            else copyText(capsules.length ? capsules.map(capsule => capsule.value).join(', ') : chip.querySelector('.tag-capsule-chip-name')?.textContent ?? '');
+        },
+    });
+    rc.append('tag_paste', LANG.right_menu_paste_tags ?? 'Paste', {
+        selector: '.tag-capsule-chip',
+        visible: chip => Boolean(chipContext(chip).field?.pasteAfter),
+        func: (chip) => {
+            const { field, capsule } = chipContext(chip);
+            if (field?.pasteAfter && capsule) field.pasteAfter(capsule.id);
         },
     });
     rc.append('tag_remove', LANG.right_menu_remove_tag, {
@@ -703,6 +726,11 @@ function registerDefaultMenuItems() {
         selector: FIELD,
         visible: scope => textareaSelection(scope).length > 0,
         items: scope => targetEntries(fieldKeyOf(scope), targetId => transferSelection(scope, targetId, { copy: true })),
+    });
+    rc.append('field_paste', LANG.right_menu_paste_tags ?? 'Paste', {
+        selector: FIELD,
+        visible: scope => Boolean(fieldApi(scope)?.pasteAfter) && !(scope instanceof HTMLTextAreaElement),
+        func: scope => fieldApi(scope)?.pasteAfter(null),
     });
     rc.append('separator_field_1', null, { selector: FIELD });
     rc.append('field_enable_all', LANG.right_menu_enable_all, {

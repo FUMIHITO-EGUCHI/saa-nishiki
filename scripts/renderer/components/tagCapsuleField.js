@@ -16,6 +16,7 @@ import {
     normalizeBatch,
     normalizeTagName,
     nudgeCapsuleWeight,
+    pasteCapsules,
     parsePlans,
     parsePromptToCapsules,
     reconcilePlans,
@@ -35,6 +36,33 @@ import {
     transferCapsules,
 } from './tagCapsuleLogic.js';
 import { createIcon, renderChips } from './tagCapsuleChip.js';
+
+// Chips go through the system clipboard as prompt text ("a, (b:1.2), ~c"), so they move
+// between fields, between sequence scenes (the screen changes, the clipboard does not) and
+// to other apps. The last copy is also kept here whole: pasting that same text back keeps
+// the chips' weight plans, which the text cannot carry.
+let tagClipboard = null;   // { text, block: [{ value, weightPlan, disabled }], inSystem }
+
+async function writeClipboard(entry) {
+    try {
+        await navigator.clipboard.writeText(entry.text);
+        entry.inSystem = true;
+    } catch (error) {
+        console.warn('[TagCapsule] clipboard write failed; the copy stays in the app', error);
+    }
+}
+
+async function readClipboard() {
+    // a copy the system clipboard refused is still pasted (not whatever it held before)
+    if (tagClipboard && !tagClipboard.inSystem) return tagClipboard.text;
+    try {
+        const value = await navigator.clipboard?.readText?.();
+        if (typeof value === 'string') return value;
+    } catch (error) {
+        console.warn('[TagCapsule] clipboard read failed', error);
+    }
+    return tagClipboard?.text ?? '';
+}
 import { FAVORITE_TAGS_CHANGED_EVENT, favGroupForKey, isFavoriteTag, toggleFavTag } from './favoriteTags.js';
 import { getWeightPopover } from './weightPopover.js';
 import { getBatchWeightDialog } from './batchWeightDialog.js';
@@ -175,6 +203,44 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         for (const id of [...selectedIds]) if (!alive.has(id)) selectedIds.delete(id);
     }
     const guard = value => { suppressInput = value; };
+
+    // ---------------------------------------------------------------- clipboard
+    // the chips a key or menu acts on: the selection when the chip is in it, else the chip
+    function actedIds(index) {
+        const id = capsules[index]?.id;
+        if (!id) return [];
+        return selectedIds.has(id) ? selectionIds() : [id];
+    }
+    function copyIds(ids) {
+        const pick = new Set(ids);
+        const picked = capsules.filter(capsule => pick.has(capsule.id));
+        if (picked.length === 0) return false;
+        const textValue = serializeCapsules(picked, { generationSeed: Math.max(0, getGenerationSeed()), imageIndex: 0, tokenPrefix: tokenPrefix() });
+        tagClipboard = {
+            text: textValue,
+            block: picked.map(capsule => ({ value: capsule.value, weightPlan: { ...capsule.weightPlan }, disabled: capsule.disabled === true })),
+            inSystem: false,
+        };
+        writeClipboard(tagClipboard);
+        return true;
+    }
+    function cutIds(ids) {
+        if (!copyIds(ids)) return;
+        const next = removeCapsules(capsules, ids);
+        selectedIds.clear();
+        commitCapsules(next);
+        focusChip(Math.max(0, Math.min(focusIndex, next.length - 1)), { fallbackToAdd: true });
+    }
+    async function pasteAt(at) {
+        const textValue = await readClipboard();
+        const block = tagClipboard && tagClipboard.text === textValue ? tagClipboard.block : parsePromptToCapsules(textValue);
+        const result = pasteCapsules(capsules, block, at);
+        if (result.pasted.length === 0) return 0;
+        commitCapsules(result.capsules);
+        setSelection(result.pasted.map(capsule => capsule.id));
+        focusChip(Math.max(0, result.capsules.findIndex(capsule => capsule.id === result.pasted[0].id)));
+        return result.pasted.length;
+    }
 
     // ---------------------------------------------------------------- header
     const header = el('div', 'tag-field-header');
@@ -583,6 +649,20 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
             if (!onAdd) openRelated(focusIndex);
             return;
         }
+        // Ctrl+C / Ctrl+X: the chip (the selection when it is in it) to the clipboard;
+        // Ctrl+V: the clipboard's tags after the chip (on "+ Tag": at the end)
+        const clipKey = (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey ? event.key.toLowerCase() : '';
+        if (clipKey === 'v') {
+            event.preventDefault();
+            pasteAt(onAdd ? capsules.length : focusIndex + 1);
+            return;
+        }
+        if ((clipKey === 'c' || clipKey === 'x') && !onAdd) {
+            event.preventDefault();
+            if (clipKey === 'c') copyIds(actedIds(focusIndex));
+            else cutIds(actedIds(focusIndex));
+            return;
+        }
         // selection keys first: Ctrl+A selects every chip, Escape drops the selection,
         // Delete on a selected chip removes the whole selection
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a' && !onAdd) {
@@ -886,6 +966,13 @@ export function setupTagCapsuleField(textboxControl, options = {}) {
         // cross-field transfer + context menu entry points
         replaceCapsules: next => { commitCapsules(Array.isArray(next) ? next : capsules); },
         findCapsule: id => capsules.find(capsule => capsule.id === id) ?? null,
+        // the clipboard (the context menu): copy / cut chips by id, paste after a chip or at the end
+        copyIds: ids => copyIds(ids),
+        cutIds: ids => cutIds(ids),
+        pasteAfter: id => {
+            const index = capsules.findIndex(capsule => capsule.id === id);
+            return pasteAt(index >= 0 ? index + 1 : capsules.length);
+        },
         insertTags: (values, at = capsules.length) => {
             const next = insertCapsules(capsules, values, at);
             if (next !== capsules) commitCapsules(next);

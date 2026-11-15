@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
     appendTagsToText,
     parsePromptToCapsules,
+    pasteCapsules,
     removeTagsFromText,
     serializeCapsules,
     transferCapsule,
@@ -48,4 +49,17 @@ test('text-mode helpers append with a separator and remove the first matching to
     assert.equal(removeTagsFromText('a, b\nc, ~b', ['b']), 'a\nc, ~b');
     assert.equal(removeTagsFromText('a, b', ['zzz']), 'a, b');
     assert.equal(removeTagsFromText('only', ['only']), '');
+});
+
+test('pasted tags keep their weight and disabled state, land at the place, and never double a tag', () => {
+    const field = parsePromptToCapsules('1girl, smile, outdoors');
+    const copied = parsePromptToCapsules('(blue eyes:1.2), ~hat, Smile');
+    const { capsules, pasted } = pasteCapsules(field, copied, 1);
+    assert.equal(serializeCapsules(capsules), '1girl, (blue eyes:1.20), ~hat, smile, outdoors');
+    assert.deepEqual(pasted.map(capsule => capsule.value), ['blue eyes', 'hat']);
+    assert.equal(new Set(capsules.map(capsule => capsule.id)).size, capsules.length, 'fresh ids');
+    const again = pasteCapsules(capsules, copied, 0);
+    assert.equal(again.capsules, capsules, 'nothing new: the field is unchanged');
+    assert.deepEqual(again.pasted, []);
+    assert.equal(serializeCapsules(pasteCapsules([], parsePromptToCapsules('a, b')).capsules), 'a, b', 'an empty field takes them at the end');
 });
