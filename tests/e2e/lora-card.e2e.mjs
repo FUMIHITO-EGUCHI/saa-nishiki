@@ -57,6 +57,56 @@ test('"+ LoRA": the LoRA tab alone, a click on a tile picks it, Add puts the row
     assert.equal(await app.errorText(), '');
 });
 
+test('the panel\'s trigger words and suggested tags come from the tag search; "+ word" stays a short chip at the end', async () => {
+    const { page } = app;
+    const PICKER = '.selection-modal:not([hidden]) ~ .selection-modal:not([hidden])';
+    const chips = selector => page.evaluate(`[...document.querySelector('${OPEN} ${selector}').children].map(node => node.textContent)`);
+    const pick = async (selector, words) => {
+        await page.click(`${OPEN} ${selector}`);
+        await page.waitFor(`document.activeElement?.classList.contains('selection-modal-search') && Boolean(document.activeElement.closest('${PICKER}'))`, { label: 'the tag search, above the LoRA picker' });
+        for (const word of words) {
+            await page.evaluate('document.activeElement.select()');
+            await page.type(word);
+            // a dictionary tag is taken from the list; a word it lacks, as typed
+            await page.waitFor(`[...document.querySelectorAll('${PICKER} .selection-modal-option')].some(node => node.textContent.startsWith(${JSON.stringify(word)})) || document.querySelector('${PICKER} .selection-modal-status')?.textContent === 'No matching tags.'`, { label: `the search for ${word}` });
+            await page.key('Enter', 'Enter', 13);
+            await page.waitFor(`[...document.querySelectorAll('${PICKER} .selection-modal-chip')].some(node => node.textContent.startsWith(${JSON.stringify(word)}))`, { label: `${word} picked` });
+        }
+        await page.click(`${PICKER} .selection-modal-apply`);
+        await page.waitFor(`!document.querySelector('${PICKER}')`, { label: 'the tag search closed' });
+    };
+    await openPicker();
+    await page.click(`${OPEN} .selection-modal-tile`);
+    await page.waitFor(`Boolean(document.querySelector('${OPEN} .lora-trigger-editor .lora-word-pick'))`, { label: 'the panel' });
+    assert.equal(await page.evaluate(`Boolean(document.querySelector('${OPEN} .lora-trigger-editor input'))`), false, 'no free-typing field');
+    const before = await chips('.lora-trigger-editor');
+    assert.equal(before.at(-1), '+ word', 'the last chip, after any guessed word on offer');
+    const width = await page.evaluate(`document.querySelector('${OPEN} .lora-trigger-editor .lora-word-pick').getBoundingClientRect().width`);
+    assert.ok(width < 80, `a chip's width, not a field's (${width}px)`);
+
+    await inView(`${OPEN} .lora-trigger-editor .lora-word-pick`);
+    await pick('.lora-trigger-editor .lora-word-pick', ['smile', 'zzlorae2eword']);
+    await page.waitFor(`[...document.querySelector('${OPEN} .lora-trigger-editor').children].some(node => node.textContent.startsWith('zzlorae2eword'))`, { label: 'the words added' });
+    const after = await chips('.lora-trigger-editor');
+    assert.ok(after.includes('smile×') && after.includes('zzlorae2eword×'), `both words: ${after.join(' | ')}`);
+    assert.equal(after.at(-1), '+ word', 'still the last chip');
+    await page.waitFor(`document.activeElement?.matches('${OPEN} .lora-trigger-editor .lora-word-pick')`, { label: 'the focus back on "+ word"' });
+
+    await inView(`${OPEN} .lora-word-pick[data-role="suggest"]`);
+    await pick('.lora-word-pick[data-role="suggest"]', ['full body']);
+    await page.waitFor(`[...document.querySelector('${OPEN} .lora-word-pick[data-role="suggest"]').parentElement.children].some(node => node.textContent === 'full body×')`, { label: 'the tag to suggest it for' });
+
+    // the words go as they came: x on each chip
+    for (const [selector, word] of [['.lora-trigger-editor', 'smile'], ['.lora-trigger-editor', 'zzlorae2eword'], ['.lora-word-pick[data-role="suggest"]', 'full body']]) {
+        await page.evaluate(`document.querySelector('${OPEN} .lora-word-remove[aria-label="Remove ${word}"]').click()`);
+        await page.waitFor(`!document.querySelector('${OPEN} .lora-word-remove[aria-label="Remove ${word}"]')`, { label: `${word} removed (${selector})` });
+    }
+    assert.deepEqual(await chips('.lora-trigger-editor'), before, 'the list as it was');
+    await page.key('Escape');
+    await page.waitFor(`!document.querySelector('${OPEN}')`, { label: 'the picker closed' });
+    assert.equal(await app.errorText(), '');
+});
+
 test('the row\'s slider, switch and fold change what a run sends, and the settings keep it', async () => {
     const { page } = app;
     await page.evaluate(`(() => { const slider = document.querySelector('.lora-slot-slider'); slider.value = '0.6'; slider.dispatchEvent(new Event('input', { bubbles: true })); })()`);

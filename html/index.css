@@ -2919,8 +2919,6 @@ button.lora-cell { cursor: zoom-in; }
 .lora-word-remove { width: 16px; height: 16px; padding: 0; border: 0; background: transparent; color: var(--saa-accent); cursor: pointer; }
 .lora-word-offer { padding: 3px 9px; border: 1px dashed var(--saa-border-strong); border-radius: 12px; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 12px; cursor: pointer; }
 .lora-word-offer.is-ask { color: var(--saa-muted); }
-.lora-word-input { flex: 0 1 110px; min-width: 70px; height: 24px; padding: 0 8px; box-sizing: border-box; border: 1px dashed var(--saa-border-strong); border-radius: 12px; background: transparent; color: var(--saa-text); font: inherit; font-size: 12px; }
-.lora-word-input:focus { border-style: solid; border-color: var(--saa-accent); outline: none; }
 .lora-default { display: flex; flex-direction: column; gap: 6px; }
 .lora-default-value { color: var(--saa-text); font-variant-numeric: tabular-nums; }
 .lora-default-slider { width: 100%; accent-color: var(--saa-accent); }
