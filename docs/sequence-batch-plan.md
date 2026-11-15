@@ -1,6 +1,6 @@
-# シーケンスバッチ生成 MVP 実装計画書(改訂 v3.1)
+# シーケンスバッチ生成 MVP 実装計画書(改訂 v3.3)
 
-- ステータス: 改訂 v3.1(2026-11-13)。v3 にシーン作りの要件詰めを反映
+- ステータス: 改訂 v3.3(2026-11-14)。シーン = プロンプト全欄+LoRA+生成設定の丸ごと(D29)。シーン欄の選択(D22・D27)は廃止
 - 対象: SAA-Nishiki、branch `experimental`(worktree `SAA-regional`)
 - 方針: 既存機能の組み合わせ優先。新生成エンジン・汎用ワークフロー基盤 作らない
 - 文中 `file:行` は 00b7d37 時点
@@ -8,6 +8,20 @@
 - 実装者: Claude。UI モック(Design canvas `https://claude.ai/artifact/3Gb2KoyxgWn1kW3zYHWqu4`)先行
 
 ## 0. 変更履歴
+
+### v3.2 → v3.3(シーンの中身を丸ごとに、実機レビュー)
+
+- シーン欄という考えを廃止(D22・D27 は無効)。シーンが持つのは Prompts カードの全欄(カスタム欄の有無・並び順・mute 含む)、LoRA 欄、生成設定(サイズ・Steps・CFG・サンプラー・Hires)。キャラ・モデル・ADetailer・ControlNet・Regional・AI/Prose・シード・バッチ数は画面のまま(D29)
+- ダイアログの Fields 選択と、欄ごとのピル・+ LoRA ボタンを撤去(LoRA はいつもの LoRA カードがシーンごとになる)
+- 並び順をシーン → キャラ → 候補に変更(D7 改訂)。シーンの設定を画面へ載せるのがシーンごとに 1 回で済み、LoRA の切替も減る
+- + Scene = 今の画面をそのまま写したシーン
+- タグのコピー・切り取り・貼り付け(D30): チップ欄で Ctrl+C / Ctrl+X / Ctrl+V、右クリックの Cut / Copy / Paste。OS のクリップボード経由なので欄をまたいでも、シーンを切り替えても貼れる
+
+### v3.1 → v3.2(シーン欄の複数選択、実装後)
+
+- シーン欄を複数選べるように変更(D27)。D22 の「シーン欄 1 欄だけ」を「選んだシーン欄だけ」に置き換え。シーンは欄ごとの文 `texts: { <欄キー>: 文 }` を持つ
+- 実機レビュー反映(D28): 採用した絵があるシーンは欄が空でも Empty にしない / タイルの絵を押すと編集モード(✎ ボタン廃止)/ Save to は押すと一瞬 Done / サムネを 384px 高に、採用画像のファイルがあれば Library のサムネを使う / 編集モード中のビューワー = 今のシーンの画像だけ(シーンを替えると採用画像を表示)
+- 不具合修正: 編集モード中は欄の選択が無効になっていたため、編集中に選んでいたカスタム欄を消すと、どの欄も選べなくなっていた → 編集モード中でも欄を選べるようにし、画面から消えた欄はメニューに「missing」として残して外せるようにした
 
 ### v3 → v3.1(シーン作りの要件詰め)
 
@@ -131,6 +145,41 @@
   - Prompts の Regional の行・Characters カードの Regional 部分は隠す。入る前に Regional ON なら、モード中は OFF として生成(UI 値は戻す)→ 要確認 10 章
   - Preview character の候補 = 既存のキャラ選択と同じ(お気に入りに限らない)
 - D24 ControlNet・IP-Adapter: 実際に送られる行が 1 つでもあれば開始不可。同じポーズ・参照画像が全シーンに掛かるため
+- D27 シーン欄の複数選択(v3.2):
+  - シーケンスは `fields`(欄キーの配列)を持つ。ダイアログのツールバー `Fields` ボタン = 選んだ欄名の列挙、押すとチェック付きメニュー(View / Background / Style / Positive / positive のカスタム欄。Positive は設定 `api_prompt`、選ぶとシーンの文で丸ごと置き換わる)。新規シーケンスの初期値は最初のカスタム欄(無ければ Background)
+  - シーン = `{ id, name, texts: { <欄キー>: 文 }, thumb }`。実行時は選んだ欄すべてを各シーンの文で置換(シーンにその欄の文が無ければ空文)。外した欄の文もシーンに残し、選び直せば戻る
+  - 空のシーン = 選んだ欄がすべて空のシーン。開始不可条件の「シーン欄が無い」= 欄 0 個、または選んだ欄が画面に無い。「mute」= 選んだ欄のどれかが mute
+  - 編集モード中も欄を選べる。足した欄はその時点の文を退避してシーンの文を入れ、外した欄は退避した文に戻す。欄が 0 個になったら編集モード終了。画面から消えた欄はメニューに missing として残り、外せる(戻す文は無い)
+  - 退避は `editBackup: { texts: { <欄キー>: 文 } }`。Save to scene は選んだ欄のうちレシピにある欄の文をすべて取る。+ LoRA は欄ごと(押した欄の文に入る)
+  - Positive も選べる(設定 `api_prompt`)
+- D29 シーンの中身(v3.3、D22・D27 を置き換え):
+  - シーン = `{ id, name, settings, thumb, image, history }`。`settings` = `{ prompt, generation, lora }` のうちシーンが持つキーだけ(`SCENE_KEYS`、`scripts/shared/sequenceBatch.js`)
+    - prompt: Artist 欄、View 系、Common・Positive・Negative 系、Background・Style・Exclude、カスタム欄(文・有無・名前)、正/負の並び順、mute
+    - generation: サイズ(幅・高さ・向き・比率)、Steps、CFG、サンプラー、スケジューラ、Hires 一式
+    - lora: LoRA 欄の行
+    - 持たない: キャラ欄(実行時に選んだキャラ)、モデル・VAE・Refiner、ADetailer、ControlNet、Regional、AI/Prose、シード、バッチ数、欄プリセット集・折り畳み状態
+  - 画面への出し入れは undo/redo と同じ経路(`collectSection` / `applySectionsData(..., { mergeLayout: false })`)
+  - 実行: 行はシーン → キャラ → 候補の順。シーンが替わる行で、そのシーンの設定を画面に載せてから行を組み、全行を組み終えたら画面の設定を戻す(組む間だけ。生成待ちの間は画面はいつもどおり)。レシピの `sections` はそのシーンのもの(キャラはスロット 1 に差し替え)
+  - 編集モード: 入ると画面の設定(シーンの分)を退避し、シーンの設定を載せる。画面の変更(文字・チップ・LoRA 行・サイズ・Undo 等)は 0.3 秒後にシーンへ入る。シーン切替・Save to・終了のたびに、そのセクションの Undo 履歴を消す(別シーンの値が Undo で混ざるのを防ぐ)
+  - Save to = 表示中の絵のレシピからシーンの設定を取り、画面にも載せる(+ サムネ・採用画像)
+  - + Scene = 今の画面の設定を写したシーン。設定の無いシーン(旧形式の読み替え前)だけが空のシーン扱い
+  - 編集モードのままアプリを閉じたら、次の起動で同じシーンの編集モードに戻る。退避は `editBackup: { settings, sceneId }`。画面の設定(閉じる時に保存済み)をそのシーンの最新とみなしてシーンへ入れる。閉じる時はシーンへの反映とストア書き込みを待たずに即実行。退避のシーンが今のシーケンスに無ければ、従来どおり画面の設定を戻して終える
+  - 旧形式(欄の文だけのシーン)は起動時に一度だけ「その時の画面の設定+そのシーンの欄の文」に読み替える。旧形式の編集退避(欄の文)も起動時に戻す
+- D30 タグのコピー・切り取り・貼り付け(v3.3、全チップ欄共通、`tagCapsuleField.js`):
+  - Ctrl+C / Ctrl+X = フォーカスしたチップ(選択中ならその選択全部)をプロンプト文(`a, (b:1.20), ~c`)としてクリップボードへ。Ctrl+X は欄から外す
+  - Ctrl+V = クリップボードのタグをフォーカスしたチップの後ろへ(+ Tag 上なら末尾)。欄に既にあるタグは足さない。貼ったチップは選択状態
+  - 直前のコピーはアプリ内にも丸ごと持ち、同じ文を貼るときは重みプラン(画像ごとの重み)も保つ。クリップボードへの書き込みに失敗したときはアプリ内のコピーを貼る
+  - 右クリック: チップに Cut / Copy / Paste、欄の余白に Paste。既存の Move to / Copy to(画面内の欄どうし)はそのまま
+  - 文字表示(Text)の欄は既存の文字の C&P のまま
+- D28 シーンの絵と履歴(v3.2、実機レビュー):
+  - シーン = `{ id, name, texts, thumb, image, history }`。`image` = 採用した絵の保存ファイル、`history` = そのシーンの編集モードで作った絵の保存ファイル(古い順、重複なし、新しい 60 件)
+  - 編集モードの試し生成はレシピの `run.sequenceScene` にシーン ID を持つ。届いた絵はそのシーンの `history` に入る(保存ファイルが無い絵は入らない)
+  - 編集モード中のビューワー(下の履歴の列を含む)= 今のシーンの `history` だけ。採用画像は列で ✓ 印、シーンを開いた時・替えた時に表示。シーン外の絵(シーケンス実行など)は表示しないが、編集モードを抜けるといつもの画像の後ろに並ぶ
+  - 絵はギャラリーの手持ちを使い、無ければファイルから読む(`libraryImage`)。アプリを再起動しても履歴は残る
+  - Save to = 表示中の絵を採用: 文・サムネ・`image` を更新、ボタンは 1.4 秒 Done
+  - 空のシーン = 採用した絵も無く、選んだ欄がすべて空のシーン(欄が空のまま作った絵を採用したシーンは、その欄に何も足さないシーンとして走る)
+  - タイルの絵を押すと編集モード。✎ ボタンは置かない
+  - 旧形式(`field` 1 つ・シーンの `text`)は読み込み時に `fields: [field]`・`texts: { [field]: text }` に読み替える。レシピの `run.sequence.fields` は欄キーのカンマ区切り
   - 判定 = `createControlNet()`(`generate.js:857`)が空でない。`api_controlnet_enable` OFF、全行 Off、モデル none の行だけ、なら開始可
   - IP-Adapter は ControlNet 欄の 1 行(前処理 `ip-adapter*`)なので同じ判定に入る
   - 編集モードの試し生成は制限しない
@@ -190,7 +239,45 @@
   - 差し替え無しだと Library の「Use settings…」・再生成が UI 状態を再現し別画像になる
   - `run.sequence` 追加: `{ runId, sequenceName, characterKey, characterIndex, sceneIndex, sceneName, candidate, candidates, total }`(`scripts/shared/recipe.js` の `cleanRun` に項目追加)
 - 保存先(`getImageSavePrefix` `generate.js:1079` の分岐追加):
-  - `seq-<runId>/<キャラ>_s<NN>-<シーン名>_c<K>`(NN・K は 1 始まり 2 桁/1 桁)
+  - `seq-<runId>/<キャラ>_p<NN>_s<NN>-<シーン名>`(p = 候補(パターン)、s = シーン、どちらも 1 始まり 2 桁)。名前順でキャラ → パターン → シーンに並ぶ(1 つのパターンのシーンが続けて読める)。Library は `seq-YYYYMMDD-HHmmss` のフォルダだけ、日時順ではなくこの名前順で並べる(D31、2026-11-14)
+- Run bar のモードと Generate(D32、2026-11-15、モック `RunModes.dc.html` / `RunModesAll.dc.html`):
+  - Generate の左に `[Single | Batch | Sequence]` の切り替え、Sequence のときだけその左に `Sequence…`(ダイアログを開く)。Batch ▾ メニュー(Batch (Random) / Batch (Last) / Expand weights per image… / Sequence…)は廃止
+  - ボタンは 1 つで名前は `Generate`。Batch は `Generate (枚数)`、Sequence は `Generate (総数)`。Sequence が始められないとき(キャラ 0 人・Regional など)はボタンを押せなくし、理由をツールチップに出す。Run bar に警告やシーン数は出さない
+  - 数の欄は Batch では枚数、Sequence では `Pattern`(キャラ × シーンごとの候補数)。値は別々に保存し、モードで表示を切り替える。Single では薄く表示
+  - モードは設定 `run_mode` に保存。選んだキャラも `sequence_run.characters` に保存し、再起動しても残す
+  - (D34 で置き換え)シーンの編集モード中は Sequence を押せなくし、Generate は試し撮り(Single / Batch)
+  - ダイアログの下は `Done`(編集モード中は `Back` も)だけ。候補数と Generate はダイアログから Run bar に移った
+  - Batch (Last) は廃止し、要素ごとの鍵(D33)で置き換える。ブラウザ版はシーケンスなし(Sequence の選択肢を隠すだけで、それ以上は考えない)
+- 乱数源の鍵(D33、2026-11-15、モック `LocksLive`、`scripts/shared/promptLocks.js` / `scripts/renderer/promptLocks.js` / `promptLocksUi.js`):
+  - 乱数源 = キャラ枠の `Random`、行全体が `random` の Background / Style、行の中の `__wildcard__` と `{a|b}`、AI プロンプトの答え。Prose(Anima)は対象外(Illustrious 系だけを考える)
+  - 鍵の場所: Random のキャラ枠は重みの右、乱数源のある行(Positive 側の行だけ)は ⋯ の左、AI カードはモードが Expand / Refine のとき役割の右。引いた値は行の「+ Tag」の右(文字表示のときは入力欄の右下)、キャラ枠は名前の右に `→ 値`。鍵がかかっていれば保持している値、外れていれば最後に引いた値を薄く出す
+  - 鍵をかけると、その時点で最後に引いた値を保持する。まだ引いていなければ「次に引いた値」を保持する。保持した値はシードと切り離して使う(鍵のない乱数源は今までどおりシードやその場の乱数で引く)
+  - 行の値は乱数源ごとに持つ(ワイルドカードは名前、`{a|b}` は中身と出てくる順、`random` は `list`)。固定タグの編集では鍵も値もそのまま。乱数源を足したり書き換えたりすると、その乱数源だけ次に引いた値を保持する。乱数源を全部消すと値は空になるが鍵は残る。鍵が勝手に外れることはない
+  - そのため行のワイルドカードと `{a|b}` は、行ごとに先に引いてから組み立てる(Exclude はその後にかかるので、ワイルドカードが出したタグも Exclude で消せるようになった)。キャラのタグと JSON 枠の分は今までどおり最後にまとめて引く
+  - Regional は左右で別の値を持つ(`part` = `left` / `right`。通常の生成は `left`)。両側に入る行も左右で別に引いて別に保持する。キャラは、その側に割り当てたキャラ枠の鍵を使う
+  - キャラ枠の鍵は枠の番号に付く。枠を減らすと、なくなった枠の鍵も消える。シーケンス中はキャラをシーケンスが決めるので効かない
+  - 保存先は prompt セクションの `prompt_locks`(行)・`character_locks`(キャラ枠)・`ai_prompt_lock`(AI)。プリセットにも入り、`prompt_locks` はシーンにも入る(`SCENE_KEYS`)。モデル種別ごとのプロンプト切り替えにも付いていく。生成中に値を保持する書き込みは元に戻す履歴に入れない(鍵の切り替えは入る)
+  - レシピ: 画像ごとに行の引いた値を `run.draws` に記録。「Use settings…」で戻すと、引いた行はすべてその値で鍵がかかった状態になり、AI はその画像の答えで鍵がかかる。記録のない古い画像は、行は鍵なし(引き直し)、キャラは今までどおり Random を引いたキャラに置き換える
+  - 「シード固定で全部同じ画像になる」確認(confirmBatchSeed)は、重みの展開がなく、鍵のない `{a|b}`(Wildcard seed オンならワイルドカードも)がなく、AI が毎回答える設定でもないときに出す
+  - Batch (Last) の経路(`runSame`、`lastPos` 以外の `last*`)は generate.js / generate_regional.js から削除。Prose・remoteAI・refineRunState の `runSame` 引数は既定値 false のまま残した
+- Sequence モード = 編集モード、Generate の縦割り(D34、2026-11-15、モック `SafeRunSplit.dc.html` / `SafeRunAll.dc.html`):
+  - 編集モードを Sequence モードに一本化する。Run bar で Sequence を選ぶと、最後に使ったシーケンスの最後に触ったシーンを読み込んで編集モードに入る(帯が出る)。Single / Batch を選ぶと編集モードを抜け、退避した画面の設定が戻る(今の Back と同じ)
+  - シーケンスが 1 つも無いとき、Sequence を選ぶとダイアログが開く(作るまで帯は出ない)
+  - 帯の `Back`、ダイアログの `Back`、Run bar の `Sequence…` ボタンは無くす。ダイアログは帯の今のシーンを押して開く。ダイアログのタイルを押すと、そのシーンの編集に切り替わる
+  - Generate は位置と外形(幅)を変えず、Sequence のときだけ縦に 2 つに割る(既定 60:40)。割っても 1 つのカプセルに見せる(外側だけ角丸、間は細い線 1 本、2026-11-15 に隙間 2px から変更)。Single / Batch は今のオレンジの `Generate` / `Generate (枚数)`。幅は 3 モードで同じにして、切り替えてもボタンの位置がずれないようにする
+    - 左(広い方)= `Sample`。今のシーンを 1 枚だけ生成する(Batch の枚数は使わない)。色は帯と同じ青(#1d6fd1)。シーン番号は出さない
+    - 右(狭い方)= `Run (総数)`。シーケンス全体を回す。赤(`--saa-run-batch` #b91c1c)に白い録画の点。Run bar のモード切り替えの `Sequence` には点を付けない(2026-11-15 に外した)
+    - いつもの位置(ボタンの中ほど)を押すと左に当たるので、押し間違えて損をするのは右を狙って外したときだけになる
+  - 数の欄は Sequence では `Pattern` のまま(Run の総数にだけ効く)
+  - 不採用: Sequence の長押し開始(何が起きるか分からない、普段使いでは面倒)、Sample の Batch(鍵をかければ Sample を何度か押すのと同じ)、ボタン内のシーン番号、編集モードと Sequence モードを別の状態にすること
+  - 実装(2026-11-15、`runModes.js` / `sequenceEdit.js` / `sequenceBatchUi.js`):
+    - 最後に触ったシーンは `sequence_run.scene`(設定)に持つ。そのシーンが無ければ先頭のシーン
+    - Generate は幅 200px の箱 `#run-generate`。Sample は今の Generate ボタンそのもの(色だけ `--saa-run-sample` 系に替える)、Run は箱の中の別ボタン `#run-sequence-go`
+    - 開始できない理由(キャラ未選択など)は Run だけを止める。Sample が止まるのは、Sequence なのにシーンが画面に無いときだけ
+    - 編集中のシーンを消すと、そのシーンがあった位置のシーンへ移る(最後のシーンなら 1 つ前)。シーンが 0 になると編集モードを抜ける(Sequence のまま、帯は出ない)
+    - 別のシーケンスを読み込むと、その先頭のシーンへ移る。同じ id のシーンがあっても、前の画面の内容は書き込まない
+    - Run の画像は届いた順にビューアーに出る(シーンの履歴には入れない)。Single / Batch に戻ると、ビューアー本来の画像と一緒に残る
+    - 編集モードのまま閉じたアプリは、次の起動で Sequence モードのまま戻る(D34 より前に編集モードで閉じた分も含む)
   - キャラ名・シーン名は Windows 禁止文字 `\ / : * ? " < > |` と制御文字を `_` に置換、長さ 40 字で切る
   - Library はフォルダ単位表示 → 実行ごとに 1 フォルダ
 - キュー表示名: `[Seq] <キャラ> / <シーン> #c` 形式
@@ -199,24 +286,23 @@
 ## 5. UI
 
 - 見た目・部品は design system に従う(`design/design-system`、`AGENTS.md`)。説明文・ヒント文は足さない
-- 入口: Run bar の Batch ▾ メニューに「Sequence…」追加 → ダイアログ(`dialogShell` / `myDialog`)
-- ダイアログ構成: 2 ページ(大きさ 920×680)。保存する「シーンの流れ」と保存しない「実行の設定」をページで分ける
-  - ページ 1 `Sequence`(A-2、保存する側、モック `Main.dc.html`):
-    - 上の行: Sequence 選択+保存+削除、Field 選択、右端にシーン数
+- 入口: Run bar で Sequence を選ぶと編集モードに入る。ダイアログ(`dialogShell` / `myDialog`)は帯の今のシーンから開く(D34)
+- ダイアログ構成: 2 タブ(大きさ 920×680、2026-11-14 にページ送りからタブへ変更、モック `Tabs.dc.html` / `TabsChars.dc.html` / `TabsNoChars.dc.html`)。保存する「シーンの流れ」と保存しない「実行の設定」をタブで分ける
+  - タブ行(見出しのすぐ下): `Scenes` と `Characters`、それぞれ件数のバッジ付き(0 件は赤枠)。右端に `シーン数 × キャラ数 × 候補数` の式。← → キーでタブを切り替えられる
+  - `Scenes` タブ(A-2、保存する側):
+    - 上の行: Sequence 選択+保存+削除(シーン数はタブのバッジに移した)
     - シーンのタイル格子、6 列、縦スクロール
       - タイル = サムネ(3:4)+左上に番号+下に名前。サムネ無しは点線枠、空のシーンは赤い点線+`Empty`
-      - ホバーで右上に ✎(編集モードへ)と削除。編集モード中のシーンはアクセント色の枠+`Editing`
+      - タイルの画像をクリックで編集モードへ、ホバーで右上に削除。編集モード中のシーンはアクセント色の枠+`Editing`
       - 最後に `+ Scene` の点線タイル
       - シーン文(プロンプト)は出さない
-    - フッター: Cancel(編集モード中は Back)/ `Next`
-  - ページ 2 `Sequence › Run`(B、保存しない側、モック `CharactersOpen.dc.html` / `RunEmpty.dc.html` / `Blocked.dc.html`):
-    - 見出し行: `Characters`、右端に今のシーケンス名とシーン数(例 `一日の流れ · 6 scenes`)
-    - キャラ選択の 2 列をページいっぱいに直接出す(ポップオーバーにしない)
+  - `Characters` タブ(B、保存しない側):
+    - キャラ選択の 2 列をタブいっぱいに直接出す(ポップオーバーにしない)
       - 左: 検索欄、お気に入り一覧(行 = 頭像+名前+`+`、選択済みは薄く `✓`、検索に合わない行は薄く)、下に `Add all` と `Random` [N]
       - 右: `Selected` と人数、選んだキャラの行(つまみ+番号+頭像+名前+×)、ドラッグで並べ替え、下に `Clear`
-    - フッター: `← Scenes` / 開始不可理由のピル(`Empty scene`・`No characters`・`Regional on` 等)、Candidates、`Generate (N)`(N = 総枚数。計算式は出さない)
-  - 開くページ: Batch ▾ → Sequence… は前回閉じたときのページ(初回は Scenes)。編集中の帯の今のシーンからは Scenes
-  - ページの行き来はフッターの `Next` / `← Scenes` だけ(タブは置かない)
+  - フッター(どちらのタブでも同じ): `Done` だけ(`Back` は D34 で廃止)。候補数・開始不可の理由・`Generate (N)` は Run bar に移した(D32)
+    - 直す場所がタブにあるピル(`No characters` → Characters、`No scenes`・`Empty scene` → Scenes)はボタンで、押すとそのタブを開く
+  - 開くタブ: Batch ▾ → Sequence… は前回閉じたときのタブ(初回は Scenes)。編集中の帯の今のシーンからは Scenes
 - 編集モード(モック `Editing.dc.html`): 4.3
 - 確認(モック `Confirm.dc.html`): 合計 ≥ しきい値のとき `Queue N images?`
 - 設定(モック `Settings.dc.html`): Settings › General に `sequence_confirm_threshold`
@@ -227,7 +313,7 @@
 
 モック `Flow.dc.html` の番号に対応。
 
-### A. ページ 1 Sequence: シーンを作る・保存する(初回・直すとき)
+### A. Scenes タブ: シーンを作る・保存する(初回・直すとき)
 
 1. A-1 お気に入りにキャラを登録(初回だけ)
 2. A-2 Batch ▾ → Sequence…、シーケンスを選ぶ / 新規、シーン欄を選び、シーンを足す・並べる
@@ -237,10 +323,10 @@
 6. A-6 気に入った絵で Save to scene(サムネ+文を絵の文に戻す)
 7. A-7 次のシーン・直すシーンがあれば A-2(または帯のシーン切替で直接 A-3)。終われば帯の今のシーン → ダイアログで Back → 保存ボタン
 
-### B. ページ 2 Run: 実行の設定(保存しない)
+### B. Characters タブ: 実行の設定(保存しない)
 
-1. B-1 ページ 1 で保存済みシーケンスを選び、Next でページ 2 へ
-2. B-2 Next → Run ページでキャラを決める(左から足す / Add all / Random、右で並べ替え・外す)
+1. B-1 Scenes タブで保存済みシーケンスを選び、Characters タブへ
+2. B-2 Characters タブでキャラを決める(左から足す / Add all / Random、右で並べ替え・外す)
 3. B-3 候補数を決める(Generate の隣の Candidates)
 4. B-4 開始可否判定 → 不可なら B-5 直してから Generate
 
@@ -322,7 +408,7 @@ E2E(`tests/e2e/sequence-batch.e2e.mjs`、実 Electron+実 ComfyUI、既存 `harn
 
 実機(CDP):
 
-- ダイアログ操作(追加・ドラッグ並べ替え・削除確認・クリック名前変更・Next / ← Scenes のページ移動・左から追加・Add all・Random・右のドラッグ並べ替え・× ・Clear・保存・読込・削除・復元)
+- ダイアログ操作(追加・ドラッグ並べ替え・削除確認・クリック名前変更・タブの切り替えとピルからのタブ移動・左から追加・Add all・Random・右のドラッグ並べ替え・× ・Clear・保存・読込・削除・復元)
 - ControlNet ON+行あり → 開始不可のピル、全行 Off → 開始可
 - 編集モード: ‹ › とダイアログの ✎ でシーン切替、各シーンの文が出る、Characters がプレビュー 1 人・Regional が隠れる、Back で両方戻る、× で編集に戻る、他欄の編集・バッチ生成が普通に動く、対象欄の印とピル、+ LoRA でタグが挿さる
 - 生成中 Cancel / Skip 後の状態、ボタン復帰
