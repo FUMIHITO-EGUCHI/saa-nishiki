@@ -82,7 +82,7 @@ test('renderer queue and generate loops always clear the busy state and re-enabl
   assert.match(generate, /globalThis\.generate\.autoStartDisabledByError = true;\n\s*setQueueAutoStart\(false\);/);
   assert.match(start, /if \(globalThis\.generate\.autoStartDisabledByError && !globalThis\.globalSettings\.generate_auto_start\) \{[\s\S]*setQueueAutoStart\(true\);/);
   assert.match(start, /globalThis\.inGenerating = false;/);
-  assert.match(start, /\} finally \{\n        globalThis\.generate\.generate_single\.setClickable\(true\);\n        globalThis\.generate\.generate_batch\.setClickable\(true\);\n        globalThis\.generate\.generate_same\.setClickable\(true\);/);
+  assert.match(start, /\} finally \{\n        globalThis\.generate\.generate_single\.setClickable\(true\);\n        globalThis\.runModes\?\.refresh\?\.\(\);/);
 });
 
 test('SAA asks the loopback ComfyUI to unload models when the last window closes', async () => {

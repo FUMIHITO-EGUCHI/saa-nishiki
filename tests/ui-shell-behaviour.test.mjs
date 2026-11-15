@@ -137,9 +137,6 @@ function buildMarkup(document) {
     dom.sizeLabel = make('span', { id: 'run-size-label' });
     dom.widthBox = make('div', { class: 'run-number' });
     dom.heightBox = make('div', { class: 'run-number' });
-    dom.batchButton = make('button', { id: 'generate-batch-menu-button' });
-    dom.batchExpand = make('button', { id: 'generate-batch-expand' });
-    dom.batchList = make('div', { id: 'generate-batch-menu-list', hidden: true }, [dom.batchExpand]);
     dom.queueStatus = make('button', { id: 'queue-status' });
     dom.queueDrawer = make('div', { id: 'queue-drawer', hidden: true });
     dom.footnote = make('button', { id: 'run-footnote' });
@@ -147,7 +144,6 @@ function buildMarkup(document) {
         dom.seedRandom,
         dom.seedReuse,
         make('div', { class: 'run-param-size' }, [dom.sizeLabel, dom.widthBox, dom.heightBox]),
-        make('div', { id: 'generate-batch-menu' }, [dom.batchButton, dom.batchList]),
         dom.queueStatus,
         dom.queueDrawer,
         dom.footnote,
@@ -417,46 +413,6 @@ test('the size label turns red while either box is over the limit, and only clea
         over(dom.heightBox, false);
         assert.equal(dom.sizeLabel.classList.contains('is-over'), false);
     });
-});
-
-test('the batch menu opens on its button and closes on a click outside, on Escape and on a choice', async () => {
-    await withShell(async ({ document, dom }) => {
-        const click = (node, target = node) => node.dispatchEvent({ type: 'click', bubbles: true, target, preventDefault() {}, stopPropagation() {} });
-        click(dom.batchButton);
-        assert.equal(dom.batchList.hidden, false);
-        assert.equal(dom.batchButton.getAttribute('aria-expanded'), 'true');
-
-        document.dispatchEvent({ type: 'click', target: dom.footnote });
-        assert.equal(dom.batchList.hidden, true);
-        assert.equal(dom.batchButton.getAttribute('aria-expanded'), 'false');
-
-        click(dom.batchButton);
-        document.dispatchEvent({ type: 'keydown', key: 'Escape' });
-        assert.equal(dom.batchList.hidden, true);
-
-        click(dom.batchButton);
-        click(dom.batchList, dom.batchExpand);
-        await settle(20);
-        assert.equal(dom.batchList.hidden, true, 'picking an entry closes the menu');
-    });
-});
-
-test('Expand weights per image opens the capsule view when the batch button is not on screen', async () => {
-    const opened = [];
-    const batchButton = { getClientRects: () => [] };
-    const field = {
-        element: { querySelector: () => batchButton },
-        setMode: (mode, options) => opened.push([mode, options]),
-    };
-    await withShell(async ({ dom }) => {
-        dom.batchExpand.click();
-        assert.deepEqual(opened, [['capsule', { focus: true }]]);
-
-        batchButton.getClientRects = () => [{ width: 20, height: 20 }];
-        batchButton.click = () => opened.push(['batch-button']);
-        dom.batchExpand.click();
-        assert.deepEqual(opened.at(-1), ['batch-button'], 'a visible batch button is clicked instead');
-    }, { slots: { fields: { positive: field } } });
 });
 
 test('the queue drawer, the queue pill and the footnote follow the settings', async () => {

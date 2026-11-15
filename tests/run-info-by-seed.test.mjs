@@ -103,7 +103,7 @@ function queueSetup() {
         keepGallery: { getValue: () => true },
         api_interface: { getValue: () => 'ComfyUI' },
         queueAutostart: { setValue() {} },
-        generate_single: button(), generate_batch: button(), generate_same: button(),
+        generate_single: button(),
         generate_skip: button(), generate_cancel: button(),
     };
     globalThis.mainGallery = { isLoading: false, showLoading() {}, hideLoading() {}, clearGallery() {}, appendImageData() {} };

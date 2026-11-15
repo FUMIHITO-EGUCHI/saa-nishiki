@@ -43,9 +43,13 @@ import { setupViewerInfo } from './renderer/viewerInfo.js';
 import { setupUseSettings } from './renderer/useSettingsDialog.js';
 import { setupLibrary } from './renderer/libraryWindow.js';
 import { setupLoraUi } from './renderer/loraUi.js';
+import { currentRunMode, onCountChange, setupRunModes } from './renderer/runModes.js';
 import { filterPrompts } from './renderer/tools/promptFilter.js';
 import { setupRightClickMenu, addSpellCheckSuggestions } from './renderer/components/myRightClickMenu.js';
-import { extractHostPort } from './renderer/generate.js';
+import { extractHostPort, getCustomFieldTexts } from './renderer/generate.js';
+import { readPromptValue } from './renderer/tools/promptBatchExpansion.js';
+import { setupPromptLocks } from './renderer/promptLocks.js';
+import { setupPromptLocksUi } from './renderer/promptLocksUi.js';
 import { CLIP_TYPE, CLIP_DEVICE, DIFFUSION_DTYPE } from './types.js';
 import { flushSlots } from './renderer/slots/slotsManager.js';
 import { installSettingsProxy, setupSettingsPersistence } from './renderer/settingsPersistence.js';
@@ -185,12 +189,28 @@ function launchFlagsTextbox(containerId, title, key) {
 
 // A batch with a fixed seed and nothing else varying repeats the same image; ask first.
 // With variable weight plans the fixed seed is the point (only the weights change).
+// the positive rows that go into the prompt, as their text: [{ id, text }]
+function promptRowsForLocks() {
+    const ids = ['common', 'views', 'background', 'style', 'positive'];
+    if (globalThis.globalSettings.regional_condition) ids.push('positive_right');
+    const rows = ids.map(id => ({ id, text: readPromptValue(id) }));
+    for (const field of getCustomFieldTexts('positive')) rows.push(field);
+    return rows;
+}
+
 async function confirmBatchSeed() {
     const loops = Number(globalThis.generate?.batch?.getValue?.() ?? 1);
     const seed = Number(globalThis.generate?.seed?.getValue?.() ?? -1);
     if (loops <= 1 || seed < 0) return true;
     const plan = globalThis.prompt?.tagCapsuleFields?.getBatchExpansion?.();
     if (Number(plan?.variable ?? 0) > 0) return true;
+    // a row that draws anew for each image (an unlocked "{a|b}", a wildcard with Wildcard seed
+    // on) or an AI answer per image makes the batch differ too (promptLocks.js)
+    if (globalThis.promptLocks?.somethingVaries?.(promptRowsForLocks(), {
+        freshWildcards: Boolean(globalThis.globalSettings.wildcard_random),
+        aiRole: globalThis.ai?.ai_select?.getValue?.() ?? 0,
+        aiInterface: globalThis.ai?.interface?.getValue?.() ?? 'None',
+    })) return true;
     const LANG = globalThis.cachedFiles.language[globalThis.globalSettings.language];
     return showDialog('confirm', {
         message: (LANG.batch_seed_confirm ?? 'Seed is fixed ({0}). Run the batch of {1} anyway?')
@@ -226,7 +246,8 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
         // the ratio chip follows whatever moves them (sizeRatioUi.js)
         width: setupSlider('generate-width', LANG.width, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.width}, (value) =>{globalThis.globalSettings.width = value; hiresCalculate(); globalThis.sizeRatio?.settleSoon?.(); }),
         height: setupSlider('generate-height', LANG.height, {min:SIZE_MIN, max:SIZE_HARD_MAX, step:SIZE_STEP, defaultValue:SETTINGS.height}, (value) =>{globalThis.globalSettings.height = value; hiresCalculate(); globalThis.sizeRatio?.settleSoon?.(); }),
-        batch: setupSlider('generate-batch', LANG.batch, {min:1, max:2038, step:1, defaultValue:SETTINGS.batch}, (value) =>{globalThis.globalSettings.batch = value;}),
+        // the count: images in Batch mode, patterns per character and scene in Sequence mode (runModes.js)
+        batch: setupSlider('generate-batch', LANG.batch, {min:1, max:2038, step:1, defaultValue:SETTINGS.batch}, (value) =>{ onCountChange(value); }),
         hifix: setupCheckbox('generate-hires-fix', LANG.api_hf_enable, SETTINGS.api_hf_enable, true, (value) => { globalThis.globalSettings.api_hf_enable = value; hiresCalculate(); }),
         refiner: setupCheckbox('generate-refiner', LANG.api_refiner_enable, SETTINGS.api_refiner_enable, true, (value) => { globalThis.globalSettings.api_refiner_enable = value; }),
         controlnet: setupCheckbox('generate-controlnet', LANG.api_controlnet_enable, SETTINGS.api_controlnet_enable, true, callback_controlnet),
@@ -252,31 +273,20 @@ export async function createGenerate(SETTINGS, FILES, LANG) {
                 hidden: false,
                 clickable: true              
             }, async () =>{
-                await callback_generate_start('normal', {loops:1, runSame:false});
-            }),
-        generate_batch: setupButtons('generate-button-batch', LANG.run_random_button, {
-                defaultColor: 'var(--saa-run-batch)',
-                hoverColor: 'var(--saa-run-batch-hover)',
-                disabledColor: 'var(--saa-run-batch-disabled)',
-                width: '100%',
-                height: '32px',
-                hidden: false,
-                clickable: true              
-            }, async () =>{
-                if (!(await confirmBatchSeed())) return;
-                await callback_generate_start('normal', {loops:globalThis.generate.batch.getValue(), runSame:false});
-            }),
-        generate_same: setupButtons('generate-button-same', LANG.run_same_button, {
-                defaultColor: 'var(--saa-run-same)',
-                hoverColor: 'var(--saa-run-same-hover)',
-                disabledColor: 'var(--saa-run-same-disabled)',
-                width: '100%',
-                height: '32px',
-                hidden: false,
-                clickable: true              
-            }, async () =>{
-                if (!(await confirmBatchSeed())) return;
-                await callback_generate_start('normal', {loops:globalThis.generate.batch.getValue(), runSame:true});
+                // one button for the three run modes (runModes.js); in Sequence it is Sample,
+                // one image of the scene on the screen, and Run beside it makes the sequence
+                const mode = currentRunMode();
+                if (mode === 'sequence') {
+                    if (globalThis.runModes?.sampleBlocked?.()) return;
+                    await callback_generate_start('normal', {loops:1});
+                    return;
+                }
+                if (mode === 'batch') {
+                    if (!(await confirmBatchSeed())) return;
+                    await callback_generate_start('normal', {loops:globalThis.generate.batch.getValue()});
+                    return;
+                }
+                await callback_generate_start('normal', {loops:1});
             }),
         generate_skip: setupButtons('generate-button-skip', LANG.run_skip_button, {
                 defaultColor: 'var(--saa-run-stop)',
@@ -877,6 +887,9 @@ async function init(){
         // Autosave (app.json / state.json), per-section preset controls, flush on unload.
         setupSettingsPersistence({ updateSettings, flushSlots, getTextboxHeights: get_prompt_textBox_Heights });
         setupEditHistoryUi();
+        setupRunModes();
+        setupPromptLocks();
+        setupPromptLocksUi();
         if (ranWizard) {
             // first run: persist the wizard result right away
             globalThis.settingsAutosave.markDirty('app');

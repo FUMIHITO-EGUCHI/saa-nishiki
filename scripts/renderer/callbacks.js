@@ -414,8 +414,6 @@ export async function callback_myCharacterList_updateThumb(){
 
 export async function callback_generate_start(runType='normal', dataPack=null){    
     globalThis.generate.generate_single.setClickable(false);
-    globalThis.generate.generate_batch.setClickable(false);
-    globalThis.generate.generate_same.setClickable(false);
 
     globalThis.generate.skipClicked = false;
     globalThis.generate.cancelClicked = false;
@@ -452,8 +450,7 @@ export async function callback_generate_start(runType='normal', dataPack=null){
         globalThis.mainGallery?.hideLoading?.(message, error?.stack ?? String(error));
     } finally {
         globalThis.generate.generate_single.setClickable(true);
-        globalThis.generate.generate_batch.setClickable(true);
-        globalThis.generate.generate_same.setClickable(true);
+        globalThis.runModes?.refresh?.();
         if ((globalThis.queueManager?.getSlotsCount?.() ?? 0) === 0 && !globalThis.inGenerating) {
             globalThis.generate.showCancelButtons(false);
         }
@@ -629,7 +626,7 @@ export async function callback_queue_autostart(trigger, isDummy=false) {
         globalThis.generate.generate_single.setTitle(LANG.run_button_paused);
     }
 
-    globalThis.globalSettings.generate_auto_start = trigger;
+    globalThis.globalSettings.generate_auto_start = trigger; globalThis.runModes?.refresh?.();
     globalThis.overlay.buttons.reload();
     globalThis.uiShell?.runBar?.refresh?.();
     if(trigger && globalThis.queueManager.getSlotsCount()>0) {
@@ -647,7 +644,7 @@ export function setQueueAutoStart(trigger) {
     else 
         globalThis.generate.generate_single.setTitle(LANG.run_button_paused);
 
-    globalThis.globalSettings.generate_auto_start=trigger;
+    globalThis.globalSettings.generate_auto_start=trigger; globalThis.runModes?.refresh?.();
     globalThis.generate.queueAutostart.setValue(trigger);
     globalThis.overlay.buttons.reload();
     // the run bar's "Queue n · auto-start on/off" has no poll: an error that pauses the

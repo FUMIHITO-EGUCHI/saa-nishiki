@@ -54,7 +54,7 @@ function setup(backend) {
         setClickable(value) { this.clickable = value; state.clickable.push([name, value]); },
         setTitle() {},
     });
-    state.enabled = () => Object.fromEntries(['single', 'batch', 'same', 'skip', 'cancel']
+    state.enabled = () => Object.fromEntries(['single', 'skip', 'cancel']
         .map(name => [name, globalThis.generate[`generate_${name}`].clickable]));
     globalThis.inBrowser = false;
     globalThis.inGenerating = false;
@@ -66,7 +66,7 @@ function setup(backend) {
         keepGallery: { getValue: () => true },
         api_interface: { getValue: () => 'ComfyUI' },
         queueAutostart: { setValue() {} },
-        generate_single: button('single'), generate_batch: button('batch'), generate_same: button('same'),
+        generate_single: button('single'),
         generate_skip: button('skip'), generate_cancel: button('cancel'),
     };
     globalThis.mainGallery = {
@@ -194,18 +194,18 @@ test('Cancel with nothing running closes the overlay without an error and leaves
 });
 
 // ------------------------------------------------------------- the buttons of a running click
-test('a generate click switches Generate / Batch / Same off for as long as the run lasts', async () => {
+test('a generate click switches Generate off for as long as the run lasts', async () => {
     const state = setup(() => QUEUED);
     // generateImage reads the backend address before anything else; an unconfigured backend
     // throws there, which is the path the "never leave the buttons disabled" finally exists for.
     globalThis.generate.api_address = { getValue() { throw new Error('backend not set'); } };
-    const running = callback_generate_start('normal');
+    const running = callback_generate_start('normal', { loops: 1 });
     // the click is in flight: a second Create Image / Batch / Same would be a double start
-    assert.deepEqual(state.enabled(), { single: false, batch: false, same: false, skip: true, cancel: true },
-        'the three generate buttons are off and Skip / Cancel are on while the run lasts');
+    assert.deepEqual(state.enabled(), { single: false, skip: true, cancel: true },
+        'Generate is off and Skip / Cancel are on while the run lasts');
     await running;
-    assert.deepEqual(state.enabled(), { single: true, batch: true, same: true, skip: true, cancel: true },
-        'a failed run gives the generate buttons back');
+    assert.deepEqual(state.enabled(), { single: true, skip: true, cancel: true },
+        'a failed run gives Generate back');
     assert.equal(state.errors.length, 1, 'the failure is reported once');
     assert.equal(globalThis.inGenerating, false);
 });

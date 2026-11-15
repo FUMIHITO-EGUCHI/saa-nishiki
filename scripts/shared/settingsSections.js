@@ -142,6 +142,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
     prompt_field_presets: {},
     prompt_field_collapsed: [],
     prompt_field_muted: [],
+    // the locks on the random sources and what they hold (scripts/shared/promptLocks.js):
+    // the rows' draws, the Random character slots, the AI answer
+    prompt_locks: {},
+    character_locks: {},
+    ai_prompt_lock: null,
     common_weight_plans: [],
     positive_weight_plans: [],
     positive_right_weight_plans: [],
@@ -266,6 +271,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
     controlnet_slot: [],
 
     fav_characters: [],
+    // the run bar's mode: 'single' | 'batch' (runModes.js; 'sequence' where the sequence batch is built in)
+    run_mode: 'single',
     fav_artists: [],
     // the artists picked most recently, newest first (the picker's opening list)
     artist_recent: [],
@@ -303,6 +310,7 @@ export const SECTION_KEYS = Object.freeze({
         'tag_assist', 'tag_chip_alias', 'wildcard_random',
         'keep_gallery', 'scroll_to_last', 'gallery_max_images', 'generate_auto_start',
         'fav_characters',
+        'run_mode',
         'fav_artists',
         'artist_recent',
         'fav_tags',
@@ -315,6 +323,7 @@ export const SECTION_KEYS = Object.freeze({
         'custom_prompt', 'api_prompt', 'api_prompt_right', 'api_neg_prompt', 'api_neg_prompt_left', 'api_neg_prompt_right',
         'prompt_background', 'prompt_style', 'ai_prompt', 'prompt_ban',
         'prompt_custom_fields', 'prompt_positive_order', 'prompt_negative_order', 'prompt_field_presets', 'prompt_field_collapsed', 'prompt_field_muted',
+        'prompt_locks', 'character_locks', 'ai_prompt_lock',
         'common_weight_plans', 'positive_weight_plans', 'positive_right_weight_plans', 'negative_weight_plans', 'exclude_weight_plans',
         'views_weight_plans', 'background_weight_plans', 'style_weight_plans', 'negative_left_weight_plans', 'negative_right_weight_plans',
         'common_batch', 'positive_batch', 'positive_right_batch', 'negative_batch', 'exclude_batch',

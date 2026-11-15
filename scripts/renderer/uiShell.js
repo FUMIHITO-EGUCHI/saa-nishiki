@@ -440,35 +440,6 @@ function setupRunBar() {
         });
     }
 
-    // Batch menu: wraps the existing Batch (Random) / Batch (Last) buttons.
-    const menuButton = document.getElementById('generate-batch-menu-button');
-    const menuList = document.getElementById('generate-batch-menu-list');
-    const expandItem = document.getElementById('generate-batch-expand');
-    const closeMenu = () => { if (menuList) menuList.hidden = true; menuButton?.setAttribute('aria-expanded', 'false'); };
-    if (menuButton && menuList) {
-        menuButton.addEventListener('click', event => {
-            event.stopPropagation();
-            const open = menuList.hidden;
-            menuList.hidden = !open;
-            menuButton.setAttribute('aria-expanded', String(open));
-        });
-        menuList.addEventListener('click', event => {
-            if (event.target.closest('button')) setTimeout(closeMenu, 0);
-        });
-        document.addEventListener('click', event => { if (!event.target.closest('#generate-batch-menu')) closeMenu(); });
-        document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenu(); });
-    }
-    expandItem?.addEventListener('click', () => {
-        const field = globalThis.prompt?.tagCapsuleFields?.get?.('positive');
-        if (!field) return;
-        const button = field.element?.querySelector?.('.tag-capsule-batch');
-        if (button && button.getClientRects().length) {
-            button.click();
-        } else {
-            field.setMode?.('capsule', { focus: true });
-        }
-    });
-
     // Queue drawer
     const queueStatus = document.getElementById('queue-status');
     const drawer = document.getElementById('queue-drawer');
@@ -495,8 +466,6 @@ function setupRunBar() {
     };
     function refresh() {
         const SETTINGS = globalThis.globalSettings ?? {};
-        if (menuButton) setMarkup(menuButton, `${escapeHtml(uiText('ui_run_batch_menu', 'Batch'))}<span>${ICONS.chevD}</span>`);
-        if (expandItem) setMarkup(expandItem, `<span>${ICONS.layers}</span>${escapeHtml(uiText('ui_run_expand_weights', 'Expand weights per image…'))}`);
         if (queueStatus) {
             const count = globalThis.queueManager?.getSlotsCount?.() ?? 0;
             const auto = SETTINGS.generate_auto_start ? uiText('ui_run_autostart_on', 'auto-start on') : uiText('ui_run_autostart_off', 'auto-start off');

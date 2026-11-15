@@ -193,7 +193,9 @@ function createCharacterThumbPreview() {
     };
 }
 
-function createCharacterControl({ containerId, dropdownCount, labels, callback }) {
+// `locks` (promptLocksUi.characterLocks): a Random slot gets a lock after its weight and shows
+// the character it drew after its name
+function createCharacterControl({ containerId, dropdownCount, labels, callback, locks = null }) {
     const container = document.querySelector(`.${containerId}`);
     if (!container) return null;
     container.__characterSelectionControl?.cleanup?.();
@@ -244,6 +246,7 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
             committed[activeIndex] = selectedOption;
             pending[activeIndex] = ''; // a pick replaces whatever the pack could not resolve
             paintTrigger(field.trigger, selectedOption, valueOnly);
+            paintLock(activeIndex);
             if (typeof callback === 'function') callback(activeIndex, committed.map(option => option?.key || 'None'));
         },
     });
@@ -259,6 +262,28 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         field.trigger.setAttribute('aria-label', labels[index]);
         field.weight.value = weights[index];
         paintSide(index);
+        paintLock(index);
+    }
+
+    // a Random slot: its lock, and the character it drew (held when locked) after its name
+    function paintLock(index) {
+        const field = fields[index];
+        if (!locks || !field?.lock) return;
+        const key = String(committed[index]?.key ?? 'None');
+        const random = key.toLowerCase() === 'random' || key === originalKey('Random');
+        field.lock.hidden = !random;
+        field.lock.parentElement?.classList.toggle('has-lock', random);
+        field.trigger.querySelector('.character-selection-drawn')?.remove();
+        if (!random) return;
+        const state = locks.state(index);
+        locks.paintButton(field.lock, state.locked, labels[index]);
+        if (!state.key) return;
+        const option = findOption(allOptions, state.key);
+        const drawn = document.createElement('span');
+        drawn.className = `character-selection-drawn${state.locked ? ' is-held' : ''}`;
+        drawn.textContent = `→ ${option ? optionDisplay(option, valueOnly) : state.key}`;
+        field.trigger.querySelector('.character-selection-name')?.after(drawn);
+        field.trigger.title = `${optionDisplay(committed[index], valueOnly)} ${drawn.textContent}`;
     }
 
     // the side column: L / R / · (T / B / · under a top-bottom split), one checked
@@ -322,12 +347,21 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
             side.appendChild(button);
             sideButtons[value] = button;
         }
-        // one row per slot: alias | character | weight | side
-        // (the alias shows for the cast only, the side column while Regional is on)
-        controls.append(alias, trigger, weight, side);
+        // a Random slot's lock (the slot list of the Characters card only)
+        let lock = null;
+        if (locks) {
+            lock = document.createElement('button');
+            lock.type = 'button';
+            lock.className = 'saa-icon-btn is-26 prompt-lock character-selection-lock';
+            lock.hidden = true;
+            lock.addEventListener('click', () => locks.toggle(index));
+        }
+        // one row per slot: alias | character | weight | lock | side
+        // (the alias shows for the cast only, the lock on a Random slot, the side column while Regional is on)
+        controls.append(...[alias, trigger, weight, lock, side].filter(Boolean));
         fieldElement.append(label, controls);
         grid.appendChild(fieldElement);
-        fields.push({ trigger, weight, alias, side, sideButtons, label, options: [], settledWeight: '1.0' });
+        fields.push({ trigger, weight, alias, side, sideButtons, label, lock, options: [], settledWeight: '1.0' });
 
         alias.addEventListener('change', event => {
             const typed = normalizeAlias(event.target.value);
@@ -437,6 +471,9 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
         refreshSideLabels() {
             fields.forEach((_, index) => paintSide(index));
         },
+        paintLocks() {
+            fields.forEach((_, index) => paintLock(index));
+        },
         setValueOnly(trigger) {
             valueOnly = Boolean(trigger);
             fields.forEach((_, index) => renderField(index));
@@ -473,7 +510,7 @@ function createCharacterControl({ containerId, dropdownCount, labels, callback }
  * supplies the labels.
  */
 export function myVariableCharacterList(containerId, waiCharacters, originalCharacters, callback, options = {}) {
-    const { slotCount = 3, minSlots = 1, maxSlots = 6, labelsFor = null, onSlotsChanged = null } = options;
+    const { slotCount = 3, minSlots = 1, maxSlots = 6, labelsFor = null, onSlotsChanged = null, locks = null } = options;
     const container = document.querySelector(`.${containerId}`);
     if (!container) return null;
 
@@ -513,6 +550,7 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
             dropdownCount: count,
             labels: labels(),
             callback,
+            locks,
         });
         control.setOptions(charData, ocData, labels());
         control.setValueOnly(previousValueOnly);
@@ -522,6 +560,8 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         for (let index = 0; index < count; index++) control.setAlias(index, aliases[index] ?? '');
         for (let index = 0; index < count; index++) control.setSide(index, sides[index] ?? 'both');
         renderSlotButtons();
+        // a slot taken away takes its lock with it
+        locks?.prune?.(count);
     }
 
     // the stored keys, not the resolved ones: a rebuild (slot + / −, a new character list)
@@ -598,6 +638,7 @@ export function myVariableCharacterList(containerId, waiCharacters, originalChar
         getSide: index => control.getSide(index),
         setSide: (index, value) => control.setSide(index, value),
         refreshSideLabels: () => control.refreshSideLabels(),
+        paintLocks: () => control?.paintLocks?.(),
         getKey: () => control.getKey(),
         getValue: () => control.getValue(),
         getTextValue: index => control.getTextValue(index),

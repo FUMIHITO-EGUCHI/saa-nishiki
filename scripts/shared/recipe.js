@@ -10,6 +10,8 @@
 //
 // Pure: no DOM, no Electron.
 
+import { cleanRunDraws } from './promptLocks.js';
+
 export const RECIPE_CHUNK = 'saa_recipe';
 export const TIME_CHUNK = 'saa_time';
 export const RECIPE_VERSION = 1;
@@ -71,6 +73,8 @@ regional: run.regional === true,
         prose,
         ai,
         sent,
+        // what each row's random sources drew (promptLocks.js); "Use settings…" locks them on it
+        ...(cleanRunDraws(run.draws) ? { draws: cleanRunDraws(run.draws) } : {}),
     };
 }
 

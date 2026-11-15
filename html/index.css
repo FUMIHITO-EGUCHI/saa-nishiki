@@ -613,6 +613,11 @@ html, body {
     gap: 4px;
 }
 
+/* a Random slot's lock after the weight (promptLocksUi.js) */
+.character-selection-controls.has-lock {
+    grid-template-columns: minmax(0, 1fr) 34px 26px;
+}
+
 .character-selection-trigger,
 .character-selection-weight,
 .tag-selection-trigger {
@@ -665,6 +670,10 @@ html, body {
     grid-template-columns: 104px minmax(0, 1fr) 34px;
 }
 
+.cast-mode .dropdown-character .character-selection-controls.has-lock {
+    grid-template-columns: 104px minmax(0, 1fr) 34px 26px;
+}
+
 /* the regional Left / Right list only stores what the side column chose */
 .dropdown-character-regional {
     display: none !important;
@@ -706,6 +715,10 @@ html, body {
 
 .regional-on:not(.cast-mode) .dropdown-character .character-selection-controls {
     grid-template-columns: minmax(0, 1fr) 34px auto;
+}
+
+.regional-on:not(.cast-mode) .dropdown-character .character-selection-controls.has-lock {
+    grid-template-columns: minmax(0, 1fr) 34px 26px auto;
 }
 
 /* Scene: every prompt unit as one row (label | chips) in chain order, edited in place

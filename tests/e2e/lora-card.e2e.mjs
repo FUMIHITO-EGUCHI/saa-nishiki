@@ -3,7 +3,7 @@
 // the card at its default weight and its trigger word in the Positive row; the row's
 // slider, switch and fold change what a run sends; Retake takes the six samples with the
 // prompt written in its dialog, and the sample viewer opens on all six and shows one large;
-// Batch (Last) keeps the last prompt but sends the LoRA card, and the trigger words the
+// A run sends the LoRA card as it is now, and the trigger words the
 // row's switch took out or put back, as they are now.
 // Run with `npm run test:e2e`.
 import assert from 'node:assert/strict';
@@ -199,7 +199,7 @@ test('Retake takes the six samples with the dialog\'s prompt; the viewer opens o
     assert.equal(await app.errorText(), '');
 });
 
-test('Batch (Last) keeps the last prompt but sends the LoRA card as it is now: switched off, not loaded and its trigger word gone; on again at a new weight, both back', async () => {
+test('the LoRA card as it is at the click: switched off, not loaded and its trigger word gone; on again at a new weight, both back', async () => {
     const { page } = app;
     // the LoRA text every run handed the LoRA loader
     const loraText = run => run.history.map(entry => workflow.executedChain(entry.workflow, entry.outputs)
@@ -215,16 +215,16 @@ test('Batch (Last) keeps the last prompt but sends the LoRA card as it is now: s
 
     await page.evaluate(`document.querySelector('.lora-slot-switch').click()`);
     assert.doesNotMatch(await row(), /charturn/, 'switched off, its trigger word leaves the Positive row');
-    const off = await app.generate({ button: 'same' });
+    const off = await app.generate();
     assert.equal(off.history.length, 1);
-    assert.doesNotMatch(loraText(off), /CharTurnIL/i, 'the last prompt runs without the LoRA');
+    assert.doesNotMatch(loraText(off), /CharTurnIL/i, 'the run goes without the LoRA');
     assert.deepEqual(tags(off), tags(first).filter(tag => tag !== 'charturn'), 'and without its word, the rest as it was');
 
     await page.evaluate(`document.querySelector('.lora-slot-switch').click()`);
     assert.match(await row(), /charturn/, 'on again, the word is back in the row');
     await page.evaluate(`(() => { const field = document.querySelector('.lora-slot-line .lora-slot-value'); field.value = '0.9'; field.dispatchEvent(new Event('change', { bubbles: true })); })()`);
-    const weighted = await app.generate({ button: 'same' });
+    const weighted = await app.generate();
     assert.match(loraText(weighted), /CharTurnIL[^>]*:0\.9:0\.9>/i, 'on again at 0.9: that weight');
-    assert.deepEqual(tags(weighted), tags(first), 'and the word back in the last prompt');
+    assert.deepEqual(tags(weighted), tags(first), 'and the word back in the prompt');
     assert.equal(await app.errorText(), '');
 });

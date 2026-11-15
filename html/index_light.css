@@ -36,6 +36,9 @@
     --saa-shadow: rgba(74,64,58,0.28);
     --saa-bar-track: #e6e0cf;
     --saa-run-disabled: #887973;
+    --saa-run-sample: #1d6fd1;
+    --saa-run-sample-hover: #1859ad;
+    --saa-run-sample-disabled: #6b7f99;
     --saa-run-batch: #b91c1c;
     --saa-run-batch-hover: #991b1b;
     --saa-run-batch-disabled: #866767;

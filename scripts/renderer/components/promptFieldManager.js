@@ -25,6 +25,8 @@ import { splitPromptTokens } from './tagCapsuleLogic.js';
 import { castEnabled, castRoster, isActionNamed, isCastFieldId, isDiffusionFieldId, syncCastFields } from '../../shared/castMembers.js';
 import { regionalSlots, slotSideLabels } from '../../shared/characterSides.js';
 import { iconElement } from '../../shared/iconSet.js';
+import { attachRowLock, paintRowLock } from '../promptLocksUi.js';
+import { forgetField } from '../promptLocks.js';
 
 const BUILTIN_LABELS = {
     common: 'Common',
@@ -353,6 +355,16 @@ export function setupPromptFieldManager() {
             }
         }
         mutedNote.textContent = muted > 0 ? text('ui_scene_muted_count', '{0} off').replace('{0}', String(muted)) : '';
+        paintLocks();
+    }
+
+    // the lock of each row that goes into the prompt and has a random source (promptLocksUi.js)
+    function paintLocks() {
+        for (const container of sceneRows()) {
+            const id = idOfContainer(container);
+            const positive = id !== 'exclude' && chainOf(id) === 'prompt_positive_order';
+            paintRowLock(container, { text: fieldValue(id), label: fieldLabel(id), positive });
+        }
     }
 
     // ---------------------------------------------------------------- the rows
@@ -440,6 +452,7 @@ export function setupPromptFieldManager() {
         menu.setAttribute('aria-label', menu.title);
         menu.addEventListener('click', event => { event.stopPropagation(); toggleRowMenu(container, id, menu); });
         tools.appendChild(menu);
+        attachRowLock(container, id, tools, menu);
         // the tools sit at the row's right end (the design), not under the label:
         // out of the header, as the wrapper's own grid cell
         const wrapper = header.parentElement;
@@ -503,6 +516,7 @@ export function setupPromptFieldManager() {
         if (!custom || isFixed(id)) return;
         fields = fields.filter(field => field.id !== id);
         for (const key of ['prompt_positive_order', 'prompt_negative_order']) SETTINGS[key] = SETTINGS[key].filter(unitId => unitId !== id);
+        forgetField(id); // and its lock
         // explicit delete: the field's preset bucket goes with it
         if (SETTINGS.prompt_field_presets && typeof SETTINGS.prompt_field_presets === 'object' && id in SETTINGS.prompt_field_presets) {
             const store = { ...SETTINGS.prompt_field_presets };
@@ -1082,6 +1096,7 @@ export function setupPromptFieldManager() {
                 const n = tagCount(idOfContainer(container));
                 count.textContent = n > 0 ? String(n) : '';
             }
+            paintLocks(); // a source typed in or taken out shows or hides the lock
         }, 400);
     }
     // capsule edits fire a bubbling input event; a preset apply / undo sets the
@@ -1260,6 +1275,7 @@ export function setupPromptFieldManager() {
         },
         swapSides,
         setMuted,
+        paintLocks,
         // Weight plans / batch of a custom field live in its entry (tagCapsuleField
         // writes them through here so a later rename / reorder cannot clobber them).
         setFieldExtras: (id, extras) => {

@@ -1973,7 +1973,7 @@ body {
 .preset-button:focus-visible { outline: 2px solid var(--saa-accent); }
 .pipeline-card .pipe-row-head .preset-host { margin-left: auto; }
 .pipeline-card .pipe-row-head .pipe-row-summary + .preset-host { margin-left: 0; }
-.run-saved { font-size: 11px; color: var(--saa-ok); white-space: nowrap; }
+.run-saved { font-size: 11px; color: var(--saa-ok); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .run-saved[hidden] { display: none !important; }
 
 /* ---- header ---- */
@@ -2210,17 +2210,37 @@ body {
 .run-footnote:hover { color: var(--saa-text); }
 #generate-buttons-container { margin-left: auto; flex: none; }
 #generate-buttons-1 { display: flex; align-items: center; gap: 6px; }
-#generate-buttons-1 .generate-button-single { flex: none; margin: 0; padding: 0; }
-#generate-buttons-1 .generate-button-single button { height: 32px !important; width: auto !important; min-width: 140px; padding: 0 18px; border-radius: 6px; font-weight: 600; font-size: 13px; }
-.generate-batch-menu { position: relative; }
-.generate-batch-menu-button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--saa-border-ctl); border-radius: 6px; background: var(--saa-bg-control); color: var(--saa-text); font: inherit; font-size: 12.5px; cursor: pointer; }
-.generate-batch-menu-button:hover { background: var(--saa-bg-hover); }
-.generate-batch-menu-list { position: absolute; right: 0; bottom: calc(100% + 6px); min-width: 220px; padding: 6px; border: 1px solid var(--saa-border-strong); border-radius: 8px; background: var(--saa-bg-panel); box-shadow: 0 12px 40px var(--saa-shadow); display: flex; flex-direction: column; gap: 4px; z-index: 50; }
-.generate-batch-menu-list[hidden] { display: none; }
-.generate-batch-menu-list .generate-button-batch, .generate-batch-menu-list .generate-button-same { margin: 0; padding: 0; flex: none; }
-.generate-batch-menu-list button { width: 100% !important; height: 30px !important; border-radius: 5px; font-size: 12.5px; text-align: left; padding: 0 10px; }
-.generate-batch-menu-item { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--saa-border); background: var(--saa-bg-control); color: var(--saa-text); font: inherit; cursor: pointer; }
-.generate-batch-menu-item:hover { background: var(--saa-bg-hover); }
+/* Generate keeps one place and one width in every mode; in Sequence it is one capsule cut in two, Sample | Run (runModes.js, D34) */
+.run-generate { display: flex; width: 200px; flex: none; }
+.run-generate.is-split { border-radius: 6px; overflow: hidden; }
+#generate-buttons-1 .generate-button-single { flex: 1 1 0; min-width: 0; margin: 0; padding: 0; }
+#generate-buttons-1 .generate-button-single > div { width: 100%; }
+#generate-buttons-1 .generate-button-single button { height: 32px !important; width: 100% !important; padding: 0 12px; border-radius: 6px; font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#generate-buttons-1 .run-generate.is-split .generate-button-single { flex: 0 0 60%; }
+#generate-buttons-1 .run-generate.is-split .generate-button-single button { border-radius: 0 !important; }
+.run-sequence-go { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 8px; border: 0; border-radius: 0; box-shadow: inset 1px 0 0 rgb(0 0 0 / 0.35); background: var(--saa-run-batch); color: #fff; font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: background-color 0.3s ease; }
+.run-sequence-go:hover:not(:disabled) { background: var(--saa-run-batch-hover); }
+.run-sequence-go:disabled { background: var(--saa-run-batch-disabled); cursor: not-allowed; }
+.run-sequence-go[hidden] { display: none; }
+.run-sequence-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+/* the run modes left of Generate (runModes.js) */
+.run-modes { display: inline-flex; height: 32px; padding: 2px; box-sizing: border-box; border: 1px solid var(--saa-border-ctl); border-radius: 7px; background: var(--saa-bg-field); }
+.run-mode { display: inline-flex; align-items: center; height: 26px; padding: 0 11px; border: 0; border-radius: 5px; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.run-mode:hover:not(:disabled) { color: var(--saa-text); }
+.run-mode[aria-checked="true"] { background: var(--saa-bg-control); color: var(--saa-text); box-shadow: 0 0 0 1px var(--saa-border-strong); }
+.run-mode:disabled { opacity: .4; cursor: default; }
+.run-mode[hidden] { display: none; }
+/* locks on the random sources (promptLocksUi.js): on = the accent, the drawn value after "+ Tag" / the name */
+.prompt-lock[hidden], .prompt-lock-drawn[hidden] { display: none; }
+.prompt-lock[aria-pressed="true"] { color: var(--saa-accent); background: color-mix(in srgb, var(--saa-accent) 16%, transparent); box-shadow: inset 0 0 0 1px var(--saa-accent); }
+.prompt-lock-drawn { display: inline-flex; align-items: center; box-sizing: border-box; height: 22px; max-width: 260px; margin-left: 4px; padding: 0 9px; border: 1px dashed var(--saa-border-strong); border-radius: 11px; color: var(--saa-muted2); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+.prompt-lock-drawn.is-held { border: 1px solid var(--saa-accent); background: color-mix(in srgb, var(--saa-accent) 14%, transparent); color: var(--saa-text); }
+.prompt-lock-drawn.is-corner { position: absolute; right: 18px; bottom: 5px; z-index: 3; max-width: 55%; height: 18px; margin: 0; padding: 0 7px; background: var(--saa-bg-field); font-size: 10.5px; pointer-events: none; }
+.prompt-lock-drawn.is-corner.is-held { background: color-mix(in srgb, var(--saa-accent) 14%, var(--saa-bg-field)); }
+.character-selection-lock { align-self: center; }
+.character-selection-drawn { margin-left: 6px; color: var(--saa-muted2); }
+.character-selection-drawn.is-held { color: var(--saa-accent); }
+.run-param.is-idle { opacity: .4; }
 .queue-drawer { border-top: 1px solid var(--saa-border); padding: 6px 12px 8px; }
 .queue-drawer[hidden] { display: none; }
 .queue-drawer .queue-container { background: transparent; border: none; padding: 0; margin: 0; }

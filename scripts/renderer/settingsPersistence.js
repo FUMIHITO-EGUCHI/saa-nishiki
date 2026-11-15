@@ -8,6 +8,7 @@ import { PRESET_SECTIONS, SECTION_KEYS, clone, pickSection, sectionOf } from '..
 import { mergePromptFieldLayout } from '../shared/promptFieldOrder.js';
 import { createAutosave, createSettingsProxy } from './tools/settingsAutosave.js';
 import { createEditHistory } from './tools/editHistory.js';
+import { LOCKS_CHANGED_EVENT } from './promptLocks.js';
 import { createPresetControl } from './components/presetControl.js';
 import { showDialog } from './components/myDialog.js';
 
@@ -145,6 +146,8 @@ export function applySectionsData(sectionData = {}, { mergeLayout = true } = {})
     } finally {
         capsules?.endBatchUpdate?.();
     }
+    // the prompt's locks came with it (a preset, undo, a scene, "Use settings…"): the buttons follow
+    if (sections.includes('prompt') && typeof document !== 'undefined') document.dispatchEvent(new CustomEvent(LOCKS_CHANGED_EVENT));
 
     for (const section of sections) autosave?.markDirty(section);
     document.dispatchEvent(new CustomEvent('saa-settings-applied', {

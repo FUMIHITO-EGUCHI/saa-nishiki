@@ -3,6 +3,7 @@ import { callback_myCharacterList_updateThumb } from '../callbacks.js'
 import { generateGUID } from '../slots/myLoRASlot.js'
 import { sendWebSocketMessage } from '../../webserver/front/wsRequest.js';
 import { clearTagAliasCache } from '../tagAliasClient.js';
+import { characterLocks } from '../promptLocksUi.js';
 import {
     myRegionalCharacterSelectionModal,
     myVariableCharacterList,
@@ -88,6 +89,7 @@ export function myCharacterList(containerId, wai_characters, oc_characters) {
         slotCount: Array.isArray(slots) && slots.length ? slots.length : 3,
         labelsFor: characterSlotLabels,
         onSlotsChanged: () => { /* persisted through callback_myCharacterList_updateThumb */ },
+        locks: characterLocks(),
     });
 }
 

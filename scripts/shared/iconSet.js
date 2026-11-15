@@ -41,6 +41,8 @@ export const ICON_SHAPES = Object.freeze({
     image: path('M2.5 3.5h11v9h-11z', 'M2.5 11.5l3.5-3.5 2.5 2.5 2-2 3 3'),
     layers: path('M8 2.5l6 3-6 3-6-3z', 'M2 8.5l6 3 6-3', 'M2 11l6 3 6-3'),
     lock: [rect(3.5, 7, 9, 6.5, 1.5), ...path('M5.5 7V5a2.5 2.5 0 0 1 5 0v2')],
+    // the lock with its shackle open: a random source that draws anew (promptLocksUi.js)
+    unlock: [rect(3.5, 7, 9, 6.5, 1.5), ...path('M5.5 7V5a2.5 2.5 0 0 1 4.9-.7')],
     dice: [rect(2.5, 2.5, 11, 11, 2), dot(6, 6), dot(10, 10), dot(10, 6), dot(6, 10)],
     link: path('M6.8 9.2l2.4-2.4', 'M7.4 4.6l1-1a2.6 2.6 0 0 1 3.7 3.7l-1 1', 'M8.6 11.4l-1 1a2.6 2.6 0 0 1-3.7-3.7l1-1'),
     unlink: path('M8.2 4l1-1a2.6 2.6 0 0 1 3.7 3.7l-1 1', 'M7.8 12l-1 1a2.6 2.6 0 0 1-3.7-3.7l1-1', 'M5.6 2.6v1.6M2.6 5.6h1.6M10.4 13.4v-1.6M13.4 10.4h-1.6'),

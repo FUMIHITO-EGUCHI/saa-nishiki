@@ -68,6 +68,7 @@ test('main process forwards structured editor and generation context only to the
 // The pending Refine panel itself (model output kept as text, the Apply / Discard buttons,
 // only the newest run actionable) is driven on a fake DOM in tests/ui-shell-behaviour.test.mjs.
 test('the queue tells the parse when the answer is a reused one', () => {
-  // the AI role "Last" hands a run the answer of an earlier one (remoteAI.js: 'last-run')
-  assert.match(read('scripts/renderer/generate.js'), /reusedAnswer: aiRequest\.source === 'last-run',/);
+  // the AI role "Last" hands a run the answer of an earlier one (remoteAI.js: 'last-run'),
+  // and so does a locked AI prompt (promptLocks.js: 'locked')
+  assert.match(read('scripts/renderer/generate.js'), /reusedAnswer: aiRequest\.source === 'last-run' \|\| aiRequest\.source === 'locked',/);
 });
