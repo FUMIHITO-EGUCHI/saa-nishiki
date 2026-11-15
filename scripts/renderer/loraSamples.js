@@ -11,8 +11,9 @@ import {
 } from '../shared/loraCatalog.js';
 import { attachPartsSampleJob, partsSampleQueued } from './generate.js';
 import { openTagPicker } from './tagSelectionModal.js';
+import { characterLabel, characterThumb, openCharacterPicker } from './components/characterSelectionModal.js';
 import { iconElement } from '../shared/iconSet.js';
-import { element, iconButton } from './dom.js';
+import { element } from './dom.js';
 
 function lang() {
     const settings = globalThis.globalSettings ?? {};
@@ -313,9 +314,10 @@ export function openSampleViewer(name) {
 
 // ------------------------------------------------------------------ the Retake dialog
 
-const sameDraft = (a, b) => a.tags.join(', ') === b.tags.join(', ') && a.negative === b.negative && a.seed === b.seed;
-const samePrompt = (a, b) => (a === null || b === null ? a === b : a.body === b.body && (a.negative ?? null) === (b.negative ?? null) && (a.seed ?? null) === (b.seed ?? null));
-const asPrompt = draft => ({ body: draft.tags.join(', '), negative: draft.negative, seed: draft.seed });
+const characterKey = prompt => prompt?.character?.key ?? '';
+const sameDraft = (a, b) => a.tags.join(', ') === b.tags.join(', ') && a.negative === b.negative && a.seed === b.seed && characterKey(a) === characterKey(b);
+const samePrompt = (a, b) => (a === null || b === null ? a === b : a.body === b.body && (a.negative ?? null) === (b.negative ?? null) && (a.seed ?? null) === (b.seed ?? null) && characterKey(a) === characterKey(b));
+const asPrompt = draft => ({ body: draft.tags.join(', '), negative: draft.negative, seed: draft.seed, ...(draft.character ? { character: draft.character } : {}) });
 
 let retake = null;
 
@@ -336,17 +338,17 @@ export function openRetakeDialog(name) {
     if (!entry) return null;
     const type = modelType();
     const words = loraWords(entry);
-    const builtIn = { tags: promptTags(DEFAULT_SAMPLE_BODY), negative: sampleNegative(type), seed: LORA_SAMPLE_SEED };
+    const builtIn = { tags: promptTags(DEFAULT_SAMPLE_BODY), negative: sampleNegative(type), seed: LORA_SAMPLE_SEED, character: null };
     const storedTemplate = cleanSamplePrompt(loraCatalog().samplePrompt);
     const storedOwn = cleanSamplePrompt(entry.samplePrompt);
     const drafts = {
         all: storedTemplate
-            ? { tags: promptTags(storedTemplate.body), negative: storedTemplate.negative ?? builtIn.negative, seed: storedTemplate.seed ?? builtIn.seed }
+            ? { tags: promptTags(storedTemplate.body), negative: storedTemplate.negative ?? builtIn.negative, seed: storedTemplate.seed ?? builtIn.seed, character: storedTemplate.character ?? null }
             : { ...builtIn, tags: [...builtIn.tags] },
     };
-    const expanded = draft => ({ tags: promptTags(expandLoraWords(draft.tags.join(', '), words)), negative: draft.negative, seed: draft.seed });
+    const expanded = draft => ({ tags: promptTags(expandLoraWords(draft.tags.join(', '), words)), negative: draft.negative, seed: draft.seed, character: draft.character });
     drafts.lora = storedOwn
-        ? { tags: promptTags(expandLoraWords(storedOwn.body, words)), negative: storedOwn.negative ?? drafts.all.negative, seed: storedOwn.seed ?? drafts.all.seed }
+        ? { tags: promptTags(expandLoraWords(storedOwn.body, words)), negative: storedOwn.negative ?? drafts.all.negative, seed: storedOwn.seed ?? drafts.all.seed, character: storedOwn.character ?? null }
         : expanded(drafts.all);
     // loraTouched: this LoRA's prompt was written here (else it follows the default's edits)
     const state = { scope: 'lora', negativeOpen: false, loraTouched: Boolean(storedOwn) };
@@ -377,10 +379,6 @@ export function openRetakeDialog(name) {
     const scopes = element('div', 'lora-segment lora-retake-scope');
     scopes.setAttribute('role', 'group');
     const chips = element('div', 'lora-retake-chips');
-    const add = element('input', 'lora-retake-add');
-    add.type = 'text';
-    add.placeholder = text('lora_add_tag_placeholder', '+ Tag');
-    add.setAttribute('aria-label', text('lora_add_tag', 'Add tag'));
     const tools = element('div', 'lora-retake-tools');
     const seedLabel = element('label', 'lora-retake-seed');
     const seed = element('input', 'lora-range-input');
@@ -390,32 +388,73 @@ export function openRetakeDialog(name) {
     seedLabel.append(element('span', 'lora-panel-label', 'Seed'), seed);
     const negativeToggle = element('button', 'lora-retake-negative-toggle');
     negativeToggle.type = 'button';
-    const negative = element('textarea', 'lora-retake-negative');
-    negative.rows = 3;
+    const negative = element('div', 'lora-retake-chips lora-retake-negative');
     negative.setAttribute('aria-label', text('lora_negative', 'Negative'));
-    const searchButton = onClick => {
-        const search = iconButton('search', text('lora_search_tags', 'Search tags'), { className: 'lora-retake-search', onClick: event => { event.stopPropagation(); onClick(search); } });
-        return search;
-    };
-    // the tag search of the prompt rows (Choose tags): the tags picked join the chips, by
-    // way of a textarea the modal writes into
-    const searchTags = searchButton(trigger => {
-        const proxy = document.createElement('textarea');
-        proxy.value = draft().tags.filter(tag => tag !== LORA_WORDS_TOKEN).join(', ');
-        proxy.addEventListener('input', () => addTags(proxy.value));
-        openTagPicker(proxy, { favGroup: 'positive', trigger });
-    });
-    // and on the negative, which it writes into as it does into a prompt row
-    const searchNegative = searchButton(trigger => {
-        if (!state.negativeOpen) {
-            state.negativeOpen = true;
-            paintNegative();
-        }
-        negative.setSelectionRange(negative.value.length, negative.value.length);
-        openTagPicker(negative, { favGroup: 'negative', trigger });
-    });
     const negativeHead = element('div', 'lora-retake-negative-head');
-    negativeHead.append(negativeToggle, searchNegative);
+    negativeHead.append(negativeToggle);
+
+    // the chips are drawn again: the focus goes back to the "+" it came from, after the
+    // modal that wrote them has given the focus back
+    const refocus = chip => requestAnimationFrame(() => { if (chip.isConnected) chip.focus(); });
+    // "+ Tag" opens the tag search of the prompt rows (Choose tags), a word it lacks typed
+    // there and taken with Enter; the tags picked join the chips, by way of a textarea the
+    // modal writes into
+    const addChip = ({ className, label, favGroup, current, onAdd }) => {
+        const chip = button(`lora-retake-add ${className}`, label, () => {
+            const proxy = document.createElement('textarea');
+            proxy.value = current().join(', ');
+            proxy.addEventListener('input', () => onAdd(proxy.value));
+            openTagPicker(proxy, { favGroup, trigger: chip });
+        });
+        chip.setAttribute('aria-haspopup', 'dialog');
+        return chip;
+    };
+    const addTag = addChip({
+        className: 'is-positive',
+        label: text('lora_add_tag_placeholder', '+ Tag'),
+        favGroup: 'positive',
+        current: () => draft().tags.filter(tag => tag !== LORA_WORDS_TOKEN),
+        onAdd: value => addTags(value),
+    });
+    // the character, above the tags: picked from the character slots' list, shown by its
+    // thumbnail and name; its tags go in front of the tags below
+    const characterRow = element('div', 'lora-retake-character');
+    const characterPick = button('lora-retake-character-pick', '', () => {
+        openCharacterPicker({
+            trigger: characterPick,
+            title: text('lora_character', 'Character'),
+            selectedKey: draft().character?.key ?? '',
+            onPick: (option, tags) => {
+                if (!tags) return;
+                draft().character = { key: option.key, tags };
+                touched();
+                paint();
+                refocus(characterPick);
+            },
+        });
+    });
+    characterPick.setAttribute('aria-haspopup', 'dialog');
+    const characterClear = button('lora-retake-chip-remove lora-retake-character-clear', '×', () => {
+        draft().character = null;
+        touched();
+        paint();
+        refocus(characterPick);
+    });
+    const addNegative = addChip({
+        className: 'is-negative',
+        label: text('lora_add_tag_placeholder', '+ Tag'),
+        favGroup: 'negative',
+        current: () => promptTags(draft().negative),
+        onAdd: value => {
+            const tags = promptTags(draft().negative);
+            const added = promptTags(value).filter(tag => !tags.includes(tag));
+            if (added.length === 0) return;
+            draft().negative = [...tags, ...added].join(', ');
+            touched();
+            paintNegative();
+            refocus(addNegative);
+        },
+    });
 
     const draft = () => drafts[state.scope];
     const isWord = tag => tag === LORA_WORDS_TOKEN || words.includes(tag);
@@ -449,7 +488,32 @@ export function openRetakeDialog(name) {
             chip.append(remove);
             chips.append(chip);
         });
-        chips.append(add, searchTags);
+        chips.append(addTag);
+    }
+
+    function paintCharacter() {
+        const character = draft().character;
+        characterPick.replaceChildren();
+        characterPick.classList.toggle('is-none', !character);
+        if (character) {
+            const thumb = element('img', 'lora-retake-character-thumb');
+            thumb.alt = '';
+            thumb.hidden = true;
+            characterThumb(character.key).then(url => {
+                if (!url || draft().character?.key !== character.key) return;
+                thumb.src = url;
+                thumb.hidden = false;
+            }).catch(() => {});
+            characterPick.append(thumb, element('span', 'lora-retake-character-name', characterLabel(character.key)));
+            characterPick.title = character.tags;
+        } else {
+            characterPick.append(element('span', 'lora-retake-character-name', text('lora_character_none', 'None')));
+            characterPick.removeAttribute('title');
+        }
+        characterPick.setAttribute('aria-label', `${text('lora_character', 'Character')}: ${character ? characterLabel(character.key) : text('lora_character_none', 'None')}`);
+        characterClear.setAttribute('aria-label', `${text('lora_remove', 'Remove')} ${character ? characterLabel(character.key) : ''}`.trim());
+        characterRow.replaceChildren(element('span', 'lora-panel-label', text('lora_character', 'Character')), characterPick);
+        if (character) characterRow.append(characterClear);
     }
 
     function paintNegative() {
@@ -457,45 +521,40 @@ export function openRetakeDialog(name) {
         if (!state.negativeOpen) negativeToggle.append(element('span', 'lora-retake-negative-preview', draft().negative));
         negativeToggle.setAttribute('aria-expanded', String(state.negativeOpen));
         negative.hidden = !state.negativeOpen;
-        negative.value = draft().negative;
+        negative.replaceChildren();
+        promptTags(draft().negative).forEach((tag, index) => {
+            const chip = element('span', 'lora-retake-chip', tag);
+            const remove = button('lora-retake-chip-remove', '×', () => {
+                const tags = promptTags(draft().negative);
+                tags.splice(index, 1);
+                draft().negative = tags.join(', ');
+                touched();
+                paintNegative();
+            });
+            remove.setAttribute('aria-label', `${text('lora_remove', 'Remove')} ${tag}`);
+            chip.append(remove);
+            negative.append(chip);
+        });
+        negative.append(addNegative);
     }
 
     function paint() {
         paintScopes();
+        paintCharacter();
         paintChips();
         seed.value = String(draft().seed);
         paintNegative();
         reset.disabled = sameDraft(draft(), state.scope === 'all' ? builtIn : expanded(drafts.all));
     }
 
-    const addTags = value => {
+    const addTags = (value, from = addTag) => {
         const tags = promptTags(value);
         if (tags.length === 0) return;
         for (const tag of tags) if (!draft().tags.includes(tag)) draft().tags.push(tag);
         touched();
         paintChips();
-        add.focus();
+        refocus(from);
     };
-    add.addEventListener('keydown', event => {
-        if (event.isComposing) return;
-        if (event.key === 'Enter' || event.key === ',') {
-            event.preventDefault();
-            const value = add.value;
-            add.value = '';
-            addTags(value);
-        } else if (event.key === 'Backspace' && add.value === '' && draft().tags.length > 0) {
-            draft().tags.pop();
-            touched();
-            paintChips();
-            add.focus();
-        }
-    });
-    add.addEventListener('blur', () => {
-        if (!add.value.trim()) return;
-        const value = add.value;
-        add.value = '';
-        addTags(value);
-    });
     seed.addEventListener('change', () => {
         const value = Number(seed.value);
         if (Number.isInteger(value) && value >= 0) {
@@ -506,14 +565,10 @@ export function openRetakeDialog(name) {
         }
         paint();
     });
-    negative.addEventListener('input', () => {
-        draft().negative = negative.value.trim();
-        touched();
-    });
     negativeToggle.addEventListener('click', () => {
         state.negativeOpen = !state.negativeOpen;
         paintNegative();
-        if (state.negativeOpen) negative.focus();
+        if (state.negativeOpen) addNegative.focus();
     });
 
     const fromPrompt = button('lora-button', text('lora_current_prompt', 'Current prompt'), () => {
@@ -530,7 +585,7 @@ export function openRetakeDialog(name) {
         paint();
     });
     tools.append(fromPrompt, reset, element('span', 'lora-spacer'), seedLabel);
-    body.append(scopes, chips, tools, negativeHead, negative);
+    body.append(scopes, characterRow, chips, tools, negativeHead, negative);
 
     const foot = element('div', 'lora-retake-foot');
     const cancel = button('selection-modal-cancel', text('tag_ui_cancel', 'Cancel'), () => closeRetakeDialog());
@@ -548,6 +603,6 @@ export function openRetakeDialog(name) {
     foot.append(cancel, take);
     dialog.append(head, body, foot);
     paint();
-    requestAnimationFrame(() => add.focus());
+    requestAnimationFrame(() => addTag.focus());
     return frame;
 }

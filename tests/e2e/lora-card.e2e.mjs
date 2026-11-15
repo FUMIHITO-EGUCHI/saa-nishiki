@@ -138,10 +138,37 @@ test('Retake takes the six samples with the dialog\'s prompt; the viewer opens o
     await page.click(`${OPEN} .lora-retake-open`);
     await page.waitFor(`Boolean(document.querySelector('.lora-retake .lora-retake-add'))`, { label: 'the Retake dialog' });
     assert.match(await page.evaluate(`[...document.querySelectorAll('.lora-retake-chip.is-lora')].map(chip => chip.textContent).join()`), /charturn/, 'the trigger word is marked');
-    await page.evaluate(`document.querySelector('.lora-retake-add').focus()`);
+    // "+ Tag": the tag search over the dialog
+    const PICKER = `${OPEN} ~ .selection-modal:not([hidden])`;
+    await page.click('.lora-retake-add.is-positive');
+    await page.waitFor(`document.activeElement?.classList.contains('selection-modal-search') && Boolean(document.activeElement.closest('${PICKER}'))`, { label: 'the tag search' });
     await page.type('from behind');
+    await page.waitFor(`[...document.querySelectorAll('${PICKER} .selection-modal-option')].some(node => node.textContent.startsWith('from behind'))`, { label: 'the tag found' });
     await page.key('Enter', 'Enter', 13);
+    await page.click(`${PICKER} .selection-modal-apply`);
     await page.waitFor(`[...document.querySelectorAll('.lora-retake-chip')].some(chip => chip.textContent.startsWith('from behind'))`, { label: 'the new tag' });
+    // the character, above the tags: the character slots' list; shown by its picture and name
+    assert.equal(await page.evaluate(`document.querySelector('.lora-retake-character-name').textContent`), 'None');
+    await page.click('.lora-retake-character-pick');
+    await page.waitFor(`document.activeElement?.classList.contains('selection-modal-search') && Boolean(document.activeElement.closest('${PICKER}'))`, { label: 'the character list' });
+    await page.type('miku');
+    await page.waitFor(`(() => { const option = [...document.querySelectorAll('${PICKER} .selection-modal-option')].find(node => /ミク|miku/i.test(node.textContent)); option?.setAttribute('data-e2e-pick', ''); return Boolean(option); })()`, { label: 'a Miku in the list' });
+    await page.click(`${PICKER} [data-e2e-pick]`);
+    await page.click(`${PICKER} .selection-modal-apply`);
+    await page.waitFor(`document.querySelector('.lora-retake-character-name').textContent !== 'None'`, { label: 'the character shown' });
+    await page.waitFor(`Boolean(document.querySelector('.lora-retake-character-thumb[src]'))`, { label: 'its picture' });
+    // the tags it is written with (the button's title)
+    const character = await page.evaluate(`document.querySelector('.lora-retake-character-pick').title`);
+    assert.match(character, /miku/i, 'a Miku\'s tag');
+    // "+ Tag" on the negative, once its fold is open
+    await page.click('.lora-retake-negative-toggle');
+    await page.click('.lora-retake-add.is-negative');
+    await page.waitFor(`document.activeElement?.classList.contains('selection-modal-search') && Boolean(document.activeElement.closest('${PICKER}'))`, { label: 'the negative tag search' });
+    await page.type('blurry');
+    await page.waitFor(`[...document.querySelectorAll('${PICKER} .selection-modal-option')].some(node => node.textContent.startsWith('blurry'))`, { label: 'blurry found' });
+    await page.key('Enter', 'Enter', 13);
+    await page.click(`${PICKER} .selection-modal-apply`);
+    await page.waitFor(`[...document.querySelectorAll('.lora-retake-negative .lora-retake-chip')].some(chip => chip.firstChild.textContent === 'blurry')`, { label: 'blurry in the negative' });
     await page.click('.lora-retake-foot .selection-modal-apply');
     await page.waitFor(`!document.querySelector('.lora-retake')`, { label: 'the dialog closed' });
 
@@ -161,6 +188,7 @@ test('Retake takes the six samples with the dialog\'s prompt; the viewer opens o
     await page.waitFor(`document.querySelector('.lora-viewer-weight-value')?.textContent === '0.8'`, { label: 'the one picked, large' });
     const prompt = await page.evaluate(`document.querySelector('.lora-viewer-info .lora-viewer-prompt').textContent`);
     assert.match(prompt, /from behind/, 'made with the prompt written in the dialog');
+    assert.ok(prompt.includes(character), `and the character picked there (${character})`);
     assert.match(prompt, /<lora:[^>]*CharTurnIL[^>]*:0\.8:0\.8>/i);
     await page.key('ArrowRight', 'ArrowRight', 39);
     await page.waitFor(`document.querySelector('.lora-viewer-weight-value')?.textContent === '1'`, { label: 'the next weight' });

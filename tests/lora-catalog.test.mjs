@@ -191,3 +191,16 @@ test('a name of the user\'s own: shown for the LoRA, kept through a clear, taken
     assert.equal(doc.loras['sub/CharTurnIL_Dim32.safetensors'], undefined);
     assert.equal(loraView({ name: 'sub/CharTurnIL_Dim32.safetensors' }, {}).label, 'CharTurnIL_Dim32', 'the file\'s name again');
 });
+
+test('a sample prompt\'s character: kept with its key and tags, written after the quality words and before the body', () => {
+    const prompt = { body: '1girl, {lora}', character: { key: ' Rem (Re:Zero) ', tags: String.raw` rem \(re:zero\) ` } };
+    const doc = applyLoraChange(normalizeLoraDoc({}), { action: 'set', name: 'a.safetensors', patch: { samplePrompt: prompt } });
+    assert.deepEqual(doc.loras['a.safetensors'].samplePrompt.character, { key: 'Rem (Re:Zero)', tags: String.raw`rem \(re:zero\)` });
+    assert.equal(applyLoraChange(normalizeLoraDoc({}), { action: 'set', name: 'a.safetensors', patch: { samplePrompt: { body: 'x', character: { key: 'k', tags: '' } } } }).loras['a.safetensors'].samplePrompt.character, undefined, 'a character without tags is none');
+
+    const resolved = resolveSamplePrompt({ entry: { triggers: ['charturn'], samplePrompt: doc.loras['a.safetensors'].samplePrompt }, modelType: 'Checkpoint' });
+    assert.equal(resolved.character.key, 'Rem (Re:Zero)');
+    const cell = loraSamplePrompt({ modelType: 'Checkpoint', name: 'a.safetensors', weight: 0, prompt: resolved });
+    assert.equal(cell.positive, String.raw`masterpiece, best quality, very aesthetic, absurdres, rem \(re:zero\), 1girl, charturn`);
+    assert.equal('character' in resolveSamplePrompt({ entry: { triggers: [] }, modelType: 'Checkpoint' }), false, 'no character, no key');
+});

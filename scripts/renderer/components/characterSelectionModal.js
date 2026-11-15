@@ -3,7 +3,7 @@ import { decodeThumb } from '../customThumbGallery.js';
 import { addFavorites, delFavorites } from './favoriteCharacters.js';
 import { createSelectionModal } from './selectionModal.js';
 import { normalizeSearchText, normalizeSelectionKey } from './selectionModalLogic.js';
-import { originalKey } from '../../shared/characterKeys.js';
+import { isOriginalKey, originalCharacterName, originalKey } from '../../shared/characterKeys.js';
 import { normalizeAlias } from '../../shared/castMembers.js';
 import { SLOT_SIDES, assignSlotSide, slotSide, slotSideLabels, uniqueSlotSides } from '../../shared/characterSides.js';
 import { characterWorkSearchTerms, characterWorkTitles } from '../../shared/characterWorks.js';
@@ -639,4 +639,72 @@ export function myRegionalCharacterSelectionModal(containerId, waiCharacters, or
     });
     if (control) control.setOptions([Object.keys(waiCharacters || {}), Object.values(waiCharacters || {})], Object.keys(originalCharacters || {}), labels);
     return control;
+}
+
+/**
+ * The prompt text a picked character stands for: a listed character's tag with its
+ * brackets escaped, as a run writes it; an original character's own tags as they are.
+ */
+export function characterPromptText(option, FILES = globalThis.cachedFiles ?? {}) {
+    if (!option) return '';
+    if (option.category === 'original') return String(FILES.ocList?.[option.value] ?? '').trim();
+    return String(option.value ?? '').trim().replaceAll('\\', '\\\\').replaceAll('(', String.raw`\(`).replaceAll(')', String.raw`\)`);
+}
+
+// One picker for callers outside the character slots (the LoRA samples' prompt): the
+// slots' list - names in the active language, the works, the thumbnails - without Random
+// and None, since a pick here is one character.
+let characterPicker = null;
+
+export function openCharacterPicker({ trigger = null, title = 'Character', selectedKey = '', onPick }) {
+    const FILES = globalThis.cachedFiles ?? {};
+    if (!characterPicker) {
+        const thumbPreview = createCharacterThumbPreview();
+        characterPicker = { onPick: null };
+        characterPicker.modal = createSelectionModal({
+            mode: 'single',
+            optionLimit: 200,
+            categoryOptions: [
+                { value: 'character', label: 'Character' },
+                { value: 'original', label: 'Original' },
+            ],
+            onClose: () => thumbPreview.hide(),
+            onOptionHover: (option, item) => thumbPreview.show(option, item, characterPicker.modal),
+            onOptionLeave: () => thumbPreview.hide(),
+            onApply: selected => {
+                const option = selected[0];
+                if (option) characterPicker.onPick?.(option, characterPromptText(option));
+            },
+        });
+    }
+    characterPicker.onPick = onPick;
+    const characters = FILES.characterList ?? {};
+    const options = makeOptions([Object.keys(characters), Object.values(characters)], Object.keys(FILES.ocList ?? {}))
+        .filter(option => !['random', 'none'].includes(String(option.value).toLowerCase()));
+    characterPicker.modal.open({
+        trigger,
+        fallback: trigger,
+        selection: options.filter(option => option.key === selectedKey),
+        options,
+        attributes: uniqueFilterOptions(options, 'attributes').map(value => ({ value, label: value })),
+        modalTitle: title,
+        favorites: characterFavoritesConfig(),
+    });
+}
+
+/** A picked character's name to show: the active language's for a listed one, an original's own. */
+export function characterLabel(key, FILES = globalThis.cachedFiles ?? {}) {
+    const text = String(key ?? '');
+    if (isOriginalKey(text)) return originalCharacterName(text);
+    return getLocalizedCharacterName({
+        key: text,
+        tag: FILES.characterList?.[text],
+        language: globalThis.globalSettings?.language,
+        characterNames: FILES.characterNames,
+    }) || text;
+}
+
+/** A listed character's thumbnail (a data URL), null for an original character or none. */
+export function characterThumb(key) {
+    return isOriginalKey(String(key ?? '')) ? Promise.resolve(null) : decodeThumb(key);
 }
