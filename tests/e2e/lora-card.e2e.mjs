@@ -57,6 +57,56 @@ test('"+ LoRA": the LoRA tab alone, a click on a tile picks it, Add puts the row
     assert.equal(await app.errorText(), '');
 });
 
+test('the panel\'s trigger words and suggested tags come from the tag search; "+ word" stays a short chip at the end', async () => {
+    const { page } = app;
+    const PICKER = '.selection-modal:not([hidden]) ~ .selection-modal:not([hidden])';
+    const chips = selector => page.evaluate(`[...document.querySelector('${OPEN} ${selector}').children].map(node => node.textContent)`);
+    const pick = async (selector, words) => {
+        await page.click(`${OPEN} ${selector}`);
+        await page.waitFor(`document.activeElement?.classList.contains('selection-modal-search') && Boolean(document.activeElement.closest('${PICKER}'))`, { label: 'the tag search, above the LoRA picker' });
+        for (const word of words) {
+            await page.evaluate('document.activeElement.select()');
+            await page.type(word);
+            // a dictionary tag is taken from the list; a word it lacks, as typed
+            await page.waitFor(`[...document.querySelectorAll('${PICKER} .selection-modal-option')].some(node => node.textContent.startsWith(${JSON.stringify(word)})) || document.querySelector('${PICKER} .selection-modal-status')?.textContent === 'No matching tags.'`, { label: `the search for ${word}` });
+            await page.key('Enter', 'Enter', 13);
+            await page.waitFor(`[...document.querySelectorAll('${PICKER} .selection-modal-chip')].some(node => node.textContent.startsWith(${JSON.stringify(word)}))`, { label: `${word} picked` });
+        }
+        await page.click(`${PICKER} .selection-modal-apply`);
+        await page.waitFor(`!document.querySelector('${PICKER}')`, { label: 'the tag search closed' });
+    };
+    await openPicker();
+    await page.click(`${OPEN} .selection-modal-tile`);
+    await page.waitFor(`Boolean(document.querySelector('${OPEN} .lora-trigger-editor .lora-word-pick'))`, { label: 'the panel' });
+    assert.equal(await page.evaluate(`Boolean(document.querySelector('${OPEN} .lora-trigger-editor input'))`), false, 'no free-typing field');
+    const before = await chips('.lora-trigger-editor');
+    assert.equal(before.at(-1), '+ word', 'the last chip, after any guessed word on offer');
+    const width = await page.evaluate(`document.querySelector('${OPEN} .lora-trigger-editor .lora-word-pick').getBoundingClientRect().width`);
+    assert.ok(width < 80, `a chip's width, not a field's (${width}px)`);
+
+    await inView(`${OPEN} .lora-trigger-editor .lora-word-pick`);
+    await pick('.lora-trigger-editor .lora-word-pick', ['smile', 'zzlorae2eword']);
+    await page.waitFor(`[...document.querySelector('${OPEN} .lora-trigger-editor').children].some(node => node.textContent.startsWith('zzlorae2eword'))`, { label: 'the words added' });
+    const after = await chips('.lora-trigger-editor');
+    assert.ok(after.includes('smile×') && after.includes('zzlorae2eword×'), `both words: ${after.join(' | ')}`);
+    assert.equal(after.at(-1), '+ word', 'still the last chip');
+    await page.waitFor(`document.activeElement?.matches('${OPEN} .lora-trigger-editor .lora-word-pick')`, { label: 'the focus back on "+ word"' });
+
+    await inView(`${OPEN} .lora-word-pick[data-role="suggest"]`);
+    await pick('.lora-word-pick[data-role="suggest"]', ['full body']);
+    await page.waitFor(`[...document.querySelector('${OPEN} .lora-word-pick[data-role="suggest"]').parentElement.children].some(node => node.textContent === 'full body×')`, { label: 'the tag to suggest it for' });
+
+    // the words go as they came: x on each chip
+    for (const [selector, word] of [['.lora-trigger-editor', 'smile'], ['.lora-trigger-editor', 'zzlorae2eword'], ['.lora-word-pick[data-role="suggest"]', 'full body']]) {
+        await page.evaluate(`document.querySelector('${OPEN} .lora-word-remove[aria-label="Remove ${word}"]').click()`);
+        await page.waitFor(`!document.querySelector('${OPEN} .lora-word-remove[aria-label="Remove ${word}"]')`, { label: `${word} removed (${selector})` });
+    }
+    assert.deepEqual(await chips('.lora-trigger-editor'), before, 'the list as it was');
+    await page.key('Escape');
+    await page.waitFor(`!document.querySelector('${OPEN}')`, { label: 'the picker closed' });
+    assert.equal(await app.errorText(), '');
+});
+
 test('the row\'s slider, switch and fold change what a run sends, and the settings keep it', async () => {
     const { page } = app;
     await page.evaluate(`(() => { const slider = document.querySelector('.lora-slot-slider'); slider.value = '0.6'; slider.dispatchEvent(new Event('input', { bubbles: true })); })()`);
@@ -88,10 +138,37 @@ test('Retake takes the six samples with the dialog\'s prompt; the viewer opens o
     await page.click(`${OPEN} .lora-retake-open`);
     await page.waitFor(`Boolean(document.querySelector('.lora-retake .lora-retake-add'))`, { label: 'the Retake dialog' });
     assert.match(await page.evaluate(`[...document.querySelectorAll('.lora-retake-chip.is-lora')].map(chip => chip.textContent).join()`), /charturn/, 'the trigger word is marked');
-    await page.evaluate(`document.querySelector('.lora-retake-add').focus()`);
+    // "+ Tag": the tag search over the dialog
+    const PICKER = `${OPEN} ~ .selection-modal:not([hidden])`;
+    await page.click('.lora-retake-add.is-positive');
+    await page.waitFor(`document.activeElement?.classList.contains('selection-modal-search') && Boolean(document.activeElement.closest('${PICKER}'))`, { label: 'the tag search' });
     await page.type('from behind');
+    await page.waitFor(`[...document.querySelectorAll('${PICKER} .selection-modal-option')].some(node => node.textContent.startsWith('from behind'))`, { label: 'the tag found' });
     await page.key('Enter', 'Enter', 13);
+    await page.click(`${PICKER} .selection-modal-apply`);
     await page.waitFor(`[...document.querySelectorAll('.lora-retake-chip')].some(chip => chip.textContent.startsWith('from behind'))`, { label: 'the new tag' });
+    // the character, above the tags: the character slots' list; shown by its picture and name
+    assert.equal(await page.evaluate(`document.querySelector('.lora-retake-character-name').textContent`), 'None');
+    await page.click('.lora-retake-character-pick');
+    await page.waitFor(`document.activeElement?.classList.contains('selection-modal-search') && Boolean(document.activeElement.closest('${PICKER}'))`, { label: 'the character list' });
+    await page.type('miku');
+    await page.waitFor(`(() => { const option = [...document.querySelectorAll('${PICKER} .selection-modal-option')].find(node => /ミク|miku/i.test(node.textContent)); option?.setAttribute('data-e2e-pick', ''); return Boolean(option); })()`, { label: 'a Miku in the list' });
+    await page.click(`${PICKER} [data-e2e-pick]`);
+    await page.click(`${PICKER} .selection-modal-apply`);
+    await page.waitFor(`document.querySelector('.lora-retake-character-name').textContent !== 'None'`, { label: 'the character shown' });
+    await page.waitFor(`Boolean(document.querySelector('.lora-retake-character-thumb[src]'))`, { label: 'its picture' });
+    // the tags it is written with (the button's title)
+    const character = await page.evaluate(`document.querySelector('.lora-retake-character-pick').title`);
+    assert.match(character, /miku/i, 'a Miku\'s tag');
+    // "+ Tag" on the negative, once its fold is open
+    await page.click('.lora-retake-negative-toggle');
+    await page.click('.lora-retake-add.is-negative');
+    await page.waitFor(`document.activeElement?.classList.contains('selection-modal-search') && Boolean(document.activeElement.closest('${PICKER}'))`, { label: 'the negative tag search' });
+    await page.type('blurry');
+    await page.waitFor(`[...document.querySelectorAll('${PICKER} .selection-modal-option')].some(node => node.textContent.startsWith('blurry'))`, { label: 'blurry found' });
+    await page.key('Enter', 'Enter', 13);
+    await page.click(`${PICKER} .selection-modal-apply`);
+    await page.waitFor(`[...document.querySelectorAll('.lora-retake-negative .lora-retake-chip')].some(chip => chip.firstChild.textContent === 'blurry')`, { label: 'blurry in the negative' });
     await page.click('.lora-retake-foot .selection-modal-apply');
     await page.waitFor(`!document.querySelector('.lora-retake')`, { label: 'the dialog closed' });
 
@@ -111,6 +188,7 @@ test('Retake takes the six samples with the dialog\'s prompt; the viewer opens o
     await page.waitFor(`document.querySelector('.lora-viewer-weight-value')?.textContent === '0.8'`, { label: 'the one picked, large' });
     const prompt = await page.evaluate(`document.querySelector('.lora-viewer-info .lora-viewer-prompt').textContent`);
     assert.match(prompt, /from behind/, 'made with the prompt written in the dialog');
+    assert.ok(prompt.includes(character), `and the character picked there (${character})`);
     assert.match(prompt, /<lora:[^>]*CharTurnIL[^>]*:0\.8:0\.8>/i);
     await page.key('ArrowRight', 'ArrowRight', 39);
     await page.waitFor(`document.querySelector('.lora-viewer-weight-value')?.textContent === '1'`, { label: 'the next weight' });

@@ -39,6 +39,26 @@ const key = (document, name) => document.dispatchEvent({ type: 'keydown', key: n
 
 let moduleCase = 0;
 
+const openModal = document => [...document.querySelectorAll('.selection-modal')].find(node => !node.hidden);
+const enter = node => node.dispatchEvent({ type: 'keydown', key: 'Enter', bubbles: true, preventDefault() {}, stopPropagation() {} });
+
+// "+ Tag" (or the character): the modal it opens, a query typed and taken with Enter, Apply
+const positiveChips = document => [...document.querySelectorAll('.lora-retake-chips:not(.lora-retake-negative) .lora-retake-chip')].map(chip => chip.firstChild.textContent);
+
+async function pickWith(document, selector, query) {
+    document.querySelector(selector).click();
+    await later();
+    const modal = openModal(document);
+    assert.ok(modal, `${selector} opens a modal`);
+    const search = modal.querySelector('.selection-modal-search');
+    search.value = query;
+    search.dispatchEvent({ type: 'input', bubbles: true });
+    await later();
+    enter(search);
+    modal.querySelector('.selection-modal-apply').click();
+    await later();
+}
+
 async function withSamples(body, options = {}) {
     moduleCase += 1;
     return withFakeDom(async document => {
@@ -49,6 +69,9 @@ async function withSamples(body, options = {}) {
         globalThis.cachedFiles = { language: { 'en-US': {} } };
         globalThis.dropdownList = { model: { getValue: () => 'v170' } };
         globalThis.generate = { api_interface: { getValue: () => 'ComfyUI' } };
+        globalThis.api.tagSearch = async () => ({ items: [], total: 0 });
+        // the modal tells the textarea with an InputEvent, which Node has not
+        globalThis.InputEvent ??= class InputEvent extends Event {};
         // every sample of the LoRA already waits in the queue, so nothing is generated here
         globalThis.queueManager = { getValues: () => WEIGHTS.map(weight => ({ queueManager: { genType: 'partsSample', sampleKey: `lora:${NAME}:${weight}:v170` } })) };
         const client = await import('../scripts/renderer/loraClient.js');
@@ -117,9 +140,7 @@ test('Retake writes this LoRA\'s own prompt: its words marked, the quality words
 
         // "looking at viewer" out, "from behind" in
         chips().find(chip => chip.textContent.startsWith('looking at viewer')).querySelector('.lora-retake-chip-remove').click();
-        const add = document.querySelector('.lora-retake-add');
-        add.value = 'from behind';
-        add.dispatchEvent({ type: 'keydown', key: 'Enter', preventDefault() {}, stopPropagation() {} });
+        await pickWith(document, '.lora-retake-add.is-positive', 'from behind');
         document.querySelector('.lora-retake-foot .selection-modal-apply').click();
         await flush();
         await flush();
@@ -138,9 +159,7 @@ test('Retake on Default for all writes the template, and an untouched LoRA follo
         const scope = label => [...document.querySelectorAll('.lora-retake-scope button')].find(node => node.textContent === label);
         scope('Default for all').click();
         assert.ok([...document.querySelectorAll('.lora-retake-chip')].some(chip => chip.textContent.startsWith('LoRA words')), 'where each LoRA\'s words go');
-        const add = document.querySelector('.lora-retake-add');
-        add.value = 'chibi';
-        add.dispatchEvent({ type: 'keydown', key: 'Enter', preventDefault() {}, stopPropagation() {} });
+        await pickWith(document, '.lora-retake-add.is-positive', 'chibi');
         scope('This LoRA').click();
         assert.ok([...document.querySelectorAll('.lora-retake-chip')].some(chip => chip.textContent.startsWith('chibi')), 'this LoRA\'s prompt follows the default it never left');
         document.querySelector('.lora-retake-foot .selection-modal-apply').click();
@@ -172,7 +191,7 @@ test('Reset puts this LoRA back on the default, and Cancel keeps nothing', async
 
         store.applied.length = 0;
         samples.openRetakeDialog(NAME);
-        document.querySelector('.lora-retake-add').value = 'x';
+        document.querySelector('.lora-retake-chips .lora-retake-chip-remove').click();
         document.querySelector('.lora-retake-foot .selection-modal-cancel').click();
         await flush();
         assert.deepEqual(store.applied, []);
@@ -180,33 +199,76 @@ test('Reset puts this LoRA back on the default, and Cancel keeps nothing', async
     });
 });
 
-test('Retake\'s tag search: the tag modal opens over the dialog, a tag it applies joins the chips, and Escape closes the modal first', async () => {
+test('Retake\'s "+ Tag": the tag modal opens over the dialog, its tags join the chips, Escape closes the modal first', async () => {
     await withSamples(async ({ document, samples }) => {
-        globalThis.api.tagSearch = async () => ({ items: [], total: 0 });
-        // the modal tells the textarea with an InputEvent, which Node has not
-        globalThis.InputEvent ??= class InputEvent extends Event {};
         samples.openRetakeDialog(NAME);
         const retake = document.querySelector('.lora-retake');
-        document.querySelector('.lora-retake-chips .lora-retake-search').click();
+        assert.equal(document.querySelector('.lora-retake-search'), null, 'no magnifier: the "+" chips open the pickers');
+        assert.equal(document.querySelector('input.lora-retake-add, textarea'), null, 'nor a field to type into');
+        assert.equal(document.querySelector('.lora-retake-chips').lastElementChild.textContent, '+ Tag', 'at the end of the chips');
+
+        document.querySelector('.lora-retake-add.is-positive').click();
         await later();
-        const modal = [...document.querySelectorAll('.selection-modal')].find(node => !node.hidden);
+        const modal = openModal(document);
         assert.ok(modal, 'the tag modal is open');
         assert.equal(retake.compareDocumentPosition(modal) & 4, 4, 'after the dialog in the page, so on top of it');
         const search = modal.querySelector('.selection-modal-search');
         search.value = 'from behind';
         search.dispatchEvent({ type: 'input', bubbles: true });
-        search.dispatchEvent({ type: 'keydown', key: 'Enter', bubbles: true, preventDefault() {}, stopPropagation() {} });
+        enter(search);
         modal.querySelector('.selection-modal-apply').click();
         await later();
-        assert.ok([...document.querySelectorAll('.lora-retake-chip')].some(chip => chip.firstChild.textContent === 'from behind'), 'the typed tag is a chip');
+        assert.ok(positiveChips(document).includes('from behind'), 'the typed tag is a chip');
 
-        document.querySelector('.lora-retake-negative-head .lora-retake-search').click();
+        // the negative: its own chips and "+ Tag", once the fold is open
+        document.querySelector('.lora-retake-negative-toggle').click();
+        assert.equal(document.querySelector('.lora-retake-negative').hidden, false);
+        const negativeChips = () => [...document.querySelectorAll('.lora-retake-negative .lora-retake-chip')].map(chip => chip.firstChild.textContent);
+        assert.equal(negativeChips()[0], 'worst quality');
+        assert.equal(document.querySelector('.lora-retake-negative').lastElementChild.textContent, '+ Tag');
+        await pickWith(document, '.lora-retake-add.is-negative', 'blurry');
+        assert.equal(negativeChips().at(-1), 'blurry', 'the negative grows');
+        document.querySelector('.lora-retake-negative .lora-retake-chip-remove[aria-label="Remove logo"]').click();
+        assert.equal(negativeChips().includes('logo'), false, 'and x takes one off');
+
+        document.querySelector('.lora-retake-add.is-negative').click();
         await later();
-        assert.equal(document.querySelector('.lora-retake-negative').hidden, false, 'the negative opens for it');
         document.dispatchEvent({ type: 'keydown', key: 'Escape', bubbles: true, preventDefault() {}, stopPropagation() {} });
         assert.ok([...document.querySelectorAll('.selection-modal')].every(node => node.hidden), 'Escape closed the tag modal');
         assert.ok(document.querySelector('.lora-retake'), 'and left the dialog open');
         document.dispatchEvent({ type: 'keydown', key: 'Escape', bubbles: true, preventDefault() {}, stopPropagation() {} });
         assert.equal(document.querySelector('.lora-retake'), null, 'the next one closes the dialog');
+    });
+});
+
+test('Retake\'s character: picked above the tags, shown by name, kept apart from them and written in front as a run writes it', async () => {
+    await withSamples(async ({ document, store, samples }) => {
+        globalThis.cachedFiles.characterList = { 'Rem (Re:Zero)': 'rem (re:zero)', 'Hatsune Miku': 'hatsune miku' };
+        globalThis.cachedFiles.ocList = { Aoi: 'aoi_oc, blue hair, short hair' };
+        globalThis.api.md5Hash = async () => null; // no thumbnails here
+        samples.openRetakeDialog(NAME);
+        const body = document.querySelector('.lora-retake-body');
+        const row = document.querySelector('.lora-retake-character');
+        assert.ok([...body.children].indexOf(row) < [...body.children].indexOf(document.querySelector('.lora-retake-chips')), 'above the tags');
+        const name = () => document.querySelector('.lora-retake-character-name').textContent;
+        assert.equal(name(), 'None');
+        assert.equal(document.querySelector('.lora-retake-character-clear'), null, 'nothing to clear');
+        const tagsBefore = positiveChips(document);
+
+        await pickWith(document, '.lora-retake-character-pick', 'rem (re:zero)');
+        assert.equal(name(), 'rem (re:zero)', 'its name in the active language (English: the tag)');
+        assert.deepEqual(positiveChips(document), tagsBefore, 'the tags as they were');
+        document.querySelector('.lora-retake-foot .selection-modal-apply').click();
+        await flush();
+        await flush();
+        assert.deepEqual(store.applied.at(-1).patch.samplePrompt.character, { key: 'Rem (Re:Zero)', tags: String.raw`rem \(re:zero\)` });
+
+        // kept: the dialog opens on it again; an original character, then none
+        samples.openRetakeDialog(NAME);
+        assert.equal(name(), 'rem (re:zero)', 'its name in the active language (English: the tag)');
+        await pickWith(document, '.lora-retake-character-pick', 'Aoi');
+        assert.equal(name(), 'Aoi');
+        document.querySelector('.lora-retake-character-clear').click();
+        assert.equal(name(), 'None');
     });
 });

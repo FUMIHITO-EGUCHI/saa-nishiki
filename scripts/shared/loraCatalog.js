@@ -147,7 +147,9 @@ function cleanSample(sample) {
 
 /**
  * A sample prompt the user wrote: `body` (the tags after the quality words, `{lora}` where
- * the LoRA's words go), and optionally its own negative and seed. Null when there is no body.
+ * the LoRA's words go), and optionally its own negative, seed and character ({ key, tags }:
+ * the character list's key, for the dialog to show it, and the tags it is written with).
+ * Null when there is no body.
  */
 export function cleanSamplePrompt(prompt) {
     if (!isObject(prompt)) return null;
@@ -157,7 +159,17 @@ export function cleanSamplePrompt(prompt) {
     if (typeof prompt.negative === 'string') clean.negative = prompt.negative.trim();
     const seed = Number(prompt.seed);
     if (Number.isInteger(seed) && seed >= 0) clean.seed = seed;
+    const character = cleanSampleCharacter(prompt.character);
+    if (character) clean.character = character;
     return clean;
+}
+
+/** A sample prompt's character: { key, tags }, both given, else null. */
+export function cleanSampleCharacter(character) {
+    if (!isObject(character)) return null;
+    const key = String(character.key ?? '').trim();
+    const tags = String(character.tags ?? '').trim();
+    return key && tags ? { key, tags } : null;
 }
 
 // a LoRA tag is no word to write: in a prompt it would load that LoRA whatever its row says
@@ -366,18 +378,19 @@ export function resolveSamplePrompt({ entry = null, template = null, modelType =
         negative: source?.negative ?? sampleNegative(modelType),
         seed: source?.seed ?? LORA_SAMPLE_SEED,
         own: Boolean(own),
+        ...(source?.character ? { character: source.character } : {}),
     };
 }
 
 /**
- * One cell of a LoRA's sample grid: the quality words of the model type and the sample
- * prompt (resolveSamplePrompt; the built-in one with the LoRA's trigger words and its
+ * One cell of a LoRA's sample grid: the quality words of the model type, the character's
+ * tags when the prompt names one, and the sample prompt (resolveSamplePrompt; the built-in one with the LoRA's trigger words and its
  * suggested tags when `prompt` is not given), at `weight` (0 = the LoRA left out, the same
  * prompt otherwise), so the cells differ by the LoRA alone.
  */
 export function loraSamplePrompt({ modelType, name, triggers = [], linked = [], weight = 0, prompt = null }) {
     const resolved = prompt ?? resolveSamplePrompt({ entry: { triggers, linked }, modelType });
-    const positive = [sampleQuality(modelType), resolved.body].filter(Boolean).join(', ');
+    const positive = [sampleQuality(modelType), resolved.character?.tags, resolved.body].filter(Boolean).join(', ');
     const tag = weight > 0 ? `\n<lora:${name}:${weight}:${weight}>` : '';
     return { positive: `${positive}${tag}`, negative: resolved.negative ?? sampleNegative(modelType), seed: resolved.seed ?? LORA_SAMPLE_SEED };
 }

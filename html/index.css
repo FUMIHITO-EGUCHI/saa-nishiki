@@ -2932,8 +2932,6 @@ button.lora-cell { cursor: zoom-in; }
 .lora-word-remove { width: 16px; height: 16px; padding: 0; border: 0; background: transparent; color: var(--saa-accent); cursor: pointer; }
 .lora-word-offer { padding: 3px 9px; border: 1px dashed var(--saa-border-strong); border-radius: 12px; background: transparent; color: var(--saa-muted2); font: inherit; font-size: 12px; cursor: pointer; }
 .lora-word-offer.is-ask { color: var(--saa-muted); }
-.lora-word-input { flex: 0 1 110px; min-width: 70px; height: 24px; padding: 0 8px; box-sizing: border-box; border: 1px dashed var(--saa-border-strong); border-radius: 12px; background: transparent; color: var(--saa-text); font: inherit; font-size: 12px; }
-.lora-word-input:focus { border-style: solid; border-color: var(--saa-accent); outline: none; }
 .lora-default { display: flex; flex-direction: column; gap: 6px; }
 .lora-default-value { color: var(--saa-text); font-variant-numeric: tabular-nums; }
 .lora-default-slider { width: 100%; accent-color: var(--saa-accent); }
@@ -3083,12 +3081,20 @@ button.lora-cell { cursor: zoom-in; }
 .lora-retake-head .lora-viewer-round { width: 30px; height: 30px; border-color: transparent; background: transparent; }
 .lora-retake-body { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
 .lora-retake-scope { align-self: flex-start; }
+.lora-retake-character { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.lora-retake-character-pick { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; height: 40px; padding: 0 12px 0 4px; border: 1px solid var(--saa-border-ctl); border-radius: 8px; background: var(--saa-bg-field); color: var(--saa-text); font: inherit; font-size: 13px; cursor: pointer; }
+.lora-retake-character-pick.is-none { padding-left: 12px; color: var(--saa-muted); }
+.lora-retake-character-pick:hover, .lora-retake-character-pick:focus-visible { border-color: var(--saa-accent); }
+.lora-retake-character-thumb { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; object-position: top; }
+.lora-retake-character-thumb[hidden] { display: none; }
+.lora-retake-character-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lora-retake-chips { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 5px; min-height: 60px; padding: 10px; border: 1px solid var(--saa-border-ctl); border-radius: 8px; background: var(--saa-bg-field); }
 .lora-retake-chip { display: inline-flex; align-items: center; gap: 2px; height: 24px; padding: 0 3px 0 9px; border: 1px solid var(--saa-border-ctl); border-radius: 6px; background: var(--saa-bg-control); font-size: 12px; }
 .lora-retake-chip.is-lora { border-color: var(--saa-accent); background: color-mix(in srgb, var(--saa-accent) 16%, transparent); }
 .lora-retake-chip.is-fixed { padding-right: 9px; border-style: dashed; background: transparent; color: var(--saa-muted); }
 .lora-retake-chip-remove { width: 18px; height: 18px; padding: 0; border: 0; background: transparent; color: var(--saa-muted); font-size: 13px; line-height: 18px; cursor: pointer; }
-.lora-retake-add { flex: 1 1 90px; min-width: 90px; height: 24px; padding: 0 6px; border: 0; outline: none; background: transparent; color: var(--saa-text); font: inherit; font-size: 12px; }
+.lora-retake-add { height: 24px; padding: 0 9px; border: 1px dashed var(--saa-border-strong); border-radius: 6px; background: transparent; color: var(--saa-muted); font: inherit; font-size: 12px; cursor: pointer; }
+.lora-retake-add:hover, .lora-retake-add:focus-visible { border-color: var(--saa-accent); color: var(--saa-text); }
 .lora-retake-tools { display: flex; align-items: center; gap: 8px; }
 .lora-retake-tools .lora-button { min-height: 30px; }
 .lora-retake-seed { display: flex; align-items: center; gap: 6px; }
@@ -3098,7 +3104,7 @@ button.lora-cell { cursor: zoom-in; }
 .lora-retake-negative-toggle { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 0; border: 0; background: transparent; color: var(--saa-muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
 .lora-retake-negative-label { flex: none; color: var(--saa-danger); }
 .lora-retake-negative-preview { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lora-retake-negative { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--saa-border-ctl); border-radius: 6px; background: var(--saa-bg-field); color: var(--saa-text); font: inherit; font-size: 12px; resize: vertical; }
+.lora-retake-negative { min-height: 0; }
 .lora-retake-negative[hidden] { display: none; }
 .lora-retake-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--saa-border); }
 
