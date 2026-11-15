@@ -628,6 +628,27 @@ export function moveCapsule(capsules = [], from, to) {
     return assignCapsuleIds(next);
 }
 
+/**
+ * Tags pasted into a field at `at`: `block` = [{ value, weightPlan, disabled }] (copied chips,
+ * or parsePromptToCapsules of pasted text). A tag the field has already is left out, so a
+ * paste never doubles a tag. Returns { capsules, pasted } (`pasted` = the new chips).
+ */
+export function pasteCapsules(capsules = [], block = [], at = capsules.length) {
+    const have = new Set(capsules.map(capsule => normalizeTagName(capsule.value)));
+    const fresh = [];
+    for (const item of Array.isArray(block) ? block : []) {
+        const value = String(item?.value ?? '').trim();
+        const key = normalizeTagName(value);
+        if (!value || have.has(key)) continue;
+        have.add(key);
+        fresh.push({ value, weightPlan: normalizeWeightPlan(item.weightPlan), disabled: item.disabled === true });
+    }
+    if (fresh.length === 0) return { capsules, pasted: [] };
+    const position = Math.max(0, Math.min(capsules.length, Math.floor(finiteNumber(at, capsules.length))));
+    const next = assignCapsuleIds([...capsules.slice(0, position), ...fresh, ...capsules.slice(position)]);
+    return { capsules: next, pasted: next.slice(position, position + fresh.length) };
+}
+
 export function insertCapsules(capsules = [], values = [], at = capsules.length) {
     const additions = parsePromptToCapsules(Array.isArray(values) ? values.join(', ') : String(values ?? ''));
     if (additions.length === 0) return capsules;
