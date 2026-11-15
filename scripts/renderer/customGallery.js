@@ -5,6 +5,24 @@ import { FAVORITES_CHANGED_EVENT, isFavorite, loadFavorites, setFavorite } from 
 
 // fired with the image on show (mainGallery.currentEntry()) whenever the selection changes
 export const VIEWER_SELECT_EVENT = 'saa:viewer-select';
+// fired after an image lands in the gallery: { image, seed, tags, info, record }
+export const GALLERY_APPEND_EVENT = 'saa:gallery-append';
+
+// Center a thumbnail in the strip by scrolling the strip alone. scrollIntoView also scrolls
+// every ancestor that can scroll: the strip bleeds past the viewer's edges, so the viewer
+// itself slid sideways once the strip was long enough to scroll.
+function centerInStrip(previewImage) {
+    const strip = previewImage?.closest?.('.cg-preview-container');
+    if (typeof strip?.scrollTo !== 'function' || typeof previewImage.getBoundingClientRect !== 'function') return;
+    const tile = previewImage.parentElement ?? previewImage;
+    const stripRect = strip.getBoundingClientRect();
+    const tileRect = tile.getBoundingClientRect();
+    const left = strip.scrollLeft + (tileRect.left - stripRect.left) - (strip.clientWidth - tileRect.width) / 2;
+    strip.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+}
+
+// a saved file's path, compared without case or slash direction (Windows)
+const pathKey = value => String(value ?? '').replaceAll('/', '\\').toLowerCase();
 
 function setupScrollableContainer(container) {
     let isDragging = false, startX, scrollLeft;
@@ -148,6 +166,43 @@ renderedImageCount = images.length;
         } else {
             gallery_renderSplitMode(incremental);
         }
+        document.dispatchEvent(new CustomEvent(GALLERY_APPEND_EVENT, {
+            detail: { image: base64, seed, tags: tagsString || '', info: ownInfo, record: records.at(-1) ?? null },
+        }));
+    };
+
+    // Everything the viewer holds, to put back later (the sequence edit mode shows one
+    // scene's images for a while): entries [{ image, seed, tags, info, record }], oldest first.
+    globalThis.mainGallery.entries = () => images.map((image, index) => ({
+        image, seed: seeds[index], tags: tags[index], info: infos[index], record: records[index] ?? null,
+    }));
+    globalThis.mainGallery.currentIndex = () => currentIndex;
+
+    // Replace what the viewer holds with `entries` (oldest first) and show `selectIndex`
+    // (the newest when it is not a valid index).
+    globalThis.mainGallery.replaceAll = function (entries, selectIndex = null) {
+        const list = Array.isArray(entries) ? entries.filter(entry => entry?.image) : [];
+        images = list.map(entry => entry.image);
+        seeds = list.map(entry => entry.seed ?? '');
+        tags = list.map(entry => entry.tags ?? '');
+        infos = list.map(entry => entry.info ?? '');
+        records = list.map(entry => entry.record ?? null);
+        currentIndex = Number.isInteger(selectIndex) && selectIndex >= 0 && selectIndex < images.length ? selectIndex : Math.max(0, images.length - 1);
+        renderedImageCount = 0;
+        container.innerHTML = '';
+        if (images.length === 0) {
+            syncInfoPanel();
+            return;
+        }
+        if (isGridMode) gallery_renderGridMode();
+        else gallery_renderSplitMode();
+    };
+
+    // One saved file the strip marks (the sequence scene's adopted image), or none.
+    let markedPath = '';
+    globalThis.mainGallery.setMarkedPath = function (file) {
+        markedPath = pathKey(file);
+        paintStars();
     };
 
     function galleryLimit() {
@@ -203,6 +258,7 @@ if (victim < currentIndex) currentIndex -= 1;
         for (const tile of container.querySelectorAll('.cg-preview-tile')) {
             const index = images.length - 1 - Number.parseInt(tile.querySelector('.cg-preview-image')?.dataset.domIndex ?? '-1', 10);
             tile.classList.toggle('is-starred', isStarred(index));
+            tile.classList.toggle('is-marked', Boolean(markedPath) && pathKey(records[index]?.path) === markedPath);
         }
     }
     document.addEventListener(FAVORITES_CHANGED_EVENT, paintStars);
@@ -673,7 +729,7 @@ if (victim < currentIndex) currentIndex -= 1;
                     currentIndex = images.length - 1 - domIndex;
                     mainImage.src = images[currentIndex];
                     updatePreviewBorders();
-                    previewImage.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    centerInStrip(previewImage);
                 }
             });
         }
@@ -708,7 +764,7 @@ if (victim < currentIndex) currentIndex -= 1;
         updatePreviewBorders();
         const currentPreview = previewContainer.querySelector(`.cg-preview-image[data-domIndex="${images.length - 1 - currentIndex}"]`);
         if (currentPreview) {
-            currentPreview.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            centerInStrip(currentPreview);
         }
 
         ensurePrivacyButton();
@@ -756,7 +812,7 @@ if (victim < currentIndex) currentIndex -= 1;
         paintStars();
         const domIndex = images.length - 1 - currentIndex;
         if (domIndex >= 0 && domIndex < previewImages.length) {
-            previewImages[domIndex].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            centerInStrip(previewImages[domIndex]);
         }
         syncInfoPanel();
     }

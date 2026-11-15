@@ -10,7 +10,7 @@ test('the sequences store starts empty, saves an envelope and reloads it normali
     const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'saa-sequences-'));
     try {
         const store = createSequencesStore({ rootDir, saaVersion: '9.9.9', now: () => new Date('2026-11-14T10:00:00Z'), log: null });
-        assert.deepEqual(store.get(), { sequences: {}, current: { name: '', field: '', scenes: [] }, editBackup: null });
+        assert.deepEqual(store.get(), { sequences: {}, current: { name: '', scenes: [] }, editBackup: null });
         store.save({
             sequences: { '一日の流れ': { field: 'cf_a', scenes: [{ id: 'a', name: '起床', text: 'waking up', thumb: 'data:image/png;base64,AA' }] } },
             current: { name: '一日の流れ', field: 'cf_a', scenes: [] },
@@ -22,9 +22,9 @@ test('the sequences store starts empty, saves an envelope and reloads it normali
         assert.equal(envelope.saved_at, '2026-11-14T10:00:00.000Z');
         const again = createSequencesStore({ rootDir, log: null });
         const scene = again.get().sequences['一日の流れ'].scenes[0];
-        assert.equal(scene.text, 'waking up');
+        assert.deepEqual(scene.texts, { cf_a: 'waking up' }, 'a one-field sequence keeps its texts until the app gives it settings');
         assert.equal(scene.thumb, '', 'only a JPEG data URL is kept as a thumb');
-        assert.deepEqual(again.get().editBackup, { fieldKey: 'cf_a', text: 'mine' });
+        assert.deepEqual(again.get().editBackup, { texts: { cf_a: 'mine' } });
     } finally {
         fs.rmSync(rootDir, { recursive: true, force: true });
     }

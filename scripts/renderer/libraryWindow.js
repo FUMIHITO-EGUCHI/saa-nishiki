@@ -15,6 +15,7 @@ import { openUseSettings } from './useSettingsDialog.js';
 import { summarizeImage } from '../shared/imageSummary.js';
 import { formatDuration } from '../shared/runTiming.js';
 import { iconMarkup } from '../shared/iconSet.js';
+import { isSequenceRunFolder } from '../shared/sequenceBatch.js';
 import { element, iconButton } from './dom.js';
 
 const TILE_SIZES = Object.freeze({ S: 120, M: 160, L: 210 });
@@ -73,6 +74,12 @@ export function filterEntries(entries, { search = '', model = '', lora = '', cha
         const haystack = `${entry.text ?? ''} ${entry.name.toLowerCase()}`;
         return words.every(word => haystack.includes(word));
     });
+}
+
+/** By file name, numbers by value: a sequence run's folder (character, pattern, scene). */
+export function sortEntriesByName(entries) {
+    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+    return [...entries].sort((a, b) => collator.compare(a.name, b.name));
 }
 
 /** In time order: newest first, or oldest first. */
@@ -370,7 +377,9 @@ function createLibrary() {
                 wantThumb(item.target.dataset.path);
             }
         }, { root: gridArea, rootMargin: '400px 0px' }) : null;
-        const shown = sortEntries(filterEntries(state.entries, state.filters), prefs.sort);
+        // a sequence run's folder reads in its files' order (character, pattern, scene)
+        const filtered = filterEntries(state.entries, state.filters);
+        const shown = isSequenceRunFolder(state.source?.folder) ? sortEntriesByName(filtered) : sortEntries(filtered, prefs.sort);
         count.textContent = countText(shown.length);
         gridArea.replaceChildren();
         if (shown.length === 0) {

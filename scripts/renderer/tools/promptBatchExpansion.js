@@ -102,14 +102,14 @@ export function beginImageOverride(expansion, loop, options = {}) {
 }
 
 /**
- * The override of one sequence-batch row (scripts/shared/sequenceBatch.js): the click's
- * field snapshot plus the scene field holding the scene's text, the row's seed, and the
- * character slots - slot 1 the row's character, every other slot None (createCharacters
- * reads `characters`).
+ * The override of one sequence-batch row (scripts/shared/sequenceBatch.js): the row's seed
+ * and the character slots - slot 1 the row's character, every other slot None
+ * (createCharacters reads `characters`). The fields are read from the screen, which holds
+ * the row's scene then (generate.js).
  */
-export function beginSequenceOverride({ baseFields = null, fieldKey, row, imageIndex = 0 }) {
+export function beginSequenceOverride({ row, imageIndex = 0 }) {
     activeOverride = {
-        fields: { ...(baseFields ?? {}), [fieldKey]: String(row?.sceneText ?? '') },
+        fields: {},
         weights: {},
         terminal: [],
         seed: Number(row?.seed),

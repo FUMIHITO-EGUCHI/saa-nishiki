@@ -1235,6 +1235,8 @@ export async function generateImage(dataPack){
     
     // a sequence batch (sequenceBatchUi.js): one queue row per character x scene x candidate
     const sequence = dataPack.sequence ?? null;
+    // a trial run in sequence edit mode belongs to the scene on show (its viewer history)
+    const editSceneId = !sequence && globalThis.sequenceEdit?.isActive?.() ? String(globalThis.sequenceEdit.sceneId() ?? '') : '';
     const aiPromptInterface = globalThis.ai.interface.getValue();
     // no AI Refine while a sequence runs: one LLM call per image, and a "Once" answer would
     // carry image #1's scene into every other scene (docs/sequence-batch-plan.md D8)
@@ -1282,6 +1284,12 @@ export async function generateImage(dataPack){
 
     // the editor as this click found it: every image of the run keeps it in its recipe
     const recipeSections = captureRecipeSections();
+    // a sequence puts each scene's own settings (prompts, LoRA rows, size, steps, Hires) on
+    // the screen while its rows are built, and gives the screen its own back afterwards
+    const sequenceScreen = sequence ? globalThis.sequenceBatch?.captureScene?.() ?? null : null;
+    let sceneOnScreen = -1;
+    let sceneSections = recipeSections;
+    if (sequence) globalThis.sequenceRunApplying = true;
     let prepareError = null;
     for(let loop = 0; loop < loops; loop++){
       try {
@@ -1298,12 +1306,18 @@ export async function generateImage(dataPack){
             globalThis.generate.loadingMessage = LANG.generate_warmup.replace('{0}', `${loop+1}`).replace('{1}', loops);
 
         const sequenceRow = sequence ? sequence.rows[loop] : null;
+        if (sequenceRow && sequenceRow.sceneIndex !== sceneOnScreen) {
+            globalThis.sequenceBatch?.applyScene?.(sequence.scenes?.[sequenceRow.sceneIndex]?.settings, { dropHistory: false });
+            await new Promise(resolve => requestAnimationFrame(() => resolve()));
+            sceneOnScreen = sequenceRow.sceneIndex;
+            sceneSections = captureRecipeSections();
+        }
         const imageOverride = sequenceRow
-            ? beginSequenceOverride({ baseFields: expansion.baseFields, fieldKey: sequence.field, row: sequenceRow, imageIndex: loop })
+            ? beginSequenceOverride({ row: sequenceRow, imageIndex: loop })
             : beginImageOverride(expansion, loop);
         let createPromptResult;
         try {
-            createPromptResult = await createPrompt(runSame, aiPromot, apiInterface, (loops > 1 && !sequence)?loop:-1);
+            createPromptResult = await createPrompt(aiPromot, apiInterface, (loops > 1 && !sequence)?loop:-1);
         } finally {
             endImageOverride();
         }
@@ -1437,15 +1451,15 @@ export async function generateImage(dataPack){
             generateData.img_prefix = target.path;
             generateData.img_filename = target.filename;
         }
-        // a sequence row's recipe holds what the row ran: its character and its scene's text
-        const rowSections = sequenceRow && recipeSections
-            ? { ...recipeSections, prompt: patchRecipePrompt(recipeSections.prompt, { characterKey: sequenceRow.characterKey, sceneText: sequenceRow.sceneText, fieldKey: sequence.field }) }
+        // a sequence row's recipe holds what the row ran: its scene's settings and its character
+        const rowSections = sequenceRow && sceneSections
+            ? { ...sceneSections, prompt: patchRecipePrompt(sceneSections.prompt, { characterKey: sequenceRow.characterKey }) }
             : recipeSections;
         generateData.recipe = queuedRecipe(rowSections, {
             ...(sequenceRow ? { sequence: {
                 runId: sequence.runId,
                 sequenceName: sequence.name,
-                field: sequence.field,
+                sceneId: sequenceRow.sceneId,
                 characterKey: sequenceRow.characterKey,
                 characterIndex: sequenceRow.characterIndex,
                 sceneIndex: sequenceRow.sceneIndex,
@@ -1454,6 +1468,7 @@ export async function generateImage(dataPack){
                 candidates: sequence.candidates,
                 total: sequence.rows.length,
             } } : {}),
+            ...(editSceneId ? { sequenceScene: editSceneId } : {}),
             seed: createPromptResult.randomSeed,
             width,
             height,
@@ -1502,10 +1517,14 @@ export async function generateImage(dataPack){
         break;
       }
     }
+    if (sequenceScreen) {
+        globalThis.sequenceBatch?.applyScene?.(sequenceScreen, { dropHistory: false });
+        await new Promise(resolve => requestAnimationFrame(() => resolve()));
+    }
+    if (sequence) globalThis.sequenceRunApplying = false;
 
     globalThis.generate.generate_single.setClickable(true);
-    globalThis.generate.generate_batch.setClickable(true);
-    globalThis.generate.generate_same.setClickable(true);    
+    globalThis.runModes?.refresh?.();
     
     if (prepareError) {
         globalThis.mainGallery.hideLoading(

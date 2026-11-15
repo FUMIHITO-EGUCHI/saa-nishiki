@@ -435,50 +435,12 @@ export async function addLorasToSlots(names) {
 }
 
 let picker = null;
-let tagPicker = null;
-let tagPickerDone = null;
-
-/**
- * The <lora:…> tags of picked LoRAs, as a slot writes them (file name, the catalog's default
- * weight for the model and the CLIP alike: two values, so Hires uses them too), and their
- * trigger words. For a prompt text that carries its own LoRA (a sequence scene).
- */
-export function loraPromptTags(names) {
-    const entries = names.map(loraEntry).filter(Boolean);
-    return {
-        tags: entries.map(entry => `<lora:${entry.name}:${number(entry.range.def)}:${number(entry.range.def)}>`),
-        triggers: [...new Set(entries.flatMap(entry => entry.triggers))],
-    };
-}
 
 /**
  * The LoRA card's "+ LoRA": the tag modal's LoRA tab on its own (titled LoRA, no other
  * tab), the picked LoRAs added to the slots and their trigger words to the Positive row.
- * With `onPick`, the picked names go to it instead (a sequence scene's "+ LoRA").
  */
-export function openLoraPicker({ trigger = null, onPick = null } = {}) {
-    if (typeof onPick === 'function') {
-        if (!tagPicker) {
-            tagPicker = createSelectionModal({
-                mode: 'multiple',
-                fitWindow: true,
-                onApply: selected => {
-                    const names = selected.map(option => option.lora).filter(Boolean);
-                    if (names.length) tagPickerDone?.(names);
-                },
-            });
-        }
-        tagPickerDone = onPick;
-        tagPicker.open({
-            trigger,
-            modalTitle: 'LoRA',
-            tabs: [loraPickerTab()],
-            tab: 'lora',
-            soleTab: true,
-            applyLabel: count => (count > 0 ? `${text('lora_add', 'Add')} (${count})` : text('lora_add', 'Add')),
-        });
-        return tagPicker;
-    }
+export function openLoraPicker({ trigger = null } = {}) {
     if (!picker) {
         picker = createSelectionModal({
             mode: 'multiple',

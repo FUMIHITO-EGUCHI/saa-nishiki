@@ -1,7 +1,9 @@
-// The Sequence dialog (docs/sequence-batch-plan.md): page 1 "Sequence" holds what is saved
-// (the scene field and the ordered scenes, as thumbnail tiles), page 2 "Run" what is not
-// (the characters, the candidates) and Generate. The edit mode in the usual screen is
-// sequenceEdit.js; the pure parts are scripts/shared/sequenceBatch.js.
+// The Sequence dialog (docs/sequence-batch-plan.md): two tabs, "Scenes" what is saved (the
+// ordered scenes as thumbnail tiles; each scene owns its prompts, LoRA rows and generation
+// settings) and "Characters" who the next run is for. It makes nothing itself: the run bar's
+// Generate runs the sequence in its Sequence mode (runModes.js), with the run bar's count as
+// the patterns per character and scene. The edit mode in the usual screen is sequenceEdit.js; the pure parts are
+// scripts/shared/sequenceBatch.js.
 import { createDialogShell } from './components/dialogShell.js';
 import { showDialog } from './components/myDialog.js';
 import { element, iconButton } from './dom.js';
@@ -12,21 +14,16 @@ import { getLocalizedCharacterName } from './characterLocalization.js';
 import { decodeThumb } from './customThumbGallery.js';
 import { normalizeSelectionKey } from './components/selectionModalLogic.js';
 import { isOriginalKey, originalCharacterName, originalKey } from '../shared/characterKeys.js';
-import { isFieldMuted, normalizeCustomFields } from '../shared/promptFieldOrder.js';
-import { castEnabled, isDiffusionFieldId } from '../shared/castMembers.js';
 import {
-    MAX_CANDIDATES, expandSequenceRows, makeSceneId, moveScene, normalizeSequence, normalizeSequenceDocument,
-    pickRandomCharacters, sequenceRunId, sequenceStartBlockers,
+    MAX_CANDIDATES, SCENE_SECTIONS, applyLegacyTexts, expandSequenceRows, makeSceneId, moveScene, normalizeEditBackup,
+    normalizeSequence, normalizeSequenceDocument, pickRandomCharacters, pickSceneSettings, sequenceRunId, sequenceStartBlockers,
 } from '../shared/sequenceBatch.js';
 
 const CAT = '[SequenceBatch]';
-const BUILTIN_FIELD_LABELS = { views: 'View', background: 'Background', style: 'Style' };
 const BLOCKER_TEXT = {
     'no-characters': ['seq_block_no_characters', 'No characters'],
     'no-scenes': ['seq_block_no_scenes', 'No scenes'],
     'empty-scene': ['seq_block_empty_scene', 'Empty scene'],
-    'no-field': ['seq_block_no_field', 'Field missing'],
-    'field-muted': ['seq_block_field_muted', 'Field muted'],
     regional: ['seq_block_regional', 'Regional on'],
     controlnet: ['seq_block_controlnet', 'ControlNet on'],
     webui: ['seq_block_webui', 'WebUI'],
@@ -43,17 +40,18 @@ const clone = value => JSON.parse(JSON.stringify(value));
 // ------------------------------------------------------------------ state
 
 let doc = normalizeSequenceDocument(null);   // settings/sequences.json
-let selected = [];                             // the picked character keys, this session only
+let selected = [];                             // the picked character keys (kept in sequence_run.characters)
 let page = 'scenes';
 let query = '';
 let saveTimer = null;
 const listeners = new Set();
+const closeListeners = new Set();
 
 export function sequenceDoc() {
     return doc;
 }
 
-/** The sequence the dialog has open: { name, field, scenes }. */
+/** The sequence the dialog has open: { name, scenes }. */
 export function currentSequence() {
     return doc.current;
 }
@@ -67,8 +65,9 @@ export function updateCurrent(mutate) {
     notify();
 }
 
+/** The screen's own scene settings while edit mode runs ({ settings }), or null. */
 export function setEditBackup(backup) {
-    doc.editBackup = backup ? { fieldKey: backup.fieldKey, text: String(backup.text ?? '') } : null;
+    doc.editBackup = normalizeEditBackup(backup);
     persistNow();
 }
 
@@ -101,7 +100,40 @@ function batchSettings() {
     const stored = globalThis.globalSettings?.sequence_run ?? {};
     const count = Math.max(1, Math.floor(Number(stored.count) || 3));
     const candidates = Math.max(1, Math.min(MAX_CANDIDATES, Math.floor(Number(stored.candidates) || 1)));
-    return { count, candidates };
+    const characters = Array.isArray(stored.characters) ? stored.characters.filter(key => typeof key === 'string' && key) : [];
+    // the scene edited last: Sequence mode opens on it (runModes.js)
+    const scene = typeof stored.scene === 'string' ? stored.scene : '';
+    return { count, candidates, characters, scene };
+}
+
+/** The picked characters change: kept for the next start, and the run bar told. */
+function setSelected(next) {
+    selected = [...next];
+    setBatchSettings({ characters: selected });
+    for (const listener of listeners) {
+        try { listener(doc); } catch (error) { console.error(CAT, 'listener failed', error); }
+    }
+    render();
+}
+
+/** The patterns per character and scene (the run bar's count in Sequence mode). */
+export function setCandidates(value) {
+    const candidates = Math.max(1, Math.min(MAX_CANDIDATES, Math.floor(Number(value) || 1)));
+    setBatchSettings({ candidates });
+    if (shell?.isOpen()) renderTabs();
+}
+
+/** Images the sequence makes now: scenes x characters x patterns. */
+export function sequenceTotal() {
+    return selected.length * doc.current.scenes.length * batchSettings().candidates;
+}
+
+/** Why the sequence cannot start now, as text for Generate's tooltip ([] = it can). */
+export function sequenceBlockerTexts() {
+    return runBlockers().map(reason => {
+        const [key, fallback] = BLOCKER_TEXT[reason] ?? [reason, reason];
+        return text(key, fallback);
+    });
 }
 
 function setBatchSettings(patch) {
@@ -146,23 +178,26 @@ function paintAvatar(node, key, label) {
     decodeThumb(key).then(url => { thumbCache.set(key, url ?? null); apply(url); }).catch(() => thumbCache.set(key, null));
 }
 
-// ------------------------------------------------------------------ fields
+// ------------------------------------------------------------------ the screen
 
-/** The prompt fields a scene can hold: View, Background, Style and the positive custom fields. */
-export function sceneFieldOptions() {
-    const SETTINGS = globalThis.globalSettings ?? {};
-    const cast = castEnabled(SETTINGS);
-    const options = Object.entries(BUILTIN_FIELD_LABELS).map(([key, label]) => ({ key, label }));
-    for (const field of normalizeCustomFields(SETTINGS.prompt_custom_fields)) {
-        if (field.polarity === 'negative') continue;
-        if (!cast && isDiffusionFieldId(field.id)) continue;
-        options.push({ key: field.id, label: field.name || field.id });
-    }
-    return options;
+/** The screen's scene settings now (SCENE_KEYS of its prompt, generation and lora sections), or null. */
+export function captureSceneSettings() {
+    const persistence = globalThis.settingsPersistence;
+    if (!persistence?.collectSection) return null;
+    return pickSceneSettings(Object.fromEntries(SCENE_SECTIONS.map(section => [section, persistence.collectSection(section)])));
 }
 
-export function sceneFieldLabel(fieldKey) {
-    return sceneFieldOptions().find(option => option.key === fieldKey)?.label ?? fieldKey;
+/**
+ * Put scene settings on the screen. Not an undo step: the undo history of those sections
+ * is dropped instead (it holds another scene's values, an undo would carry them over).
+ */
+export function applySceneSettings(settings, { dropHistory = true } = {}) {
+    const persistence = globalThis.settingsPersistence;
+    const picked = pickSceneSettings(settings);
+    if (!persistence?.applySectionsData || !picked) return false;
+    const done = persistence.applySectionsData(picked, { mergeLayout: false });
+    if (dropHistory) persistence.history?.clear?.([...SCENE_SECTIONS]);
+    return done;
 }
 
 // ------------------------------------------------------------------ the dialog
@@ -171,35 +206,52 @@ let shell = null;
 let ui = null;
 
 function build() {
-    shell = createDialogShell({ className: 'sequence-dialog' });
+    shell = createDialogShell({ className: 'sequence-dialog', onClose: notifyClose });
     const { body, footer } = shell;
     shell.dialog.classList.add('sequence-dialog-frame');
 
-    // page 1: the saved sequence
+    // the tabs: Scenes (page 'scenes') and Characters (page 'run'), each with its count
+    const tabs = element('div', 'sequence-tabs');
+    tabs.setAttribute('role', 'tablist');
+    const tabButton = (name, label) => {
+        const button = element('button', 'sequence-tab');
+        button.type = 'button';
+        button.dataset.page = name;
+        button.setAttribute('role', 'tab');
+        const count = element('span', 'sequence-tab-count');
+        button.append(element('span', '', label), count);
+        button.addEventListener('click', () => showPage(name));
+        return { button, count };
+    };
+    const scenesTab = tabButton('scenes', text('seq_scenes_page', 'Scenes'));
+    const charactersTab = tabButton('run', text('seq_characters', 'Characters'));
+    const formula = element('span', 'sequence-formula');
+    tabs.append(scenesTab.button, charactersTab.button, element('span', 'sequence-fill'), formula);
+    tabs.addEventListener('keydown', event => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        const next = page === 'scenes' ? 'run' : 'scenes';
+        showPage(next);
+        (next === 'scenes' ? scenesTab : charactersTab).button.focus();
+    });
+
+    // the Scenes tab: the saved sequence
     const scenesPage = element('section', 'sequence-page sequence-page-scenes');
+    scenesPage.setAttribute('role', 'tabpanel');
     const toolbar = element('div', 'sequence-toolbar');
     const nameSelect = element('select', 'sequence-select');
     nameSelect.setAttribute('aria-label', 'Sequence');
     const saveButton = iconButton('save', text('seq_save', 'Save sequence'), { size: 26 });
     const deleteButton = iconButton('trash', text('seq_delete', 'Delete sequence'), { size: 26 });
-    const sep = element('span', 'sequence-toolbar-sep');
-    const fieldLabel = element('label', 'sequence-label', text('seq_field', 'Field'));
-    const fieldSelect = element('select', 'sequence-select is-field');
-    fieldSelect.id = 'sequence-field-select';
-    fieldLabel.htmlFor = fieldSelect.id;
-    const count = element('span', 'sequence-count');
-    toolbar.append(nameSelect, saveButton, deleteButton, sep, fieldLabel, fieldSelect, element('span', 'sequence-fill'), count);
+    toolbar.append(nameSelect, saveButton, deleteButton);
     const grid = element('div', 'sequence-grid');
     const gridScroll = element('div', 'sequence-grid-scroll');
     gridScroll.append(grid);
     scenesPage.append(toolbar, gridScroll);
 
-    // page 2: the run
+    // the Characters tab: who this run is for
     const runPage = element('section', 'sequence-page sequence-page-run');
-    const runHead = element('div', 'sequence-run-head');
-    const runTitle = element('span', 'sequence-run-title', text('seq_characters', 'Characters'));
-    const runContext = element('span', 'sequence-run-context');
-    runHead.append(runTitle, element('span', 'sequence-fill'), runContext);
+    runPage.setAttribute('role', 'tabpanel');
     const columns = element('div', 'sequence-columns');
     const left = element('div', 'sequence-column');
     const search = element('input', 'sequence-search');
@@ -231,65 +283,37 @@ function build() {
     rightFoot.append(element('span', 'sequence-fill'), clearButton);
     right.append(rightHead, chosenList, rightFoot);
     columns.append(left, right);
-    runPage.append(runHead, columns);
+    runPage.append(columns);
     body.classList.add('sequence-body');
-    body.append(scenesPage, runPage);
+    body.append(tabs, scenesPage, runPage);
 
-    // footer
-    const leftButton = element('button', 'selection-modal-cancel');
-    leftButton.type = 'button';
-    const rightGroup = element('div', 'sequence-foot-actions');
-    const blockers = element('div', 'sequence-blockers');
-    const candidatesLabel = element('label', 'sequence-label', text('seq_candidates', 'Candidates'));
-    const candidates = element('input', 'sequence-number');
-    candidates.type = 'number';
-    candidates.min = '1';
-    candidates.max = String(MAX_CANDIDATES);
-    candidates.id = 'sequence-candidates';
-    candidatesLabel.htmlFor = candidates.id;
-    const nextButton = element('button', 'selection-modal-apply', text('seq_next', 'Next'));
-    nextButton.type = 'button';
-    const generateButton = element('button', 'selection-modal-apply sequence-generate');
-    generateButton.type = 'button';
-    rightGroup.append(blockers, candidatesLabel, candidates, nextButton, generateButton);
+    // footer: Done (every change is kept as it is made; Single / Batch on the run bar end the edit mode)
+    const doneButton = element('button', 'selection-modal-apply sequence-done', text('seq_done', 'Done'));
+    doneButton.type = 'button';
     footer.classList.add('sequence-footer');
-    footer.append(leftButton, rightGroup);
+    footer.append(doneButton);
 
     ui = {
-        scenesPage, runPage, nameSelect, saveButton, deleteButton, fieldSelect, count, grid, runContext,
+        scenesTab, charactersTab, formula, scenesPage, runPage, nameSelect, saveButton, deleteButton, grid,
         search, poolList, addAll, randomButton, randomCount, chosenList, chosenCount, clearButton,
-        leftButton, blockers, candidatesLabel, candidates, nextButton, generateButton,
+        doneButton,
     };
 
     nameSelect.addEventListener('change', () => loadNamed(nameSelect.value));
     saveButton.addEventListener('click', saveNamed);
     deleteButton.addEventListener('click', deleteNamed);
-    fieldSelect.addEventListener('change', () => updateCurrent(current => { current.field = fieldSelect.value; }));
     search.addEventListener('input', () => { query = search.value; renderPool(); });
-    addAll.addEventListener('click', () => { selected = favoritePool().map(entry => entry.key); render(); });
+    addAll.addEventListener('click', () => setSelected(favoritePool().map(entry => entry.key)));
     randomButton.addEventListener('click', () => {
-        selected = pickRandomCharacters(favoritePool().map(entry => entry.key), batchSettings().count, cryptoRandom);
-        render();
+        setSelected(pickRandomCharacters(favoritePool().map(entry => entry.key), batchSettings().count, cryptoRandom));
     });
     randomCount.addEventListener('change', () => {
         const value = Math.max(1, Math.floor(Number(randomCount.value) || 1));
         setBatchSettings({ count: value });
         randomCount.value = String(value);
     });
-    clearButton.addEventListener('click', () => { selected = []; render(); });
-    candidates.addEventListener('change', () => {
-        const value = Math.max(1, Math.min(MAX_CANDIDATES, Math.floor(Number(candidates.value) || 1)));
-        setBatchSettings({ candidates: value });
-        candidates.value = String(value);
-        renderFooter();
-    });
-    leftButton.addEventListener('click', () => {
-        if (page === 'run') { page = 'scenes'; render(); return; }
-        if (globalThis.sequenceEdit?.isActive?.()) { Promise.resolve(globalThis.sequenceEdit.exit()).then(render); return; }
-        shell.close();
-    });
-    nextButton.addEventListener('click', () => { page = 'run'; render(); });
-    generateButton.addEventListener('click', startRun);
+    clearButton.addEventListener('click', () => setSelected([]));
+    doneButton.addEventListener('click', () => shell.close());
 }
 
 function cryptoRandom() {
@@ -317,9 +341,10 @@ async function loadNamed(name) {
         });
         if (!ok) { render(); return; }
     }
-    if (globalThis.sequenceEdit?.isActive?.()) globalThis.sequenceEdit.exit();
+    // the edit mode moves to the loaded sequence's first scene (sequenceEdit.js follows the change)
+    globalThis.sequenceEdit?.detach?.();
     const saved = doc.sequences[name];
-    doc.current = saved ? { name, ...normalizeSequence(clone(saved)) } : { name: '', field: doc.current.field, scenes: [] };
+    doc.current = saved ? { name, ...normalizeSequence(clone(saved)) } : { name: '', scenes: [] };
     persistNow();
     notify();
 }
@@ -363,26 +388,48 @@ async function deleteNamed() {
 
 let dragFrom = null;
 
+// the adopted image's Library thumbnail (sharper than the stored one); '' when the file is gone
+const fileThumbs = new Map();
+function paintTileImage(node, scene) {
+    if (scene.thumb) node.style.backgroundImage = `url("${scene.thumb}")`;
+    else node.classList.add('is-blank');
+    const file = scene.image;
+    if (!file || !globalThis.api?.libraryThumbs) return;
+    const apply = url => {
+        if (!url) return;
+        node.classList.remove('is-blank');
+        node.style.backgroundImage = `url("${url}")`;
+    };
+    if (fileThumbs.has(file)) { apply(fileThumbs.get(file)); return; }
+    Promise.resolve(globalThis.api.libraryThumbs([file]))
+        .then(result => { const url = result?.[file] ?? ''; fileThumbs.set(file, url); apply(url); })
+        .catch(() => fileThumbs.set(file, ''));
+}
+
 function sceneTile(scene, index) {
     const editingId = globalThis.sequenceEdit?.isActive?.() ? globalThis.sequenceEdit.sceneId() : null;
     const tile = element('div', 'sequence-tile');
     tile.draggable = true;
     tile.dataset.sceneId = scene.id;
-    const empty = !scene.text.trim();
+    const empty = !scene.settings;
     tile.classList.toggle('is-empty', empty);
     tile.classList.toggle('is-editing', scene.id === editingId);
     const image = element('div', 'sequence-tile-image');
-    if (scene.thumb) image.style.backgroundImage = `url("${scene.thumb}")`;
-    else image.classList.add('is-blank');
+    paintTileImage(image, scene);
     image.append(element('span', 'sequence-tile-no', String(index + 1).padStart(2, '0')));
     if (empty) image.append(element('span', 'sequence-tile-empty', text('seq_empty', 'Empty')));
     if (scene.id === editingId) image.append(element('span', 'sequence-tile-editing', text('seq_editing', 'Editing')));
     const tools = element('div', 'sequence-tile-tools');
-    tools.append(
-        iconButton('pencil', text('seq_edit', 'Edit in prompts'), { onClick: event => { event.stopPropagation(); editScene(scene.id); } }),
-        iconButton('trash', text('seq_delete_scene', 'Delete scene'), { onClick: event => { event.stopPropagation(); deleteScene(scene); } }),
-    );
+    tools.append(iconButton('trash', text('seq_delete_scene', 'Delete scene'), { onClick: event => { event.stopPropagation(); deleteScene(scene); } }));
     image.append(tools);
+    // the picture opens the scene in the prompts (edit mode)
+    image.setAttribute('role', 'button');
+    image.tabIndex = 0;
+    image.setAttribute('aria-label', `${text('seq_edit', 'Edit in prompts')}: ${scene.name}`);
+    image.addEventListener('click', () => editScene(scene.id));
+    image.addEventListener('keydown', event => {
+        if (event.target === image && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); editScene(scene.id); }
+    });
     const name = element('button', 'sequence-tile-name', scene.name);
     name.type = 'button';
     name.title = scene.name;
@@ -449,25 +496,25 @@ async function deleteScene(scene) {
         yesText: text('seq_delete_yes', 'Delete'), noText: text('setup_no', 'No'),
     });
     if (!ok) return;
-    if (globalThis.sequenceEdit?.isActive?.() && globalThis.sequenceEdit.sceneId() === scene.id) globalThis.sequenceEdit.exit();
+    // the scene on the screen gone: the edit mode moves to its neighbour (sequenceEdit.js)
     updateCurrent(current => { current.scenes = current.scenes.filter(item => item.id !== scene.id); });
 }
 
+// a new scene starts as the screen is now (its prompts, LoRA rows and generation settings)
 function addScene() {
     const id = makeSceneId();
-    updateCurrent(current => { current.scenes.push({ id, name: `Scene ${current.scenes.length + 1}`, text: '', thumb: '' }); });
+    const settings = captureSceneSettings();
+    updateCurrent(current => { current.scenes.push({ id, name: `Scene ${current.scenes.length + 1}`, settings, thumb: '', image: '', history: [] }); });
     const tile = ui.grid.querySelector(`[data-scene-id="${id}"]`);
     const scene = doc.current.scenes.find(item => item.id === id);
     if (tile && scene) startRename(tile, scene);
 }
 
+// a tile: that scene on the screen (Sequence mode, runModes.js); queued before the close so
+// the close does not first put the scene touched last there
 function editScene(sceneId) {
-    if (!doc.current.field || !sceneFieldOptions().some(option => option.key === doc.current.field)) {
-        showDialog('info', { message: text('seq_pick_field', 'Pick the field the scenes go into first.') });
-        return;
-    }
+    globalThis.runModes?.editScene?.(sceneId);
     shell.close();
-    globalThis.sequenceEdit?.enter(sceneId);
 }
 
 function renderScenes() {
@@ -485,22 +532,6 @@ function renderScenes() {
     }
     ui.nameSelect.value = doc.current.name || '';
     ui.deleteButton.disabled = !doc.current.name || !doc.sequences[doc.current.name];
-
-    const options = sceneFieldOptions();
-    ui.fieldSelect.replaceChildren();
-    if (!options.some(option => option.key === doc.current.field)) {
-        const option = element('option', '', doc.current.field ? `${doc.current.field} ?` : '—');
-        option.value = doc.current.field;
-        ui.fieldSelect.append(option);
-    }
-    for (const option of options) {
-        const node = element('option', '', option.label);
-        node.value = option.key;
-        ui.fieldSelect.append(node);
-    }
-    ui.fieldSelect.value = doc.current.field;
-    ui.fieldSelect.disabled = Boolean(globalThis.sequenceEdit?.isActive?.());
-    ui.count.textContent = `${doc.current.scenes.length} ${text('seq_scenes', 'scenes')}`;
 
     ui.grid.replaceChildren(...doc.current.scenes.map(sceneTile));
     const add = element('button', 'sequence-tile-add');
@@ -525,7 +556,7 @@ function renderPool() {
         paintAvatar(avatar, entry.key, entry.label);
         row.append(avatar, element('span', 'sequence-row-name', entry.label), element('span', 'sequence-row-mark', chosen ? '✓' : '+'));
         row.title = entry.label;
-        row.addEventListener('click', () => { if (!selected.includes(entry.key)) { selected = [...selected, entry.key]; render(); } });
+        row.addEventListener('click', () => { if (!selected.includes(entry.key)) setSelected([...selected, entry.key]); });
         return row;
     }));
 }
@@ -540,7 +571,7 @@ function renderChosen() {
         row.draggable = true;
         const avatar = element('span', 'sequence-avatar');
         paintAvatar(avatar, key, label);
-        const remove = iconButton('close', text('seq_remove', 'Remove'), { onClick: () => { selected = selected.filter(item => item !== key); render(); } });
+        const remove = iconButton('close', text('seq_remove', 'Remove'), { onClick: () => setSelected(selected.filter(item => item !== key)) });
         const grip = element('span', 'sequence-row-grip');
         grip.append(iconElement('grip', 12));
         row.append(grip, element('span', 'sequence-row-no', String(index + 1)), avatar, element('span', 'sequence-row-name', label), remove);
@@ -554,23 +585,19 @@ function renderChosen() {
             event.preventDefault();
             const from = rowDragFrom;
             rowDragFrom = null;
-            selected = moveScene(selected, from, index);
-            render();
+            setSelected(moveScene(selected, from, index));
         });
         return row;
     }));
 }
 
-// ---- footer and the run
+// ---- the run
 
 function runBlockers() {
     const SETTINGS = globalThis.globalSettings ?? {};
-    const field = doc.current.field;
     return sequenceStartBlockers({
         characters: selected.length,
         scenes: doc.current.scenes,
-        fieldExists: Boolean(field) && sceneFieldOptions().some(option => option.key === field),
-        fieldMuted: Boolean(field) && isFieldMuted(SETTINGS, field),
         regional: Boolean(SETTINGS.regional_condition),
         controlNet: createControlNet().length,
         backend: globalThis.generate?.api_interface?.getValue?.() ?? SETTINGS.api_interface,
@@ -578,33 +605,55 @@ function runBlockers() {
     });
 }
 
+function showPage(name) {
+    if (page === name) return;
+    page = name;
+    render();
+}
+
+// the tabs: which one is open, how many scenes and characters, and what they multiply to
+function renderTabs() {
+    const scenes = doc.current.scenes.length;
+    const characters = selected.length;
+    for (const [tab, name, count] of [[ui.scenesTab, 'scenes', scenes], [ui.charactersTab, 'run', characters]]) {
+        const open = page === name;
+        tab.button.setAttribute('aria-selected', String(open));
+        tab.button.tabIndex = open ? 0 : -1;
+        tab.count.textContent = String(count);
+        tab.count.classList.toggle('is-zero', count === 0);
+    }
+    ui.formula.textContent = `${scenes} × ${characters} × ${batchSettings().candidates}`;
+}
+
 function renderFooter() {
-    const { candidates } = batchSettings();
-    const total = selected.length * doc.current.scenes.length * candidates;
-    const onRun = page === 'run';
-    ui.leftButton.textContent = onRun ? `← ${text('seq_scenes_page', 'Scenes')}` : (globalThis.sequenceEdit?.isActive?.() ? text('seq_back', 'Back') : text('ui_cancel', 'Cancel'));
-    ui.nextButton.hidden = onRun;
-    for (const node of [ui.blockers, ui.candidatesLabel, ui.candidates, ui.generateButton]) node.hidden = !onRun;
-    ui.candidates.value = String(candidates);
-    ui.generateButton.textContent = `${text('seq_generate', 'Generate')} (${total})`;
-    const reasons = onRun ? runBlockers() : [];
-    ui.blockers.replaceChildren(...reasons.map(reason => {
-        const [key, fallback] = BLOCKER_TEXT[reason] ?? [reason, reason];
-        const pill = element('span', 'sequence-blocker');
-        pill.append(element('i'), document.createTextNode(text(key, fallback)));
-        return pill;
-    }));
-    ui.generateButton.disabled = reasons.length > 0 || total === 0;
+    renderTabs();
+}
+
+function notifyClose() {
+    for (const listener of closeListeners) {
+        try { listener(); } catch (error) { console.error(CAT, 'close listener failed', error); }
+    }
+}
+
+/** The scene edited last (Sequence mode opens on it), '' when none is known. */
+export function lastScene() {
+    return batchSettings().scene;
+}
+
+export function setLastScene(sceneId) {
+    const scene = String(sceneId ?? '');
+    if (batchSettings().scene === scene) return;
+    setBatchSettings({ scene });
+    globalThis.settingsAutosave?.markDirty?.('app');
 }
 
 function render() {
     if (!shell) return;
-    shell.heading.textContent = page === 'run' ? `${text('seq_title', 'Sequence')} › ${text('seq_run', 'Run')}` : text('seq_title', 'Sequence');
+    shell.heading.textContent = text('seq_title', 'Sequence');
     ui.scenesPage.hidden = page !== 'scenes';
     ui.runPage.hidden = page !== 'run';
     if (page === 'scenes') renderScenes();
     else {
-        ui.runContext.textContent = `${doc.current.name || text('seq_unsaved', 'Unsaved')} · ${doc.current.scenes.length} ${text('seq_scenes', 'scenes')}`;
         ui.randomCount.value = String(batchSettings().count);
         ui.randomCount.max = String(Math.max(1, favoritePool().length));
         renderPool();
@@ -613,9 +662,10 @@ function render() {
     renderFooter();
 }
 
-async function startRun() {
+/** Run the open sequence for the picked characters (the run bar's Generate in Sequence mode). */
+export async function runSequence() {
     const reasons = runBlockers();
-    if (reasons.length) { renderFooter(); return; }
+    if (reasons.length) return false;
     const { candidates } = batchSettings();
     const scenes = doc.current.scenes;
     const total = selected.length * scenes.length * candidates;
@@ -625,30 +675,28 @@ async function startRun() {
             message: text('seq_confirm_total', 'Queue {0} images?').replace('{0}', String(total)),
             yesText: text('setup_yes', 'Yes'), noText: text('setup_no', 'No'),
         });
-        if (!ok) return;
+        if (!ok) return false;
     }
     const slider = Number(globalThis.generate?.seed?.getValue?.() ?? -1);
     const baseSeed = Number.isFinite(slider) && slider >= 0 ? slider : generateRandomSeed();
     const rows = expandSequenceRows({ characters: [...selected], scenes, candidates, baseSeed });
-    const sequence = { runId: sequenceRunId(), name: doc.current.name, field: doc.current.field, candidates, rows };
-    shell.close();
-    await callback_generate_start('normal', { loops: 1, runSame: false, sequence });
+    const sequence = {
+        runId: sequenceRunId(), name: doc.current.name, candidates, rows,
+        scenes: scenes.map(scene => ({ id: scene.id, name: scene.name, settings: clone(scene.settings) })),
+    };
+    if (shell?.isOpen()) shell.close();
+    await callback_generate_start('normal', { loops: 1, sequence });
+    return true;
 }
 
-/** Open the dialog; `page` 'scenes' (the edit strip) or the page it was closed on. */
+/** Open the dialog; `page` 'scenes' (the edit strip) or 'run' (Characters), else the tab it was closed on. */
 export function openSequenceDialog({ page: wanted = null, trigger = null } = {}) {
     if (!shell) build();
     if (wanted) page = wanted;
-    // a new sequence starts on the first custom field (else Background)
-    if (!doc.current.field) {
-        const options = sceneFieldOptions();
-        const field = options.find(option => !BUILTIN_FIELD_LABELS[option.key]) ?? options.find(option => option.key === 'background');
-        if (field) updateCurrent(current => { current.field = field.key; });
-    }
     query = '';
     ui.search.value = '';
     render();
-    shell.open({ trigger, title: shell.heading.textContent, initialFocus: () => (page === 'run' ? ui.generateButton : ui.nameSelect) });
+    shell.open({ trigger, title: shell.heading.textContent, initialFocus: () => (page === 'run' ? ui.search : ui.nameSelect) });
 }
 
 /** Load the store and give back the scene field's text a crashed edit mode left in it. */
@@ -659,9 +707,50 @@ export async function setupSequenceBatch() {
     } catch (error) {
         console.error(CAT, 'load failed', error);
     }
-    globalThis.sequenceBatch = { open: openSequenceDialog, current: currentSequence, update: updateCurrent, onChange: onSequenceChange, setEditBackup, doc: sequenceDoc };
+    // the characters picked last time, those still among the favorites
+    const known = new Set(favoritePool().map(entry => entry.key));
+    selected = batchSettings().characters.filter(key => known.has(key));
+    globalThis.sequenceBatch = {
+        open: openSequenceDialog, current: currentSequence, update: updateCurrent, onChange: onSequenceChange, setEditBackup, doc: sequenceDoc,
+        captureScene: captureSceneSettings, applyScene: applySceneSettings,
+        run: runSequence, total: sequenceTotal, blockers: sequenceBlockerTexts,
+        candidates: () => batchSettings().candidates, setCandidates, selected: () => [...selected],
+        isOpen: () => Boolean(shell?.isOpen()), onClose: listener => { closeListeners.add(listener); return () => closeListeners.delete(listener); },
+        lastScene, setLastScene,
+    };
     mountThresholdSetting();
-    if (doc.editBackup) await globalThis.sequenceEdit?.recover?.(doc.editBackup);
+    // closing the app writes the store now (an edit mode's last edit included, sequenceEdit.js)
+    globalThis.addEventListener('beforeunload', persistNow);
+    // the app was closed in edit mode: back on that scene, else the screen gets its own back
+    const backup = doc.editBackup;
+    const resumable = Boolean(backup?.settings && backup.sceneId && doc.current.scenes.some(scene => scene.id === backup.sceneId));
+    if (resumable) {
+        carryOverTextScenes();
+        await globalThis.sequenceEdit?.resume?.(backup);
+        return;
+    }
+    if (backup) await globalThis.sequenceEdit?.recover?.(backup);
+    carryOverTextScenes();
+}
+
+// Scenes from before scenes held their own settings were the text of a few fields: they
+// become the screen's settings with those texts written in, once.
+function carryOverTextScenes() {
+    const base = captureSceneSettings();
+    if (!base) return;
+    let changed = false;
+    const carry = scenes => scenes.map(scene => {
+        if (scene.settings || !scene.texts) return scene;
+        changed = true;
+        const { texts, ...rest } = scene;
+        return { ...rest, settings: applyLegacyTexts(base, texts) };
+    });
+    doc.current = { ...doc.current, scenes: carry(doc.current.scenes) };
+    for (const name of Object.keys(doc.sequences)) doc.sequences[name] = { ...doc.sequences[name], scenes: carry(doc.sequences[name].scenes) };
+    if (changed) {
+        console.log(CAT, 'scenes of the field kind now hold their own settings');
+        persistNow();
+    }
 }
 
 // Settings › General: how many images a run may queue before Generate asks first (0 = never)

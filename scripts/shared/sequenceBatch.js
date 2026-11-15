@@ -1,28 +1,95 @@
 // Sequence batch (docs/sequence-batch-plan.md): one Generate click runs every picked
-// character through an ordered list of scenes, K candidates each. A scene is the text of
-// one prompt field (the "scene field"); everything else comes from the screen as it is.
+// character through an ordered list of scenes, K candidates each. A scene holds its own
+// prompts (every field of the Prompts card, the custom fields and their order included),
+// its LoRA rows and its generation settings (size, steps, CFG, sampler, Hires); the
+// character, the model and ADetailer come from the run and the screen.
 //
 // Pure: no DOM, no Electron, no I/O. The renderer and the main-process store share it.
 
 export const MAX_CANDIDATES = 16;
 export const NAME_LIMIT = 40;
 export const THUMB_PREFIX = 'data:image/jpeg;base64,';
+export const HISTORY_LIMIT = 60;
 const SEED_RANGE = 2 ** 32;
 
-// Built-in fields a scene can hold, and the setting each one's text lives in. Every other
-// scene field is a custom field (prompt_custom_fields[].id, "cf_…").
+/**
+ * The settings a scene owns, per settings section. Everything else (the characters, the
+ * model and its files, ADetailer, ControlNet, Regional, the AI / Prose options, the seed,
+ * the batch size) stays as the screen has it.
+ */
+export const SCENE_KEYS = Object.freeze({
+    prompt: Object.freeze([
+        'artist_slots', 'artist_signature_guard',
+        'view_tags', 'view_angle', 'view_camera', 'view_background', 'view_style',
+        'custom_prompt', 'api_prompt', 'api_prompt_right', 'api_neg_prompt', 'api_neg_prompt_left', 'api_neg_prompt_right',
+        'prompt_background', 'prompt_style', 'prompt_ban',
+        'prompt_custom_fields', 'prompt_positive_order', 'prompt_negative_order', 'prompt_field_muted',
+        'prompt_locks',
+    ]),
+    generation: Object.freeze([
+        'cfg', 'step', 'width', 'height', 'api_image_landscape', 'api_image_ratio', 'api_image_ratio_linked',
+        'api_model_sampler', 'api_model_scheduler',
+        'api_hf_enable', 'api_hf_scale', 'api_hf_denoise', 'api_hf_upscaler_selected', 'api_hf_colortransfer', 'api_hf_random_seed', 'api_hf_steps',
+    ]),
+    lora: Object.freeze(['lora_slot']),
+});
+export const SCENE_SECTIONS = Object.freeze(Object.keys(SCENE_KEYS));
+
+// Before scenes held their own settings, a scene was the text of one or more fields
+// ({ <fieldKey>: text }); the built-in fields and the setting each one's text lived in.
+// Used to carry such scenes over (sequenceBatchUi.js).
 export const BUILTIN_SCENE_FIELDS = Object.freeze({
     views: 'view_tags',
     background: 'prompt_background',
     style: 'prompt_style',
+    positive: 'api_prompt',
 });
 
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const text = value => (typeof value === 'string' ? value : '');
+const clone = value => JSON.parse(JSON.stringify(value));
 
-/** The setting key that holds a built-in scene field's text, or null for a custom field. */
+/** The setting key that holds a built-in field's text, or null for a custom field. */
 export function builtinSceneSetting(fieldKey) {
     return BUILTIN_SCENE_FIELDS[fieldKey] ?? null;
+}
+
+/**
+ * The scene's part of a set of sections ({ prompt, generation, lora }, as collectSection
+ * or a recipe's `sections` hold them): only SCENE_KEYS, deep-copied; null when none is there.
+ */
+export function pickSceneSettings(sections) {
+    if (!isObject(sections)) return null;
+    const out = {};
+    let any = false;
+    for (const [section, keys] of Object.entries(SCENE_KEYS)) {
+        const source = isObject(sections[section]) ? sections[section] : {};
+        const picked = {};
+        for (const key of keys) {
+            if (Object.hasOwn(source, key) && source[key] !== undefined) {
+                picked[key] = clone(source[key]);
+                any = true;
+            }
+        }
+        out[section] = picked;
+    }
+    return any ? out : null;
+}
+
+/** Old scene texts ({ <fieldKey>: text }) written over a scene's settings (a copy). */
+export function applyLegacyTexts(settings, texts) {
+    const out = clone(settings);
+    out.prompt = isObject(out.prompt) ? out.prompt : {};
+    for (const [fieldKey, value] of Object.entries(isObject(texts) ? texts : {})) {
+        if (typeof value !== 'string') continue;
+        const setting = builtinSceneSetting(fieldKey);
+        if (setting) {
+            out.prompt[setting] = value;
+        } else if (Array.isArray(out.prompt.prompt_custom_fields)) {
+            out.prompt.prompt_custom_fields = out.prompt.prompt_custom_fields.map(field => (isObject(field) && field.id === fieldKey ? { ...field, text: value } : field));
+        }
+    }
+    return out;
 }
 
 let sceneCounter = 0;
@@ -32,11 +99,53 @@ export function makeSceneId(now = Date.now()) {
     return `s${now.toString(36)}${sceneCounter.toString(36)}`;
 }
 
+/** A saved file's path as a comparison key (no case, one slash direction). */
+export function pathKey(value) {
+    return String(value ?? '').replaceAll('/', '\\').toLowerCase();
+}
+
+// the scene's images made in edit mode: saved file paths, oldest first, distinct, the
+// newest HISTORY_LIMIT
+function normalizeHistory(list) {
+    if (!Array.isArray(list)) return [];
+    const out = [];
+    for (const entry of list) {
+        const file = text(entry).trim();
+        if (!file) continue;
+        const index = out.findIndex(item => pathKey(item) === pathKey(file));
+        if (index >= 0) out.splice(index, 1);
+        out.push(file);
+    }
+    return out.slice(-HISTORY_LIMIT);
+}
+
+/** The scene's history with `file` added as its newest image. */
+export function addToHistory(history, file) {
+    return normalizeHistory([...(Array.isArray(history) ? history : []), file]);
+}
+
+// the text per field of a scene stored before scenes held their own settings
+function legacyTexts(scene, legacyField) {
+    const texts = {};
+    if (isObject(scene.texts)) {
+        for (const [key, value] of Object.entries(scene.texts)) {
+            const id = text(key).trim();
+            if (id && typeof value === 'string') texts[id] = value;
+        }
+    } else if (legacyField && typeof scene.text === 'string') {
+        texts[legacyField] = scene.text;
+    }
+    return texts;
+}
+
 /**
- * Scenes as stored: { id, name, text, thumb }. Each gets an id, a name ("Scene <n>"
- * when blank), its text as a string, and a thumb only when it is a JPEG data URL.
+ * Scenes as stored: { id, name, settings, thumb, image, history }. Each gets an id, a name
+ * ("Scene <n>" when blank), its settings (SCENE_KEYS only; null when it has none yet), a
+ * thumb only when it is a JPEG data URL, the adopted image's saved file (`image`, '' when
+ * none) and the images made for it in edit mode (`history`). A scene from before scenes
+ * held settings keeps its old texts as `texts` until it gets settings.
  */
-export function normalizeScenes(list, { makeId = makeSceneId } = {}) {
+export function normalizeScenes(list, { makeId = makeSceneId, legacyField = '' } = {}) {
     if (!Array.isArray(list)) return [];
     const seen = new Set();
     return list.filter(isObject).map((scene, index) => {
@@ -45,21 +154,27 @@ export function normalizeScenes(list, { makeId = makeSceneId } = {}) {
         seen.add(id);
         const name = text(scene.name).trim() || `Scene ${index + 1}`;
         const thumb = text(scene.thumb).startsWith(THUMB_PREFIX) ? scene.thumb : '';
-        return { id, name, text: text(scene.text), thumb };
+        const settings = pickSceneSettings(scene.settings);
+        const out = { id, name, settings, thumb, image: text(scene.image).trim(), history: normalizeHistory(scene.history) };
+        if (!settings) out.texts = legacyTexts(scene, legacyField);
+        return out;
     });
 }
 
-/** One sequence: the scene field and its scenes. */
+/** One sequence: its scenes. */
 export function normalizeSequence(value) {
     const data = isObject(value) ? value : {};
-    return { field: text(data.field).trim(), scenes: normalizeScenes(data.scenes) };
+    const legacyField = Array.isArray(data.fields) ? '' : text(data.field).trim();
+    return { scenes: normalizeScenes(data.scenes, { legacyField }) };
 }
 
 /**
  * The store's document (settings/sequences.json):
- *   sequences  { <name>: { field, scenes } }   the saved ones
- *   current    { name, field, scenes }         what the dialog holds, unsaved changes included
- *   editBackup { fieldKey, text } | null       the scene field's own text while edit mode runs
+ *   sequences  { <name>: { scenes } }   the saved ones
+ *   current    { name, scenes }         what the dialog holds, unsaved changes included
+ *   editBackup { settings, sceneId } | null
+ *                                       the screen's own settings while edit mode runs, and
+ *                                       the scene on it (the mode comes back on start)
  */
 export function normalizeSequenceDocument(value) {
     const data = isObject(value) ? value : {};
@@ -72,11 +187,30 @@ export function normalizeSequenceDocument(value) {
     }
     const current = isObject(data.current)
         ? { name: text(data.current.name).trim(), ...normalizeSequence(data.current) }
-        : { name: '', field: '', scenes: [] };
-    const backup = isObject(data.editBackup) && text(data.editBackup.fieldKey)
-        ? { fieldKey: data.editBackup.fieldKey, text: text(data.editBackup.text) }
-        : null;
-    return { sequences, current, editBackup: backup };
+        : { name: '', scenes: [] };
+    return { sequences, current, editBackup: normalizeEditBackup(data.editBackup) };
+}
+
+/**
+ * The edit backup: { settings, sceneId } (the screen's own scene settings and the scene the
+ * mode has on the screen; sceneId '' when unknown), or { texts } from an edit mode of the
+ * older kind ({ texts: { <fieldKey>: text } } or { fieldKey, text }); null when there is
+ * nothing to give back.
+ */
+export function normalizeEditBackup(value) {
+    if (!isObject(value)) return null;
+    const settings = pickSceneSettings(value.settings);
+    if (settings) return { settings, sceneId: text(value.sceneId).trim() };
+    const texts = {};
+    if (isObject(value.texts)) {
+        for (const [key, entry] of Object.entries(value.texts)) {
+            const id = text(key).trim();
+            if (id) texts[id] = text(entry);
+        }
+    } else if (text(value.fieldKey).trim()) {
+        texts[value.fieldKey.trim()] = text(value.text);
+    }
+    return Object.keys(texts).length ? { texts } : null;
 }
 
 /** `count` distinct entries of `pool`, drawn with `rng` (returns [0, 1)). */
@@ -97,15 +231,15 @@ export function candidateSeed(baseSeed, candidate) {
 }
 
 /**
- * The queue rows of one run, character by character, then scene by scene, then
- * candidate: [{ characterKey, characterIndex, sceneIndex, sceneId, sceneName, sceneText,
- * candidate, seed }].
+ * The queue rows of one run, scene by scene (a scene's settings go on the screen once),
+ * then character, then candidate: [{ characterKey, characterIndex, sceneIndex, sceneId,
+ * sceneName, candidate, seed }].
  */
 export function expandSequenceRows({ characters = [], scenes = [], candidates = 1, baseSeed = 0 } = {}) {
     const k = Math.max(1, Math.min(MAX_CANDIDATES, Math.floor(Number(candidates) || 1)));
     const rows = [];
-    characters.forEach((characterKey, characterIndex) => {
-        scenes.forEach((scene, sceneIndex) => {
+    scenes.forEach((scene, sceneIndex) => {
+        characters.forEach((characterKey, characterIndex) => {
             for (let candidate = 0; candidate < k; candidate++) {
                 rows.push({
                     characterKey,
@@ -113,7 +247,6 @@ export function expandSequenceRows({ characters = [], scenes = [], candidates = 
                     sceneIndex,
                     sceneId: scene.id,
                     sceneName: scene.name,
-                    sceneText: scene.text,
                     candidate,
                     seed: candidateSeed(baseSeed, candidate),
                 });
@@ -139,11 +272,19 @@ export function sequenceRunId(date = new Date()) {
 
 /**
  * Where one row's image is saved (the saver node's `path` and `filename`): one folder per
- * run, seq-<runId>, and <character>_s<NN>-<scene>_c<K> in it.
+ * run, seq-<runId>, and <character>_p<NN>_s<NN>-<scene> in it, so the files sort character
+ * by character, then candidate ("pattern") by candidate, then scene by scene: one
+ * candidate's scenes read as a story.
  */
 export function sequenceSaveTarget({ runId, characterName, sceneIndex, sceneName, candidate }) {
-    const nn = String(sceneIndex + 1).padStart(2, '0');
-    return { path: `seq-${runId}`, filename: `${sanitizeName(characterName)}_s${nn}-${sanitizeName(sceneName)}_c${candidate + 1}` };
+    const pattern = String(candidate + 1).padStart(2, '0');
+    const scene = String(sceneIndex + 1).padStart(2, '0');
+    return { path: `seq-${runId}`, filename: `${sanitizeName(characterName)}_p${pattern}_s${scene}-${sanitizeName(sceneName)}` };
+}
+
+/** A Library folder of one sequence run (sequenceSaveTarget's `path`). */
+export function isSequenceRunFolder(name) {
+    return /^seq-\d{8}-\d{6}$/.test(String(name ?? ''));
 }
 
 /** The queue's label of one row: "[Seq] <character> / <scene> #<candidate>". */
@@ -153,9 +294,9 @@ export function sequenceQueueLabel({ characterName, sceneName, candidate }) {
 
 /**
  * The prompt section of an image's recipe as the row ran it: slot 1 holds the row's
- * character, every other slot None, and the scene field holds the scene's text.
+ * character, every other slot None (the scene's own prompts are on the screen already).
  */
-export function patchRecipePrompt(prompt, { characterKey, sceneText, fieldKey }) {
+export function patchRecipePrompt(prompt, { characterKey }) {
     const data = isObject(prompt) ? JSON.parse(JSON.stringify(prompt)) : {};
     const slots = Array.isArray(data.character_slots) && data.character_slots.length ? data.character_slots : [{ key: 'None', weight: 1 }];
     data.character_slots = slots.map((slot, index) => ({ ...(isObject(slot) ? slot : {}), key: index === 0 ? characterKey : 'None' }));
@@ -164,16 +305,10 @@ export function patchRecipePrompt(prompt, { characterKey, sceneText, fieldKey })
         data.character2 = 'None';
         data.character3 = 'None';
     }
-    const setting = builtinSceneSetting(fieldKey);
-    if (setting) {
-        data[setting] = sceneText;
-    } else if (Array.isArray(data.prompt_custom_fields)) {
-        data.prompt_custom_fields = data.prompt_custom_fields.map(field => (isObject(field) && field.id === fieldKey ? { ...field, text: sceneText } : field));
-    }
     return data;
 }
 
-/** The scene field's text in a recipe's prompt section, or null when the recipe lacks the field. */
+/** A field's text in a prompt section (settings or a recipe's), or null when the field is not there. */
 export function readSceneText(prompt, fieldKey) {
     if (!isObject(prompt) || !fieldKey) return null;
     const setting = builtinSceneSetting(fieldKey);
@@ -182,26 +317,19 @@ export function readSceneText(prompt, fieldKey) {
     return field && typeof field.text === 'string' ? field.text : null;
 }
 
-/** The text of a scene field as the settings hold it now, or null when the field is not there. */
-export function fieldTextInSettings(settings, fieldKey) {
-    return readSceneText(settings, fieldKey);
-}
-
 /**
  * Why the run cannot start, in the order the dialog shows them (ids; the dialog words them):
- * no-characters, no-scenes, empty-scene, no-field, field-muted, regional, controlnet,
+ * no-characters, no-scenes, empty-scene (a scene without settings), regional, controlnet,
  * webui, diffusion, busy.
  */
 export function sequenceStartBlockers({
-    characters = 0, scenes = [], fieldExists = true, fieldMuted = false,
+    characters = 0, scenes = [],
     regional = false, controlNet = 0, backend = 'ComfyUI', modelType = 'Checkpoint', busy = false,
 } = {}) {
     const reasons = [];
     if (!characters) reasons.push('no-characters');
     if (!scenes.length) reasons.push('no-scenes');
-    if (scenes.some(scene => !text(scene?.text).trim())) reasons.push('empty-scene');
-    if (!fieldExists) reasons.push('no-field');
-    else if (fieldMuted) reasons.push('field-muted');
+    if (scenes.some(scene => !scene?.settings)) reasons.push('empty-scene');
     if (regional) reasons.push('regional');
     if (controlNet > 0) reasons.push('controlnet');
     if (backend !== 'ComfyUI') reasons.push('webui');
