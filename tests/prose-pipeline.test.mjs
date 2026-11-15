@@ -448,7 +448,7 @@ test('the queue row\'s "−" on the image being written stops it, like Cancel do
 test('generate.js takes the job at queue time and does not start the backend after a Cancel', opts, () => {
     const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
     const generate = fs.readFileSync(path.join(root, 'scripts/renderer/generate.js'), 'utf8').replace(/\r\n/g, '\n');
-    assert.match(generate, /const proseJob = await captureProseJob\(\{[\s\S]*?runSame,[\s\S]*?resolveText:[\s\S]*?replaceWildcardsAsync\([\s\S]*?filterPrompts\([\s\S]*?weighText:/);
+    assert.match(generate, /const proseJob = await captureProseJob\(\{[\s\S]*?resolveText:[\s\S]*?replaceWildcardsAsync\([\s\S]*?filterPrompts\([\s\S]*?weighText:/);
     assert.match(generate, /generateData\.queueManager\.prose = proseJob;/);
     assert.match(generate, /applyProse\(generateData, \{\n\s*job: queueManager\.prose,/);
     // a Cancel ends the run; a queue-row delete ("−", jobDropped) drops this job only, so

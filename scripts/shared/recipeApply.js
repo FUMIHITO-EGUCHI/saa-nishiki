@@ -6,9 +6,11 @@
 // fixed key, a custom field by its id and then by its name. A field the image had and the
 // editor lacks is made again; one only the editor has is muted, never deleted. The
 // character slots grow to the image's count, and a slot that said "Random" takes the
-// character the image's run picked.
+// character the image's run picked. The rows that drew come back locked on what they drew
+// for the image, and the AI prompt on the image's answer (promptLocks.js).
 
 import { recipeLoras } from './recipe.js';
+import { AI_LOCK, FIELD_LOCKS, recipeLocks } from './promptLocks.js';
 
 // built-in prompt fields: id (the chain's name for it) -> setting key, default label
 export const BUILTIN_FIELDS = Object.freeze([
@@ -128,8 +130,13 @@ function mergedOrder(imageOrder, currentOrder, extraIds) {
  * prompt sections). Everything that is not the prompt itself (the AI card, the field
  * presets, the collapsed rows) stays as `current` has it.
  */
-export function mergeRecipePrompt(current = {}, image = {}, { picked = [] } = {}) {
+export function mergeRecipePrompt(current = {}, image = {}, { picked = [], run = null } = {}) {
     const next = { ...current };
+    // the image's draws, locked: an image from before they were recorded unlocks the rows
+    // (they draw anew) and keeps the editor's AI lock unless it has an answer of its own
+    const locks = recipeLocks(run ?? {});
+    next[FIELD_LOCKS] = locks[FIELD_LOCKS] ?? {};
+    if (locks[AI_LOCK]) next[AI_LOCK] = locks[AI_LOCK];
     for (const [, key] of BUILTIN_FIELDS) next[key] = text(image[key]);
     for (const id of PLANNED_FIELDS) {
         for (const key of [`${id}_weight_plans`, `${id}_batch`]) if (Object.hasOwn(image, key)) next[key] = image[key];
@@ -194,7 +201,7 @@ export function planRecipeLoad(recipe, current, rows = []) {
     const on = new Set(rows);
     const sections = {};
     const app = {};
-    if (on.has('tags')) sections.prompt = mergeRecipePrompt(current?.sections?.prompt ?? {}, recipe?.sections?.prompt ?? {}, { picked: recipe?.run?.characters ?? [] });
+    if (on.has('tags')) sections.prompt = mergeRecipePrompt(current?.sections?.prompt ?? {}, recipe?.sections?.prompt ?? {}, { picked: recipe?.run?.characters ?? [], run: recipe?.run ?? null });
     for (const row of ['model', 'size', 'regional', 'lora']) {
         if (!on.has(row)) continue;
         for (const [section, keys] of Object.entries(RECIPE_ROWS[row])) {

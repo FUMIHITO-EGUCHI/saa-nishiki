@@ -372,15 +372,14 @@ export const sharedBodyHTML = `
               <span class="run-saved" id="run-saved" hidden></span>
               <div id="generate-buttons-container">
                 <div id="generate-buttons-1">
-                  <div class="generate-button-single"></div>
-                  <div class="generate-batch-menu" id="generate-batch-menu">
-                    <button type="button" class="generate-batch-menu-button" id="generate-batch-menu-button" aria-haspopup="menu" aria-expanded="false"></button>
-                    <div class="generate-batch-menu-list" id="generate-batch-menu-list" role="menu" hidden>
-                      <div class="generate-button-batch" role="menuitem"></div>
-                      <div class="generate-button-same" role="menuitem"></div>
-                      <button type="button" class="generate-batch-menu-item" id="generate-batch-expand" role="menuitem"></button>
-                      <button type="button" class="generate-batch-menu-item" id="generate-batch-sequence" role="menuitem"></button>
-                    </div>
+                  <div class="run-modes" id="run-modes" role="radiogroup" aria-label="Run mode">
+                    <button type="button" class="run-mode" role="radio" data-mode="single" aria-checked="true"></button>
+                    <button type="button" class="run-mode" role="radio" data-mode="batch" aria-checked="false"></button>
+                    <button type="button" class="run-mode" role="radio" data-mode="sequence" aria-checked="false"></button>
+                  </div>
+                  <div class="run-generate" id="run-generate">
+                    <div class="generate-button-single"></div>
+                    <button type="button" class="run-sequence-go" id="run-sequence-go" hidden></button>
                   </div>
                 </div>
               </div>

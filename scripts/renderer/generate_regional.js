@@ -1,12 +1,11 @@
 import { decodeThumb } from './customThumbGallery.js';
 import { jsonSlotFragment } from '../shared/jsonSlotPrompt.js';
 import { appendPromptEnd, regionalRatio, singleLinePrompt } from '../shared/regionalGeneration.js';
-import { swapSlotLoras, withSlotLoras } from '../shared/slotLoraLine.js';
-import { retakeWords } from './loraWordSwitch.js';
+import { withSlotLoras } from '../shared/slotLoraLine.js';
 import { generateRandomSeed, getTagAssist, getLoRAs, replaceWildcardsAsync, getRandomIndex, formatCharacterInfo, formatOriginalCharacterInfo,
     getViewTags, createHiFix, createRefiner, extractHostPort, checkVpred, extractAPISecure,
     createControlNet, createADetailer, toggleQueueColor, startQueue, REPLACE_AI_MARK,
-    updateADetailerModelList, getImageSavePrefix, getCustomFieldTexts, readViewPromptField } from './generate.js';
+    updateADetailerModelList, getImageSavePrefix, getCustomFieldTexts, readViewPromptField, drawRow, drawViewRow } from './generate.js';
 import { processRandomString } from './tools/nestedBraceParsing.js';
 import { sendWebSocketMessage } from '../webserver/front/wsRequest.js';
 import { filterPrompts } from './tools/promptFilter.js';
@@ -14,8 +13,10 @@ import { asFragment, normalizeCustomFields, normalizeOrder } from '../shared/pro
 import { normalizeSplit, panelTags, sideOrder } from '../shared/regionalSides.js';
 import { artistPrompt } from '../shared/artistSlots.js';
 import { composeRegionalNegatives } from '../shared/negativeComposition.js';
-import { beginImageOverride, describeOverrideWeights, endImageOverride, getActiveOverride, overrideSeed, planBatchExpansion, readPromptValue, reapplyPlanWeights } from './tools/promptBatchExpansion.js';
-import { isOriginalKey, originalCharacterName } from '../shared/characterKeys.js';
+import { beginImageOverride, describeOverrideWeights, endImageOverride, overrideSeed, planBatchExpansion, readPromptValue } from './tools/promptBatchExpansion.js';
+import { beginImageDraws, heldCharacterKey, noteCharacter } from './promptLocks.js';
+import { regionalSlots } from '../shared/characterSides.js';
+import { isOriginalKey, originalCharacterName, originalKey } from '../shared/characterKeys.js';
 import { removeAiPromptMarker } from '../aiPromptRefiner.js';
 import { getLocalizedCharacterName } from './characterLocalization.js';
 import { captureRefineEditorSnapshot, refineRequestFields, snapshotFieldsForPromptOverride } from './tools/refineEditorState.js';
@@ -106,7 +107,8 @@ function getCustomJSON(loop=-1){
     }
 }
 
-export function getPrompts(character_left, character_right, views, ai='', apiInterface = 'None', loop=-1, seed=0){
+// `drawn` (createPrompt): each side's rows with their random sources drawn ({ left: { [id]: text }, right })
+export function getPrompts(character_left, character_right, views, ai='', apiInterface = 'None', loop=-1, seed=0, drawn = null){
     const SETTINGS = globalThis.globalSettings;
     const dark = SETTINGS.css_style === 'dark';
     const commonColor = dark ? 'darkorange' : 'Sienna';
@@ -130,12 +132,14 @@ export function getPrompts(character_left, character_right, views, ai='', apiInt
     // "both" units go to both prompts, side units to theirs; the characters block
     // is the side's character.
     const unit = (id, side) => {
+        const own = drawn?.[side] ?? {};
+        const read = (key, fallback) => (Object.hasOwn(own, key) ? own[key] : fallback());
         switch (id) {
             // the Panels preset (split screen, 2koma, two panels) follows Common on both sides
-            case 'common': return { text: asFragment(readPromptValue('common')) + asFragment(panelTags(SETTINGS)), color: commonColor };
-            case 'views': return { text: views || '', color: viewColor };
-            case 'background': return { text: asFragment(readViewPromptField('background', 'background', seed)), color: viewColor };
-            case 'style': return { text: asFragment(readViewPromptField('style', 'style', seed)), color: viewColor };
+            case 'common': return { text: asFragment(read('common', () => readPromptValue('common'))) + asFragment(panelTags(SETTINGS)), color: commonColor };
+            case 'views': return { text: read('views', () => views) || '', color: viewColor };
+            case 'background': return { text: asFragment(read('background', () => readViewPromptField('background', 'background', seed))), color: viewColor };
+            case 'style': return { text: asFragment(read('style', () => readViewPromptField('style', 'style', seed))), color: viewColor };
             // the Artist card (Diffusion only) writes "@name" tokens for the whole image
             case 'artist': return { text: SETTINGS.api_model_type === 'Diffusion' ? asFragment(artistPrompt(SETTINGS)) : '', color: customColor };
             case 'ai': return { text: aiPrompt, color: aiColor };
@@ -143,9 +147,9 @@ export function getPrompts(character_left, character_right, views, ai='', apiInt
                 const [BOC, EOC, text] = side === 'left' ? [BOCL, EOCL, character_left] : [BOCR, EOCR, character_right];
                 return { text: `${BOC}${text}${EOC}`, colored: `${BOC}${colored(text, characterColor)}${EOC}` };
             }
-            case 'positive': return { text: asFragment(readPromptValue('positive')), color: positiveColor };
-            case 'positive_right': return { text: asFragment(readPromptValue('positive_right')), color: positiveRColor };
-            default: return { text: customTexts[id] ?? '', color: customColor };
+            case 'positive': return { text: asFragment(read('positive', () => readPromptValue('positive'))), color: positiveColor };
+            case 'positive_right': return { text: asFragment(read('positive_right', () => readPromptValue('positive_right'))), color: positiveRColor };
+            default: return { text: Object.hasOwn(own, id) ? asFragment(own[id]) : (customTexts[id] ?? ''), color: customColor };
         }
     };
     const assemble = (side) => {
@@ -245,6 +249,8 @@ export function getNegativePrompts({ negative_tags_left = '', negative_tags_righ
 async function createCharacters(index, seeds) {
     const FILES = globalThis.cachedFiles;
     const character = globalThis.characterListRegional.getKey()[index];
+    // the Characters slot this side draws (its lock is that slot's, promptLocks.js)
+    const slot = regionalSlots(globalThis.globalSettings?.character_slots)[index === 0 ? 'left' : 'right']?.index ?? -1;
     const isValueOnly = globalThis.characterListRegional.isValueOnly();
     const seed = seeds[index];
 
@@ -255,8 +261,8 @@ async function createCharacters(index, seeds) {
     // an `oc:` key is an original character, on either side
     const isOriginalCharacter = isOriginalKey(character);
     const { tag, thumb, info, weight, name } = isOriginalCharacter
-        ? handleOriginalCharacter(originalCharacterName(character), seed, isValueOnly, index, FILES)
-        : await handleStandardCharacter(character, seed, isValueOnly, index, FILES);
+        ? handleOriginalCharacter(originalCharacterName(character), seed, isValueOnly, index, FILES, slot)
+        : await handleStandardCharacter(character, seed, isValueOnly, index, FILES, slot);
 
     const { tag: parsedTag, neg_tags } = splitTagNegativePrompt(tag);
     const tagAssist = getTagAssist(parsedTag, globalThis.generate.tag_assist.getValue(), FILES, index, info);
@@ -275,11 +281,18 @@ async function createCharacters(index, seeds) {
     };
 }
 
-async function handleStandardCharacter(character, seed, isValueOnly, index, FILES) {
+// the list entry a locked Random slot holds (promptLocks.js), else the seed's pick
+function randomIndex(list, seed, held, keyOf) {
+    const heldIndex = held ? list.findIndex(entry => keyOf(entry[0]) === held) : -1;
+    return heldIndex >= 0 ? heldIndex : getRandomIndex(seed, list.length);
+}
+
+async function handleStandardCharacter(character, seed, isValueOnly, index, FILES, slot = -1) {
     let tag, thumb, info, name;
     if (character.toLowerCase() === 'random') {
-        const selectedIndex = getRandomIndex(seed, FILES.characterListArray.length);
+        const selectedIndex = randomIndex(FILES.characterListArray, seed, slot >= 0 ? heldCharacterKey(slot) : null, entryKey => entryKey);
         const selectedKey = FILES.characterListArray[selectedIndex][0];
+        if (slot >= 0) noteCharacter(slot, selectedKey);
         tag = FILES.characterListArray[selectedIndex][1];
         const displayName = getLocalizedCharacterName({
             key: selectedKey,
@@ -312,10 +325,11 @@ async function handleStandardCharacter(character, seed, isValueOnly, index, FILE
     return { tag, thumb, info, weight, name };
 }
 
-function handleOriginalCharacter(character, seed, isValueOnly, index, FILES) {
+function handleOriginalCharacter(character, seed, isValueOnly, index, FILES, slot = -1) {
     let tag, info, name;
     if (character.toLowerCase() === 'random') {
-        const selectedIndex = getRandomIndex(seed, FILES.ocListArray.length);
+        const selectedIndex = randomIndex(FILES.ocListArray, seed, slot >= 0 ? heldCharacterKey(slot, { original: true }) : null, originalKey);
+        if (slot >= 0) noteCharacter(slot, originalKey(FILES.ocListArray[selectedIndex][0]));
         tag = FILES.ocListArray[selectedIndex][1];
         info = formatOriginalCharacterInfo({
         key: FILES.ocListArray[selectedIndex][0],
@@ -426,7 +440,7 @@ async function getCharacters(){
     }
 }
 
-export async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
+export async function createPrompt(aiPromot, apiInterface, loop=-1){
     let finalInfo = ''
     let randomSeed = -1;
     let randomSeedr = -1;
@@ -443,51 +457,10 @@ export async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     let refineContext = null;
     // the LoRA card's line on the left prompt (slotLoraLine.js)
     let slotLora = '';
-    // the trigger words the LoRAs switched off took out of the rows (loraWordSwitch.js)
-    const takenWords = globalThis.loraUi?.takenWords?.() ?? [];
+    // what this image's random sources drew, row by row and side by side (its recipe)
+    const draws = beginImageDraws();
 
-    if(runSame) {
-        // a fixed slider seed is the seed (it stayed -1 and failed ComfyUI validation);
-        // a batch expansion override supplies seed + n − 1
-        const seed = overrideSeed(globalThis.generate.seed.getValue());
-        randomSeed = (seed === -1) ? generateRandomSeed() : seed;
-        // the last prompts with the LoRA card as it is now, not as it was for that run
-        slotLora = getLoRAs(apiInterface);
-        // and its trigger words with them: out for a LoRA switched off since, back for one switched on
-        const lastPrompt = swapSlotLoras(globalThis.generate.lastPos, globalThis.generate.lastLora, '');
-        const fromRight = item => item.id === 'positive_right';
-        const lastTaken = globalThis.generate.lastTaken ?? [];
-        positivePromptLeft = withSlotLoras(retakeWords(lastPrompt, lastTaken.filter(item => !fromRight(item)), takenWords), slotLora);
-        positivePromptLeftColored = globalThis.generate.lastPosColored;
-        positivePromptRight = typeof globalThis.generate.lastPosR === 'string'
-            ? retakeWords(globalThis.generate.lastPosR, lastTaken.filter(fromRight), takenWords)
-            : globalThis.generate.lastPosR;
-        positivePromptRightColored = globalThis.generate.lastPosRColored;
-        negativePrompt = globalThis.generate.lastNeg;
-        negativePromptLeft = globalThis.generate.lastNegL ?? negativePrompt;
-        negativePromptRight = globalThis.generate.lastNegR ?? negativePrompt;
-        charactersName = globalThis.generate.lastCharacter;
-        img_prefix = globalThis.generate.lastImagePrefix;
-        // Batch (Last) keeps the previous prompts but still walks the weight plans, both
-        // sides and both side negatives (the standard path does the same in generate.js).
-        // Without this the batch sent the same prompt every time while the info line
-        // claimed a different weight per image.
-        const override = getActiveOverride();
-        if (override?.weights && Object.keys(override.weights).length > 0) {
-            const applied = reapplyPlanWeights({
-                positive: positivePromptLeft,
-                positiveRight: positivePromptRight,
-                negative: negativePrompt,
-                negativeLeft: negativePromptLeft,
-                negativeRight: negativePromptRight,
-            }, override.weights);
-            positivePromptLeft = applied.positive;
-            positivePromptRight = applied.positiveRight;
-            negativePrompt = applied.negative;
-            negativePromptLeft = applied.negativeLeft;
-            negativePromptRight = applied.negativeRight;
-        }
-    } else {            
+    {
         const {thumb, character_left, character_right, information, seed, characters, negative_tags_left, negative_tags_right, image_prefix} = await getCharacters();
         randomSeed = seed;
         randomSeedr = Math.floor(seed / 3);
@@ -495,7 +468,14 @@ export async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
 
         // background / style are ordered units of the chain now (like the standard path)
         const views = getViewTags(seed, false);
-        let {posL, posLc, posR, posRc, lora, refineContext: promptRefineContext} = getPrompts(character_left, character_right, views, aiPromot, apiInterface, loop, seed);
+        // each side's rows drawn on their own (left with the seed, right with its own, as
+        // the whole prompts were), so a locked row holds a draw per side; what is left (the
+        // characters' tags, the JSON slots) draws below
+        const drawn = {
+            left: await drawSide('left', { seed, sideSeed: randomSeed, views, image: draws }),
+            right: await drawSide('right', { seed, sideSeed: randomSeedr, views, image: draws }),
+        };
+        let {posL, posLc, posR, posRc, lora, refineContext: promptRefineContext} = getPrompts(character_left, character_right, views, aiPromot, apiInterface, loop, seed, drawn);
 
         posL = await replaceWildcardsAsync(posL, randomSeed);
         posLc = await replaceWildcardsAsync(posLc, randomSeed);
@@ -544,8 +524,26 @@ export async function createPrompt(runSame, aiPromot, apiInterface, loop=-1){
     return {finalInfo, randomSeed, positivePromptLeft, positivePromptRight, 
             positivePromptLeftColored, positivePromptRightColored, negativePrompt,
             negativePromptLeft, negativePromptRight,
-            thumbImage, charactersName, img_prefix, refineContext, slotLora, takenWords
+            thumbImage, charactersName, img_prefix, refineContext, slotLora, draws
     }
+}
+
+// One side's rows (the ones in its chain) with their random sources drawn: { [id]: text }.
+// A view list's `random` picks by the image's seed on both sides, as readViewPromptField did.
+async function drawSide(side, { seed, sideSeed, views, image }) {
+    const SETTINGS = globalThis.globalSettings;
+    const customs = normalizeCustomFields(SETTINGS.prompt_custom_fields);
+    const order = normalizeOrder(SETTINGS.prompt_positive_order, 'positive', customs);
+    const customTexts = Object.fromEntries(getCustomFieldTexts('positive').map(field => [field.id, field.text]));
+    const options = { part: side };
+    const out = {};
+    for (const id of sideOrder(order, side, customs)) {
+        if (id === 'views') out.views = await drawRow('views', views, sideSeed, image, options);
+        else if (id === 'common' || id === 'positive' || id === 'positive_right') out[id] = await drawRow(id, readPromptValue(id), sideSeed, image, options);
+        else if (id === 'background' || id === 'style') out[id] = await drawViewRow(id, id, sideSeed, image, { ...options, listSeed: seed });
+        else if (Object.hasOwn(customTexts, id)) out[id] = await drawRow(id, customTexts[id], sideSeed, image, options);
+    }
+    return out;
 }
 
 export function createRegional(apiInterface) {
@@ -573,7 +571,6 @@ export function createRegional(apiInterface) {
 
 // eslint-disable-next-line sonarjs/cognitive-complexity
 export async function generateRegionalImage(dataPack){
-    const {runSame} = dataPack;
     const SETTINGS = globalThis.globalSettings;
     const FILES = globalThis.cachedFiles;
     const LANG = FILES.language[SETTINGS.language];
@@ -602,7 +599,6 @@ export async function generateRegionalImage(dataPack){
     const structuredRefine = isStructuredRefineRequest({
         aiInterface: aiPromptInterface,
         aiOptions: aiRunSettings,
-        runSame,
     });
     const refineSnapshot = captureRefineEditorSnapshot({ mode: 'regional', ai: aiRunSettings });
     const expansion = planBatchExpansion(dataPack, {
@@ -612,7 +608,6 @@ export async function generateRegionalImage(dataPack){
     const loops = expansion.loops;
     const refineRun = createRefineRunController({
         role: aiPromptCurrentRole,
-        runSame,
         total: loops,
         snapshot: refineSnapshot,
     });
@@ -650,7 +645,7 @@ export async function generateRegionalImage(dataPack){
         const imageOverride = beginImageOverride(expansion, loop);
         let createPromptResult;
         try {
-            createPromptResult = await createPrompt(runSame, aiPromot, apiInterface, (loops > 1)?loop:-1);
+            createPromptResult = await createPrompt(aiPromot, apiInterface, (loops > 1)?loop:-1);
         } finally {
             endImageOverride();
         }
@@ -671,17 +666,8 @@ export async function generateRegionalImage(dataPack){
             vae_override = false;
         }
 
+        // the tag prompt the Prose step compares the next one with (prosePipeline.js)
         globalThis.generate.lastPos = createPromptResult.positivePromptLeft;
-        globalThis.generate.lastLora = createPromptResult.slotLora;
-        globalThis.generate.lastTaken = createPromptResult.takenWords;
-        globalThis.generate.lastPosColored = createPromptResult.positivePromptLeftColored;
-        globalThis.generate.lastPosR = createPromptResult.positivePromptRight;
-        globalThis.generate.lastPosRColored = createPromptResult.positivePromptRightColored;
-        globalThis.generate.lastNeg = createPromptResult.negativePrompt;
-        globalThis.generate.lastNegL = createPromptResult.negativePromptLeft;
-        globalThis.generate.lastNegR = createPromptResult.negativePromptRight;
-        globalThis.generate.lastCharacter = createPromptResult.charactersName;
-        globalThis.generate.lastImagePrefix = createPromptResult.img_prefix;
         if(createPromptResult.thumbImage)
             globalThis.generate.lastThumb = createPromptResult.thumbImage;
 
@@ -785,6 +771,7 @@ export async function generateRegionalImage(dataPack){
             names: createPromptResult.charactersName,
             positive: `${createPromptResult.positivePromptLeft}\n${createPromptResult.positivePromptRight}`,
             negative: createPromptResult.negativePrompt,
+            draws: createPromptResult.draws,
         });
 
         let finalInfo = `${createPromptResult.finalInfo}\n`;
@@ -830,8 +817,7 @@ export async function generateRegionalImage(dataPack){
     }
 
     globalThis.generate.generate_single.setClickable(true);
-    globalThis.generate.generate_batch.setClickable(true);
-    globalThis.generate.generate_same.setClickable(true);    
+    globalThis.runModes?.refresh?.();
     
     if (prepareError) {
         globalThis.mainGallery.hideLoading(

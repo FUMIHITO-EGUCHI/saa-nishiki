@@ -179,8 +179,7 @@ export function updateLanguage(skipLoRA = false, skipRightClick = false) {
     globalThis.generate.scheduler.setTitle(LANG.api_model_scheduler);
 
     globalThis.generate.generate_single.setTitle(globalThis.globalSettings.generate_auto_start?LANG.run_button:LANG.run_button_paused);
-    globalThis.generate.generate_batch.setTitle(LANG.run_random_button);
-    globalThis.generate.generate_same.setTitle(LANG.run_same_button);
+    globalThis.runModes?.refresh?.();
     globalThis.generate.generate_skip.setTitle(LANG.run_skip_button);
     globalThis.generate.generate_cancel.setTitle(LANG.run_cancel_button);
 

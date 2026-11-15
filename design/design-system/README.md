@@ -38,7 +38,7 @@ SAA-Nishiki は ComfyUI で画像を作るデスクトップアプリ（Electron
 - 装飾には使わない。
 
 **実行**
-- `saa-run` 系は生成の実行ボタンだけに使う。Generate は橙、Batch は赤（`saa-run-batch`）、Batch (Last) は紺（`saa-run-same`）、Skip と Cancel は灰（`saa-run-stop`）。
+- `saa-run` 系は生成の実行ボタンだけに使う。Generate は橙、Sequence の Sample は青（`saa-run-sample`）、Sequence の Run と Batch は赤（`saa-run-batch`）、Batch (Last) は紺（`saa-run-same`）、Skip と Cancel は灰（`saa-run-stop`）。
 - ほかのボタンに橙を使わない。
 
 **状態**

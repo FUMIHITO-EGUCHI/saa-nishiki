@@ -21,6 +21,7 @@ export const PROMPT_STATE_KEYS = Object.freeze([
     ...PROMPT_PLAN_KEYS,
     'prompt_custom_fields', 'prompt_positive_order', 'prompt_negative_order',
     'prompt_field_muted', 'prompt_field_collapsed',
+    'prompt_locks', 'character_locks',
     'character_slots', 'artist_slots',
 ]);
 

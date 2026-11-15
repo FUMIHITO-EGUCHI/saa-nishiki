@@ -75,7 +75,7 @@ test('pipeline rows: one switch or count per feature, no duplicate enable checkb
 test('run bar carries seed / size / steps·cfg / sampler / batch, the run buttons and the queue drawer', () => {
   const runBar = rightMarkup.slice(rightMarkup.indexOf('id="run-bar"'));
   for (const cls of ['generate-random-seed', 'generate-width', 'generate-height', 'generate-step', 'generate-cfg', 'generate-sampler', 'generate-scheduler', 'generate-batch',
-    'generate-button-single', 'generate-button-batch', 'generate-button-same', 'generate-button-skip', 'generate-button-cancel', 'queue-autostart-generate', 'queue-main']) {
+    'generate-button-single', 'run-modes', 'run-generate', 'run-sequence-go', 'generate-button-skip', 'generate-button-cancel', 'queue-autostart-generate', 'queue-main']) {
     assert.match(runBar, new RegExp(`class="${cls}\\b`), `.${cls} in run bar`);
   }
   assert.match(runBar, /id="seed-random-button"/);
@@ -83,7 +83,11 @@ test('run bar carries seed / size / steps·cfg / sampler / batch, the run button
   for (const id of ['run-ratio-turn', 'run-ratio-pick', 'run-ratio-chain', 'run-ratio-popover']) assert.match(runBar, new RegExp(`id="${id}"`));
   assert.match(runBar, /id="run-ratio"[\s\S]*generate-width[\s\S]*id="run-ratio-chain"[\s\S]*generate-height/);
   assert.doesNotMatch(runBar, /generate-landscape/);
-  assert.match(runBar, /id="generate-batch-menu-list"/);
+  // one Generate after the run modes, in one box with Run (Sequence splits it: Sample | Run, D34)
+  assert.match(runBar, /id="run-modes"[\s\S]*data-mode="single"[\s\S]*data-mode="batch"[\s\S]*data-mode="sequence"/);
+  assert.match(runBar, /id="run-modes"[\s\S]*id="run-generate"[\s\S]*class="generate-button-single"[\s\S]*id="run-sequence-go" hidden/);
+  assert.doesNotMatch(runBar, /run-sequence-open/);
+  assert.doesNotMatch(runBar, /generate-batch-menu/);
   assert.match(runBar, /id="queue-drawer" hidden/);
   assert.match(runBar, /id="run-progress"/);
 });

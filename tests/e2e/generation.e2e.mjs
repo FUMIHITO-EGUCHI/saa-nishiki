@@ -48,7 +48,7 @@ test('a batch of three on a random seed: three images with three seeds, one prom
     // a fixed seed would repeat the image (the app says so and asks); a batch is run on -1
     await app.setSeed(-1);
     await app.setBatch(3);
-    const run = await app.generate({ button: 'batch', expectImages: 3 });
+    const run = await app.generate({ mode: 'batch', expectImages: 3 });
     await app.setBatch(1);
     await app.setSeed(freshSeed() + 100);
     assert.equal(run.error, '');

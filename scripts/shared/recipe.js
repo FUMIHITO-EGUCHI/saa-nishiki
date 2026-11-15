@@ -10,6 +10,8 @@
 //
 // Pure: no DOM, no Electron.
 
+import { cleanRunDraws } from './promptLocks.js';
+
 export const RECIPE_CHUNK = 'saa_recipe';
 export const TIME_CHUNK = 'saa_time';
 export const RECIPE_VERSION = 1;
@@ -71,10 +73,12 @@ regional: run.regional === true,
         prose,
         ai,
         sent,
+        // what each row's random sources drew (promptLocks.js); "Use settings…" locks them on it
+        ...(cleanRunDraws(run.draws) ? { draws: cleanRunDraws(run.draws) } : {}),
         ...(isObject(run.sequence) ? { sequence: {
             runId: text(run.sequence.runId),
             sequenceName: text(run.sequence.sequenceName),
-            field: text(run.sequence.field),
+            sceneId: text(run.sequence.sceneId),
             characterKey: text(run.sequence.characterKey),
             characterIndex: finite(run.sequence.characterIndex),
             sceneIndex: finite(run.sequence.sceneIndex),
@@ -83,6 +87,8 @@ regional: run.regional === true,
             candidates: finite(run.sequence.candidates),
             total: finite(run.sequence.total),
         } } : {}),
+        // the sequence scene a trial run in edit mode was made for (sequenceEdit.js)
+        ...(text(run.sequenceScene) ? { sequenceScene: text(run.sequenceScene) } : {}),
     };
 }
 

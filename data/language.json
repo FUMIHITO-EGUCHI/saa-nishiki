@@ -17,7 +17,6 @@
         "api_model_scheduler": "Scheduler",
         "api_model_file_select": "Model list",
         "api_model_type": "Method",
-
         "api_difussion_vae_model": "Diffusion VAE",
         "api_ckpt_vae_model": "SDXL VAE",
         "api_vae_sdxl_override": "SDXL VAE Override",
@@ -26,7 +25,6 @@
         "api_text_encoder": "CLIP Text Encoder",
         "api_text_encoder_type": "Type",
         "api_text_encoder_device": "Device",
-
         "vpred": "Vpred",
         "vpred_auto": "Auto",
         "vpred_on": "On",
@@ -52,9 +50,7 @@
         "api_neg_prompt_right": "Negative (right)",
         "ptompt_textbox_autoresize": "Auto line height",
         "ptompt_textbox_fontsize": "Prompt font size",
-
         "batch_generate_rule": "AI rule for Batch generate: ",
-
         "regional_condition": "Regional Condition",
         "regional_swap": "Swap Character",
         "regional_custom_prompt": "Common Prompt (Both Side Header)",
@@ -73,7 +69,6 @@
         "regional_option_right": "Right Area",
         "regional_forge_neo": "Note: Regional Condition for Forge Neo need [color=CornflowerBlue]regional_forge_neo[/color]. \n\nBased on document from [color=CornflowerBlue]sd-forge-couple[/color], it only supports [color=CornflowerBlue]Anima models[/color] in [color=CornflowerBlue]Diffusion[/color] mode.\n\nClick to copy the Plugin download link:\n[color=CornflowerBlue]https://github.com/Haoming02/sd-forge-couple[/color]",
         "regional_forge_neo_link": "https://github.com/Haoming02/sd-forge-couple",
-
         "title_settings_save": "Save Settings",
         "title_settings_load": "Load Settings",
         "title_settings_delete": "Delete Settings",
@@ -81,7 +76,6 @@
         "title_global_refresh": "Refresh Page",
         "title_swap_layout": "Right to left",
         "title_theme": "Toggle Theme",
-
         "api_image_landscape": "Landscape",
         "ai_prompt": "AI Prompt",
         "prompt_ban": "Prompt & Tagger Ban List (Exclude - \"tag\", Replace - \"tag1:tag2\")",
@@ -161,19 +155,12 @@
         "ui_comfy_proc_failed": "failed",
         "ui_comfy_proc_confirm_busy": "ComfyUI has {0} job(s) running or queued. Stop it anyway? That work is lost.",
         "ui_comfy_proc_keep": "Keep running",
-
         "ui_comfy_proc_confirm_unverified": "The ComfyUI port is held by {0}, which does not answer as ComfyUI. End that process anyway?",
-
         "ui_comfy_proc_leave": "Leave it alone",
-
         "ui_comfy_approve_title": "ComfyUI launch command",
-
         "ui_comfy_approve_message": "Run this ComfyUI launch command?",
-
         "ui_comfy_approve_detail": "{0}\n\nSAA runs it for Start, Restart and \"Start ComfyUI with SAA\", and asks once for each new command. Allow it only if you set this command yourself.",
-
         "ui_comfy_approve_run": "Run",
-
         "ui_comfy_approve_cancel": "Cancel",
         "ui_comfy_proc_note": "Launch command: a start script (.ps1 / .cmd; a path with spaces in double quotes) or python with the full path of main.py and its arguments. SAA asks once before it runs a new command. Start runs it and waits for the backend on the ComfyUI address above (loopback only); with Start ComfyUI with SAA on, it also runs at launch when the backend does not answer. Stop (also during a start) unloads the models, then ends the ComfyUI holding that port; a program that does not answer as ComfyUI is only ended after SAA asks about it by name.",
         "ui_pod_start": "Start pod",
@@ -282,7 +269,7 @@
         "ai_prose_fail_refusal": "the LLM declined to write it",
         "ai_prose_fail_refs": "the paragraph still named a character by \"@n\"",
         "ai_prose_fail_no_fields": "the last run left no fields to write from",
-        "ai_prose_fail_student": "the student model could not be started (Settings \u203a AI)",
+        "ai_prose_fail_student": "the student model could not be started (Settings › AI)",
         "ai_prose_not_retried": "not asked again in this run",
         "ai_prose_unknown_refs": "unknown cast references",
         "generate_prose": "Writing the prompt as a paragraph…",
@@ -291,21 +278,17 @@
         "image_info_to_generate": "Send image info to generator",
         "scroll_to_last": "Scroll to latest",
         "keep_gallery": "Keep Gallery",
-
         "model_path_comfyui": "ComfyUI checkpoints folder",
         "image_save_path_comfyui": "ComfyUI output folder path prefix (Default: %date)",
         "model_path_webui": "WebUI checkpoints folder",
         "image_save_path_webui": "WebUI output folder path prefix (Default: [date])",
         "image_save_embed_character_name": "Character name in folder prefix",
-
         "webui_auth": "WebUI API Auth (Username:Password)",
         "webui_auth_enable": "Enable",
-
         "model_filter": "Enable model name filter",
         "model_filter_keyword": "Checkpoint Model filter",
         "model_filter_keyword_diffusion": "Diffusion Model filter (Set to * to disable this filter)",
         "search_modelinsubfolder": "Search model subfolder",
-
         "size_limit_checkpoint": "Max size per side (Checkpoint)",
         "size_limit_diffusion": "Max size per side (Diffusion)",
         "api_hf_enable": "Enable Hires Fix",
@@ -317,12 +300,10 @@
         "api_hf_random_seed": "HF Random Seed (ComfyUI)",
         "api_hf_steps": "HF Steps",
         "api_hf_message": "<span>[Width x Height x Scale] {0} x {1} x {2} = {3} x {4} = {5}M</span>",
-
         "api_refiner_enable": "Enable Refiner",
         "api_refiner_model": "Refiner Model",
         "api_refiner_ratio": "Ratio",
         "api_refiner_add_noise": "Refiner Add Noise(ComfyUI)",
-
         "api_controlnet_enable": "Enable ControlNet",
         "api_controlnet_pre_process_model": "Pre-Process",
         "api_controlnet_pre_process_resolution": "Pre-Process Output Resolution (N⭐64)",
@@ -335,7 +316,6 @@
         "message_controlnet_custom_overlay": "Right click to copy image",
         "message_controlnet_comfyui": "Note: ControlNet/IP Adapter for ComfyUI requires [color=CornflowerBlue]ComfyUI_Mira version 0.4.9.6 or above.[/color] Additionally, [color=CornflowerBlue]comfyui_controlnet_aux[/color], [color=CornflowerBlue]comfyui-art-venture[/color] and [color=CornflowerBlue]ComfyUI_IPAdapter_plus[/color] must be installed. Click to copy the Custom Node download link.\n\n[color=CornflowerBlue]https://github.com/Fannovel16/comfyui_controlnet_aux[/color]\n[color=CornflowerBlue]https://github.com/sipherxyz/comfyui-art-venture[/color]\n[color=CornflowerBlue]https://github.com/cubiq/ComfyUI_IPAdapter_plus[/color]",
         "message_controlnet_comfyui_link": "https://github.com/Fannovel16/comfyui_controlnet_aux\nhttps://github.com/sipherxyz/comfyui-art-venture",
-
         "api_adetailer_enable": "Enable ADetailer",
         "api_adetailer_model": "ADetailer Model_Select",
         "api_adetailer_prompt": "ADetailer Prompt",
@@ -347,33 +327,25 @@
         "api_adetailer_mask_merge_invert": "Forge Neo  -  Mask merge mode\nComfyUI  -  sam_detection_hint",
         "api_adetailer_mask_blur": "Forge Neo  -  Inpaint mask blur (0-64)\nComfyUI  -  feather (0-100)",
         "api_adetailer_denoise": "Forge Neo  -  Inpaint denoising strength (0~1)\nComfyUI  -  denoise (0~1)",
-
         "message_adetailer_comfyui": "Note: ADetailer for ComfyUI requires [color=CornflowerBlue]Impact Pack[/color] and [color=CornflowerBlue]Impact Subpack[/color]. Click to copy the Plugin download link.\n\n[color=CornflowerBlue]https://github.com/ltdrdata/ComfyUI-Impact-Pack[/color]\n[color=CornflowerBlue]https://github.com/ltdrdata/ComfyUI-Impact-Subpack[/color]",
         "message_adetailer_comfyui_link": "https://github.com/ltdrdata/ComfyUI-Impact-Pack\nhttps://github.com/ltdrdata/ComfyUI-Impact-Subpack",
         "message_adetailer_webui": "Note: ADetailer for Forge Neo requires [color=CornflowerBlue]ADetailer Neo[/color].\nClick to copy the Plugin download link.\n\n[color=CornflowerBlue]https://github.com/Haoming02/ADetailer-Neo[/color]",
         "message_adetailer_webui_link": "https://github.com/Haoming02/ADetailer-Neo",
-
         "message_mira_itu_only_comfyui": "The Mira Image Tiled Upscaler feature, which relies on vision models, is applicable only to ComfyUI.",
         "message_mira_itu_do_not_use_latent_upscale": "Latent tiled upscale may lead to abnormal results. Please select a different upscaling model",
         "message_mira_itu_need_tagger": "Need a Tagger model in ComfyUI model\\onnx folder.",
         "message_mira_itu_requirements": "\nNote: Mira Image Tiled Upscaler requires [color=CornflowerBlue]Mira 0.5.6.0 and MiraSubPack[/color]   Check [color=CornflowerBlue]https://github.com/mirabarukaso/ComfyUI_MiraSubPack[/color]\nThere are many settings, but only those with ⭐ are necessary to pay attention to, other settings can be adjusted as needed.\nIf you using pre-bake for Reference mode, it is recommended to set Overall Denoise⭐ to 0.6~0.8 for better results.",
-
-        "run_button": "Create Image",
-        "run_button_paused": "Create Image (Paused)",
-        "run_random_button": "Batch (Random)",
-        "run_same_button": "Batch (Last)",
+        "run_button": "Generate",
+        "run_button_paused": "Generate (Paused)",
         "run_skip_button": "Cancel follow-up",
         "run_cancel_button": "Cancel and Clear Queue",
         "save_settings_button": "Save Settings",
         "load_settings_button": "Load Settings",
-
         "gr_error_creating_image": "[Error] Got error from Image API:\n[color=red]{0}[/color]\nCheck your [color=DodgerBlue]{1}[/color] console logs.",
         "ai_system_prompt": "You are a Stable Diffusion prompt writer. Follow these guidelines to generate prompts:\n1.Prohibited keywords: Do not use any gender-related words such as \"man,\" \"woman,\" \"boy,\" \"girl,\" \"person,\" or similar terms.\n2.Format: Provide 8 to 16 keywords separated by commas, keeping the prompt concise.\n3.Content focus: Concentrate solely on visual elements of the image; avoid abstract concepts, art commentary, or descriptions of intent.\n4.Keyword categories: Ensure the prompt includes keywords from the following categories:\n    - Theme or style (e.g., cyberpunk, fantasy, wasteland)\n    - Location or scene (e.g., back alley, forest, street)\n    - Visual elements or atmosphere (e.g., neon lights, fog, ruined)\n    - Camera angle or composition (e.g., front view, side view, close-up)\n    - Action or expression (e.g., standing, jumping, smirk, calm)\n    - Environmental details (e.g., graffiti, trees)\n    - Time of day or lighting (e.g., sunny day, night, golden hour)\n    - Additional effects (e.g., depth of field, blurry background)\n5.Creativity and coherence: Select keywords that are diverse and creative, forming a vivid and coherent scene.\n6.User input: Incorporate the exact keywords from the user's query into the prompt where appropriate.\n7.Emphasis handling: If the user emphasizes a particular aspect, you may increase the number of keywords in that category (up to 6), but ensure the total number of keywords remains between 8 and 16.\n8.Character description: You may describe actions and expressions but must not mention specific character traits (such as gender or age). Words that imply a character (e.g., \"warrior\") are allowed as long as they do not violate the prohibited keywords.\n9.Output: Provide the answer as a single line of comma-separated keywords in English, do not include any responses other than keywords.\n10. Output Example:nature style, eating, forest, meadow, sunlight, vibrant colors, close-up, detailed, serene, peaceful, green foliage, wild berries, natural textures, soft focus, shallow depth of field, tranquil atmosphere\nPrompt for the following theme:",
-
         "overlay_title": "Now generating...",
         "overlay_te": "Elapsed time:",
         "overlay_sec": "seconds",
-
         "generate_ai": "Wait for AI promot ...",
         "generate_warmup": "Creating prompts {0}/{1}……",
         "generate_start": "{0}\n{1}",
@@ -381,7 +353,6 @@
         "generate_normal": "{0}",
         "generate_regional": "Regional: {0}",
         "generate_controlnet_process": "Processing ControlNet...\n",
-
         "lora_info": "LoRA info",
         "lora_trigger_words": "Trigger Words (Top 10): ",
         "lora_metadata": "Metadata:",
@@ -389,15 +360,12 @@
         "lora_model_strength": "Model strength",
         "lora_clip_strength": "CLIP strength",
         "lora_enable_title": "Method: ALL,Base,HiFix,OFF",
-
         "jsonlist_name": "Name",
         "jsonlist_strength": "Strength",
         "json_regional": "Position for Regional Condition",
         "jsonlist_position": "Insert Position: Begin Of Prompts; Begin Of Character; End Of Character; End Of Prompts; Off",
-
         "image_info_drag_hint_top": "Show Image Info",
         "image_info_drag_hint_bottom": "Mira Image Tiled Upscaler",
-
         "image_info_add_controlnet": "Add ControlNet",
         "image_info_add_controlnet_processing": "Processing...",
         "image_info_add_controlnet_added": "Added",
@@ -407,7 +375,6 @@
         "image_info_copy_metadata": "Copy Metadata",
         "image_info_copy_metadata_copied": "Copied",
         "image_info_show_metadata_buttons": "Show Metadata",
-
         "image_info_mira_itu_button": "Tiled-Upscale",
         "image_info_mira_itu_local_tagger_button": "SAA Tagger",
         "image_info_mira_itu_button_processing": "Queued...",
@@ -435,14 +402,12 @@
         "image_info_mira_itu_target_resolution": "Estimated Resolution:",
         "image_info_mira_itu_auto_max_deviation": "Auto max deviation:",
         "image_info_mira_itu_auto_tile_target": "Estimate Tiles:",
-
         "image_tagger_run": "Run Tagger",
         "image_tagger_run_no_model": "No Model",
         "image_tagger_run_tagged": "Tagged",
         "image_tagger_run_no_tag": "No Tag",
         "image_tagger_run_error": "Error",
         "image_tagger_run_processing": "Processing...",
-
         "right_menu_copy_image": "Copy Image",
         "right_menu_copy_image_metadata": "Copy Metadata",
         "right_menu_image_info": "Open in Image Info",
@@ -469,22 +434,17 @@
         "right_menu_copy_field": "Copy field text",
         "right_menu_clear_field": "Clear field",
         "right_menu_no_target": "(no other field)",
-
         "save_settings_title": "Save Settings file\nPlease enter the name of the file to be saved.",
         "save_settings_success": "{0} Saved!",
         "save_settings_failed": "Save {0} failed!",
-
         "delete_settings_title": "Delete settings file: {0}.json\nAre you sure you want to delete this file?",
         "delete_settings_success": "Settings file {0}.json deleted",
         "delete_settings_failed": "Failed to delete settings file: {0}.json",
-
         "saac_http_connection": "[Warning] Non-Secure Connection\n\nConnected using HTTP/WebSocket. For enhanced security, ensure the SAA server is configured with valid SSL certificates.",
         "saac_disconnected": "[color=red][Error] Disconnected from SAA...[/color]\nThe system will automatically attempt to reconnect when you select character or generate image.",
         "saac_macos_clipboard": "\n[color=red]Clipboard API not working[/color]\nDue to HTTP protocol security restrictions, the clipboard cannot be used in MacOS and iOS environments.\nPlease copy the relevant information manually:\n\n{0}",
         "saac_macos_copy_image": "\n[color=red]Failed to copy image to clipboard. If this is a MiraITU image, it may be because the image is too big to copy. Try copying it again.\nClipboard API not working[/color]\nDue to HTTP protocol security restrictions, the clipboard cannot be used in MacOS and iOS environments.\n\nFor MacOS, just drag the image to your local folder, or for iOS hold on image then select \"Save to Photo\"",
-
         "thumb_select": "thumbList",
-
         "favlist_mismach": "Conflict in favourite character lists. Please choose how to proceed:\nOld list: {0} with {1} characters\nNew list: {2} with {3} characters\n\nNote: After merging or overwriting, you must manually save the settings file. Otherwise, the new favourite list will NOT be saved.\n\n",
         "favlist_title_merge": "Merge {0} and {1} with {2} characters\n",
         "favlist_title_overwrite": "Overwrite using the old list in {0}.json\n",
@@ -492,7 +452,6 @@
         "favlist_merge": "Merge",
         "favlist_overwrite": "Overwrite",
         "favlist_replace": "Replace",
-
         "setup_yes": "Yes",
         "setup_no": "No",
         "setup_ok": "Okay",
@@ -505,19 +464,16 @@
         "setup_model_filter_keyword": "Please set the filter keywords for Checkpoint models.\nIf multiple keywords are needed, separate them with commas (,).",
         "setup_model_filter_keyword_diffusion": "Please set the filter keywords for Diffusion models.\nIf multiple keywords are needed, separate them with commas (,).",
         "setup_search_modelinsubfolder": "Search for model files in subfolders of the model folder.",
-
         "setup_enable_saac": "Do you want to enable the SAA Client service?",
         "setup_saac_addr": "Please enter the SAAC service listening address, default is to listen on all local addresses",
         "setup_saac_port": "Please enter the SAAC service listening port, port number must be greater than 10000",
         "setup_saac_start": "SAAC service will start automatically when SAA launched next time.\nIf you want to modify the SAAC service, please modify the settings.json file and set \"ws_service/ws_addr/ws_addr\".\n\nListening address: {0}:{1}",
-
         "setup_remote_ai_interface": "Configure the AI language model interface (None to disable, Remote for a cloud API, Local for local, Pod for a Runpod pod).",
         "setup_remote_ai_addr": "Please enter the API address for the remote language model.",
         "setup_remote_ai_model": "Please enter the name of the remote language model.",
         "setup_remote_ai_api_key": "Please enter your API key for the remote language model.",
         "setup_local_ai_addr": "Please enter the API address for your local language model.",
         "setup_pod_ai_addr": "Please enter the Runpod pod endpoint for the language model.",
-
         "setup_done": "Initial setup is complete, and the configuration has been saved as settings.json.\nIf you are using ComfyUI, please enable Dev Mode in the settings.\nIf you are using WebUI, modify webui-user.bat and add COMMANDLINE_ARGS= --api.\n\nImportant: Please ensure that the HighRes Fix model has been selected correctly. The initial default configuration may not select the correct model.",
         "setup_skip_wizard": "Skip following setup?",
         "title_generation_settings": "Generation Settings",
@@ -581,13 +537,6 @@
         "tag_ui_cancel": "Cancel",
         "tag_ui_apply": "Apply",
         "tag_ui_apply_count": "Apply ({0})",
-        "tag_ui_selected": "Selected",
-        "tag_ui_selected_all": "Show every selected item",
-        "tag_ui_selected_none": "None",
-        "tag_ui_clear_selection": "Clear",
-        "tag_ui_fit_window": "Fit the window",
-        "tag_ui_sort": "Sort",
-        "tag_ui_tile_size": "Tile size",
         "tag_ui_selected": "Selected",
         "tag_ui_selected_all": "Show every selected item",
         "tag_ui_selected_none": "None",
@@ -711,19 +660,6 @@
         "parts_origin_user": "yours",
         "parts_edit_short": "Edit",
         "parts_sample_short": "Sample",
-        "parts_no_sample_yet": "No sample yet",
-        "parts_sort_name": "Name",
-        "parts_sort_newest": "Newest",
-        "parts_tile_size_s": "Small tiles",
-        "parts_tile_size_m": "Medium tiles",
-        "parts_tile_size_l": "Large tiles",
-        "parts_sends_as": "Sends as",
-        "parts_add_to_selection": "Add to selection",
-        "parts_remove_from_selection": "Remove from selection",
-        "parts_origin_starter": "starter",
-        "parts_origin_user": "yours",
-        "parts_edit_short": "Edit",
-        "parts_sample_short": "Sample",
         "parts_no_sample_for": "None for {0}",
         "parts_not_generated": "not generated",
         "parts_used_in_rows": "Used in {0} rows — saving changes them all",
@@ -826,7 +762,7 @@
         "ui_prose_writer_label": "Writer",
         "ui_prose_writer_llm": "LLM",
         "ui_prose_writer_student": "Student",
-        "ui_prose_student_unavailable": "student model not available: set its server and model in Settings \u203a AI",
+        "ui_prose_student_unavailable": "student model not available: set its server and model in Settings › AI",
         "ui_prose_regenerate": "Regenerate",
         "ui_prose_revert": "Revert",
         "ui_prose_empty": "The paragraph written for the last image appears here. Edit it and the next image with the same fields sends your text.",
@@ -846,9 +782,6 @@
         "ui_run_steps_cfg": "Steps · CFG",
         "ui_run_sampler": "Sampler · Scheduler",
         "ui_run_batch": "Batch",
-        "ui_run_batch_menu": "Batch",
-        "ui_run_expand_weights": "Expand weights per image…",
-        "ui_run_sequence": "Sequence…",
         "seq_title": "Sequence",
         "seq_run": "Run",
         "seq_save": "Save sequence",
@@ -1005,7 +938,16 @@
         "ui_history_redo": "Redo",
         "ui_history_undone": "Undo complete",
         "ui_history_redone": "Redo complete",
-        "ui_settings_open_folder": "Open settings folder"
+        "ui_settings_open_folder": "Open settings folder",
+        "ui_run_mode_single": "Single",
+        "ui_run_mode_batch": "Batch",
+        "ui_run_mode_sequence": "Sequence",
+        "ui_run_sample": "Sample",
+        "ui_run_sequence_run": "Run",
+        "ui_lock_on": "Locked: keeps what it drew. Click to draw anew",
+        "ui_lock_off": "Lock what it drew",
+        "ui_run_pattern": "Pattern",
+        "seq_done": "Done"
     },
     "zh-CN": {
         "language": "中文（简体）",
@@ -1025,7 +967,6 @@
         "api_model_scheduler": "调度器",
         "api_model_file_select": "模型选择",
         "api_model_type": "方案选择",
-
         "api_difussion_vae_model": "Diffusion VAE",
         "api_ckpt_vae_model": "Checkpoint VAE",
         "api_vae_sdxl_override": "SDXL VAE覆盖",
@@ -1034,7 +975,6 @@
         "api_text_encoder": "CLIP 文本编码器",
         "api_text_encoder_type": "类型",
         "api_text_encoder_device": "设备",
-
         "vpred": "V预测",
         "vpred_auto": "自动",
         "vpred_on": "启动",
@@ -1060,9 +1000,7 @@
         "api_neg_prompt_right": "负面提示词（右侧）",
         "ptompt_textbox_autoresize": "自动调整行数",
         "ptompt_textbox_fontsize": "提示词字体尺寸",
-
         "batch_generate_rule": "AI填词规则：",
-
         "regional_condition": "双人分区采样",
         "regional_swap": "交换角色位置",
         "regional_custom_prompt": "通用提示词（两侧最前）",
@@ -1081,7 +1019,6 @@
         "regional_option_right": "右区域",
         "regional_forge_neo": "注意，分区采样Forge Neo需要插件 [color=CornflowerBlue]regional_forge_neo[/color]\n\n[color=CornflowerBlue]sd-forge-couple[/color]文档显示，[color=CornflowerBlue]Diffusion[/color]模式中只有[color=CornflowerBlue] Anima模型 [/color]支持分区采样。\n\n点击复制\n[color=CornflowerBlue]https://github.com/Haoming02/sd-forge-couple[/color]",
         "regional_forge_neo_link": "https://github.com/Haoming02/sd-forge-couple",
-
         "title_settings_save": "保存设置",
         "title_settings_load": "读取设置",
         "title_settings_delete": "删除设置",
@@ -1089,7 +1026,6 @@
         "title_global_refresh": "刷新页面",
         "title_swap_layout": "切换左右",
         "title_theme": "切换主题",
-
         "api_image_landscape": "宽高互换",
         "ai_prompt": "AI提示词（用于生成填词）",
         "prompt_ban": "提示词、反推黑名单（排除 - \"tag\"，替换 - \"tag1:tag2\"）",
@@ -1151,19 +1087,12 @@
         "ui_comfy_proc_failed": "失败",
         "ui_comfy_proc_confirm_busy": "ComfyUI 有 {0} 个任务正在运行或排队。仍要停止吗？这些任务将丢失。",
         "ui_comfy_proc_keep": "继续运行",
-
         "ui_comfy_proc_confirm_unverified": "ComfyUI 端口被 {0} 占用，但它不以 ComfyUI 身份响应。仍要结束该进程吗？",
-
         "ui_comfy_proc_leave": "保持不动",
-
         "ui_comfy_approve_title": "ComfyUI 启动命令",
-
         "ui_comfy_approve_message": "要运行这条 ComfyUI 启动命令吗？",
-
         "ui_comfy_approve_detail": "{0}\n\n启动、重启和“随 SAA 启动 ComfyUI”都会运行它，每条新命令只询问一次。只有这条命令是你自己设置的才允许运行。",
-
         "ui_comfy_approve_run": "运行",
-
         "ui_comfy_approve_cancel": "取消",
         "ui_comfy_proc_note": "启动命令：启动脚本（.ps1 / .cmd；路径含空格时用双引号括起）或带参数的 python 加 main.py 的完整路径。首次运行新命令前 SAA 会询问一次。启动会执行该命令并等待上方 ComfyUI 地址（仅限本机回环地址）响应；开启“随 SAA 启动 ComfyUI”后，SAA 启动时若后端无响应也会执行。停止（启动过程中也可）会先卸载模型，再结束占用该端口的 ComfyUI；不以 ComfyUI 身份响应的程序只有在 SAA 询问并确认后才会被结束。",
         "ui_pod_start": "启动Pod",
@@ -1290,7 +1219,7 @@
         "ai_prose_fail_refusal": "LLM 拒绝了改写",
         "ai_prose_fail_refs": "段落中仍用 \"@n\" 指代角色",
         "ai_prose_fail_no_fields": "上一次运行没有留下可改写的字段",
-        "ai_prose_fail_student": "学生模型无法启动（设置 \u203a AI）",
+        "ai_prose_fail_student": "学生模型无法启动（设置 › AI）",
         "ai_prose_not_retried": "本次运行不再重试",
         "ai_prose_unknown_refs": "未知的角色引用",
         "generate_prose": "正在把提示词改写为段落……",
@@ -1304,15 +1233,12 @@
         "model_path_webui": "WebUI 模型路径",
         "image_save_path_webui": "WebUI 图片输出路径 (默认: [date])",
         "image_save_embed_character_name": "文件夹前缀加角色名",
-
         "webui_auth": "WebUI API认证 (用户名:密码)",
         "webui_auth_enable": "启用",
-
         "model_filter": "启用模型名称过滤",
         "model_filter_keyword": "Checkpoint 模型名称过滤规则",
         "model_filter_keyword_diffusion": "Diffusion 模型名称过滤规则 (设置为 * 表示关闭此过滤)",
         "search_modelinsubfolder": "搜索模型文件夹子目录",
-
         "size_limit_checkpoint": "单边最大尺寸 (Checkpoint)",
         "size_limit_diffusion": "单边最大尺寸 (Diffusion)",
         "api_hf_enable": "启用高清修复",
@@ -1324,12 +1250,10 @@
         "api_hf_random_seed": "高修随机种子(ComfyUI)",
         "api_hf_steps": "高修步数",
         "api_hf_message": "<span>[宽 x 高 x 高修倍率] {0} x {1} x {2} = {3} x {4} = {5}M</span>",
-
         "api_refiner_enable": "启用切换降噪 Refiner",
         "api_refiner_model": "切换降噪模型",
         "api_refiner_ratio": "比例",
         "api_refiner_add_noise": "切换降噪添加噪点(ComfyUI)",
-
         "api_controlnet_enable": "启用 ControlNet",
         "api_controlnet_pre_process": "启用预处理",
         "api_controlnet_pre_process_model": "预处理模型",
@@ -1343,7 +1267,6 @@
         "message_controlnet_custom_overlay": "右键点击图片复制",
         "message_controlnet_comfyui": "注意：ControlNet ComryUI 需要[color=CornflowerBlue]ComfyUI_Mira版本高于0.4.9.6[/color]，同时还要装有[color=CornflowerBlue]comfyui_controlnet_aux[/color]和[color=CornflowerBlue]comfyui-art-venture[/color]和[color=CornflowerBlue]ComfyUI_IPAdapter_plus[/color]，点击复制Node下载连接。\n\n[color=CornflowerBlue]https://github.com/Fannovel16/comfyui_controlnet_aux[/color]\n[color=CornflowerBlue]https://github.com/sipherxyz/comfyui-art-venture[/color]\n[color=CornflowerBlue]https://github.com/cubiq/ComfyUI_IPAdapter_plus[/color]",
         "message_controlnet_comfyui_link": "https://github.com/Fannovel16/comfyui_controlnet_aux\nhttps://github.com/sipherxyz/comfyui-art-venture",
-
         "api_adetailer_enable": "启用 ADetailer",
         "api_adetailer_model": "ADetailer 模型选择",
         "api_adetailer_prompt": "提示词",
@@ -1355,33 +1278,25 @@
         "api_adetailer_mask_merge_invert": "Forge Neo  -  蒙版合并模式\nComfyUI  -  sam_detection_hint",
         "api_adetailer_mask_blur": "Forge Neo  -  重绘蒙版模糊度 (0-64)\nComfyUI  -  feather (0-100)",
         "api_adetailer_denoise": "Forge Neo",
-
         "message_adetailer_comfyui": "注意：ADetailer ComfyUI需要插件[color=CornflowerBlue]Impact Pack[/color]和[color=CornflowerBlue]Impact Subpack[/color]，点击复制\n\n[color=CornflowerBlue]https://github.com/ltdrdata/ComfyUI-Impact-Pack[/color]\n[color=CornflowerBlue]https://github.com/ltdrdata/ComfyUI-Impact-Subpack[/color]",
         "message_adetailer_comfyui_link": "https://github.com/ltdrdata/ComfyUI-Impact-Pack\nhttps://github.com/ltdrdata/ComfyUI-Impact-Subpack",
         "message_adetailer_webui": "注意：ADetailer Forge Neo需要插件 [color=CornflowerBlue]ADetailer Neo[/color]，点击复制\n\n[color=CornflowerBlue]https://github.com/Haoming02/ADetailer-Neo[/color]",
         "message_adetailer_webui_link": "https://github.com/Haoming02/ADetailer-Neo",
-
         "message_mira_itu_only_comfyui": "Mira ITU 仅适用于 ComfyUI",
         "message_mira_itu_do_not_use_latent_upscale": "Latent分块放大会导致异常结果，请选择其他放大模型",
         "message_mira_itu_need_tagger": "ComfyUI model\\onnx 目录内未找到Tagger模型",
         "message_mira_itu_requirements": "\n注意：Mira ITU 需要插件 [color=CornflowerBlue]Mira 0.5.6.0 & MiraSubPack[/color]  参考：[color=CornflowerBlue]https://github.com/mirabarukaso/ComfyUI_MiraSubPack[/color]\n设置较多，但只有带有⭐的是必须要关注的，其他的设置项可以根据需要调整。\n如果你使用预烘焙来进行参考模式，建议将“整体降噪⭐”设置为 0.6~0.8 以获得更好的效果。",
-
-        "run_button": "单图生成",
-        "run_button_paused": "单图生成（暂停）",
-        "run_random_button": "批量（随机）",
-        "run_same_button": "批量（上次）",
+        "run_button": "生成",
+        "run_button_paused": "生成（暂停）",
         "run_skip_button": "清除后续队列",
         "run_cancel_button": "取消并清除队列",
         "save_settings_button": "保存设置",
         "load_settings_button": "载入设置",
-
         "gr_error_creating_image": "错误：生成图片返回故障信息：\n[color=red]{0}[/color]\n请检查[color=DodgerBlue]{1}[/color]控制台输出的日志。",
         "ai_system_prompt": "你是一个Stable Diffusion提示词编写者，按照以下指南生成提示词：\n1.禁止关键词： 不得使用任何性别相关词，如“man”、“woman”、“boy”、“girl”、“person”或类似词。\n2.格式： 提供8到16个关键词，用逗号分隔，保持简洁。\n3.内容重点： 仅关注图像的可视元素，避免抽象概念、艺术评论或意图描述。\n4.关键词类别： 确保提示词涵盖以下类别：\n    - 主题或风格 (e.g., cyberpunk, fantasy, wasteland)\n    - 地点或场景 (e.g., back alley, forest, street)\n    - 可视元素或氛围 (e.g., neon lights, fog, ruined)\n    - 镜头视角或构图 (e.g., front view, side view, close-up)\n    - 动作姿势或表情情绪 (e.g., standing, jumping, smirk, calm)\n    - 环境细节 (e.g., graffiti, trees)\n    - 时间或光线 (e.g., sunny day, night, golden hour)\n    - 额外效果 (e.g., depth of field, blurry background)\n5.创意与连贯性： 关键词选择需多样且富有创意，形成一个生动连贯的场景。\n6.用户输入： 将用户查询中的关键词逐字纳入，适当融入提示词。\n7.强调处理： 若用户强调某方面，可增加该类别关键词（最多6个），但总数保持在8到16个。\n8.角色描述： 可描述动作和表情，但不得提及角色特征（如性别、年龄）。允许使用暗示角色的词（如warrior），只要不涉及禁止词。\n9.输出： 仅以单行逗号分隔的关键词形式且必须以英文回答，不要加入关键词以外的任何回复。\n10.输出示例：nature style, eating, forest, meadow, sunlight, vibrant colors, close-up, detailed, serene, peaceful, green foliage, wild berries, natural textures, soft focus, shallow depth of field, tranquil atmosphere\nPrompt for the following theme:",
-
         "overlay_title": "后端正在生成……",
         "overlay_te": "经过时间：",
         "overlay_sec": "秒",
-
         "generate_ai": "等待AI返回题词……",
         "generate_warmup": "正在创建提示词 {0}/{1}……",
         "generate_start": "{0}\n{1}",
@@ -1389,7 +1304,6 @@
         "generate_normal": "{0}",
         "generate_regional": "分区：{0}",
         "generate_controlnet_process": "ControlNet处理中……\n",
-
         "lora_info": "LoRA信息：",
         "lora_trigger_words": "触发词（热度前10）：",
         "lora_metadata": "元数据：",
@@ -1397,15 +1311,12 @@
         "lora_model_strength": "Model强度",
         "lora_clip_strength": "CLIP强度",
         "lora_enable_title": "使用方法：开启ALL,基础Base,高修HiFix,关闭OFF",
-
         "jsonlist_name": "名称",
         "jsonlist_strength": "强度",
         "json_regional": "分区逻辑：Both：双侧；Left：左侧；Right：右侧",
         "jsonlist_position": "词条插入逻辑：BOP：最开头；BOC：角色前；EOC：角色后；EOP：最末尾；OFF：关闭",
-
         "image_info_drag_hint_top": "查看图片信息",
         "image_info_drag_hint_bottom": "MiraITU 分区放大",
-
         "image_info_add_controlnet": "添加ControlNet",
         "image_info_add_controlnet_processing": "处理中……",
         "image_info_add_controlnet_added": "已添加",
@@ -1415,7 +1326,6 @@
         "image_info_copy_metadata": "复制元数据",
         "image_info_copy_metadata_copied": "已复制",
         "image_info_show_metadata_buttons": "显示元数据",
-
         "image_info_mira_itu_button": "分块放大",
         "image_info_mira_itu_local_tagger_button": "SAA 反推",
         "image_info_mira_itu_button_processing": "队列中...",
@@ -1443,14 +1353,12 @@
         "image_info_mira_itu_target_resolution": "推测分辨率",
         "image_info_mira_itu_auto_max_deviation": "分块调整：",
         "image_info_mira_itu_auto_tile_target": "预测分块：",
-
         "image_tagger_run": "反推标签",
         "image_tagger_run_no_model": "没有模型",
         "image_tagger_run_no_tag": "没找到标签",
         "image_tagger_run_error": "错误",
         "image_tagger_run_tagged": "已反推",
         "image_tagger_run_processing": "反推中……",
-
         "right_menu_copy_image": "复制图像",
         "right_menu_copy_image_metadata": "复制图像元数据",
         "right_menu_image_info": "在图像信息中打开",
@@ -1477,22 +1385,17 @@
         "right_menu_copy_field": "复制栏位文本",
         "right_menu_clear_field": "清空栏位",
         "right_menu_no_target": "（没有其他栏位）",
-
         "save_settings_title": "保存配置文件\n请输入要保存的文件名称：",
         "save_settings_success": "配置文件 {0} 保存成功",
         "save_settings_failed": "配置文件 {0} 保存失败",
-
         "delete_settings_title": "删除配置文件：{0}.json\n确定要删除此文件吗？",
         "delete_settings_success": "配置文件 {0}.json 删除成功",
         "delete_settings_failed": "配置文件 {0}.json 删除失败",
-
         "saac_http_connection": "非安全连接\n\n通过HTTP/WebSocket连接。为增强安全性，请确保SAA服务器已配置有效的SSL证书。",
         "saac_disconnected": "[color=red]错误：与SAA失去连接[/color]\n选择角色或生成图片时会自动尝试重连",
         "saac_macos_clipboard": "\n[color=red]剪切板API无效[/color]\n由于HTTP协议安全策略限制，剪切板在MacOS以及iOS环境中无法使用，请手动复制相关信息：\n\n{0}",
         "saac_macos_copy_image": "\n[color=red]复制图片失败：如果是MiraITU放大后的图片，可能会由于数据过大导致失败，请尝试再次进行复制。\n剪切板API无效[/color]\n由于HTTP协议安全策略限制，剪切板在MacOS以及iOS环境中无法使用。\n\nMacOS用户可以直接将图片拖拽到本地目录保存，iOS长按图片选择“保存到照片”。",
-
         "thumb_select": "角色头像",
-
         "favlist_mismach": "收藏角色列表冲突，请选择如何操作：\n旧列表：{0} 包含 {1} 个角色\n新列表：{2} 包含 {3} 个角色\n\n注意：合并与覆盖后需要手动存储配置文件，否则新列表不会保存。\n\n",
         "favlist_title_merge": "合并 {0} 与 {1} ，合并后包含{2}个角色\n",
         "favlist_title_overwrite": "覆盖，使用旧列表 {0}.json\n",
@@ -1500,7 +1403,6 @@
         "favlist_merge": "合并",
         "favlist_overwrite": "覆盖",
         "favlist_replace": "替换",
-
         "setup_yes": "是",
         "setup_no": "否",
         "setup_ok": "确定",
@@ -1513,19 +1415,16 @@
         "setup_model_filter_keyword": "请设置Checkpoint模型过滤器白名单关键字\n如果需要多个关键字，请用半角逗号隔开“,”",
         "setup_model_filter_keyword_diffusion": "请设置Diffusion模型过滤器白名单关键字\n如果需要多个关键字，请用半角逗号隔开“,”",
         "setup_search_modelinsubfolder": "是否搜索模型文件夹子目录下的模型文件",
-
         "setup_enable_saac": "是否启用SAA服务",
         "setup_saac_addr": "请输入SAAC服务监听地址，默认监听本地全部地址",
         "setup_saac_port": "请输入SAAC服务监听端口，端口号必须大于10000",
         "setup_saac_start": "SAAC服务将在下次启动SAA时自动启动。\n注意，如需修改SAAC服务设置，请修改settings.json文件中的\"ws_service/ws_addr/ws_addr\"参数。\n\n监听地址: {0}:{1}",
-
         "setup_remote_ai_interface": "设置AI语言模型接口（关闭 None,云端API Remote,本地 Local,Runpod Pod）",
         "setup_remote_ai_addr": "请输入远程语言模型API地址",
         "setup_remote_ai_model": "请输入远程语言模型名称",
         "setup_remote_ai_api_key": "请输入你的远程语言模型API密钥",
         "setup_local_ai_addr": "请输入你的本地语言模型API地址",
         "setup_pod_ai_addr": "请输入Runpod Pod的语言模型服务地址",
-
         "setup_done": "初始化设置完成，相关配置已经存储为 settings.json\n如果你使用ComfyUI，请在设置中开启Dev Mode\n如果你使用WebUI，请修改webui-user.bat，修改COMMANDLINE_ARGS= --api\n\n重要：请确认高清修复模型是否正确选择，默认的初始化配置可能无法选择正确的模型。",
         "setup_skip_wizard": "是否要跳过后续设置？",
         "title_generation_settings": "生成设置",
@@ -1589,13 +1488,6 @@
         "tag_ui_cancel": "取消",
         "tag_ui_apply": "应用",
         "tag_ui_apply_count": "应用 ({0})",
-        "tag_ui_selected": "已选",
-        "tag_ui_selected_all": "显示全部已选项",
-        "tag_ui_selected_none": "无",
-        "tag_ui_clear_selection": "清空",
-        "tag_ui_fit_window": "适应窗口",
-        "tag_ui_sort": "排序",
-        "tag_ui_tile_size": "图块大小",
         "tag_ui_selected": "已选",
         "tag_ui_selected_all": "显示全部已选项",
         "tag_ui_selected_none": "无",
@@ -1719,19 +1611,6 @@
         "parts_origin_user": "自建",
         "parts_edit_short": "编辑",
         "parts_sample_short": "示例图",
-        "parts_no_sample_yet": "尚无示例图",
-        "parts_sort_name": "名称",
-        "parts_sort_newest": "最新",
-        "parts_tile_size_s": "小图块",
-        "parts_tile_size_m": "中图块",
-        "parts_tile_size_l": "大图块",
-        "parts_sends_as": "发送为",
-        "parts_add_to_selection": "加入已选",
-        "parts_remove_from_selection": "从已选移除",
-        "parts_origin_starter": "初始部件",
-        "parts_origin_user": "自建",
-        "parts_edit_short": "编辑",
-        "parts_sample_short": "示例图",
         "parts_no_sample_for": "{0} 无示例图",
         "parts_not_generated": "未生成",
         "parts_used_in_rows": "已在 {0} 行使用 — 保存会全部更改",
@@ -1834,7 +1713,7 @@
         "ui_prose_writer_label": "写作者",
         "ui_prose_writer_llm": "LLM",
         "ui_prose_writer_student": "学生模型",
-        "ui_prose_student_unavailable": "学生模型不可用：请在 设置 \u203a AI 中指定其服务器和模型",
+        "ui_prose_student_unavailable": "学生模型不可用：请在 设置 › AI 中指定其服务器和模型",
         "ui_prose_regenerate": "重新生成",
         "ui_prose_revert": "还原",
         "ui_prose_empty": "上一张图使用的段落会显示在这里。编辑后，字段不变的下一张图将发送你的文本。",
@@ -1854,9 +1733,6 @@
         "ui_run_steps_cfg": "步数 · CFG",
         "ui_run_sampler": "采样器 · 调度器",
         "ui_run_batch": "批量",
-        "ui_run_batch_menu": "批量",
-        "ui_run_expand_weights": "按张展开权重…",
-        "ui_run_sequence": "序列…",
         "seq_title": "序列",
         "seq_run": "运行",
         "seq_save": "保存序列",
@@ -2012,6 +1888,15 @@
         "ui_history_redo": "重做",
         "ui_history_undone": "已撤销",
         "ui_history_redone": "已重做",
-        "ui_settings_open_folder": "打开设置文件夹"
+        "ui_settings_open_folder": "打开设置文件夹",
+        "ui_run_mode_single": "单张",
+        "ui_run_mode_batch": "批量",
+        "ui_run_mode_sequence": "序列",
+        "ui_run_sample": "试生成",
+        "ui_run_sequence_run": "运行",
+        "ui_lock_on": "已锁定：保留抽到的内容。点击后重新抽取",
+        "ui_lock_off": "锁定抽到的内容",
+        "ui_run_pattern": "候选",
+        "seq_done": "完成"
     }
-  }
+}

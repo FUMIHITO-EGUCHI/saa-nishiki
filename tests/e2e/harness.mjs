@@ -423,16 +423,19 @@ export async function launchApp({ settings = {}, startTimeoutMs = 90_000, starte
         setSeed(seed) { return app.setSlider('seed', seed); },
         setBatch(count) { return app.setSlider('batch', count); },
 
-        // Clicks one of the Generate buttons ('single' = one image, 'batch' = the batch
-        // count with a random character per image, 'same' = the batch count with the same
-        // character) and waits for the images: what the gallery received and what ComfyUI
-        // ran, in the order they came. A batch with a fixed seed asks whether to run
-        // anyway; the answer is yes, as a person would click.
-        async generate({ button = 'single', expectImages = 1, timeoutMs = 180_000 } = {}) {
+        // Picks a run mode ('single' = one image, 'batch' = the batch count, each drawn
+        // anew), clicks Generate and waits for the images: what the gallery received and
+        // what ComfyUI ran, in the order they came. A batch with a fixed seed asks whether
+        // to run anyway; the answer is yes, as a person would click.
+        async generate({ mode = 'single', expectImages = 1, timeoutMs = 180_000 } = {}) {
             const known = new Set(await comfy.historyIds());
             const before = await page.evaluate('globalThis.__e2e.images.length');
-            await page.evaluate(`globalThis.generate.generate_${button}.click()`);
-            if (button !== 'single') {
+            await page.evaluate(`(() => {
+                document.querySelector('.run-mode[data-mode="${mode}"]').click();
+                globalThis.generate.generate_single.click();
+                return true;
+            })()`);
+            if (mode !== 'single') {
                 const yes = '.dialog-container .dialog-button-container-yes button, .dialog-container .dialog-button-container-yes';
                 const asked = await page.waitFor(`Boolean(document.querySelector(${JSON.stringify(yes)})) || globalThis.inGenerating === true || globalThis.__e2e.images.length > ${before}`, { timeoutMs: 5000, label: 'the batch to start or ask' }).catch(() => false);
                 if (asked && await page.evaluate(`Boolean(document.querySelector(${JSON.stringify(yes)}))`)) await page.click(yes);

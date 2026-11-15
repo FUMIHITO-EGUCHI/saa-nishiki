@@ -17,7 +17,7 @@ test('shared body keeps every container the renderer looks up, in the new places
     'hires-fix-model', 'hires-fix-scale', 'hires-fix-color-transfer', 'hires-fix-denoise', 'hires-fix-steps', 'hires-fix-random-seed', 'hires-fix-resolution',
     'refiner-model', 'refiner-vpred', 'refiner-ratio', 'refiner-addnoise', 'adetailer-main', 'controlnet-main', 'add-lora-main', 'jsonlist-main', 'queue-main',
     'generate-random-seed', 'generate-width', 'generate-height', 'generate-step', 'generate-cfg', 'generate-sampler', 'generate-scheduler', 'generate-batch',
-    'generate-button-single', 'generate-button-batch', 'generate-button-same', 'generate-button-skip', 'generate-button-cancel', 'queue-autostart-generate',
+    'generate-button-single', 'run-modes', 'run-generate', 'run-sequence-go', 'generate-button-skip', 'generate-button-cancel', 'queue-autostart-generate',
     'gallery-main-main', 'gallery-main-latest', 'gallery-main-keep', 'image-infobox-main', 'gallery-thumb-main', 'generate-tag-assist', 'generate-wildcard-random',
     'model-select', 'model-type', 'global-settings-language', 'model-vpred', 'thumb-select', 'vae-sdxl', 'vae-override', 'vae-unet', 'text-encoder',
     'system-settings-api-interface', 'system-settings-api-address', 'system-settings-ai-local-address', 'system-settings-ai-refine-sysprompt', 'prompt-textbox-autoresize', 'prompt-textbox-fontsize']) {
@@ -64,7 +64,7 @@ test('AI result and preview are routed to the info panel / viewer instead of ove
 
 test('language.json carries the ui_* keys in en-US and zh-CN', () => {
   const language = JSON.parse(fs.readFileSync(path.join(root, 'data/language.json'), 'utf8'));
-  for (const key of ['ui_characters_title', 'ui_ai_mode_refine', 'ui_run_expand_weights', 'ui_settings_backend', 'ui_field_exclude', 'ui_status_no_answer']) {
+  for (const key of ['ui_characters_title', 'ui_ai_mode_refine', 'ui_run_pattern', 'ui_settings_backend', 'ui_field_exclude', 'ui_status_no_answer']) {
     assert.equal(typeof language['en-US'][key], 'string', `en-US ${key}`);
     assert.equal(typeof language['zh-CN'][key], 'string', `zh-CN ${key}`);
   }

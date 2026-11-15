@@ -70,8 +70,7 @@ export async function generateMiraITU(dataPack){
     globalThis.queueManager.attach(bannerInfo, generateData);
 
     globalThis.generate.generate_single.setClickable(true);
-    globalThis.generate.generate_batch.setClickable(true);
-    globalThis.generate.generate_same.setClickable(true);    
+    globalThis.runModes?.refresh?.();
 
     if(globalThis.globalSettings.generate_auto_start) {        
         await startQueue();        

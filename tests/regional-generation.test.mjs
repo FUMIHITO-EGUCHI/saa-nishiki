@@ -7,9 +7,8 @@ import { rememberPrompts } from '../scripts/shared/modelTypePrompts.js';
 import { jsonSlotFragment } from '../scripts/shared/jsonSlotPrompt.js';
 import { expandAll, parsePromptToCapsules } from '../scripts/renderer/components/tagCapsuleLogic.js';
 import { chainFromSettings } from '../scripts/renderer/components/tagCapsuleField.js';
-import { beginImageOverride, endImageOverride, planBatchExpansion } from '../scripts/renderer/tools/promptBatchExpansion.js';
 import { resolveQueuedAiPrompt } from '../scripts/renderer/tools/refineGenerationResult.js';
-import { createPrompt, createRegional, getPrompts } from '../scripts/renderer/generate_regional.js';
+import { createRegional, getPrompts } from '../scripts/renderer/generate_regional.js';
 import { adoptRegionalCharacters, applyPromptsForModelType, callback_myCharacterList_updateThumb, syncRegionalCharacters } from '../scripts/renderer/callbacks.js';
 
 // ---------------------------------------------------------------- stubs
@@ -112,22 +111,6 @@ test('a JSON slot fragment is the same text on both paths', () => {
     // generate.js and generate_regional.js build their fragments with this one function
     assert.equal(jsonSlotFragment('red dress', '1.0'), 'red dress, ');
     assert.equal(jsonSlotFragment('  ', '0.8'), '');
-});
-
-// ---------------------------------------------------------------- "same settings" seed
-
-test('Regional "same settings" sends the fixed slider seed, not -1', async () => {
-    stubPromptCard();
-    const last = { lastPos: 'l', lastPosColored: 'lc', lastPosR: 'r', lastPosRColored: 'rc', lastNeg: 'n', lastNegL: 'nl', lastNegR: 'nr', lastCharacter: 'A', lastImagePrefix: 'A' };
-    globalThis.generate = { seed: { getValue: () => 12345 }, ...last };
-    const fixed = await createPrompt(true, '', 'ComfyUI');
-    assert.equal(fixed.randomSeed, 12345);
-    assert.equal(fixed.positivePromptLeft, 'l');
-    assert.equal(fixed.negativePromptRight, 'nr');
-
-    globalThis.generate = { seed: { getValue: () => -1 }, ...last };
-    const random = await createPrompt(true, '', 'ComfyUI');
-    assert.ok(Number.isInteger(random.randomSeed) && random.randomSeed >= 0, `a random seed, got ${random.randomSeed}`);
 });
 
 // ---------------------------------------------------------------- regions
@@ -242,65 +225,6 @@ test('a restart, preset or undo after a model type switch adds no characters to 
     reloadSettings(settings);
     assert.deepEqual(settings.character_slots.map(slot => slot.key), ['C', 'D']);
     assert.deepEqual([settings.character_left, settings.character_right], ['A', 'B']);
-});
-
-// ---------------------------------------------------------------- "same settings" weight plans
-
-// the tag-capsule field set as planBatchExpansion / beginImageOverride read it: two plans
-// that step per image, one on Positive and one on Negative (left)
-function stubPlanFieldSet() {
-    return {
-        getBatchExpansion: () => ({ enabled: false, count: 1, variable: 2 }),
-        getPromptOverrides: imageIndex => ({
-            positive: '1girl, smile',
-            negative_left: 'blurry',
-            weights: { 'positive/smile#0': 1 + 0.1 * imageIndex, 'negative_left/blurry#0': 1 + 0.2 * imageIndex },
-            terminal: [],
-        }),
-    };
-}
-
-test('Regional "same settings" walks the weight plans instead of sending one prompt N times', async () => {
-    stubPromptCard();
-    globalThis.generate = {
-        seed: { getValue: () => 7 },
-        lastPos: '1girl, smile', lastPosColored: '', lastPosR: 'sad, smile', lastPosRColored: '',
-        lastNeg: 'lowres, blurry', lastNegL: 'lowres, blurry', lastNegR: 'lowres, bad hands',
-        lastCharacter: 'A', lastImagePrefix: 'A',
-    };
-    const fieldSet = stubPlanFieldSet();
-    const expansion = planBatchExpansion({ loops: 3 }, { fieldSet, sliderSeed: 7 });
-    const runs = [];
-    for (let loop = 0; loop < expansion.loops; loop++) {
-        beginImageOverride(expansion, loop, { fieldSet });
-        try { runs.push(await createPrompt(true, '', 'ComfyUI', loop)); } finally { endImageOverride(); }
-    }
-    assert.deepEqual(runs.map(run => run.positivePromptLeft),
-        ['1girl, smile', '1girl, (smile:1.10)', '1girl, (smile:1.20)'], 'the left prompt follows the plan');
-    assert.deepEqual(runs.map(run => run.negativePromptLeft),
-        ['lowres, blurry', 'lowres, (blurry:1.20)', 'lowres, (blurry:1.40)'], 'so does the left negative');
-    // the right side has no plan of its own: the Positive plan does not reach it
-    assert.deepEqual([...new Set(runs.map(run => run.positivePromptRight))], ['sad, smile']);
-    assert.deepEqual([...new Set(runs.map(run => run.negativePromptRight))], ['lowres, bad hands']);
-    // a fixed slider seed still pins the seed; only the weights move
-    assert.deepEqual(runs.map(run => run.randomSeed), [7, 7, 7]);
-});
-
-test('Regional "same settings" without a plan is the previous prompt, untouched', async () => {
-    stubPromptCard();
-    globalThis.generate = {
-        seed: { getValue: () => 12345 },
-        lastPos: '1girl, smile', lastPosColored: 'c', lastPosR: 'sad', lastPosRColored: 'cr',
-        lastNeg: 'lowres', lastNegL: 'lowres', lastNegR: 'lowres', lastCharacter: 'A', lastImagePrefix: 'A',
-    };
-    const expansion = planBatchExpansion({ loops: 2 }, { fieldSet: { getBatchExpansion: () => ({ enabled: false, count: 1, variable: 0 }) } });
-    beginImageOverride(expansion, 0);
-    try {
-        const run = await createPrompt(true, '', 'ComfyUI', 0);
-        assert.equal(run.positivePromptLeft, '1girl, smile');
-        assert.equal(run.negativePromptLeft, 'lowres');
-        assert.equal(run.randomSeed, 12345);
-    } finally { endImageOverride(); }
 });
 
 // ---------------------------------------------------------------- queued Refine and the side negatives

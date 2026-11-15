@@ -13,6 +13,9 @@ import { setupRightClickMenu } from '../renderer/components/myRightClickMenu.js'
 import { initWebSocket, isSecuredConnection, sendWebSocketMessage, registerCallback } from './front/wsRequest.js';
 import { flushSlots } from '../renderer/slots/slotsManager.js';
 import { set_prompt_textBox_Heights } from '../renderer/components/componentsManager.js';
+import { setupRunModes } from '../renderer/runModes.js';
+import { setupPromptLocks } from '../renderer/promptLocks.js';
+import { setupPromptLocksUi } from '../renderer/promptLocksUi.js';
 import { setupHeader, setupLeftRight, createGenerate, createPrompt, createHifixRefiner, createRegional, createAI } from '../renderer.js';
 
 // Run the init function when the DOM is fully loaded
@@ -163,6 +166,9 @@ async function init() {
         }
 
         globalThis.generate.toggleButtons = toggleButtons;
+        setupRunModes();
+        setupPromptLocks();
+        setupPromptLocksUi();
         globalThis.generate.showCancelButtons = showCancelButtons;
         globalThis.generate.queueColor1st = false;
         globalThis.generate.lastPos = '';

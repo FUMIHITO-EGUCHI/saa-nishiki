@@ -38,7 +38,7 @@ function setup({ exclude = '', muted = [], seed = 1234, autoStart = false, keepG
         webui_auth_enable: { getValue: () => 'OFF' },
         keepGallery: { getValue: () => keepGallery },
         showCancelButtons() {},
-        generate_single: button('single'), generate_batch: button('batch'), generate_same: button('same'),
+        generate_single: button('single'),
     };
     globalThis.dropdownList = { vpred: { getValue: () => 'Off' } };
     globalThis.prompt = { exclude: { getValue: () => exclude } };
@@ -88,7 +88,7 @@ test('the queued job carries the image, the upscale model and the seed on screen
         ['show', 'Now generating...', 'Elapsed time:', 'seconds'],
         ['hide', 'success', ''],
     ], 'without auto start the overlay only covers the queueing');
-    assert.deepEqual(state.clickable, [['single', true], ['batch', true], ['same', true]]);
+    assert.deepEqual(state.clickable, [['single', true]]);
 });
 
 test('a dry run says so instead of naming a target size', async () => {
