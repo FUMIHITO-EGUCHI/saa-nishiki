@@ -20,6 +20,7 @@ import { putWordsBack, takeWordsOut } from './loraWordSwitch.js';
 import { cleanAlias, defaultCell, loraFitsModel, loraLabel, promptTags, sampleWeights, samplesForModel, tagKey } from '../shared/loraCatalog.js';
 import { getPart, partLoras } from './partsClient.js';
 import { showDialog } from './components/myDialog.js';
+import { openTagPicker } from './tagSelectionModal.js';
 import { createSelectionModal } from './components/selectionModal.js';
 import {
     button, comfyInterface, currentModel, hasSamples, icon, insideSampleOverlay, modelType, number,
@@ -98,9 +99,9 @@ function setRange(entry, patch) {
     return changeLora({ action: 'set', name: entry.name, patch: { range } });
 }
 
-function wordChips(words, { onRemove = null, onAdd = null, addLabel = '' } = {}) {
+function wordChips(words, { onRemove = null } = {}) {
     const box = element('div', 'lora-words');
-    for (const word of words.active) {
+    for (const word of words) {
         const chip = element('span', 'lora-word');
         chip.append(document.createTextNode(word));
         if (onRemove) {
@@ -110,60 +111,84 @@ function wordChips(words, { onRemove = null, onAdd = null, addLabel = '' } = {})
         }
         box.append(chip);
     }
-    for (const word of words.offered ?? []) box.append(button('lora-word-offer', `+ ${word}`, () => onAdd?.(word)));
-    if (addLabel) box.append(button('lora-word-offer is-ask', addLabel, () => onAdd?.(null)));
     return box;
 }
 
 const afterRender = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
 /**
- * A LoRA's trigger words to edit: x takes one off the list, the field adds what is typed
- * (Enter or a comma), "+ word" adds a guessed one (on the panel; the card's row is kept
- * short). The prompt itself is not touched: a word is put in or taken out of it on the
- * LoRA card's row. `where` names the editor, for the field to keep the focus when the list
- * comes back.
+ * The "+ word" / "+ tag" chip at the end of a word list: it opens the tag search of the
+ * prompt rows (Choose tags), whose picks are added to `words` and handed to `save` (a word
+ * the dictionary lacks is typed there and taken with Enter, as on a row). The list comes
+ * back re-rendered, so the focus goes to the new chip of the same `where`/`role`.
+ */
+function pickChip({ label, aria, words, save, name, where, role }) {
+    const chip = button('lora-word-offer is-ask lora-word-pick', label, () => {
+        // the modal writes into a textarea: the words already there are its Selected chips
+        const proxy = document.createElement('textarea');
+        proxy.value = words.join(', ');
+        proxy.addEventListener('input', async () => {
+            const added = [...new Set(promptTags(proxy.value).map(tagKey))].filter(word => word && !words.includes(word));
+            if (added.length === 0) return;
+            await save([...words, ...added]);
+            // the list is drawn again once the catalog is read back: its new chip takes the focus
+            for (let tries = 0; tries < 30; tries++) {
+                await afterRender();
+                const again = [...document.querySelectorAll('.lora-word-pick')].find(node => node !== chip && node.dataset.lora === name && node.dataset.editor === where && node.dataset.role === role);
+                if (again) {
+                    again.focus();
+                    return;
+                }
+            }
+        });
+        openTagPicker(proxy, { favGroup: 'positive', singleTagsOnly: true, trigger: chip });
+    });
+    chip.setAttribute('aria-label', aria);
+    chip.setAttribute('aria-haspopup', 'dialog');
+    chip.dataset.lora = name;
+    chip.dataset.editor = where;
+    chip.dataset.role = role;
+    return chip;
+}
+
+/**
+ * A LoRA's trigger words to edit: x takes one off the list, "+ word" (always the last chip)
+ * adds from the tag search, and on the panel "+ <word>" adds a guessed one (the card's row
+ * is kept short). The prompt itself is not touched: a word is put in or taken out of it on
+ * the LoRA card's row. `where` names the editor ('panel' or 'row').
  */
 export function triggerEditor(name, where = 'panel') {
     const entry = loraEntry(name);
-    const box = element('div', 'lora-words lora-trigger-editor');
-    if (!entry) return box;
-    const save = async (triggers, { refocus = false } = {}) => {
-        await changeLora({ action: 'set', name: entry.name, patch: { triggers } });
-        if (!refocus) return;
-        await afterRender();
-        const again = [...document.querySelectorAll('.lora-word-input')].find(node => node.dataset.editor === where && node.dataset.lora === entry.name);
-        again?.focus();
-    };
-    for (const word of entry.triggers) {
-        const chip = element('span', 'lora-word');
-        chip.append(document.createTextNode(word));
-        const remove = button('lora-word-remove', '×', () => save(entry.triggers.filter(item => item !== word)));
-        remove.setAttribute('aria-label', `${text('lora_remove', 'Remove')} ${word}`);
-        chip.append(remove);
-        box.append(chip);
-    }
-    const field = element('input', 'lora-word-input');
-    field.type = 'text';
-    field.placeholder = text('lora_add_word', '+ word');
-    field.setAttribute('aria-label', text('lora_add_trigger', 'Add a trigger word'));
-    field.dataset.lora = entry.name;
-    field.dataset.editor = where;
-    const add = ({ refocus }) => {
-        const words = promptTags(field.value).map(tagKey).filter(word => word && !entry.triggers.includes(word));
-        field.value = '';
-        if (words.length) save([...entry.triggers, ...words], { refocus });
-    };
-    field.addEventListener('keydown', event => {
-        if (event.isComposing) return;
-        if (event.key === 'Enter' || event.key === ',') {
-            event.preventDefault();
-            add({ refocus: true });
-        }
-    });
-    field.addEventListener('blur', () => { if (field.value.trim()) add({ refocus: false }); });
-    box.append(field);
+    if (!entry) return element('div', 'lora-words lora-trigger-editor');
+    const save = triggers => changeLora({ action: 'set', name: entry.name, patch: { triggers } });
+    const box = wordChips(entry.triggers, { onRemove: word => save(entry.triggers.filter(item => item !== word)) });
+    box.classList.add('lora-trigger-editor');
     if (where === 'panel') for (const word of entry.candidates) box.append(button('lora-word-offer', `+ ${word}`, () => save([...entry.triggers, word])));
+    box.append(pickChip({
+        label: text('lora_add_word', '+ word'),
+        aria: text('lora_add_trigger', 'Add a trigger word'),
+        words: entry.triggers,
+        save,
+        name: entry.name,
+        where,
+        role: 'trigger',
+    }));
+    return box;
+}
+
+/** The tags a LoRA is suggested for: x takes one off, "+ tag" adds from the tag search. */
+function suggestEditor(entry) {
+    const save = linked => changeLora({ action: 'set', name: entry.name, patch: { linked } });
+    const box = wordChips(entry.linked, { onRemove: tag => save(entry.linked.filter(item => item !== tag)) });
+    box.append(pickChip({
+        label: text('lora_add_tag', '+ tag'),
+        aria: text('lora_suggest_add', 'Suggest this LoRA for a tag'),
+        words: entry.linked,
+        save,
+        name: entry.name,
+        where: 'panel',
+        role: 'suggest',
+    }));
     return box;
 }
 
@@ -295,15 +320,7 @@ function panel(entry) {
     weight.append(weightHead, slider);
     box.append(weight);
 
-    box.append(section(text('lora_suggest_for', 'Suggest for tags'), wordChips({ active: entry.linked }, {
-        onRemove: tag => changeLora({ action: 'set', name: entry.name, patch: { linked: entry.linked.filter(item => item !== tag) } }),
-        onAdd: async () => {
-            const answer = await showDialog('input', { message: text('lora_suggest_ask', 'Suggest this LoRA for the tag:'), defaultValue: '' });
-            const tag = tagKey(answer);
-            if (tag && !entry.linked.includes(tag)) changeLora({ action: 'set', name: entry.name, patch: { linked: [...entry.linked, tag] } });
-        },
-        addLabel: text('lora_add_tag', '+ tag'),
-    })));
+    box.append(section(text('lora_suggest_for', 'Suggest for tags'), suggestEditor(entry)));
 
     if (!globalThis.inBrowser) {
         const uses = element('div', 'lora-panel-section lora-uses');
